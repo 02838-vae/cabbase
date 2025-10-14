@@ -1,11 +1,15 @@
 import streamlit as st
+import time
 
 st.set_page_config(page_title="Airplane Intro", layout="wide")
 
-# --- CSS cho toàn màn hình video và text hiệu ứng ---
+# Mỗi lần load lại luôn phát video
+st.session_state.intro_done = False
+
+# CSS full-screen video + chữ hiệu ứng
 st.markdown("""
 <style>
-html, body, [class*="stAppViewContainer"], [class*="stApp"] {
+html, body, [class*="stAppViewContainer"], [class*="stApp"], [class*="stMainBlockContainer"] {
     height: 100%;
     margin: 0;
     padding: 0;
@@ -42,13 +46,18 @@ video {
 </style>
 """, unsafe_allow_html=True)
 
-# --- HTML5 Video với onended event ---
-video_html = """
-<video autoplay muted playsinline onended="window.location.href='pages/main_page'">
-    <source src="airplane.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-</video>
-<div class="overlay-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-"""
+# Hiển thị video intro
+st.markdown(
+    """
+    <video autoplay muted playsinline>
+        <source src="airplane.mp4" type="video/mp4">
+    </video>
+    <div class="overlay-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+    """,
+    unsafe_allow_html=True
+)
 
-st.markdown(video_html, unsafe_allow_html=True)
+# ⏳ Chờ video kết thúc (thay 10 = độ dài video giây)
+time.sleep(10)
+st.session_state.intro_done = True
+st.switch_page("pages/main_page.py")
