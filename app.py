@@ -3,10 +3,11 @@ import time
 
 st.set_page_config(page_title="Airplane Intro", layout="wide")
 
-# Mỗi lần load lại luôn phát video
-st.session_state.intro_done = False
+# --- Quản lý trạng thái ---
+if "intro_done" not in st.session_state:
+    st.session_state.intro_done = False
 
-# CSS full-screen video + chữ hiệu ứng
+# --- CSS toàn màn hình video và text ---
 st.markdown("""
 <style>
 html, body, [class*="stAppViewContainer"], [class*="stApp"], [class*="stMainBlockContainer"] {
@@ -15,12 +16,12 @@ html, body, [class*="stAppViewContainer"], [class*="stApp"], [class*="stMainBloc
     padding: 0;
     overflow: hidden;
 }
-video {
-    position: fixed;
+.stVideo {
+    position: fixed !important;
     top: 0;
     left: 0;
-    width: 100vw;
-    height: 100vh;
+    width: 100vw !important;
+    height: 100vh !important;
     object-fit: cover;
     z-index: -1;
 }
@@ -46,18 +47,46 @@ video {
 </style>
 """, unsafe_allow_html=True)
 
-# Hiển thị video intro
-st.markdown(
-    """
-    <video autoplay muted playsinline>
-        <source src="airplane.mp4" type="video/mp4">
-    </video>
-    <div class="overlay-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-    """,
-    unsafe_allow_html=True
-)
+# --- Hiển thị intro ---
+if not st.session_state.intro_done:
+    # Phát video intro
+    st.video("airplane.mp4")
 
-# ⏳ Chờ video kết thúc (thay 10 = độ dài video giây)
-time.sleep(10)
-st.session_state.intro_done = True
-st.switch_page("pages/main_page.py")
+    # Dòng chữ hiệu ứng
+    st.markdown("<div class='overlay-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>", unsafe_allow_html=True)
+
+    # Đợi hết video (thay 10 bằng độ dài thực tế)
+    time.sleep(10)
+
+    # Đánh dấu intro xong và rerun
+    st.session_state.intro_done = True
+    st.rerun()
+
+# --- Trang chính ---
+else:
+    # CSS background ảnh
+    st.markdown(
+        """
+        <style>
+        .stApp {
+            background: url("cabbase.jpg") no-repeat center center fixed;
+            background-size: cover;
+        }
+        .main-box {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            max-width: 900px;
+            margin: 5rem auto;
+        }
+        </style>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown("<div class='main-box'>", unsafe_allow_html=True)
+    st.title("🌟 Trang Chính")
+    st.write("Chào mừng bạn đến với ứng dụng của chúng tôi!")
+    st.write("Video intro đã kết thúc và đây là nội dung chính.")
+    st.markdown("</div>", unsafe_allow_html=True)
