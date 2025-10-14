@@ -2,12 +2,12 @@ import streamlit as st
 
 st.set_page_config(page_title="Main Page", layout="wide")
 
-# CSS cho background ảnh
+# CSS cho background ảnh (đảm bảo ảnh nằm cùng thư mục app.py)
 st.markdown(
     """
     <style>
     .stApp {
-        background: url("cabbase.jpg") no-repeat center center fixed;
+        background: url("../cabbase.jpg") no-repeat center center fixed;
         background-size: cover;
     }
     .main-box {
