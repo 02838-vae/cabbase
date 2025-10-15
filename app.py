@@ -132,25 +132,45 @@ if not st.session_state.show_main:
 # ---------- TRANG CHÍNH ----------
 st.session_state.intro_done = True
 
-st.markdown("""
-    <style>
-    .stApp {
-        background: url("cabbase.jpg") no-repeat center center fixed;
-        background-size: cover;
-    }
-    .main-box {
-        background-color: rgba(255, 255, 255, 0.8);
-        padding: 2rem;
-        border-radius: 20px;
-        box-shadow: 0 0 20px rgba(0,0,0,0.3);
-        max-width: 900px;
-        margin: 5rem auto;
-    }
-    </style>
-""", unsafe_allow_html=True)
-img_base64 = get_base64("cabbase.jpg") if os.path.exists("airplane.jpg") else ""
+# Đọc ảnh nền và mã hóa base64 (đảm bảo hiển thị được cả khi deploy)
+bg_path = "cabbase.jpg"
+if os.path.exists(bg_path):
+    bg_base64 = get_base64(bg_path)
+    bg_css = f"""
+        <style>
+        .stApp {{
+            background: url("data:image/jpeg;base64,{bg_base64}") no-repeat center center fixed;
+            background-size: cover;
+        }}
+        .main-box {{
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            max-width: 900px;
+            margin: 5rem auto;
+        }}
+        </style>
+    """
+else:
+    bg_css = """
+        <style>
+        .stApp { background-color: #eef2f3; }
+        .main-box {
+            background-color: rgba(255, 255, 255, 0.8);
+            padding: 2rem;
+            border-radius: 20px;
+            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            max-width: 900px;
+            margin: 5rem auto;
+        }
+        </style>
+    """
 
+st.markdown(bg_css, unsafe_allow_html=True)
+
+# Hiển thị nội dung chính
 st.markdown("<div class='main-box'>", unsafe_allow_html=True)
-st.title("TỔ BẢO DƯỠNG SỐ 1")
-st.write("Video intro đã kết thúc — Chào mừng bạn đến với website ✈️")
+st.title("✈️ TỔ BẢO DƯỠNG SỐ 1")
+st.write("Video intro đã kết thúc — Chào mừng bạn đến với website 🌍")
 st.markdown("</div>", unsafe_allow_html=True)
