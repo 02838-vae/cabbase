@@ -1,9 +1,10 @@
 import streamlit as st
+import pandas as pd
 import base64
 import os
 import time
 
-st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
 # ===== HÀM PHỤ TRỢ =====
 def get_base64(file_path):
@@ -18,10 +19,11 @@ if "video_played" not in st.session_state:
 
 video_file = "airplane.mp4"
 
-# ===== MÀN HÌNH VIDEO INTRO =====
+# ===== MÀN HÌNH VIDEO INTRO (FULL SCREEN) =====
 if not st.session_state.show_main:
     if os.path.exists(video_file):
         video_data = get_base64(video_file)
+
         st.markdown(f"""
         <style>
         html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] {{
@@ -31,7 +33,9 @@ if not st.session_state.show_main:
             overflow: hidden !important;
             height: 100vh !important;
         }}
-        [data-testid="stHeader"] {{ display: none !important; }}
+        [data-testid="stHeader"] {{
+            display: none !important;
+        }}
         .video-container {{
             position: fixed;
             inset: 0;
@@ -49,6 +53,17 @@ if not st.session_state.show_main:
             height: 100%;
             object-fit: cover;
             object-position: center center;
+            z-index: 9997;
+            transition: object-fit 0.3s ease, object-position 0.3s ease;
+        }}
+        /* ⚙️ Điều chỉnh cho điện thoại */
+        @media (max-width: 768px) {{
+            .video-bg {{
+                object-fit: contain !important;
+                object-position: center center !important;
+                transform: scale(1.05);
+                background-color: black;
+            }}
         }}
         .intro-text {{
             position: absolute;
@@ -67,14 +82,15 @@ if not st.session_state.show_main:
             animation:
                 appear 3s ease-in forwards,
                 floatFade 3s ease-in 5s forwards;
+            z-index: 9999;
         }}
         @keyframes appear {{
             0% {{ opacity: 0; filter: blur(8px); transform: translateY(40px); }}
             100% {{ opacity: 1; filter: blur(0); transform: translateY(0); }}
         }}
         @keyframes floatFade {{
-            0% {{ opacity: 1; }}
-            100% {{ opacity: 0; transform: translateY(-30px) scale(1.05); }}
+            0% {{ opacity: 1; filter: blur(0); transform: translateY(0); }}
+            100% {{ opacity: 0; filter: blur(12px); transform: translateY(-30px) scale(1.05); }}
         }}
         </style>
 
@@ -99,73 +115,64 @@ if not st.session_state.show_main:
 # ===== TRANG CHÍNH =====
 img_base64 = get_base64("cabbase.jpg") if os.path.exists("cabbase.jpg") else ""
 
+# ===== CSS PHONG CÁCH VINTAGE (NỀN RÕ + FONT TO) =====
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
 
-html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] {{
-    height: 100%;
-    margin: 0;
-    padding: 0;
-}}
-
 .stApp {{
     font-family: 'Special Elite', cursive !important;
     background:
-        linear-gradient(rgba(250, 245, 230, 0.25), rgba(250, 245, 230, 0.25)),
+        linear-gradient(rgba(245, 242, 230, 0.5), rgba(245, 242, 230, 0.5)),
         url("data:image/jpeg;base64,{img_base64}") no-repeat center center fixed;
     background-size: cover;
-    backdrop-filter: blur(1px);
+}}
+.stApp::after {{
+    content: "";
+    position: fixed;
+    inset: 0;
+    background: url("https://www.transparenttextures.com/patterns/aged-paper.png");
+    opacity: 0.2;
+    pointer-events: none;
+    z-index: -1;
 }}
 
-[data-testid="stHeader"], [data-testid="stToolbar"] {{
-    display: none !important;
-}}
+header[data-testid="stHeader"] {{ display: none; }}
+.block-container {{ padding-top: 0 !important; }}
 
-.block-container {{
-    padding-top: 0 !important;
-    padding-bottom: 0 !important;
-    margin: 0 auto !important;
-}}
-
-.main-box {{
-    background-color: rgba(255, 255, 255, 0.5);
-    padding: 2rem;
-    border-radius: 15px;
-    box-shadow: 0 0 25px rgba(0,0,0,0.2);
-    max-width: 900px;
-    margin: 6rem auto;
-    text-align: center;
-    backdrop-filter: blur(3px);
-}}
-
+/* ===== TIÊU ĐỀ ===== */
 .main-title {{
     font-size: 48px;
     font-weight: bold;
+    text-align: center;
     color: #3e2723;
-    text-shadow: 2px 2px 5px rgba(255,255,255,0.8);
+    margin-top: 25px;
+    text-shadow: 2px 2px 0 #fff, 0 0 25px #f0d49b, 0 0 50px #bca27a;
+}}
+.sub-title {{
+    font-size: 34px;
+    text-align: center;
+    color: #6d4c41;
+    margin-top: 5px;
+    margin-bottom: 25px;
+    letter-spacing: 1px;
+    animation: glowTitle 3s ease-in-out infinite alternate;
+}}
+@keyframes glowTitle {{
+    from {{ text-shadow: 0 0 10px #bfa67a, 0 0 20px #d2b48c, 0 0 30px #e6d5a8; color: #4e342e; }}
+    to {{ text-shadow: 0 0 20px #f8e1b4, 0 0 40px #e0b97d, 0 0 60px #f7e7ce; color: #5d4037; }}
 }}
 
-.sub-text {{
-    font-size: 22px;
-    color: #5d4037;
-    margin-top: 15px;
-}}
-</style>
-""", unsafe_allow_html=True)
 
-# ===== GIAO DIỆN CHÍNH =====
-st.markdown("<div class='main-box'>", unsafe_allow_html=True)
-st.markdown("<div class='main-title'>✈️ TỔ BẢO DƯỠNG SỐ 1</div>", unsafe_allow_html=True)
-st.markdown("<div class='sub-text'>Chào mừng bạn đến với trang thông tin của chúng tôi!</div>", unsafe_allow_html=True)
-st.markdown("</div>", unsafe_allow_html=True)
+# ===== TIÊU ĐỀ =====
+st.markdown('<div class="main-title">📜 TỔ BẢO DƯỠNG SỐ 1</div>', unsafe_allow_html=True)
 
 # ===== NHẠC NỀN =====
 try:
     with open("background.mp3", "rb") as f:
         audio_bytes = f.read()
         st.markdown("""
-        <div style='text-align:center; margin-top:-40px;'>
+        <div style='text-align:center; margin-top:5px;'>
             <p style='font-family:Special Elite; color:#3e2723; font-size:17px;'>
                 🎵 Nhạc nền (hãy nhấn Play để thưởng thức)
             </p>
