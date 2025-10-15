@@ -184,36 +184,3 @@ try:
 except FileNotFoundError:
     st.warning("⚠️ Không tìm thấy file background.mp3")
 
-# ====== CHỌN DỮ LIỆU ======
-zone = st.selectbox("📂 Bạn muốn tra cứu zone nào?", xls.sheet_names)
-if zone:
-    df = load_and_clean(zone)
-
-    if "A/C" in df.columns:
-        aircrafts = sorted([ac for ac in df["A/C"].dropna().unique().tolist() if ac])
-        aircraft = st.selectbox("✈️ Loại máy bay?", aircrafts)
-    else:
-        aircraft = None
-
-    if aircraft:
-        df_ac = df[df["A/C"] == aircraft]
-
-        if "DESCRIPTION" in df_ac.columns:
-            desc_list = sorted([d for d in df_ac["DESCRIPTION"].dropna().unique().tolist() if d])
-            description = st.selectbox("📑 Bạn muốn tra cứu phần nào?", desc_list)
-        else:
-            description = None
-
-        if description:
-            df_desc = df_ac[df_ac["DESCRIPTION"] == description]
-
-            # === Làm sạch ===
-            df_desc = df_desc.drop(columns=["A/C", "ITEM", "DESCRIPTION"], errors="ignore")
-            df_desc = df_desc.replace(r'^\s*$', pd.NA, regex=True).dropna(how="all")
-
-            if not df_desc.empty:
-                df_desc.insert(0, "STT", range(1, len(df_desc) + 1))
-                st.success(f"✅ Tìm thấy {len(df_desc)} dòng dữ liệu")
-                st.write(df_desc.to_html(escape=False, index=False), unsafe_allow_html=True)
-            else:
-                st.warning("📌 Không có dữ liệu phù hợp.")
