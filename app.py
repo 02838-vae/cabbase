@@ -30,22 +30,17 @@ if "show_main" not in st.session_state:
 if "intro_ran" not in st.session_state:
     st.session_state.intro_ran = False
 
-# === TẢI FILE NỀN SỚM (FIX NameError) ===
+# === TẢI FILE NỀN SỚM (Đảm bảo không NameError) ===
 img_base64 = get_base64(bg_file)
 if img_base64 is None:
     st.error(f"❌ Không tìm thấy file {bg_file}. Vui lòng kiểm tra lại tên và đường dẫn file.")
     st.stop()
-# ========================================
+# ===================================================
 
-# CSS động để kiểm soát hiển thị video (Chống Flicker)
+# CSS động để kiểm soát hiển thị video và flicker
 is_main_page = st.session_state.show_main
+# KHÔI PHỤC: Dùng 'flex' để hiển thị container video khi chưa ở trang chính
 video_display_style = "display: none;" if is_main_page else "display: flex;" 
-
-# === FIX FLICKER MỚI: Ẩn background trang chính khi video đang chạy ===
-main_page_display_style = "opacity: 1;" if is_main_page else "opacity: 0 !important; visibility: hidden !important;"
-# Nếu không phải trang chính (đang chạy video), ta ẩn nó đi.
-# =====================================================================
-
 
 # === CSS CHUNG VÀ VIDEO (Đã xác nhận hoạt động tốt) ===
 st.markdown(f"""
@@ -70,7 +65,7 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     height: 100vh !important;
 }}
 
-/* 3. CSS CHO VIDEO CONTAINER (FIX LỆCH CHỮ) */
+/* 3. CSS CHO VIDEO CONTAINER (Đã fix lỗi lệch chữ) */
 .video-container {{
     position: fixed; inset:0; width:100vw; height:100vh;
     justify-content:center; 
@@ -99,8 +94,9 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 
 /* Keyframes và animations giữ nguyên */
 @keyframes fadeOut {{ 
-    0% {{opacity:1; visibility:visible;}}
-    99% {{opacity:0.01; visibility:visible;}}
+    /* KHÔI PHỤC: Sử dụng visibility: hidden ở 100% để ẩn video sau khi fade */
+    0% {{opacity:1;}}
+    99% {{opacity:0.01;}}
     100%{{opacity:0; visibility:hidden;}}
 }}
 .intro-animation {{
@@ -110,7 +106,7 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 @keyframes floatFade {{ 0% {{opacity:1; filter:blur(0); transform:translateY(0);}} 100%{{opacity:0; filter:blur(12px); transform:translateY(-30px) scale(1.05);}} }}
 
 
-/* 4. CSS CHO TRANG CHÍNH: BACKGROUND FIX */
+/* 4. CSS CHO TRANG CHÍNH: BACKGROUND FIX (Đã Fix lỗi Full Screen PC) */
 .stApp {{
     background-color: #333; 
     background-image: linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
@@ -124,17 +120,16 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     width: 100vw !important;
     height: 100vh !important;
 
-    /* !!! FIX FLICKER MỚI: ẨN NÓ KHI KHÔNG PHẢI TRANG CHÍNH !!! */
-    {main_page_display_style}
+    /* Tạm thời loại bỏ fix flicker background để ưu tiên video play */
+    opacity: 1; 
+    visibility: visible;
 }}
 
 /* 5. MEDIA QUERY (FIX DỨT ĐIỂM BACKGROUND TRÊN MOBILE) */
 @media screen and (max-width: 768px) {{
     .stApp {{
-        background-size: contain; 
+        background-size: contain; /* DÙNG CONTAIN để thấy hết hình máy bay */
         background-color: #333; 
-        /* Giữ nguyên logic hiển thị cho mobile */
-        {main_page_display_style} 
     }}
 }}
 
