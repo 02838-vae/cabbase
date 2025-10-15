@@ -59,7 +59,7 @@ section.main > div {{ padding-top: 0 !important; padding-left: 0 !important; pad
     min-height: calc(var(--vh, 1vh) * 100) !important; 
 }}
 
-/* 3. CSS CHO VIDEO CONTAINER */
+/* 3. CSS CHO VIDEO CONTAINER (RESPONSIVE VÀ CHẮN CHẮN CONTAIN) */
 .video-container {{
     position: fixed; inset:0; width:100%; height:100%;
     justify-content:center; align-items:center;
@@ -67,10 +67,13 @@ section.main > div {{ padding-top: 0 !important; padding-left: 0 !important; pad
     {video_display_style} 
     height: calc(var(--vh, 1vh) * 100) !important; 
 }}
+
+/* TĂNG CƯỜNG SỨC MẠNH CỦA CONTAIN */
 .video-bg {{ 
-    width:100%; 
-    height:100%; 
-    /* !!! QUAN TRỌNG: DÙNG CONTAIN ĐỂ THẤY HẾT HÌNH (SẼ CÓ DẢI ĐEN) */
+    /* Đảm bảo video không vượt quá kích thước màn hình */
+    max-width: 100%; 
+    max-height: 100%;
+    /* !!! Dùng contain để thấy hết hình. Background màu đen sẽ được thấy rõ hơn */
     object-fit:contain; 
 }}
 
@@ -145,8 +148,10 @@ st.markdown(f"""
 .stApp {{
     background: linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
                 url("data:image/jpeg;base64,{img_base64}") no-repeat center center fixed;
-    /* !!! QUAN TRỌNG: DÙNG CONTAIN ĐỂ THẤY HẾT HÌNH BACKGROUND (SẼ CÓ DẢI ĐEN) */
+    /* !!! QUAN TRỌNG: DÙNG CONTAIN ĐỂ THẤY HẾT HÌNH BACKGROUND */
     background-size: contain; 
+    /* Đảm bảo không lặp lại ảnh nền */
+    background-repeat: no-repeat;
     min-height: calc(var(--vh, 1vh) * 100) !important;
 }}
 /* Khôi phục padding nhẹ cho nội dung trang chính */
