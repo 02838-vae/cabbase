@@ -43,9 +43,19 @@ if not st.session_state.show_main:
         .intro-text {{
             position:absolute; bottom:12vh; width:100%; text-align:center;
             font-family:'Special Elite', cursive; font-weight:bold;
-            color:#fff; text-shadow:0 0 20px rgba(255,255,255,0.8),
+            color:#fff; font-size:4vw; z-index:9999;
+            text-shadow:0 0 20px rgba(255,255,255,0.8),
                         0 0 40px rgba(180,220,255,0.6),0 0 60px rgba(255,255,255,0.4);
-            font-size:4vw; z-index:9999;
+            opacity:0;
+            animation: appear 3s ease-in forwards, floatFade 3s ease-in 5s forwards;
+        }}
+        @keyframes appear {{
+            0% {{ opacity:0; transform: translateY(40px); }}
+            100% {{ opacity:1; transform: translateY(0); }}
+        }}
+        @keyframes floatFade {{
+            0% {{ opacity:1; transform: translateY(0); }}
+            100% {{ opacity:0; transform: translateY(-30px) scale(1.05); }}
         }}
         @media(max-width:768px){{
             .intro-text {{ font-size:6vw; }}
@@ -59,7 +69,6 @@ if not st.session_state.show_main:
         </div>
         """, unsafe_allow_html=True)
 
-        # Dùng time.sleep để giả lập kết thúc video và chuyển trang
         if not st.session_state.video_played:
             st.session_state.video_played = True
             time.sleep(VIDEO_DURATION)
@@ -78,7 +87,7 @@ st.markdown(f"""
 @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
 .stApp {{
     font-family:'Special Elite', cursive;
-    background: linear-gradient(rgba(245,242,180,0.4), rgba(245,242,180,0.4)),
+    background: linear-gradient(rgba(245,242,180,0.5), rgba(245,242,180,0.5)),
                 url("data:image/jpeg;base64,{img_base64}") no-repeat center center fixed;
     background-size:cover;
 }}
@@ -86,7 +95,7 @@ st.markdown(f"""
     position: fixed; top:10px; left:10px; z-index:10000; width:200px;
 }}
 header[data-testid="stHeader"] {{ display:none; }}
-.block-container {{ padding-top: 0 !important; }}
+.block-container {{ padding-top:0 !important; }}
 .main-title {{
     font-size:48px; font-weight:bold; text-align:center;
     color:#3e2723; margin-top:25px;
