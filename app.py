@@ -34,43 +34,55 @@ if "intro_ran" not in st.session_state:
 is_main_page = st.session_state.show_main
 video_display_style = "display: none;" if is_main_page else "display: flex;" 
 
-# === CSS VÀ MOBILE HEIGHT FIX (Không thay đổi) ===
+# === CSS CHỐNG LỆCH CHỮ, FULLSCREEN VÀ MOBILE FIX ===
 st.markdown(f"""
 <style>
-/* 1. KHẮC PHỤC VIEWPORT TRÊN MOBILE */
+/* 1. KHẮC PHỤC VIEWPORT TRÊN MOBILE (Giữ nguyên) */
 html, body {{ 
     margin:0; 
     padding:0; 
     height:100%; 
     overflow:hidden; 
     background:black; 
-    /* Dùng biến CSS --vh được đặt bởi JavaScript */
     height: calc(var(--vh, 1vh) * 100); 
 }}
 
-/* 2. FULLSCREEN TRIỆT ĐỂ VÀ DÙNG BIẾN --vh */
+/* 2. FULLSCREEN TRIỆT ĐỂ */
 header[data-testid="stHeader"], footer {{ display: none !important; }}
-section.main > div {{ padding-top: 0 !important; padding-left: 0 !important; padding-right: 0 !important; }}
-.block-container, .stApp {{
+.block-container, section.main > div {{
     margin: 0 !important;
     padding: 0 !important;
     max-width: 100% !important;
-    width: 100% !important;
-    min-height: calc(var(--vh, 1vh) * 100) !important; 
+    width: 100vw !important;
+    height: 100vh !important;
 }}
 
-/* 3. CSS CHO VIDEO CONTAINER (Đã xác nhận hoạt động tốt với CONTAIN) */
+/* 3. CSS CHO VIDEO CONTAINER (FIX LỆCH CHỮ) */
 .video-container {{
-    position: fixed; inset:0; width:100%; height:100%;
-    justify-content:center; align-items:center;
+    position: fixed; inset:0; width:100vw; height:100vh;
+    justify-content:center; 
+    align-items:center;
     background:black; z-index:9999;
     {video_display_style} 
-    height: calc(var(--vh, 1vh) * 100) !important; 
+    /* FIX: Dùng flex-direction: column để căn giữa nội dung */
+    flex-direction: column; 
 }}
+
+/* 4. CHỮ INTRO (position: absolute) */
+.video-text {{
+    position:absolute; bottom:12vh; width:100%; text-align:center;
+    font-family:'Special Elite', cursive; font-size:clamp(24px,5vw,44px);
+    font-weight:bold; color:#fff;
+    text-shadow: 0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(180,220,255,0.6), 0 0 60px rgba(255,255,255,0.4);
+    opacity:0;
+    animation: appear 3s ease-in forwards, floatFade 3s ease-in 5s forwards;
+}}
+
+/* Video settings giữ nguyên */
 .video-bg {{ 
     max-width: 100%; 
     max-height: 100%;
-    object-fit:contain; /* Giữ lại contain cho video để máy bay không bị cắt */
+    object-fit:contain; 
 }}
 
 /* Các hiệu ứng khác giữ nguyên */
@@ -78,10 +90,35 @@ section.main > div {{ padding-top: 0 !important; padding-left: 0 !important; pad
 .intro-animation {{
     animation: fadeOut {FADE_DURATION_SECONDS}s ease-out {VIDEO_DURATION_SECONDS}s forwards; 
 }}
+/* ... (animation keyframes) ... */
 
-.video-text {{ /* ... */ }}
-@keyframes appear {{ /* ... */ }}
-@keyframes floatFade {{ /* ... */ }}
+/* 5. CSS CHO TRANG CHÍNH: BACKGROUND RESPONSE */
+.stApp {{
+    background-color: #333; 
+    background-image: linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
+                      url("data:image/jpeg;base64,{img_base64}");
+    
+    /* MẶC ĐỊNH: COVER cho PC (Đẹp mắt, lấp đầy) */
+    background-size: cover; 
+    background-repeat: no-repeat;
+    background-position: center center; 
+    width: 100vw !important;
+    height: 100vh !important;
+}}
+
+/* 6. MEDIA QUERY (FIX DỨT ĐIỂM BACKGROUND TRÊN MOBILE) */
+@media screen and (max-width: 768px) {{
+    .stApp {{
+        /* Trên Mobile (Màn hình nhỏ), BẮT BUỘC DÙNG CONTAIN để thấy hết hình máy bay */
+        background-size: contain; 
+    }}
+}}
+
+/* Khôi phục padding nhẹ cho nội dung trang chính */
+.block-container {{ padding-top:2rem !important; padding-left:1rem !important; padding-right:1rem !important;}}
+
+.main-title {{ /* ... */ }}
+
 </style>
 
 <script>
@@ -105,7 +142,6 @@ if not st.session_state.show_main and not st.session_state.intro_ran:
         st.error(f"❌ Không tìm thấy file {video_file}.")
         st.stop()
     
-    # HTML/Video và Kích hoạt Rerun Bằng Python
     st.markdown(f"""
     <div class="video-container intro-animation" id="videoContainer">
         <video id="introVideo" class="video-bg" autoplay muted playsinline>
@@ -115,7 +151,6 @@ if not st.session_state.show_main and not st.session_state.intro_ran:
     </div>
     """, unsafe_allow_html=True)
     
-    # Tạm dừng luồng Streamlit và kích hoạt RERUN
     time.sleep(TOTAL_DELAY_SECONDS) 
     
     st.session_state.show_main = True
@@ -131,39 +166,8 @@ if img_base64 is None:
     st.error(f"❌ Không tìm thấy file {bg_file}.")
     st.stop()
 
-st.markdown(f"""
-<style>
-/* 4. CSS cho Trang Chính (RESPONSIVE BACKGROUND) */
-.stApp {{
-    /* Áp dụng màu nền đen/xám để lấp đầy khoảng trống nếu cần */
-    background-color: #333; 
-    background-image: linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
-                      url("data:image/jpeg;base64,{img_base64}");
-    
-    /* !!! QUAN TRỌNG: CHUYỂN VỀ COVER ĐỂ LẤP ĐẦY TOÀN BỘ MÀN HÌNH */
-    background-size: cover; 
-    background-repeat: no-repeat;
-    background-position: center center; 
-    min-height: calc(var(--vh, 1vh) * 100) !important;
-}}
-/* Khôi phục padding nhẹ cho nội dung trang chính */
-.block-container {{ padding-top:2rem !important; padding-left:1rem !important; padding-right:1rem !important;}}
+# ... (Phần code hiển thị nhạc và nội dung trang chính) ...
 
-/* Đảm bảo header/footer ẩn khi ở trang chính */
-header[data-testid="stHeader"] {{ display:none; }}
-footer {{ display:none; }}
-
-.main-title {{
-    font-family:'Special Elite', cursive;
-    font-size: clamp(36px,5vw,48px);
-    font-weight:bold; text-align:center;
-    color:#3e2723; margin-top:50px;
-    text-shadow:2px 2px 0 #fff,0 0 25px #f0d49b,0 0 50px #bca27a;
-}}
-</style>
-""", unsafe_allow_html=True)
-
-# Nhạc góc trên trái
 audio_base64 = get_base64(audio_file)
 if audio_base64:
     st.markdown(f"""
