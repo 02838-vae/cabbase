@@ -173,4 +173,4 @@ try:
         st.markdown(html_audio, unsafe_allow_html=True)
         st.audio(audio_bytes, format="audio/mp3", start_time=0)
 except FileNotFoundError:
-    st.warning("⚠️ Không tìm thấy file background.mp3 — vui lòng thêm file vào cùng thư mục."
+    st.warning("⚠️ Không tìm thấy file background.mp3 — vui lòng thêm file vào cùng thư mục.")
