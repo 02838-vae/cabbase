@@ -71,7 +71,7 @@ st.markdown(f"""
     font-family: 'Special Elite', cursive !important;
     background:
         linear-gradient(rgba(245, 222, 179, 0.35), rgba(245, 222, 179, 0.35)),
-        url("data:image/jpeg;base64,{img_base64}") no-repeat center center fixed;
+        url("data:image/jpeg;base64,{img_base64}") no-repeat center bottom fixed;  /* đổi center center -> center bottom */
     background-size: cover;
     filter: sepia(0.25) brightness(0.9) contrast(1.05);
     backdrop-filter: blur(6px);
