@@ -130,21 +130,25 @@ if img_base64 is None:
 
 st.markdown(f"""
 <style>
-/* === BACKGROUND === */
+/* === BACKGROUND CHÍNH === */
 .stApp {{
-    background: 
+    background:
         linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
-        url("data:image/jpeg;base64,{img_base64}") no-repeat center center fixed;
-    background-size: contain;
-    background-repeat: no-repeat;
-    background-position: center;
+        url("data:image/jpeg;base64,{img_base64}") no-repeat center center;
+    background-size: cover;              /* ✅ PC: full màn hình */
+    background-attachment: fixed;        /* Giữ nền khi cuộn trên PC */
     min-height: 100vh !important;
+    width: 100vw !important;
 }}
 
-/* 📱 Trên điện thoại, ảnh nền nhỏ hơn */
+/* 📱 MOBILE FIX */
 @media (max-width: 768px) {{
     .stApp {{
-        background-size: 100% auto;
+        background-attachment: scroll !important;  /* ⚡ Tắt fixed trên mobile để mượt */
+        background-size: contain !important;       /* Hiển thị toàn bộ ảnh */
+        background-position: center center !important;
+        background-repeat: no-repeat !important;
+        background-color: black !important;        /* Nền đen nếu ảnh không lấp kín */
     }}
 }}
 
@@ -163,13 +167,3 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-audio_base64 = get_base64(audio_file)
-if audio_base64:
-    st.markdown(f"""
-    <audio autoplay loop controls style="position:fixed; top:10px; left:10px; width:180px; z-index:9999;">
-        <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
-    </audio>
-    """, unsafe_allow_html=True)
-
-st.markdown('<div class="main-title">📜 TỔ BẢO DƯỠNG SỐ 1</div>', unsafe_allow_html=True)
-st.write("Chào mừng bạn đến với website ✈️")
