@@ -5,28 +5,29 @@ import io
 import time
 from PIL import Image, ImageFilter
 
+# ===== CẤU HÌNH TRANG =====
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide", initial_sidebar_state="collapsed")
 
-# ===== HÀM PHỤ TRỢ =====
+# ===== HÀM HỖ TRỢ =====
 def get_base64(file_path):
     with open(file_path, "rb") as f:
         return base64.b64encode(f.read()).decode("utf-8")
 
 def process_background(image_path):
-    """Làm mờ vintage nhẹ ảnh nền, mờ nhiều phía dưới, giữ rõ phía trên"""
+    """Làm mờ vintage nhẹ ảnh nền, mờ nhiều phía dưới"""
     if not os.path.exists(image_path):
         return ""
     img = Image.open(image_path).convert("RGB")
     width, height = img.size
 
-    # Mờ nhẹ toàn bộ ảnh
+    # Mờ nhẹ toàn ảnh
     base_blur = img.filter(ImageFilter.GaussianBlur(2))
 
-    # Mờ mạnh phía dưới (giúp logo / chữ phía dưới nhạt đi)
+    # Mờ mạnh phía dưới
     bottom_blur = img.crop((0, int(height*0.7), width, height)).filter(ImageFilter.GaussianBlur(14))
     base_blur.paste(bottom_blur, (0, int(height*0.7)))
 
-    # Lớp màu vàng nhẹ vintage
+    # Lớp vàng vintage
     overlay = Image.new("RGB", img.size, (245, 222, 179))
     mask = Image.new("L", img.size, 60)
     for y in range(int(height*0.7), height):
@@ -47,73 +48,46 @@ if "video_played" not in st.session_state:
 
 video_file = "airplane.mp4"
 
-# ===== MÀN HÌNH VIDEO INTRO =====
+# ===== VIDEO INTRO =====
 if not st.session_state.show_main:
     if os.path.exists(video_file):
         video_data = get_base64(video_file)
         st.markdown(f"""
         <style>
         html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] {{
-            margin: 0 !important;
-            padding: 0 !important;
-            background: black !important;
-            overflow: hidden !important;
-            height: 100vh !important;
+            margin:0 !important; padding:0 !important;
+            background:black !important; overflow:hidden !important; height:100vh !important;
         }}
-        [data-testid="stHeader"] {{ display: none !important; }}
+        [data-testid="stHeader"] {{ display:none !important; }}
         .video-container {{
-            position: fixed;
-            inset: 0;
-            width: 100vw;
-            height: 100vh;
-            background: black;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 9998;
-            overflow: hidden;
+            position:fixed; inset:0; width:100vw; height:100vh;
+            background:black; display:flex; justify-content:center; align-items:center;
+            z-index:9998; overflow:hidden;
         }}
         .video-bg {{
-            width: 100%;
-            height: 100%;
-            object-fit: contain; 
-            object-position: center center;
-            z-index: 9997;
+            width:100%; height:100%; object-fit:contain; object-position:center center; z-index:9997;
         }}
-        @media (max-width: 768px) {{
+        @media (max-width:768px) {{
             .video-bg {{
-                object-fit: contain !important;
-                width: 100%;
-                height: auto;
-                max-height: 100vh;
+                object-fit:contain !important; width:100%; height:auto; max-height:100vh;
             }}
         }}
         .intro-text {{
-            position: absolute;
-            bottom: 12vh;
-            width: 100%;
-            text-align: center;
-            font-family: 'Special Elite', cursive;
-            font-size: 44px;
-            font-weight: bold;
-            color: #ffffff;
-            text-shadow:
-                0 0 20px rgba(255,255,255,0.8),
-                0 0 40px rgba(180,220,255,0.6),
-                0 0 60px rgba(255,255,255,0.4);
-            opacity: 0;
-            animation:
-                appear 3s ease-in forwards,
-                floatFade 3s ease-in 5s forwards;
-            z-index: 9999;
+            position:absolute; bottom:12vh; width:100%; text-align:center;
+            font-family:'Special Elite', cursive; font-size:44px; font-weight:bold;
+            color:#ffffff;
+            text-shadow:0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(180,220,255,0.6), 0 0 60px rgba(255,255,255,0.4);
+            opacity:0;
+            animation:appear 3s ease-in forwards, floatFade 3s ease-in 5s forwards;
+            z-index:9999;
         }}
         @keyframes appear {{
-            0% {{ opacity: 0; filter: blur(8px); transform: translateY(40px); }}
-            100% {{ opacity: 1; filter: blur(0); transform: translateY(0); }}
+            0% {{ opacity:0; filter:blur(8px); transform:translateY(40px); }}
+            100% {{ opacity:1; filter:blur(0); transform:translateY(0); }}
         }}
         @keyframes floatFade {{
-            0% {{ opacity: 1; filter: blur(0); transform: translateY(0); }}
-            100% {{ opacity: 0; filter: blur(12px); transform: translateY(-30px) scale(1.05); }}
+            0% {{ opacity:1; filter:blur(0); transform:translateY(0); }}
+            100% {{ opacity:0; filter:blur(12px); transform:translateY(-30px) scale(1.05); }}
         }}
         </style>
 
@@ -144,47 +118,34 @@ st.markdown(f"""
 
 .stApp {{
     font-family: 'Special Elite', cursive !important;
-    background:
-        url("data:image/jpeg;base64,{img_base64}") no-repeat center center;
-    background-size: contain;
-    background-attachment: scroll;
+    background: url("data:image/jpeg;base64,{img_base64}") no-repeat center center;
+    background-size:cover; background-attachment:fixed;
 }}
-@media (max-width: 768px) {{
-    .stApp {{
-        background-size: contain;
-        background-position: top center;
-    }}
-}}
-
-header[data-testid="stHeader"] {{ display: none; }}
-.block-container {{ padding-top: 0 !important; }}
+header[data-testid="stHeader"] {{ display:none; }}
+.block-container {{ padding-top:0 !important; }}
 
 .main-title {{
-    font-size: 48px;
-    font-weight: bold;
-    text-align: center;
-    color: #3e2723;
-    margin-top: 25px;
-    text-shadow: 2px 2px 0 #fff, 0 0 25px #f0d49b, 0 0 50px #bca27a;
+    font-size:48px; font-weight:bold; text-align:center; color:#3e2723;
+    margin-top:25px;
+    text-shadow:2px 2px 0 #fff, 0 0 25px #f0d49b, 0 0 50px #bca27a;
 }}
 
 .audio-box {{
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    z-index: 10000;
-    width: auto;
+    position:fixed; top:10px; left:10px; z-index:10000; width:auto;
 }}
 </style>
 """, unsafe_allow_html=True)
 
-# ===== THANH NHẠC =====
-try:
+# ===== THANH NHẠC HTML BASE64 =====
+if os.path.exists("background.mp3"):
     with open("background.mp3", "rb") as f:
         audio_bytes = f.read()
-        st.audio(audio_bytes, format="audio/mp3", start_time=0, key="bgmusic")
-except FileNotFoundError:
-    st.warning("⚠️ Không tìm thấy file background.mp3")
+        audio_base64 = base64.b64encode(audio_bytes).decode()
+    st.markdown(f"""
+    <audio autoplay loop controls class="audio-box">
+        <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
+    </audio>
+    """, unsafe_allow_html=True)
 
 # ===== TIÊU ĐỀ =====
 st.markdown('<div class="main-title">📜 TỔ BẢO DƯỠNG SỐ 1</div>', unsafe_allow_html=True)
