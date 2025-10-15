@@ -133,116 +133,89 @@ if not st.session_state.show_main:
         st.error("❌ Không tìm thấy file airplane.mp4")
         st.stop()
 
-# ==========================
-# 🌅 TRANG CHÍNH (vintage, full-screen, fixed)
-# ==========================
+# ---------- TRANG CHÍNH ----------
 st.session_state.intro_done = True
 
+# Lấy base64 ảnh nền
 bg_path = "cabbase.jpg"
+bg_base64 = get_base64(bg_path) if os.path.exists(bg_path) else None
 
-if os.path.exists(bg_path):
-    bg_base64 = get_base64(bg_path)
-    background_css = f"""
+# ========== CSS + HTML ==========
+if bg_base64:
+    st.markdown(f"""
         <style>
-        /* RESET TOÀN BỘ */
         html, body {{
-            margin: 0 !important;
-            padding: 0 !important;
+            margin: 0;
+            padding: 0;
             height: 100%;
             width: 100%;
-            overflow: hidden !important;
+            overflow: hidden;
+            background: none;
         }}
-
-        [data-testid="stAppViewContainer"],
-        [data-testid="stApp"],
-        [data-testid="stMainBlockContainer"],
-        [data-testid="stVerticalBlock"] {{
-            margin: 0 !important;
-            padding: 0 !important;
-            height: 100vh !important;
-            width: 100vw !important;
-            overflow: hidden !important;
-            background: none !important;
-        }}
-
-        header, footer, [data-testid="stHeader"], [data-testid="stSidebar"], [data-testid="stToolbar"] {{
+        [data-testid="stAppViewContainer"], [data-testid="stMainBlockContainer"],
+        [data-testid="stSidebar"], header, footer, [data-testid="stToolbar"] {{
             display: none !important;
         }}
 
-        /* NỀN ẢNH + HIỆU ỨNG MỜ NHẸ */
-        .stApp::before {{
-            content: "";
+        /* Toàn bộ nền và mờ overlay */
+        .bg-wrapper {{
             position: fixed;
             inset: 0;
-            background: url("data:image/jpeg;base64,{bg_base64}") no-repeat center center fixed;
+            width: 100vw;
+            height: 100vh;
+            background: url("data:image/jpeg;base64,{bg_base64}") no-repeat center center;
             background-size: cover;
-            filter: brightness(0.92) sepia(0.15) contrast(1.05) saturate(0.9);
+            filter: brightness(0.9) sepia(0.12) contrast(1.05);
             z-index: -2;
         }}
-
-        .stApp::after {{
-            content: "";
+        .bg-overlay {{
             position: fixed;
             inset: 0;
-            background: rgba(240, 224, 200, 0.18);
-            backdrop-filter: blur(2.5px);
+            width: 100%;
+            height: 100%;
+            background: rgba(245,230,200,0.22);
+            backdrop-filter: blur(2px);
             z-index: -1;
         }}
 
-        /* HỘP NỘI DUNG CHÍNH */
+        /* Hộp nội dung chính */
         .main-box {{
             position: relative;
             z-index: 10;
-            background-color: rgba(255, 255, 255, 0.78);
-            padding: 2.5rem 3rem;
-            border-radius: 20px;
-            box-shadow: 0 6px 25px rgba(0,0,0,0.25);
-            max-width: 900px;
-            margin: 15vh auto;
-            text-align: center;
+            background-color: rgba(255, 255, 255, 0.8);
             backdrop-filter: blur(2px);
-            border: 1px solid rgba(255,255,255,0.3);
-        }}
-
-        /* CHỮ PHONG CÁCH VINTAGE */
-        .main-box h1 {{
+            border-radius: 20px;
+            padding: 3rem;
+            box-shadow: 0 4px 25px rgba(0,0,0,0.25);
+            max-width: 900px;
+            margin: 15vh auto 0 auto;
+            text-align: center;
             font-family: 'Georgia', serif;
+        }}
+        .main-box h1 {{
+            font-size: 2.2rem;
             color: #2a2a2a;
-            text-shadow: 0 0 6px rgba(255,255,255,0.7);
-            font-size: 2.3rem;
+            text-shadow: 0 0 6px rgba(255,255,255,0.6);
             margin-bottom: 1rem;
         }}
-
         .main-box p {{
-            font-family: 'Georgia', serif;
-            font-size: 1.1rem;
-            color: #333;
+            font-size: 1.2rem;
+            color: #2e2e2e;
         }}
         </style>
-    """
+
+        <div class="bg-wrapper"></div>
+        <div class="bg-overlay"></div>
+    """, unsafe_allow_html=True)
 else:
-    background_css = """
-        <style>
-        .main-box {
-            background-color: rgba(255, 255, 255, 0.85);
-            padding: 2rem;
-            border-radius: 20px;
-            box-shadow: 0 0 20px rgba(0,0,0,0.3);
-            max-width: 900px;
-            margin: 5rem auto;
-        }
-        </style>
-    """
+    st.error("❌ Không tìm thấy file nền 'cabbase.jpg'")
 
-st.markdown(background_css, unsafe_allow_html=True)
-
-# ==========================
-# 📜 NỘI DUNG CHÍNH
-# ==========================
+# ========== Nội dung ==========
 st.markdown("<div class='main-box'>", unsafe_allow_html=True)
 st.title("✈️ TỔ BẢO DƯỠNG SỐ 1")
 st.write("Video intro đã kết thúc — Chào mừng bạn đến với website 🌍")
 st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
