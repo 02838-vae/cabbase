@@ -125,12 +125,21 @@ header[data-testid="stHeader"] {{ display: none !important; }}
     filter: sepia(0.25) brightness(0.9) contrast(1.05);
     backdrop-filter: blur(6px);
 }}
+
+/* ===== THANH NHẠC MINI ===== */
+.audio-fixed {{
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    width: 200px !important;
+    z-index: 10000;
+}}
 </style>
 """, unsafe_allow_html=True)
 
 # ===== TIÊU ĐỀ =====
 st.markdown(
-    '<div style="text-align:center; font-size:50px; font-weight:bold; color:#3e2723; text-shadow:2px 2px 4px #fff;">📜 TỔ BẢO DƯỠNG SỐ 1</div>',
+    '<div style="text-align:center; font-size:50px; font-weight:bold; color:#3e2723; text-shadow:2px 2px 4px #fff; margin-top:50px;">📜 TỔ BẢO DƯỠNG SỐ 1</div>',
     unsafe_allow_html=True,
 )
 
@@ -138,7 +147,13 @@ st.markdown(
 try:
     with open("background.mp3", "rb") as f:
         audio_bytes = f.read()
-        st.markdown("<div style='height:25px;'></div>", unsafe_allow_html=True)  # khoảng cách nhỏ dưới tiêu đề
-        st.audio(audio_bytes, format="audio/mp3", start_time=0)
+        st.audio(audio_bytes, format="audio/mp3", start_time=0, key="bgmusic", help=None)
+        # wrap audio với div fixed
+        st.markdown("""
+        <script>
+        const audio = window.parent.document.querySelector('audio');
+        if(audio){ audio.parentElement.classList.add('audio-fixed'); }
+        </script>
+        """, unsafe_allow_html=True)
 except FileNotFoundError:
     pass
