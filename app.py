@@ -134,7 +134,7 @@ if not st.session_state.show_main:
         st.stop()
 
 # ==========================
-# 🌅 TRANG CHÍNH
+# 🌅 TRANG CHÍNH (nền mờ)
 # ==========================
 st.session_state.intro_done = True
 
@@ -144,15 +144,33 @@ if os.path.exists(bg_path):
     bg_base64 = get_base64(bg_path)
     background_css = f"""
         <style>
+        /* Nền ảnh phủ toàn bộ */
         html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"], [data-testid="stVerticalBlock"] {{
             background: url("data:image/jpeg;base64,{bg_base64}") no-repeat center center fixed !important;
             background-size: cover !important;
+            position: relative;
         }}
+
+        /* Lớp làm mờ phủ toàn bộ */
+        [data-testid="stAppViewContainer"]::before {{
+            content: "";
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.35); /* lớp tối nhẹ để nổi chữ */
+            backdrop-filter: blur(6px);       /* ⚡ hiệu ứng làm mờ nền */
+            z-index: 0;
+        }}
+
+        /* Đảm bảo nội dung nổi lên trên */
         [data-testid="stMainBlockContainer"], [data-testid="stMarkdownContainer"], .block-container {{
             background: transparent !important;
+            position: relative;
+            z-index: 1;
         }}
+
+        /* Hộp nội dung chính */
         .main-box {{
-            background-color: rgba(255, 255, 255, 0.82);
+            background-color: rgba(255, 255, 255, 0.88);
             padding: 2rem;
             border-radius: 20px;
             box-shadow: 0 0 25px rgba(0,0,0,0.4);
@@ -160,6 +178,7 @@ if os.path.exists(bg_path):
             margin: 8vh auto;
             position: relative;
             z-index: 2;
+            backdrop-filter: blur(4px);
         }}
         </style>
     """
@@ -179,7 +198,9 @@ else:
 
 st.markdown(background_css, unsafe_allow_html=True)
 
+# Nội dung trang chính
 st.markdown("<div class='main-box'>", unsafe_allow_html=True)
 st.title("✈️ TỔ BẢO DƯỠNG SỐ 1")
 st.write("Video intro đã kết thúc — Chào mừng bạn đến với website 🌍")
 st.markdown("</div>", unsafe_allow_html=True)
+
