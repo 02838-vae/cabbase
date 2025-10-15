@@ -41,18 +41,18 @@ if img_base64 is None:
 is_main_page = st.session_state.show_main
 video_display_style = "display: none;" if is_main_page else "display: flex;" 
 
-# === CSS CHỐNG LỆCH CHỮ, FULLSCREEN VÀ MOBILE FIX ===
-# Lưu ý: Biến img_base64 đã có giá trị ở đây, nên lỗi NameError được khắc phục.
+# === CSS CHUNG VÀ VIDEO (Đã xác nhận hoạt động tốt) ===
 st.markdown(f"""
 <style>
-/* 1. KHẮC PHỤC VIEWPORT TRÊN MOBILE */
+/* 1. KHẮC PHỤC VIEWPORT TRÊN MOBILE và FULL HEIGHT cho PC */
 html, body {{ 
     margin:0; 
     padding:0; 
     height:100%; 
     overflow:hidden; 
     background:black; 
-    height: calc(var(--vh, 1vh) * 100); 
+    /* Dùng biến --vh cho Mobile và 100% cho PC */
+    height: 100%; 
 }}
 
 /* 2. FULLSCREEN TRIỆT ĐỂ */
@@ -75,7 +75,14 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     flex-direction: column; 
 }}
 
-/* 4. CHỮ INTRO (position: absolute) */
+/* Video settings giữ nguyên */
+.video-bg {{ 
+    max-width: 100%; 
+    max-height: 100%;
+    object-fit:contain; 
+}}
+
+/* Chữ intro giữ nguyên */
 .video-text {{
     position:absolute; bottom:12vh; width:100%; text-align:center;
     font-family:'Special Elite', cursive; font-size:clamp(24px,5vw,44px);
@@ -85,14 +92,7 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     animation: appear 3s ease-in forwards, floatFade 3s ease-in 5s forwards;
 }}
 
-/* Video settings giữ nguyên */
-.video-bg {{ 
-    max-width: 100%; 
-    max-height: 100%;
-    object-fit:contain; 
-}}
-
-/* Các hiệu ứng khác giữ nguyên */
+/* Keyframes và animations giữ nguyên */
 @keyframes fadeOut {{ 
     0% {{opacity:1; visibility:visible;}}
     99% {{opacity:0.01; visibility:visible;}}
@@ -105,25 +105,30 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 @keyframes floatFade {{ 0% {{opacity:1; filter:blur(0); transform:translateY(0);}} 100%{{opacity:0; filter:blur(12px); transform:translateY(-30px) scale(1.05);}} }}
 
 
-/* 5. CSS CHO TRANG CHÍNH: BACKGROUND RESPONSE */
+/* 4. CSS CHO TRANG CHÍNH: BACKGROUND FIX */
 .stApp {{
     background-color: #333; 
-    /* Dùng biến đã được định nghĩa ở trên */
     background-image: linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
                       url("data:image/jpeg;base64,{img_base64}");
     
-    background-size: cover; /* Mặc định cho PC */
+    /* FIX PC: Dùng fixed để đảm bảo lấp đầy viewport */
+    background-attachment: fixed; 
+    background-size: cover; /* MẶC ĐỊNH CHO PC: COVER (FULL SCREEN) */
     background-repeat: no-repeat;
     background-position: center center; 
+    
+    /* Đảm bảo chiều cao tối đa */
     width: 100vw !important;
     height: 100vh !important;
 }}
 
-/* 6. MEDIA QUERY (FIX DỨT ĐIỂM BACKGROUND TRÊN MOBILE) */
+/* 5. MEDIA QUERY (FIX DỨT ĐIỂM BACKGROUND TRÊN MOBILE) */
 @media screen and (max-width: 768px) {{
     .stApp {{
-        /* Trên Mobile (Màn hình nhỏ), DÙNG CONTAIN để thấy hết hình máy bay (có dải đen) */
+        /* Trên Mobile (Màn hình nhỏ), DÙNG CONTAIN để thấy hết hình máy bay */
         background-size: contain; 
+        /* Cần background-color để che khoảng trống khi dùng contain */
+        background-color: #333; 
     }}
 }}
 
@@ -140,7 +145,7 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 </style>
 
 <script>
-    // CODE JAVASCRIPT ĐỂ FIX LỖI 100vh TRÊN MOBILE
+    // CODE JAVASCRIPT ĐỂ FIX LỖI 100vh TRÊN MOBILE (Giữ nguyên)
     function setVhProperty() {{
         let vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty('--vh', `${{vh}}px`);
@@ -179,7 +184,6 @@ if not st.session_state.show_main and not st.session_state.intro_ran:
 
 # --- TRANG CHÍNH ---
 
-# Không cần tải img_base64 ở đây nữa
 audio_base64 = get_base64(audio_file)
 if audio_base64:
     st.markdown(f"""
