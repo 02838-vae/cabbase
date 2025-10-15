@@ -148,8 +148,9 @@ st.markdown("""
     }
     </style>
 """, unsafe_allow_html=True)
+img_base64 = get_base64("cabbase.jpg") if os.path.exists("airplane.jpg") else ""
 
 st.markdown("<div class='main-box'>", unsafe_allow_html=True)
-st.title("🌍 Trang Chính")
+st.title("TỔ BẢO DƯỠNG SỐ 1")
 st.write("Video intro đã kết thúc — Chào mừng bạn đến với website ✈️")
 st.markdown("</div>", unsafe_allow_html=True)
