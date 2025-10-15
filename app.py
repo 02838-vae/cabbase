@@ -30,14 +30,22 @@ if "show_main" not in st.session_state:
 if "intro_ran" not in st.session_state:
     st.session_state.intro_ran = False
 
+# === TẢI FILE NỀN SỚM (FIX NameError) ===
+img_base64 = get_base64(bg_file)
+if img_base64 is None:
+    st.error(f"❌ Không tìm thấy file {bg_file}. Vui lòng kiểm tra lại tên và đường dẫn file.")
+    st.stop()
+# ========================================
+
 # CSS động để kiểm soát hiển thị video (Chống Flicker)
 is_main_page = st.session_state.show_main
 video_display_style = "display: none;" if is_main_page else "display: flex;" 
 
 # === CSS CHỐNG LỆCH CHỮ, FULLSCREEN VÀ MOBILE FIX ===
+# Lưu ý: Biến img_base64 đã có giá trị ở đây, nên lỗi NameError được khắc phục.
 st.markdown(f"""
 <style>
-/* 1. KHẮC PHỤC VIEWPORT TRÊN MOBILE (Giữ nguyên) */
+/* 1. KHẮC PHỤC VIEWPORT TRÊN MOBILE */
 html, body {{ 
     margin:0; 
     padding:0; 
@@ -64,7 +72,6 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     align-items:center;
     background:black; z-index:9999;
     {video_display_style} 
-    /* FIX: Dùng flex-direction: column để căn giữa nội dung */
     flex-direction: column; 
 }}
 
@@ -86,20 +93,26 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 }}
 
 /* Các hiệu ứng khác giữ nguyên */
-@keyframes fadeOut {{ /* ... */ }}
+@keyframes fadeOut {{ 
+    0% {{opacity:1; visibility:visible;}}
+    99% {{opacity:0.01; visibility:visible;}}
+    100%{{opacity:0; visibility:hidden;}}
+}}
 .intro-animation {{
     animation: fadeOut {FADE_DURATION_SECONDS}s ease-out {VIDEO_DURATION_SECONDS}s forwards; 
 }}
-/* ... (animation keyframes) ... */
+@keyframes appear {{ 0% {{opacity:0; filter:blur(8px); transform:translateY(40px);}} 100%{{opacity:1; filter:blur(0); transform:translateY(0);}} }}
+@keyframes floatFade {{ 0% {{opacity:1; filter:blur(0); transform:translateY(0);}} 100%{{opacity:0; filter:blur(12px); transform:translateY(-30px) scale(1.05);}} }}
+
 
 /* 5. CSS CHO TRANG CHÍNH: BACKGROUND RESPONSE */
 .stApp {{
     background-color: #333; 
+    /* Dùng biến đã được định nghĩa ở trên */
     background-image: linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
                       url("data:image/jpeg;base64,{img_base64}");
     
-    /* MẶC ĐỊNH: COVER cho PC (Đẹp mắt, lấp đầy) */
-    background-size: cover; 
+    background-size: cover; /* Mặc định cho PC */
     background-repeat: no-repeat;
     background-position: center center; 
     width: 100vw !important;
@@ -109,7 +122,7 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 /* 6. MEDIA QUERY (FIX DỨT ĐIỂM BACKGROUND TRÊN MOBILE) */
 @media screen and (max-width: 768px) {{
     .stApp {{
-        /* Trên Mobile (Màn hình nhỏ), BẮT BUỘC DÙNG CONTAIN để thấy hết hình máy bay */
+        /* Trên Mobile (Màn hình nhỏ), DÙNG CONTAIN để thấy hết hình máy bay (có dải đen) */
         background-size: contain; 
     }}
 }}
@@ -117,8 +130,13 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 /* Khôi phục padding nhẹ cho nội dung trang chính */
 .block-container {{ padding-top:2rem !important; padding-left:1rem !important; padding-right:1rem !important;}}
 
-.main-title {{ /* ... */ }}
-
+.main-title {{
+    font-family:'Special Elite', cursive;
+    font-size: clamp(36px,5vw,48px);
+    font-weight:bold; text-align:center;
+    color:#3e2723; margin-top:50px;
+    text-shadow:2px 2px 0 #fff,0 0 25px #f0d49b,0 0 50px #bca27a;
+}}
 </style>
 
 <script>
@@ -161,13 +179,7 @@ if not st.session_state.show_main and not st.session_state.intro_ran:
 
 # --- TRANG CHÍNH ---
 
-img_base64 = get_base64(bg_file)
-if img_base64 is None:
-    st.error(f"❌ Không tìm thấy file {bg_file}.")
-    st.stop()
-
-# ... (Phần code hiển thị nhạc và nội dung trang chính) ...
-
+# Không cần tải img_base64 ở đây nữa
 audio_base64 = get_base64(audio_file)
 if audio_base64:
     st.markdown(f"""
