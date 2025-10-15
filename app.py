@@ -1,17 +1,43 @@
 import streamlit as st
+import pandas as pd
 import base64
 import os
 import time
+from PIL import Image, ImageFilter
+import io
 
-# ===== CẤU HÌNH =====
+# ====== CẤU HÌNH TRANG ======
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
-# ===== HÀM PHỤ TRỢ =====
+# ====== HÀM PHỤ TRỢ ======
 def get_base64(file_path):
     with open(file_path, "rb") as f:
         return base64.b64encode(f.read()).decode("utf-8")
 
-# ===== TRẠNG THÁI =====
+def process_background(image_path):
+    """Làm mờ nhẹ phần dưới ảnh nền để xoá logo."""
+    if not os.path.exists(image_path):
+        return ""
+    img = Image.open(image_path).convert("RGB")
+    width, height = img.size
+
+    # Làm mờ vùng dưới
+    blur_region = img.crop((0, int(height * 0.75), width, height)).filter(ImageFilter.GaussianBlur(18))
+    img.paste(blur_region, (0, int(height * 0.75)))
+
+    # Làm mờ dần (ngả vàng nhẹ)
+    overlay = Image.new("RGBA", img.size, (245, 222, 179, 0))
+    for y in range(int(height * 0.75), height):
+        alpha = int((y - height * 0.75) / (height * 0.25) * 180)
+        for x in range(width):
+            overlay.putpixel((x, y), (245, 222, 179, alpha))
+    img = Image.alpha_composite(img.convert("RGBA"), overlay)
+
+    buffered = io.BytesIO()
+    img.save(buffered, format="JPEG", quality=90)
+    return base64.b64encode(buffered.getvalue()).decode("utf-8")
+
+# ====== TRẠNG THÁI ======
 if "show_main" not in st.session_state:
     st.session_state.show_main = False
 if "video_played" not in st.session_state:
@@ -19,30 +45,66 @@ if "video_played" not in st.session_state:
 
 video_file = "airplane.mp4"
 
-# ===== VIDEO INTRO =====
+# ====== VIDEO INTRO ======
 if not st.session_state.show_main:
     if os.path.exists(video_file):
         video_data = get_base64(video_file)
-        st.markdown(f"""
+
+        st.markdown(rf"""
         <style>
         html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] {{
-            margin:0!important; padding:0!important; background:black!important; overflow:hidden!important; height:100vh!important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: black !important;
+            overflow: hidden !important;
+            height: 100vh !important;
         }}
-        [data-testid="stHeader"] {{ display:none!important; }}
+        [data-testid="stHeader"] {{ display: none !important; }}
         .video-container {{
-            position: fixed; inset:0; width:100vw; height:100vh;
-            background:black; display:flex; justify-content:center; align-items:center; z-index:9998; overflow:hidden;
+            position: fixed;
+            inset: 0;
+            width: 100vw;
+            height: 100vh;
+            background: black;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9998;
         }}
-        .video-bg {{ width:100%; height:100%; object-fit:cover; object-position:center center; z-index:9997; }}
+        .video-bg {{
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }}
         .intro-text {{
-            position:absolute; bottom:12vh; width:100%; text-align:center;
-            font-family:'Special Elite', cursive; font-size:44px; font-weight:bold; color:#fff;
-            text-shadow:0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(180,220,255,0.6), 0 0 60px rgba(255,255,255,0.4);
-            opacity:0; animation: appear 3s ease-in forwards, floatFade 3s ease-in 5s forwards; z-index:9999;
+            position: absolute;
+            bottom: 12vh;
+            width: 100%;
+            text-align: center;
+            font-family: 'Special Elite', cursive;
+            font-size: 44px;
+            font-weight: bold;
+            color: #ffffff;
+            text-shadow:
+                0 0 20px rgba(255,255,255,0.8),
+                0 0 40px rgba(180,220,255,0.6),
+                0 0 60px rgba(255,255,255,0.4);
+            opacity: 0;
+            animation:
+                appear 3s ease-in forwards,
+                floatFade 3s ease-in 5s forwards;
+            z-index: 9999;
         }}
-        @keyframes appear {{0%{{opacity:0; filter:blur(8px); transform:translateY(40px);}}100%{{opacity:1; filter:blur(0); transform:translateY(0);}}}}
-        @keyframes floatFade {{0%{{opacity:1; filter:blur(0); transform:translateY(0);}}100%{{opacity:0; filter:blur(12px); transform:translateY(-30px) scale(1.05);}}}}
+        @keyframes appear {{
+            0% {{ opacity: 0; filter: blur(8px); transform: translateY(40px); }}
+            100% {{ opacity: 1; filter: blur(0); transform: translateY(0); }}
+        }}
+        @keyframes floatFade {{
+            0% {{ opacity: 1; filter: blur(0); transform: translateY(0); }}
+            100% {{ opacity: 0; filter: blur(12px); transform: translateY(-30px) scale(1.05); }}
+        }}
         </style>
+
         <div class="video-container">
             <video class="video-bg" autoplay muted playsinline>
                 <source src="data:video/mp4;base64,{video_data}" type="video/mp4">
@@ -61,9 +123,27 @@ if not st.session_state.show_main:
         st.error("❌ Không tìm thấy file airplane.mp4")
         st.stop()
 
-# ===== TRANG CHÍNH =====
-img_base64 = get_base64("cabbase.jpg") if os.path.exists("cabbase.jpg") else ""
+# ====== TRANG CHÍNH ======
+excel_file = "A787.xlsx"
+if not os.path.exists(excel_file):
+    st.error("❌ Không tìm thấy file A787.xlsx")
+    st.stop()
 
+xls = pd.ExcelFile(excel_file)
+
+def load_and_clean(sheet):
+    df = pd.read_excel(excel_file, sheet_name=sheet)
+    df.columns = df.columns.str.strip().str.upper()
+    df = df.replace(r'^\s*$', pd.NA, regex=True).dropna(how="all")
+    for col in df.columns:
+        if df[col].dtype == "object":
+            df[col] = df[col].fillna("").astype(str).str.strip()
+    return df
+
+# ====== XỬ LÝ ẢNH NỀN ======
+img_base64 = process_background("cabbase.jpg")
+
+# ====== CSS PHONG CÁCH ======
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
@@ -71,32 +151,82 @@ st.markdown(f"""
     font-family: 'Special Elite', cursive !important;
     background:
         linear-gradient(rgba(245, 222, 179, 0.35), rgba(245, 222, 179, 0.35)),
-        url("data:image/jpeg;base64,{img_base64}") no-repeat center bottom fixed;  /* đổi center center -> center bottom */
+        url("data:image/jpeg;base64,{img_base64}") no-repeat center center fixed;
     background-size: cover;
-    filter: sepia(0.25) brightness(0.9) contrast(1.05);
-    backdrop-filter: blur(6px);
+    filter: sepia(0.3) brightness(0.9) contrast(1.05);
+    backdrop-filter: blur(5px);
 }}
-header[data-testid="stHeader"] {{ display:none; }}
-.block-container {{ padding-top:0!important; }}
-.main-title {{ text-align:center; font-size:50px; font-weight:bold; color:#3e2723; text-shadow:2px 2px 4px #fff; margin-top:50px; }}
 .audio-fixed {{
     position: fixed;
     top: 15px;
     left: 15px;
     width: 200px;
-    z-index:10000;
+    z-index: 10000;
+}}
+header[data-testid="stHeader"] {{ display: none; }}
+.block-container {{ padding-top: 0 !important; }}
+.main-title {{
+    font-size: 48px;
+    font-weight: bold;
+    text-align: center;
+    color: #3e2723;
+    margin-top: 60px;
+    text-shadow: 2px 2px 0 #fff, 0 0 25px #f0d49b, 0 0 50px #bca27a;
+}}
+.sub-title {{
+    font-size: 34px;
+    text-align: center;
+    color: #6d4c41;
+    margin-top: 5px;
+    margin-bottom: 25px;
+    letter-spacing: 1px;
 }}
 </style>
 """, unsafe_allow_html=True)
 
-# ===== THANH NHẠC MINI (HTML) =====
-if os.path.exists("background.mp3"):
-    audio_base64 = get_base64("background.mp3")
-    st.markdown(f"""
-    <audio class="audio-fixed" controls autoplay loop>
-        <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
-    </audio>
-    """, unsafe_allow_html=True)
-
-# ===== TIÊU ĐỀ =====
+# ====== TIÊU ĐỀ ======
 st.markdown('<div class="main-title">📜 TỔ BẢO DƯỠNG SỐ 1</div>', unsafe_allow_html=True)
+
+# ====== NHẠC NỀN ======
+try:
+    with open("background.mp3", "rb") as f:
+        audio_bytes = f.read()
+        st.markdown('<div class="audio-fixed">', unsafe_allow_html=True)
+        st.audio(audio_bytes, format="audio/mp3", start_time=0)
+        st.markdown('</div>', unsafe_allow_html=True)
+except FileNotFoundError:
+    st.warning("⚠️ Không tìm thấy file background.mp3")
+
+# ====== CHỌN DỮ LIỆU ======
+zone = st.selectbox("📂 Bạn muốn tra cứu zone nào?", xls.sheet_names)
+if zone:
+    df = load_and_clean(zone)
+
+    if "A/C" in df.columns:
+        aircrafts = sorted([ac for ac in df["A/C"].dropna().unique().tolist() if ac])
+        aircraft = st.selectbox("✈️ Loại máy bay?", aircrafts)
+    else:
+        aircraft = None
+
+    if aircraft:
+        df_ac = df[df["A/C"] == aircraft]
+
+        if "DESCRIPTION" in df_ac.columns:
+            desc_list = sorted([d for d in df_ac["DESCRIPTION"].dropna().unique().tolist() if d])
+            description = st.selectbox("📑 Bạn muốn tra cứu phần nào?", desc_list)
+        else:
+            description = None
+
+        if description:
+            df_desc = df_ac[df_ac["DESCRIPTION"] == description]
+
+            # === Làm sạch ===
+            df_desc = df_desc.drop(columns=["A/C", "ITEM", "DESCRIPTION"], errors="ignore")
+            df_desc = df_desc.replace(r'^\s*$', pd.NA, regex=True).dropna(how="all")
+
+            if not df_desc.empty:
+                df_desc.insert(0, "STT", range(1, len(df_desc) + 1))
+                st.success(f"✅ Tìm thấy {len(df_desc)} dòng dữ liệu")
+                st.write(df_desc.to_html(escape=False, index=False), unsafe_allow_html=True)
+            else:
+                st.warning("📌 Không có dữ liệu phù hợp.")
