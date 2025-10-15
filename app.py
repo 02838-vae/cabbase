@@ -1,6 +1,7 @@
 import streamlit as st
 import base64
 import os
+import time # <<< Cần sử dụng lại thư viện time
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
@@ -10,38 +11,38 @@ video_file = "airplane.mp4"
 bg_file = "cabbase.jpg"
 audio_file = "background.mp3"
 
-# Ước tính thời gian chuyển cảnh (Cần điều chỉnh nếu video của bạn dài/ngắn hơn 5s)
-VIDEO_DURATION_SECONDS = 5  # Thời lượng video ước tính
-FADE_DURATION_SECONDS = 4   # Thời gian hiệu ứng mờ dần
+# Ước tính thời gian chuyển cảnh (Cần điều chỉnh)
+VIDEO_DURATION_SECONDS = 5  
+FADE_DURATION_SECONDS = 4   
 TOTAL_DELAY_SECONDS = VIDEO_DURATION_SECONDS + FADE_DURATION_SECONDS
 
 # Hàm đọc file và chuyển thành Base64
 def get_base64(file_path):
-    """Đọc file nhị phân và mã hóa Base64."""
     try:
         with open(file_path, "rb") as f:
             return base64.b64encode(f.read()).decode("utf-8")
     except FileNotFoundError:
         return None
 
-# Hàm callback khi nút kích hoạt được nhấn
-def switch_to_main():
-    """Thay đổi trạng thái để hiển thị trang chính."""
-    st.session_state.show_main = True
-
 # Khởi tạo Session State
+# 'show_main' theo dõi trạng thái đã chuyển cảnh chưa
 if "show_main" not in st.session_state:
     st.session_state.show_main = False
+# 'intro_ran' theo dõi xem quá trình chờ video đã chạy lần nào chưa
+if "intro_ran" not in st.session_state:
+    st.session_state.intro_ran = False
+
 
 # --- GIAO DIỆN CHUYỂN CẢNH (VIDEO INTRO) ---
-if not st.session_state.show_main:
+# CHỈ CHẠY INTRO LẦN ĐẦU TIÊN KHI TRANG LOAD
+if not st.session_state.show_main and not st.session_state.intro_ran:
     
     video_data = get_base64(video_file)
     if video_data is None:
         st.error(f"❌ Không tìm thấy file {video_file}. Vui lòng kiểm tra lại tên và đường dẫn file.")
         st.stop()
     
-    # 1. CSS VÀ FULLSCREEN TRIỆT ĐỂ (KHẮC PHỤC KHOẢNG TRẮNG)
+    # 1. CSS VÀ FULLSCREEN TRIỆT ĐỂ
     st.markdown(f"""
     <style>
     /* Ẩn triệt để tất cả các yếu tố UI mặc định của Streamlit và loại bỏ khoảng trắng */
@@ -53,18 +54,6 @@ if not st.session_state.show_main:
         max-width: 100% !important;
         width: 100vw !important; /* Fullscreen theo chiều ngang */
         height: 100vh !important; /* Fullscreen theo chiều dọc */
-    }}
-    
-    /* Ẩn nút Vô hình TỪ GỐC (Tránh hiển thị khi refresh) */
-    [data-testid="stButton"] button[key="switch_trigger_button"] {{
-        position: absolute !important; 
-        top: -100px !important; /* Đẩy ra khỏi màn hình */
-        left: -100px !important;
-        visibility: hidden !important;
-        opacity: 0 !important;
-        width: 1px !important; 
-        height: 1px !important;
-        overflow: hidden !important;
     }}
     
     /* CSS cho trang video */
@@ -81,7 +70,7 @@ if not st.session_state.show_main:
     /* Hiệu ứng mờ dần */
     @keyframes fadeOut {{
         0% {{opacity:1; visibility:visible;}}
-        99% {{opacity:0.01; visibility:visibility;}}
+        99% {{opacity:0.01; visibility:visible;}}
         100%{{opacity:0; visibility:hidden;}}
     }}
     
@@ -99,10 +88,7 @@ if not st.session_state.show_main:
     </style>
     """, unsafe_allow_html=True)
     
-    # 2. NÚT KÍCH HOẠT VÔ HÌNH (Đã được CSS đẩy ra khỏi màn hình)
-    st.button("Vô hình", key="switch_trigger_button", on_click=switch_to_main)
-             
-    # 3. HTML/Video và JavaScript Kích hoạt
+    # 2. HTML/Video và Kích hoạt Rerun Bằng Python (Force Rerun)
     st.markdown(f"""
     <div class="video-container" id="videoContainer">
         <video id="introVideo" class="video-bg" autoplay muted playsinline>
@@ -112,17 +98,9 @@ if not st.session_state.show_main:
     </div>
     
     <script>
-        // Đặt hẹn giờ để kích hoạt nút vô hình sau khi video và fade kết thúc
+        // JS chỉ để ẩn container sau khi hoạt ảnh kết thúc (dự phòng)
         setTimeout(() => {{
-            // Tìm nút vô hình bằng thuộc tính 'key' trong DOM (Đây là cơ chế đáng tin cậy nhất)
-            const switchButton = window.parent.document.querySelector('[data-testid="stButton"] button[key="switch_trigger_button"]');
-            
-            if (switchButton) {{
-                switchButton.click(); // Kích hoạt callback switch_to_main() trong Python
-            }}
-            
-            // Xóa container video
-            const container = document.getElementById('videoContainer');
+            const container = window.parent.document.getElementById('videoContainer');
             if (container) {{
                 container.style.display='none';
             }}
@@ -130,10 +108,21 @@ if not st.session_state.show_main:
     </script>
     """, unsafe_allow_html=True)
     
-    st.stop() 
+    # === KHẮC PHỤC DỨT ĐIỂM BẰNG PYTHON ===
+    # Tạm dừng luồng Streamlit trong thời gian T = 9s
+    time.sleep(TOTAL_DELAY_SECONDS) 
+    
+    # Sau khi chờ xong, đặt cờ đã chạy và gọi RERUN
+    # Streamlit sẽ chạy lại từ đầu và lần này sẽ hiển thị Trang Chính
+    st.session_state.show_main = True
+    st.session_state.intro_ran = True 
+    st.rerun() 
+    
+    st.stop() # Dừng luồng này, Streamlit sẽ tự rerun ngay lập tức
 
 # --- TRANG CHÍNH ---
-# background vintage
+# ... (Phần code hiển thị trang chính của bạn giữ nguyên) ...
+
 img_base64 = get_base64(bg_file)
 if img_base64 is None:
     st.error(f"❌ Không tìm thấy file {bg_file}.")
@@ -143,7 +132,6 @@ st.markdown(f"""
 <style>
 /* CSS cho Trang Chính */
 .stApp {{
-    /* Áp dụng lại Fullscreen cho trang chính nhưng có background */
     background: linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
                 url("data:image/jpeg;base64,{img_base64}") no-repeat center center fixed;
     background-size: cover;
