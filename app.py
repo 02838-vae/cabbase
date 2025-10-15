@@ -1,6 +1,7 @@
 import streamlit as st
 import base64
 import os
+import time
 
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
@@ -12,10 +13,14 @@ def get_base64(file_path):
 # ===== TRẠNG THÁI =====
 if "show_main" not in st.session_state:
     st.session_state.show_main = False
+if "video_played" not in st.session_state:
+    st.session_state.video_played = False
 
 video_file = "airplane.mp4"
 bg_image_file = "cabbase.jpg"
 audio_file = "background.mp3"
+
+VIDEO_DURATION = 8.5  # thời lượng video intro (giây)
 
 # ===== VIDEO INTRO =====
 if not st.session_state.show_main:
@@ -32,7 +37,8 @@ if not st.session_state.show_main:
             display:flex; justify-content:center; align-items:center; z-index:9998;
         }}
         .video-bg {{
-            width:100vw; height:100vh; object-fit:cover; object-position:center center; z-index:9997;
+            width:100%; height:100%; object-fit:cover; object-position:center center;
+            z-index:9997;
         }}
         .intro-text {{
             position:absolute; bottom:12vh; width:100%; text-align:center;
@@ -46,25 +52,19 @@ if not st.session_state.show_main:
         }}
         </style>
         <div class="video-container">
-            <video id="introVideo" class="video-bg" autoplay muted playsinline>
+            <video class="video-bg" autoplay muted playsinline>
                 <source src="data:video/mp4;base64,{video_data}" type="video/mp4">
             </video>
             <div class="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
         </div>
-        <script>
-        const video = document.getElementById('introVideo');
-        video.onended = () => {{
-            // gọi Streamlit rerun
-            const streamlitMessage = new CustomEvent("streamlit:message", {{
-                detail: {{
-                    type: "set_show_main",
-                    value: true
-                }}
-            }});
-            window.dispatchEvent(streamlitMessage);
-        }};
-        </script>
         """, unsafe_allow_html=True)
+
+        # Dùng time.sleep để giả lập kết thúc video và chuyển trang
+        if not st.session_state.video_played:
+            st.session_state.video_played = True
+            time.sleep(VIDEO_DURATION)
+            st.session_state.show_main = True
+            st.experimental_rerun()
         st.stop()
     else:
         st.error("❌ Không tìm thấy file airplane.mp4")
@@ -95,8 +95,10 @@ header[data-testid="stHeader"] {{ display:none; }}
 </style>
 """, unsafe_allow_html=True)
 
+# ===== TIÊU ĐỀ =====
 st.markdown('<div class="main-title">📜 TỔ BẢO DƯỠNG SỐ 1</div>', unsafe_allow_html=True)
 
+# ===== NHẠC NỀN =====
 if os.path.exists(audio_file):
     with open(audio_file, "rb") as f:
         audio_bytes = f.read()
