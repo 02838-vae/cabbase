@@ -9,6 +9,7 @@ st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 # Tên các file cần thiết
 video_file = "airplane.mp4"
 bg_file = "cabbase.jpg"
+bg_mobile_file = "mobile.jpg" # <--- TÊN FILE MOBILE MỚI
 audio_file = "background.mp3"
 
 # Ước tính thời gian chuyển cảnh (Cần điều chỉnh)
@@ -35,11 +36,16 @@ img_base64 = get_base64(bg_file)
 if img_base64 is None:
     st.error(f"❌ Không tìm thấy file {bg_file}. Vui lòng kiểm tra lại tên và đường dẫn file.")
     st.stop()
+    
+# TẢI FILE NỀN MOBILE
+img_mobile_base64 = get_base64(bg_mobile_file)
+# Nếu không tìm thấy file mobile, dùng file PC thay thế.
+if img_mobile_base64 is None:
+    img_mobile_base64 = img_base64 
 # ===================================================
 
 # CSS động để kiểm soát hiển thị video và flicker
 is_main_page = st.session_state.show_main
-# KHÔI PHỤC: Dùng 'flex' để hiển thị container video khi chưa ở trang chính
 video_display_style = "display: none;" if is_main_page else "display: flex;" 
 
 # === CSS CHUNG VÀ VIDEO (Đã xác nhận hoạt động tốt) ===
@@ -94,7 +100,6 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 
 /* Keyframes và animations giữ nguyên */
 @keyframes fadeOut {{ 
-    /* KHÔI PHỤC: Sử dụng visibility: hidden ở 100% để ẩn video sau khi fade */
     0% {{opacity:1;}}
     99% {{opacity:0.01;}}
     100%{{opacity:0; visibility:hidden;}}
@@ -106,14 +111,14 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 @keyframes floatFade {{ 0% {{opacity:1; filter:blur(0); transform:translateY(0);}} 100%{{opacity:0; filter:blur(12px); transform:translateY(-30px) scale(1.05);}} }}
 
 
-/* 4. CSS CHO TRANG CHÍNH: BACKGROUND FIX (Đã Fix lỗi Full Screen PC) */
+/* 4. CSS CHO TRANG CHÍNH: BACKGROUND PC (Dùng cabbase.jpg, COVER) */
 .stApp {{
     background-color: #333; 
     background-image: linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
                       url("data:image/jpeg;base64,{img_base64}");
     
     background-attachment: fixed; 
-    background-size: cover; /* MẶC ĐỊNH CHO PC: COVER (FULL SCREEN) */
+    background-size: cover; 
     background-repeat: no-repeat;
     background-position: center center; 
     
@@ -128,7 +133,10 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 /* 5. MEDIA QUERY (FIX DỨT ĐIỂM BACKGROUND TRÊN MOBILE) */
 @media screen and (max-width: 768px) {{
     .stApp {{
-        background-size: contain; /* DÙNG CONTAIN để thấy hết hình máy bay */
+        /* MOBILE: Dùng mobile.jpg và COVER để loại bỏ dải xám đen */
+        background-image: linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
+                          url("data:image/jpeg;base64,{img_mobile_base64}");
+        background-size: cover; 
         background-color: #333; 
     }}
 }}
