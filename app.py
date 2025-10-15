@@ -41,6 +41,12 @@ if img_base64 is None:
 is_main_page = st.session_state.show_main
 video_display_style = "display: none;" if is_main_page else "display: flex;" 
 
+# === FIX FLICKER MỚI: Ẩn background trang chính khi video đang chạy ===
+main_page_display_style = "opacity: 1;" if is_main_page else "opacity: 0 !important; visibility: hidden !important;"
+# Nếu không phải trang chính (đang chạy video), ta ẩn nó đi.
+# =====================================================================
+
+
 # === CSS CHUNG VÀ VIDEO (Đã xác nhận hoạt động tốt) ===
 st.markdown(f"""
 <style>
@@ -51,7 +57,6 @@ html, body {{
     height:100%; 
     overflow:hidden; 
     background:black; 
-    /* Dùng biến --vh cho Mobile và 100% cho PC */
     height: 100%; 
 }}
 
@@ -111,24 +116,25 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     background-image: linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
                       url("data:image/jpeg;base64,{img_base64}");
     
-    /* FIX PC: Dùng fixed để đảm bảo lấp đầy viewport */
     background-attachment: fixed; 
     background-size: cover; /* MẶC ĐỊNH CHO PC: COVER (FULL SCREEN) */
     background-repeat: no-repeat;
     background-position: center center; 
     
-    /* Đảm bảo chiều cao tối đa */
     width: 100vw !important;
     height: 100vh !important;
+
+    /* !!! FIX FLICKER MỚI: ẨN NÓ KHI KHÔNG PHẢI TRANG CHÍNH !!! */
+    {main_page_display_style}
 }}
 
 /* 5. MEDIA QUERY (FIX DỨT ĐIỂM BACKGROUND TRÊN MOBILE) */
 @media screen and (max-width: 768px) {{
     .stApp {{
-        /* Trên Mobile (Màn hình nhỏ), DÙNG CONTAIN để thấy hết hình máy bay */
         background-size: contain; 
-        /* Cần background-color để che khoảng trống khi dùng contain */
         background-color: #333; 
+        /* Giữ nguyên logic hiển thị cho mobile */
+        {main_page_display_style} 
     }}
 }}
 
