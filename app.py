@@ -1,7 +1,7 @@
 import streamlit as st
 import base64
 import os
-import time # <<< Cần sử dụng lại thư viện time
+import time
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
@@ -25,35 +25,44 @@ def get_base64(file_path):
         return None
 
 # Khởi tạo Session State
-# 'show_main' theo dõi trạng thái đã chuyển cảnh chưa
 if "show_main" not in st.session_state:
     st.session_state.show_main = False
-# 'intro_ran' theo dõi xem quá trình chờ video đã chạy lần nào chưa
 if "intro_ran" not in st.session_state:
     st.session_state.intro_ran = False
 
+# === CODE CHỐNG FLICKER (CHẠY ĐẦU TIÊN) ===
+# Thêm một script ẩn container video ngay lập tức nếu đã chuyển cảnh
+if st.session_state.show_main:
+    st.markdown("""
+    <script>
+        const videoContainer = window.parent.document.getElementById('videoContainer');
+        if (videoContainer) {
+            videoContainer.style.display = 'none';
+        }
+    </script>
+    """, unsafe_allow_html=True)
+
 
 # --- GIAO DIỆN CHUYỂN CẢNH (VIDEO INTRO) ---
-# CHỈ CHẠY INTRO LẦN ĐẦU TIÊN KHI TRANG LOAD
 if not st.session_state.show_main and not st.session_state.intro_ran:
     
     video_data = get_base64(video_file)
     if video_data is None:
-        st.error(f"❌ Không tìm thấy file {video_file}. Vui lòng kiểm tra lại tên và đường dẫn file.")
+        st.error(f"❌ Không tìm thấy file {video_file}.")
         st.stop()
     
-    # 1. CSS VÀ FULLSCREEN TRIỆT ĐỂ
+    # CSS VÀ FULLSCREEN
     st.markdown(f"""
     <style>
-    /* Ẩn triệt để tất cả các yếu tố UI mặc định của Streamlit và loại bỏ khoảng trắng */
+    /* Ẩn tất cả UI mặc định và loại bỏ padding/margin để Fullscreen */
     header[data-testid="stHeader"], footer {{ display: none !important; }}
     section.main > div {{ padding-top: 0 !important; padding-left: 0 !important; padding-right: 0 !important; }}
     .block-container, .stApp {{
         margin: 0 !important;
         padding: 0 !important;
         max-width: 100% !important;
-        width: 100vw !important; /* Fullscreen theo chiều ngang */
-        height: 100vh !important; /* Fullscreen theo chiều dọc */
+        width: 100vw !important;
+        height: 100vh !important;
     }}
     
     /* CSS cho trang video */
@@ -88,7 +97,7 @@ if not st.session_state.show_main and not st.session_state.intro_ran:
     </style>
     """, unsafe_allow_html=True)
     
-    # 2. HTML/Video và Kích hoạt Rerun Bằng Python (Force Rerun)
+    # HTML/Video và Kích hoạt Rerun Bằng Python
     st.markdown(f"""
     <div class="video-container" id="videoContainer">
         <video id="introVideo" class="video-bg" autoplay muted playsinline>
@@ -96,32 +105,18 @@ if not st.session_state.show_main and not st.session_state.intro_ran:
         </video>
         <div class="video-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
     </div>
+    """, unsafe_allow_html=True) # Không cần JS Timeout ở đây nữa!
     
-    <script>
-        // JS chỉ để ẩn container sau khi hoạt ảnh kết thúc (dự phòng)
-        setTimeout(() => {{
-            const container = window.parent.document.getElementById('videoContainer');
-            if (container) {{
-                container.style.display='none';
-            }}
-        }}, {TOTAL_DELAY_SECONDS * 1000});
-    </script>
-    """, unsafe_allow_html=True)
-    
-    # === KHẮC PHỤC DỨT ĐIỂM BẰNG PYTHON ===
-    # Tạm dừng luồng Streamlit trong thời gian T = 9s
+    # Tạm dừng luồng Streamlit và kích hoạt RERUN
     time.sleep(TOTAL_DELAY_SECONDS) 
     
-    # Sau khi chờ xong, đặt cờ đã chạy và gọi RERUN
-    # Streamlit sẽ chạy lại từ đầu và lần này sẽ hiển thị Trang Chính
     st.session_state.show_main = True
     st.session_state.intro_ran = True 
     st.rerun() 
     
-    st.stop() # Dừng luồng này, Streamlit sẽ tự rerun ngay lập tức
+    st.stop() 
 
 # --- TRANG CHÍNH ---
-# ... (Phần code hiển thị trang chính của bạn giữ nguyên) ...
 
 img_base64 = get_base64(bg_file)
 if img_base64 is None:
