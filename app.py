@@ -112,5 +112,5 @@ if os.path.exists(audio_file):
     with open(audio_file, "rb") as f:
         audio_bytes = f.read()
         st.markdown('<div class="audio-box">', unsafe_allow_html=True)
-        st.audio(audio_bytes, format="audio/mp3", key="bgmusic")
+        st.audio(audio_bytes, format="audio/mp3")  # bỏ key, start_time
         st.markdown('</div>', unsafe_allow_html=True)
