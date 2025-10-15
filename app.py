@@ -134,7 +134,7 @@ if not st.session_state.show_main:
         st.stop()
 
 # ==========================
-# 🌅 TRANG CHÍNH (vintage nhẹ)
+# 🌅 TRANG CHÍNH (vintage toàn màn hình)
 # ==========================
 st.session_state.intro_done = True
 
@@ -144,44 +144,57 @@ if os.path.exists(bg_path):
     bg_base64 = get_base64(bg_path)
     background_css = f"""
         <style>
-        /* Ảnh nền chính */
-        html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"], [data-testid="stVerticalBlock"] {{
+        /* NỀN ẢNH CHÍNH */
+        html, body, [data-testid="stApp"], [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] {{
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 100vh !important;
+            width: 100vw !important;
             background: url("data:image/jpeg;base64,{bg_base64}") no-repeat center center fixed !important;
             background-size: cover !important;
-            position: relative;
+            overflow: hidden !important;
         }}
 
-        /* Lớp overlay nhẹ tạo hiệu ứng vintage */
-        [data-testid="stAppViewContainer"]::before {{
+        /* LỚP PHỦ MỜ + MÀU VINTAGE */
+        [data-testid="stApp"]::before {{
             content: "";
             position: fixed;
             inset: 0;
-            background: rgba(245, 228, 190, 0.25); /* vàng nhạt kiểu film retro */
+            width: 100%;
+            height: 100%;
+            background: rgba(245, 228, 190, 0.22); /* vàng nhạt kiểu film */
             backdrop-filter: blur(2.5px) brightness(0.95) contrast(1.05);
             z-index: 0;
         }}
 
-        /* Làm trong suốt các lớp chính */
+        /* ẨN HOÀN TOÀN CÁC NỀN TRẮNG MẶC ĐỊNH */
         [data-testid="stMainBlockContainer"], [data-testid="stMarkdownContainer"], .block-container {{
             background: transparent !important;
+            padding-top: 0 !important;
+            margin-top: 0 !important;
             position: relative;
             z-index: 1;
         }}
 
-        /* Hộp nội dung chính */
+        /* XÓA PHẦN TRẮNG TRÊN CÙNG (THƯỜNG DO HEADER ẨN ĐỂ LẠI) */
+        [data-testid="stHeader"], header, footer {{
+            display: none !important;
+        }}
+
+        /* HỘP NỘI DUNG CHÍNH */
         .main-box {{
             background-color: rgba(255, 255, 255, 0.78);
-            padding: 2rem;
+            padding: 2.5rem;
             border-radius: 20px;
             box-shadow: 0 4px 25px rgba(0,0,0,0.3);
             max-width: 900px;
-            margin: 8vh auto;
+            margin: 12vh auto 5vh auto;
             position: relative;
             z-index: 2;
             backdrop-filter: blur(2px);
         }}
 
-        /* Hiệu ứng chữ vintage */
+        /* CHỮ PHONG CÁCH VINTAGE */
         .main-box h1, .main-box p {{
             color: #2b2b2b;
             text-shadow: 0 0 6px rgba(255,255,255,0.6);
@@ -205,10 +218,13 @@ else:
 
 st.markdown(background_css, unsafe_allow_html=True)
 
-# Nội dung trang chính
+# ==========================
+# 📜 NỘI DUNG CHÍNH
+# ==========================
 st.markdown("<div class='main-box'>", unsafe_allow_html=True)
 st.title("✈️ TỔ BẢO DƯỠNG SỐ 1")
 st.write("Video intro đã kết thúc — Chào mừng bạn đến với website 🌍")
 st.markdown("</div>", unsafe_allow_html=True)
+
 
 
