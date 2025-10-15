@@ -10,14 +10,13 @@ video_file = "airplane.mp4"
 bg_file = "cabbase.jpg"
 audio_file = "background.mp3"
 
-# Ước tính thời gian chuyển cảnh (Cần điều chỉnh nếu video của bạn dài/ngắn hơn 5s)
-VIDEO_DURATION_SECONDS = 5  # Thời lượng video ước tính
-FADE_DURATION_SECONDS = 4   # Thời gian hiệu ứng mờ dần
+# Ước tính thời gian chuyển cảnh (Cần điều chỉnh)
+VIDEO_DURATION_SECONDS = 5
+FADE_DURATION_SECONDS = 4
 TOTAL_DELAY_SECONDS = VIDEO_DURATION_SECONDS + FADE_DURATION_SECONDS
 
 # Hàm đọc file và chuyển thành Base64
 def get_base64(file_path):
-    """Đọc file nhị phân và mã hóa Base64."""
     try:
         with open(file_path, "rb") as f:
             return base64.b64encode(f.read()).decode("utf-8")
@@ -26,8 +25,9 @@ def get_base64(file_path):
 
 # Hàm callback khi kích hoạt chuyển cảnh
 def switch_to_main():
-    """Thay đổi trạng thái để hiển thị trang chính."""
+    # Khi nút vô hình được nhấn, thay đổi cờ
     st.session_state.show_main = True
+    # Không cần st.rerun() ở đây, vì việc nhấn nút đã kích hoạt Streamlit rerun
 
 # Khởi tạo Session State
 if "show_main" not in st.session_state:
@@ -41,15 +41,11 @@ if not st.session_state.show_main:
         st.error(f"❌ Không tìm thấy file {video_file}. Vui lòng kiểm tra lại tên và đường dẫn file.")
         st.stop()
     
-    # 1. Thêm nút Streamlit VÔ HÌNH để kích hoạt Rerun
-    # Việc đặt nút ở đây đảm bảo nó được Streamlit xử lý trước khi render JS
-    st.button("Vô hình", key="switch_trigger_button", on_click=switch_to_main)
-             
-    # 2. Hiển thị HTML/CSS/JS
+    # === KHẮC PHỤC 1: ẨN NÚT NGAY LẬP TỨC ===
+    # 1. Thêm CSS để ẩn tất cả các nút có key này ngay từ đầu
     st.markdown(f"""
     <style>
-    /* Ẩn widget kích hoạt VÔ HÌNH bằng key */
-    /* Dùng CSS để ẩn hoàn toàn nút, không để lại bất kỳ khoảng trống nào */
+    /* Ẩn triệt để nút Vô hình trước khi video chạy */
     [data-testid="stButton"] button[key="switch_trigger_button"] {{
         visibility: hidden !important;
         height: 0 !important;
@@ -60,14 +56,13 @@ if not st.session_state.show_main:
         opacity: 0 !important;
         display: none !important; 
     }}
-    
+
     /* CSS cho trang video */
     html, body {{ margin:0; padding:0; height:100%; overflow:hidden; background:black; }}
     .video-container {{
         position: fixed; inset:0; width:100%; height:100%;
         display:flex; justify-content:center; align-items:center;
         background:black; z-index:9999;
-        /* Hiệu ứng mờ dần: Chạy trong 4s, sau khi video phát được 5s */
         animation: fadeOut {FADE_DURATION_SECONDS}s ease-out {VIDEO_DURATION_SECONDS}s forwards; 
     }}
     .video-bg {{ width:100%; height:100%; object-fit:cover; }}
@@ -79,7 +74,7 @@ if not st.session_state.show_main:
         100%{{opacity:0; visibility:hidden;}}
     }}
     
-    /* Giữ nguyên các animation cũ (appear, floatFade) */
+    /* Giữ nguyên các animation khác */
     .video-text {{
         position:absolute; bottom:12vh; width:100%; text-align:center;
         font-family:'Special Elite', cursive; font-size:clamp(24px,5vw,44px);
@@ -91,7 +86,13 @@ if not st.session_state.show_main:
     @keyframes appear {{ 0% {{opacity:0; filter:blur(8px); transform:translateY(40px);}} 100%{{opacity:1; filter:blur(0); transform:translateY(0);}} }}
     @keyframes floatFade {{ 0% {{opacity:1; filter:blur(0); transform:translateY(0);}} 100%{{opacity:0; filter:blur(12px); transform:translateY(-30px) scale(1.05);}} }}
     </style>
+    """, unsafe_allow_html=True)
     
+    # 2. Đặt nút Vô hình sau CSS, nhưng nó phải được render.
+    # Nút được đặt ở đây và bị ẩn bằng CSS phía trên.
+    st.button("Vô hình", key="switch_trigger_button", on_click=switch_to_main)
+             
+    st.markdown(f"""
     <div class="video-container" id="videoContainer">
         <video id="introVideo" class="video-bg" autoplay muted playsinline>
             <source src="data:video/mp4;base64,{video_data}" type="video/mp4">
@@ -100,31 +101,38 @@ if not st.session_state.show_main:
     </div>
     
     <script>
-        // 3. Đặt hẹn giờ để kích hoạt nút vô hình sau khi video và fade kết thúc
+        // === KHẮC PHỤC 2: TỰ ĐỘNG CHUYỂN CẢNH ===
+        // Đặt hẹn giờ để kích hoạt nút vô hình sau khi video và fade kết thúc
         setTimeout(() => {{
-            // Tìm nút vô hình bằng thuộc tính 'key' trong DOM (Rất quan trọng!)
+            // Tìm nút vô hình bằng thuộc tính 'key' trong DOM (Đảm bảo độ chính xác)
             const switchButton = window.parent.document.querySelector('[data-testid="stButton"] button[key="switch_trigger_button"]');
             
             if (switchButton) {{
-                switchButton.click(); // Kích hoạt callback switch_to_main() trong Python
+                // Kích hoạt callback switch_to_main()
+                switchButton.click(); 
+                
+                // Loại bỏ container video (Mặc dù CSS đã làm, nhưng đảm bảo)
+                const container = document.getElementById('videoContainer');
+                if (container) {{
+                    container.style.display='none';
+                }}
+            }} else {{
+                // Fallback: Nếu không tìm thấy nút, in ra console để debug (nếu bạn chạy console)
+                console.error("Lỗi: Không tìm thấy nút kích hoạt Streamlit.");
             }}
-            
-            // Đảm bảo container video biến mất hoàn toàn
-            const container = document.getElementById('videoContainer');
-            if (container) {{
-                container.style.display='none';
-            }}
-        }}, {TOTAL_DELAY_SECONDS * 1000}); // Chuyển sang mili giây
+        }}, {TOTAL_DELAY_SECONDS * 1000});
     </script>
     """, unsafe_allow_html=True)
     
     st.stop() # Dừng luồng cho đến khi nút vô hình được kích hoạt
 
 # --- TRANG CHÍNH ---
-# background vintage
+# ... (Phần code hiển thị trang chính của bạn giữ nguyên) ...
+# Bạn không cần phải thay đổi gì trong phần này.
+# Code ở đây sẽ tự động chạy sau khi switch_to_main được gọi và Streamlit rerun.
 img_base64 = get_base64(bg_file)
 if img_base64 is None:
-    st.error(f"❌ Không tìm thấy file {bg_file}. Vui lòng kiểm tra lại tên và đường dẫn file.")
+    st.error(f"❌ Không tìm thấy file {bg_file}.")
     st.stop()
 
 st.markdown(f"""
@@ -146,7 +154,6 @@ header[data-testid="stHeader"] {{ display:none; }}
 </style>
 """, unsafe_allow_html=True)
 
-# Nhạc góc trên trái
 audio_base64 = get_base64(audio_file)
 if audio_base64:
     st.markdown(f"""
