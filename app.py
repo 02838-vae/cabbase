@@ -30,37 +30,44 @@ if "show_main" not in st.session_state:
 if "intro_ran" not in st.session_state:
     st.session_state.intro_ran = False
 
-# === CSS NỀN TẢNG VÀ CHỐNG FLICKER ===
+# CSS động để kiểm soát hiển thị video (Chống Flicker)
 is_main_page = st.session_state.show_main
 video_display_style = "display: none;" if is_main_page else "display: flex;" 
-# Nếu show_main là True, videoContainer sẽ bị ẩn ngay từ đầu
-# Sử dụng CSS động (f-string) để áp dụng display: none;
 
+# === CSS NỀN TẢNG VÀ FULLSCREEN/RESPONSIVE ===
 st.markdown(f"""
 <style>
-/* FULLSCREEN TRIỆT ĐỂ */
+/* 1. KHẮC PHỤC VIEWPORT CHO MOBILE (Sử dụng đơn vị 'vh' thường gặp lỗi trên mobile) */
+/* Cố gắng sửa lỗi 100vh không chính xác trên các trình duyệt mobile */
+html, body {{ margin:0; padding:0; height:100%; overflow:hidden; background:black; }}
+
+/* 2. FULLSCREEN TRIỆT ĐỂ */
 header[data-testid="stHeader"], footer {{ display: none !important; }}
 section.main > div {{ padding-top: 0 !important; padding-left: 0 !important; padding-right: 0 !important; }}
 .block-container, .stApp {{
     margin: 0 !important;
     padding: 0 !important;
     max-width: 100% !important;
-    width: 100vw !important;
-    height: 100vh !important;
+    width: 100% !important; /* Dùng 100% thay vì 100vw */
+    min-height: 100vh !important;
+    /* Dùng min-height 100vh để đảm bảo chiều cao tối thiểu */
 }}
 
-/* CSS CHO VIDEO CONTAINER (CHỐNG FLICKER) */
-html, body {{ margin:0; padding:0; height:100%; overflow:hidden; background:black; }}
+/* 3. CSS CHO VIDEO CONTAINER (RESPONSIVE VIDEO VÀ CHỐNG FLICKER) */
 .video-container {{
     position: fixed; inset:0; width:100%; height:100%;
     justify-content:center; align-items:center;
     background:black; z-index:9999;
-    {video_display_style} /* <--- DÙNG CSS ĐỘNG ĐỂ ẨN CONTAINER NGAY LẬP TỨC */
+    {video_display_style} 
 }}
-.video-bg {{ width:100%; height:100%; object-fit:cover; }}
+.video-bg {{ 
+    width:100%; 
+    height:100%; 
+    object-fit:cover; /* Đảm bảo video lấp đầy khung hình mà không bị méo */
+}}
 
-/* HIỆU ỨNG MỜ DẦN (CHỈ CHẠY KHI LẦN ĐẦU) */
-@keyframes fadeOut {{
+/* Hiệu ứng mờ dần */
+@keyframes fadeOut {{ /* Giữ nguyên hiệu ứng */
     0% {{opacity:1; visibility:visible;}}
     99% {{opacity:0.01; visibility:visible;}}
     100%{{opacity:0; visibility:hidden;}}
@@ -92,7 +99,7 @@ if not st.session_state.show_main and not st.session_state.intro_ran:
         st.error(f"❌ Không tìm thấy file {video_file}.")
         st.stop()
     
-    # Thêm lớp intro-animation khi chạy lần đầu
+    # HTML/Video và Kích hoạt Rerun Bằng Python
     st.markdown(f"""
     <div class="video-container intro-animation" id="videoContainer">
         <video id="introVideo" class="video-bg" autoplay muted playsinline>
@@ -120,11 +127,12 @@ if img_base64 is None:
 
 st.markdown(f"""
 <style>
-/* CSS cho Trang Chính */
+/* 4. CSS cho Trang Chính (RESPONSIVE BACKGROUND) */
 .stApp {{
+    /* Đảm bảo background fill toàn bộ màn hình */
     background: linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
                 url("data:image/jpeg;base64,{img_base64}") no-repeat center center fixed;
-    background-size: cover;
+    background-size: cover; /* <--- Đảm bảo background fit và lấp đầy khung hình */
 }}
 /* Khôi phục padding nhẹ cho nội dung trang chính */
 .block-container {{ padding-top:2rem !important; padding-left:1rem !important; padding-right:1rem !important;}}
