@@ -136,85 +136,83 @@ if not st.session_state.show_main:
 # ---------- TRANG CHÍNH ----------
 st.session_state.intro_done = True
 
-# Lấy base64 ảnh nền
 bg_path = "cabbase.jpg"
-bg_base64 = get_base64(bg_path) if os.path.exists(bg_path) else None
+bg_base64 = get_base64(bg_path) if os.path.exists(bg_path) else ""
 
-# ========== CSS + HTML ==========
-if bg_base64:
-    st.markdown(f"""
-        <style>
-        html, body {{
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            width: 100%;
-            overflow: hidden;
-            background: none;
-        }}
-        [data-testid="stAppViewContainer"], [data-testid="stMainBlockContainer"],
-        [data-testid="stSidebar"], header, footer, [data-testid="stToolbar"] {{
-            display: none !important;
-        }}
+st.markdown(
+    f"""
+    <style>
+    html, body {{
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        width: 100%;
+        overflow: hidden;
+        background: none;
+    }}
+    [data-testid="stSidebar"], header, footer, [data-testid="stToolbar"] {{
+        display: none !important;
+    }}
+    .full-bg {{
+        position: fixed;
+        inset: 0;
+        width: 100vw;
+        height: 100vh;
+        background-image: url("data:image/jpeg;base64,{bg_base64}");
+        background-size: cover;
+        background-position: center center;
+        filter: brightness(0.9) sepia(0.1) contrast(1.05);
+        z-index: -2;
+    }}
+    .overlay {{
+        position: fixed;
+        inset: 0;
+        background: rgba(255, 245, 230, 0.2);
+        backdrop-filter: blur(2px);
+        z-index: -1;
+    }}
+    .main-content {{
+        position: relative;
+        z-index: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        text-align: center;
+    }}
+    .content-box {{
+        background-color: rgba(255, 255, 255, 0.78);
+        border-radius: 20px;
+        padding: 3rem 4rem;
+        box-shadow: 0 4px 30px rgba(0,0,0,0.25);
+        backdrop-filter: blur(2px);
+    }}
+    .content-box h1 {{
+        font-family: 'Georgia', serif;
+        color: #2a2a2a;
+        text-shadow: 0 0 6px rgba(255,255,255,0.6);
+        font-size: 2.3rem;
+        margin-bottom: 1rem;
+    }}
+    .content-box p {{
+        font-family: 'Georgia', serif;
+        font-size: 1.1rem;
+        color: #333;
+    }}
+    </style>
 
-        /* Toàn bộ nền và mờ overlay */
-        .bg-wrapper {{
-            position: fixed;
-            inset: 0;
-            width: 100vw;
-            height: 100vh;
-            background: url("data:image/jpeg;base64,{bg_base64}") no-repeat center center;
-            background-size: cover;
-            filter: brightness(0.9) sepia(0.12) contrast(1.05);
-            z-index: -2;
-        }}
-        .bg-overlay {{
-            position: fixed;
-            inset: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(245,230,200,0.22);
-            backdrop-filter: blur(2px);
-            z-index: -1;
-        }}
-
-        /* Hộp nội dung chính */
-        .main-box {{
-            position: relative;
-            z-index: 10;
-            background-color: rgba(255, 255, 255, 0.8);
-            backdrop-filter: blur(2px);
-            border-radius: 20px;
-            padding: 3rem;
-            box-shadow: 0 4px 25px rgba(0,0,0,0.25);
-            max-width: 900px;
-            margin: 15vh auto 0 auto;
-            text-align: center;
-            font-family: 'Georgia', serif;
-        }}
-        .main-box h1 {{
-            font-size: 2.2rem;
-            color: #2a2a2a;
-            text-shadow: 0 0 6px rgba(255,255,255,0.6);
-            margin-bottom: 1rem;
-        }}
-        .main-box p {{
-            font-size: 1.2rem;
-            color: #2e2e2e;
-        }}
-        </style>
-
-        <div class="bg-wrapper"></div>
-        <div class="bg-overlay"></div>
-    """, unsafe_allow_html=True)
-else:
-    st.error("❌ Không tìm thấy file nền 'cabbase.jpg'")
-
-# ========== Nội dung ==========
-st.markdown("<div class='main-box'>", unsafe_allow_html=True)
-st.title("✈️ TỔ BẢO DƯỠNG SỐ 1")
-st.write("Video intro đã kết thúc — Chào mừng bạn đến với website 🌍")
-st.markdown("</div>", unsafe_allow_html=True)
+    <div class="full-bg"></div>
+    <div class="overlay"></div>
+    <div class="main-content">
+        <div class="content-box">
+            <h1>✈️ TỔ BẢO DƯỠNG SỐ 1</h1>
+            <p>Video intro đã kết thúc — Chào mừng bạn đến với website 🌍</p>
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True,
+)
 
 
 
