@@ -134,7 +134,7 @@ if not st.session_state.show_main:
         st.stop()
 
 # ==========================
-# 🌅 TRANG CHÍNH (vintage full screen, no white space)
+# 🌅 TRANG CHÍNH (vintage, full-screen, fixed)
 # ==========================
 st.session_state.intro_done = True
 
@@ -145,7 +145,18 @@ if os.path.exists(bg_path):
     background_css = f"""
         <style>
         /* RESET TOÀN BỘ */
-        html, body, [data-testid="stApp"], [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"], [data-testid="stMainBlockContainer"] {{
+        html, body {{
+            margin: 0 !important;
+            padding: 0 !important;
+            height: 100%;
+            width: 100%;
+            overflow: hidden !important;
+        }}
+
+        [data-testid="stAppViewContainer"],
+        [data-testid="stApp"],
+        [data-testid="stMainBlockContainer"],
+        [data-testid="stVerticalBlock"] {{
             margin: 0 !important;
             padding: 0 !important;
             height: 100vh !important;
@@ -154,61 +165,58 @@ if os.path.exists(bg_path):
             background: none !important;
         }}
 
-        header, footer, [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stSidebar"] {{
+        header, footer, [data-testid="stHeader"], [data-testid="stSidebar"], [data-testid="stToolbar"] {{
             display: none !important;
         }}
 
-        /* NỀN ẢNH FULL */
-        body::before {{
+        /* NỀN ẢNH + HIỆU ỨNG MỜ NHẸ */
+        .stApp::before {{
             content: "";
             position: fixed;
             inset: 0;
-            width: 100%;
-            height: 100%;
             background: url("data:image/jpeg;base64,{bg_base64}") no-repeat center center fixed;
             background-size: cover;
-            filter: brightness(0.9) sepia(0.15) contrast(1.05) saturate(0.9);
+            filter: brightness(0.92) sepia(0.15) contrast(1.05) saturate(0.9);
             z-index: -2;
         }}
 
-        /* LỚP MỜ PHỦ TRÊN ẢNH */
-        body::after {{
+        .stApp::after {{
             content: "";
             position: fixed;
             inset: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(255, 248, 230, 0.18);
-            backdrop-filter: blur(3px);
+            background: rgba(240, 224, 200, 0.18);
+            backdrop-filter: blur(2.5px);
             z-index: -1;
         }}
 
-        /* KHỐI NỘI DUNG */
+        /* HỘP NỘI DUNG CHÍNH */
         .main-box {{
-            background-color: rgba(255, 255, 255, 0.82);
-            padding: 2.8rem;
-            border-radius: 20px;
-            box-shadow: 0 4px 30px rgba(0,0,0,0.25);
-            max-width: 900px;
-            margin: 13vh auto 0 auto;
             position: relative;
-            z-index: 1;
+            z-index: 10;
+            background-color: rgba(255, 255, 255, 0.78);
+            padding: 2.5rem 3rem;
+            border-radius: 20px;
+            box-shadow: 0 6px 25px rgba(0,0,0,0.25);
+            max-width: 900px;
+            margin: 15vh auto;
+            text-align: center;
             backdrop-filter: blur(2px);
-            border: 1px solid rgba(255,255,255,0.4);
+            border: 1px solid rgba(255,255,255,0.3);
         }}
 
+        /* CHỮ PHONG CÁCH VINTAGE */
         .main-box h1 {{
             font-family: 'Georgia', serif;
             color: #2a2a2a;
             text-shadow: 0 0 6px rgba(255,255,255,0.7);
-            font-size: 2.2rem;
-            margin-bottom: 0.5rem;
+            font-size: 2.3rem;
+            margin-bottom: 1rem;
         }}
 
         .main-box p {{
             font-family: 'Georgia', serif;
-            font-size: 1.2rem;
-            color: #2e2e2e;
+            font-size: 1.1rem;
+            color: #333;
         }}
         </style>
     """
@@ -235,6 +243,7 @@ st.markdown("<div class='main-box'>", unsafe_allow_html=True)
 st.title("✈️ TỔ BẢO DƯỠNG SỐ 1")
 st.write("Video intro đã kết thúc — Chào mừng bạn đến với website 🌍")
 st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
