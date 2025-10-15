@@ -134,7 +134,7 @@ if not st.session_state.show_main:
         st.stop()
 
 # ==========================
-# 🌅 TRANG CHÍNH (nền mờ)
+# 🌅 TRANG CHÍNH (vintage nhẹ)
 # ==========================
 st.session_state.intro_done = True
 
@@ -144,24 +144,24 @@ if os.path.exists(bg_path):
     bg_base64 = get_base64(bg_path)
     background_css = f"""
         <style>
-        /* Nền ảnh phủ toàn bộ */
+        /* Ảnh nền chính */
         html, body, [data-testid="stAppViewContainer"], [data-testid="stApp"], [data-testid="stVerticalBlock"] {{
             background: url("data:image/jpeg;base64,{bg_base64}") no-repeat center center fixed !important;
             background-size: cover !important;
             position: relative;
         }}
 
-        /* Lớp làm mờ phủ toàn bộ */
+        /* Lớp overlay nhẹ tạo hiệu ứng vintage */
         [data-testid="stAppViewContainer"]::before {{
             content: "";
             position: fixed;
             inset: 0;
-            background: rgba(0, 0, 0, 0.35); /* lớp tối nhẹ để nổi chữ */
-            backdrop-filter: blur(6px);       /* ⚡ hiệu ứng làm mờ nền */
+            background: rgba(245, 228, 190, 0.25); /* vàng nhạt kiểu film retro */
+            backdrop-filter: blur(2.5px) brightness(0.95) contrast(1.05);
             z-index: 0;
         }}
 
-        /* Đảm bảo nội dung nổi lên trên */
+        /* Làm trong suốt các lớp chính */
         [data-testid="stMainBlockContainer"], [data-testid="stMarkdownContainer"], .block-container {{
             background: transparent !important;
             position: relative;
@@ -170,15 +170,22 @@ if os.path.exists(bg_path):
 
         /* Hộp nội dung chính */
         .main-box {{
-            background-color: rgba(255, 255, 255, 0.88);
+            background-color: rgba(255, 255, 255, 0.78);
             padding: 2rem;
             border-radius: 20px;
-            box-shadow: 0 0 25px rgba(0,0,0,0.4);
+            box-shadow: 0 4px 25px rgba(0,0,0,0.3);
             max-width: 900px;
             margin: 8vh auto;
             position: relative;
             z-index: 2;
-            backdrop-filter: blur(4px);
+            backdrop-filter: blur(2px);
+        }}
+
+        /* Hiệu ứng chữ vintage */
+        .main-box h1, .main-box p {{
+            color: #2b2b2b;
+            text-shadow: 0 0 6px rgba(255,255,255,0.6);
+            font-family: 'Georgia', 'Times New Roman', serif;
         }}
         </style>
     """
@@ -203,4 +210,5 @@ st.markdown("<div class='main-box'>", unsafe_allow_html=True)
 st.title("✈️ TỔ BẢO DƯỠNG SỐ 1")
 st.write("Video intro đã kết thúc — Chào mừng bạn đến với website 🌍")
 st.markdown("</div>", unsafe_allow_html=True)
+
 
