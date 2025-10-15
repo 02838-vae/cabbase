@@ -167,11 +167,10 @@ try:
         html_audio = """
         <div style='text-align:center; margin-top:-40px;'>
             <p style='font-family:Special Elite; color:#3e2723; font-size:17px;'>
-                &#127925; Nhạc nền (hãy nhấn Play để thưởng thức)
             </p>
         </div>
         """
         st.markdown(html_audio, unsafe_allow_html=True)
         st.audio(audio_bytes, format="audio/mp3", start_time=0)
 except FileNotFoundError:
-    st.warning("⚠️ Không tìm thấy file background.mp3 — vui lòng thêm file vào cùng thư mục.")
+    st.warning("⚠️ Không tìm thấy file background.mp3 — vui lòng thêm file vào cùng thư mục."
