@@ -39,16 +39,15 @@ if img_base64 is None:
     
 # TẢI FILE NỀN MOBILE
 img_mobile_base64 = get_base64(bg_mobile_file)
-# Nếu không tìm thấy file mobile, dùng file PC thay thế.
 if img_mobile_base64 is None:
     img_mobile_base64 = img_base64 
 # ===================================================
 
-# CSS động để kiểm soát hiển thị video và flicker
+# CSS động để kiểm soát hiển thị video
 is_main_page = st.session_state.show_main
 video_display_style = "display: none;" if is_main_page else "display: flex;" 
 
-# === CSS CHUNG VÀ VIDEO (Đã xác nhận hoạt động tốt) ===
+# === CSS CHUNG VÀ VIDEO (FIX FLICKER MẠNH) ===
 st.markdown(f"""
 <style>
 /* 1. KHẮC PHỤC VIEWPORT TRÊN MOBILE và FULL HEIGHT cho PC */
@@ -124,10 +123,9 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     
     width: 100vw !important;
     height: 100vh !important;
-
-    /* Tạm thời loại bỏ fix flicker background để ưu tiên video play */
-    opacity: 1; 
-    visibility: visible;
+    
+    /* FIX FLICKER MỚI: Mặc định ẩn trang chính */
+    visibility: hidden;
 }}
 
 /* 5. MEDIA QUERY (FIX DỨT ĐIỂM BACKGROUND TRÊN MOBILE) */
@@ -139,6 +137,11 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
         background-size: cover; 
         background-color: #333; 
     }}
+}}
+
+/* 6. CSS KÍCH HOẠT: Hiển thị lại trang chính khi class được thêm */
+.show-main-page .stApp {{
+    visibility: visible;
 }}
 
 /* Khôi phục padding nhẹ cho nội dung trang chính */
@@ -162,6 +165,15 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 
     setVhProperty();
     window.addEventListener('resize', setVhProperty);
+    
+    // CODE JAVASCRIPT MỚI: Thêm class vào body để hiển thị trang chính
+    let isMain = {'true' if is_main_page else 'false'};
+    if (isMain) {{
+        document.body.classList.add('show-main-page');
+    }} else {{
+        // Đảm bảo không có class khi đang ở intro
+        document.body.classList.remove('show-main-page');
+    }}
 </script>
 """, unsafe_allow_html=True)
 
@@ -187,11 +199,14 @@ if not st.session_state.show_main and not st.session_state.intro_ran:
     
     st.session_state.show_main = True
     st.session_state.intro_ran = True 
+    
+    # RERUN và JavaScript sẽ kích hoạt hiển thị trang chính
     st.rerun() 
     
     st.stop() 
 
 # --- TRANG CHÍNH ---
+# ... (Nội dung trang chính) ...
 
 audio_base64 = get_base64(audio_file)
 if audio_base64:
@@ -200,6 +215,6 @@ if audio_base64:
         <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
     </audio>
     """, unsafe_allow_html=True)
-
+    
 st.markdown('<div class="main-title">📜 TỔ BẢO DƯỠNG SỐ 1</div>', unsafe_allow_html=True)
 st.write("Chào mừng bạn đến với website ✈️")
