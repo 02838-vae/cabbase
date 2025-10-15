@@ -1,40 +1,44 @@
 import streamlit as st
 import time
-import os
+import base64
+from pathlib import Path
 
 st.set_page_config(page_title="Airplane Intro", layout="wide")
 
-# --- Kiểm tra file tồn tại ---
-if not os.path.exists("airplane.mp4"):
-    st.error("❌ Không tìm thấy file airplane.mp4 trong thư mục hiện tại!")
-    st.stop()
-
-# --- Trạng thái intro ---
+# --- Kiểm tra trạng thái ---
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
+# --- Nếu chưa xem intro ---
 if not st.session_state.intro_done:
-    # CSS full-screen và hiệu ứng chữ
-    st.markdown("""
+    # Đọc file video và encode base64
+    video_path = Path("airplane.mp4")
+    if not video_path.exists():
+        st.error("❌ Không tìm thấy file airplane.mp4 trong thư mục hiện tại!")
+        st.stop()
+
+    video_bytes = video_path.read_bytes()
+    video_base64 = base64.b64encode(video_bytes).decode("utf-8")
+
+    # CSS + HTML video autoplay full màn hình
+    st.markdown(f"""
     <style>
-    .stApp {
-        height: 100vh;
+    html, body, [class*="stAppViewContainer"], [class*="stApp"], [class*="stMainBlockContainer"] {{
+        height: 100%;
+        margin: 0;
+        padding: 0;
         overflow: hidden;
-    }
-    .video-container {
+    }}
+    video {{
         position: fixed;
         top: 0;
         left: 0;
         width: 100vw;
         height: 100vh;
-        z-index: -1;
-    }
-    video {
-        width: 100%;
-        height: 100%;
         object-fit: cover;
-    }
-    .overlay-text {
+        z-index: -1;
+    }}
+    .overlay-text {{
         position: fixed;
         bottom: 10%;
         width: 100%;
@@ -46,26 +50,23 @@ if not st.session_state.intro_done:
         opacity: 0;
         animation: fadeInOut 5s ease-in-out forwards;
         animation-delay: 1s;
-    }
-    @keyframes fadeInOut {
-        0% {opacity: 0;}
-        20% {opacity: 1;}
-        80% {opacity: 1;}
-        100% {opacity: 0;}
-    }
+    }}
+    @keyframes fadeInOut {{
+        0% {{opacity: 0;}}
+        20% {{opacity: 1;}}
+        80% {{opacity: 1;}}
+        100% {{opacity: 0;}}
+    }}
     </style>
+
+    <video autoplay muted playsinline>
+        <source src="data:video/mp4;base64,{video_base64}" type="video/mp4">
+        Your browser does not support the video tag.
+    </video>
+    <div class="overlay-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
     """, unsafe_allow_html=True)
 
-    # Hiển thị video (Streamlit sẽ auto render tag <video>)
-    video_file = open("airplane.mp4", "rb")
-    video_bytes = video_file.read()
-    st.markdown('<div class="video-container"></div>', unsafe_allow_html=True)
-    st.video(video_bytes)
-
-    # Hiệu ứng chữ
-    st.markdown('<div class="overlay-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>', unsafe_allow_html=True)
-
-    # Đợi hết video (thay 10 = số giây video thật)
+    # Sau X giây (thời lượng video thật)
     time.sleep(10)
     st.session_state.intro_done = True
     st.rerun()
@@ -91,7 +92,8 @@ else:
         """,
         unsafe_allow_html=True
     )
+
     st.markdown("<div class='main-box'>", unsafe_allow_html=True)
     st.title("🌟 Trang Chính")
-    st.write("Chào mừng bạn đến với ứng dụng của chúng tôi!")
+    st.write("Video intro đã kết thúc và đây là trang chính.")
     st.markdown("</div>", unsafe_allow_html=True)
