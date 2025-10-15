@@ -94,54 +94,62 @@ img_base64 = get_base64("cabbase.jpg")
 
 st.markdown(f"""
     <style>
-    /* Toàn bộ trang chính */
-    html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"], [data-testid="stMainBlockContainer"] {{
+    /* Xóa mọi margin, padding của Streamlit */
+    html, body, [data-testid="stAppViewContainer"], [data-testid="stMainBlockContainer"] {{
         margin: 0 !important;
         padding: 0 !important;
         height: 100vh !important;
         width: 100vw !important;
-        background: url("data:image/jpeg;base64,{img_base64}") no-repeat center center fixed !important;
-        background-size: cover !important;
-        background-attachment: fixed !important;
         overflow: hidden !important;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        filter: brightness(0.85) sepia(0.08) saturate(1.1) blur(2px);
+        background: none !important;
     }}
 
-    /* Lớp phủ để làm mờ nhẹ nhưng vẫn đọc được chữ */
+    /* Ảnh nền phủ toàn màn hình */
+    .background {{
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: url("data:image/jpeg;base64,{img_base64}") center center / cover no-repeat;
+        filter: brightness(0.9) sepia(0.15) saturate(1.05) blur(2px);
+        z-index: -2;
+    }}
+
+    /* Lớp phủ mờ nhẹ kiểu vintage */
     .overlay {{
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        backdrop-filter: blur(2px);
-        background-color: rgba(0,0,0,0.25);
-        z-index: 0;
+        background: rgba(0, 0, 0, 0.25);
+        z-index: -1;
     }}
 
-    /* Khối nội dung chính */
+    /* Hộp nội dung chính */
     .main-box {{
         position: relative;
-        z-index: 1;
-        background-color: rgba(255, 255, 255, 0.15);
-        padding: 2rem 3rem;
-        border-radius: 20px;
-        box-shadow: 0 0 25px rgba(0,0,0,0.4);
-        max-width: 900px;
-        color: #fff;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
         text-align: center;
+        color: #fff;
         font-family: "Georgia", serif;
+        background: rgba(255, 255, 255, 0.1);
         backdrop-filter: blur(6px);
+        padding: 2.5rem 3rem;
+        border-radius: 20px;
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        max-width: 850px;
     }}
     </style>
 
+    <div class="background"></div>
     <div class="overlay"></div>
     <div class="main-box">
-        <h1>TỔ BẢO DƯỠNG SỐ 1 ✈️</h1>
-        <p>Chào mừng bạn đến với trang chính — nơi bắt đầu hành trình khám phá bầu trời 🌍</p>
+        <h1 style="font-size: 2.5rem; margin-bottom: 1rem;">TỔ BẢO DƯỠNG SỐ 1 ✈️</h1>
+        <p style="font-size: 1.2rem;">Chào mừng bạn đến với trang chính — nơi bắt đầu hành trình khám phá bầu trời 🌍</p>
     </div>
 """, unsafe_allow_html=True)
 
