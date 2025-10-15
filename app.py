@@ -56,23 +56,22 @@ section.main > div {{ padding-top: 0 !important; padding-left: 0 !important; pad
     padding: 0 !important;
     max-width: 100% !important;
     width: 100% !important;
-    /* Áp dụng biến --vh cho chiều cao */
     min-height: calc(var(--vh, 1vh) * 100) !important; 
 }}
 
-/* 3. CSS CHO VIDEO CONTAINER (RESPONSIVE) */
+/* 3. CSS CHO VIDEO CONTAINER */
 .video-container {{
     position: fixed; inset:0; width:100%; height:100%;
     justify-content:center; align-items:center;
     background:black; z-index:9999;
     {video_display_style} 
-    /* Áp dụng biến --vh cho container video */
     height: calc(var(--vh, 1vh) * 100) !important; 
 }}
 .video-bg {{ 
     width:100%; 
     height:100%; 
-    object-fit:cover; 
+    /* !!! QUAN TRỌNG: DÙNG CONTAIN ĐỂ THẤY HẾT HÌNH (SẼ CÓ DẢI ĐEN) */
+    object-fit:contain; 
 }}
 
 /* Các hiệu ứng khác giữ nguyên */
@@ -81,22 +80,26 @@ section.main > div {{ padding-top: 0 !important; padding-left: 0 !important; pad
     animation: fadeOut {FADE_DURATION_SECONDS}s ease-out {VIDEO_DURATION_SECONDS}s forwards; 
 }}
 
-.video-text {{ /* ... */ }}
-@keyframes appear {{ /* ... */ }}
-@keyframes floatFade {{ /* ... */ }}
+.video-text {{
+    position:absolute; bottom:12vh; width:100%; text-align:center;
+    font-family:'Special Elite', cursive; font-size:clamp(24px,5vw,44px);
+    font-weight:bold; color:#fff;
+    text-shadow: 0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(180,220,255,0.6), 0 0 60px rgba(255,255,255,0.4);
+    opacity:0;
+    animation: appear 3s ease-in forwards, floatFade 3s ease-in 5s forwards;
+}}
+@keyframes appear {{ 0% {{opacity:0; filter:blur(8px); transform:translateY(40px);}} 100%{{opacity:1; filter:blur(0); transform:translateY(0);}} }}
+@keyframes floatFade {{ 0% {{opacity:1; filter:blur(0); transform:translateY(0);}} 100%{{opacity:0; filter:blur(12px); transform:translateY(-30px) scale(1.05);}} }}
 </style>
 
 <script>
     // CODE JAVASCRIPT ĐỂ FIX LỖI 100vh TRÊN MOBILE
-    // Tính toán chiều cao thực của viewport và đặt nó thành biến CSS --vh
     function setVhProperty() {{
         let vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty('--vh', `${{vh}}px`);
     }}
 
     setVhProperty();
-    
-    // Đảm bảo chạy lại khi thay đổi kích thước (xoay ngang/dọc trên mobile)
     window.addEventListener('resize', setVhProperty);
 </script>
 """, unsafe_allow_html=True)
@@ -142,8 +145,8 @@ st.markdown(f"""
 .stApp {{
     background: linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
                 url("data:image/jpeg;base64,{img_base64}") no-repeat center center fixed;
-    background-size: cover; 
-    /* Chiều cao của background cũng dùng biến --vh */
+    /* !!! QUAN TRỌNG: DÙNG CONTAIN ĐỂ THẤY HẾT HÌNH BACKGROUND (SẼ CÓ DẢI ĐEN) */
+    background-size: contain; 
     min-height: calc(var(--vh, 1vh) * 100) !important;
 }}
 /* Khôi phục padding nhẹ cho nội dung trang chính */
