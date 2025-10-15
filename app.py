@@ -1,17 +1,18 @@
 import streamlit as st
 import base64
+import os
 import time
 from PIL import Image, ImageEnhance, ImageFilter
 from io import BytesIO
 
-st.set_page_config(page_title="Airplane Intro", layout="wide")
+st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
-# ===== HELPERS =====
+# ===== HÀM HỖ TRỢ =====
 def get_base64(file_path):
     with open(file_path,"rb") as f:
         return base64.b64encode(f.read()).decode()
 
-def process_background(image_path, blur=1.5, brightness=0.9):
+def process_background(image_path, blur=2, brightness=0.9):
     img = Image.open(image_path).convert("RGB")
     img = ImageEnhance.Brightness(img).enhance(brightness)
     img = img.filter(ImageFilter.GaussianBlur(blur))
@@ -28,11 +29,12 @@ if "video_played" not in st.session_state:
 video_file = "airplane.mp4"
 background_img = "cabbase.jpg"
 
-# ===== VIDEO INTRO =====
+# ===== VIDEO INTRO FULL SCREEN =====
 if not st.session_state.show_main:
     if not os.path.exists(video_file):
         st.error("Không tìm thấy airplane.mp4")
         st.stop()
+
     video_data = get_base64(video_file)
 
     st.markdown(f"""
@@ -70,7 +72,7 @@ if not st.session_state.show_main:
         st.experimental_rerun()
     st.stop()
 
-# ===== MAIN PAGE =====
+# ===== TRANG CHÍNH =====
 if os.path.exists(background_img):
     bg_base64 = process_background(background_img, blur=2, brightness=0.9)
 else:
