@@ -44,6 +44,7 @@ def process_background(image_path):
 
 
 
+
 # ====== TRẠNG THÁI ======
 if "show_main" not in st.session_state:
     st.session_state.show_main = False
