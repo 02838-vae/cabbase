@@ -116,15 +116,16 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] 
 header[data-testid="stHeader"] {{ display: none !important; }}
 .block-container {{ padding-top: 0 !important; }}
 
-.stApp {{
+.stApp {
     font-family: 'Special Elite', cursive !important;
     background:
-        linear-gradient(rgba(245, 222, 179, 0.25), rgba(245, 222, 179, 0.25)),
+        linear-gradient(rgba(245, 222, 179, 0.35), rgba(245, 222, 179, 0.35)),
         url("data:image/jpeg;base64,{img_base64}") no-repeat center center fixed;
     background-size: cover;
-    filter: sepia(0.2) brightness(0.95) contrast(1.1);
-    backdrop-filter: blur(2px);
-}}
+    filter: sepia(0.25) brightness(0.9) contrast(1.05);
+    backdrop-filter: blur(5px); /* tăng từ 2px lên 5px để mờ hơn */
+}
+
 </style>
 """, unsafe_allow_html=True)
 
