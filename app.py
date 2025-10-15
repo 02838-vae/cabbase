@@ -1,10 +1,9 @@
 import streamlit as st
-import os
-import time
 
+# ============ CẤU HÌNH CƠ BẢN ============
 st.set_page_config(page_title="Airplane Intro", layout="wide", initial_sidebar_state="collapsed")
 
-# Ẩn hoàn toàn sidebar, header, footer
+# Ẩn sidebar + header + footer
 st.markdown("""
     <style>
     [data-testid="stSidebar"], [data-testid="stToolbar"], header, footer {display: none !important;}
@@ -17,19 +16,14 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Quản lý trạng thái
+# Trạng thái video intro
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
-# ----------------- PHẦN INTRO -----------------
+# ============ PHẦN INTRO ============
 if not st.session_state.intro_done:
-    video_file = "airplane.mp4"
-    if not os.path.exists(video_file):
-        st.error("❌ Không tìm thấy file airplane.mp4 trong thư mục hiện tại!")
-        st.stop()
-
-    # Lấy đường dẫn tuyệt đối và tạo URL tĩnh
-    video_url = f"http://localhost:8501/{video_file}"
+    # Video trong thư mục static
+    video_url = "static/airplane.mp4"
 
     st.markdown(f"""
     <style>
@@ -71,6 +65,7 @@ if not st.session_state.intro_done:
     <div class="overlay-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
 
     <script>
+    // Khi video kết thúc -> reload trang để vào trang chính
     const video = document.getElementById("introVideo");
     video.onended = () => {{
         fetch("/_stcore/stream", {{method:"POST"}}).then(() => window.location.reload());
@@ -80,18 +75,17 @@ if not st.session_state.intro_done:
 
     st.stop()
 
-# ----------------- TRANG CHÍNH -----------------
+# ============ TRANG CHÍNH ============
 st.session_state.intro_done = True
 
-st.markdown(
-    """
+st.markdown("""
     <style>
     .stApp {
-        background: url("cabbase.jpg") no-repeat center center fixed;
+        background: url("static/cabbase.jpg") no-repeat center center fixed;
         background-size: cover;
     }
     .main-box {
-        background-color: rgba(255, 255, 255, 0.8);
+        background-color: rgba(255, 255, 255, 0.85);
         padding: 2rem;
         border-radius: 20px;
         box-shadow: 0 0 20px rgba(0,0,0,0.3);
@@ -99,11 +93,9 @@ st.markdown(
         margin: 5rem auto;
     }
     </style>
-    """,
-    unsafe_allow_html=True
-)
+""", unsafe_allow_html=True)
 
 st.markdown("<div class='main-box'>", unsafe_allow_html=True)
 st.title("🌍 Trang Chính")
-st.write("Chào mừng bạn đến với website của bạn sau video intro ✈️")
+st.write("Video intro đã kết thúc. Chào mừng bạn đến với website của bạn ✈️")
 st.markdown("</div>", unsafe_allow_html=True)
