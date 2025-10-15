@@ -15,28 +15,33 @@ def get_base64(file_path):
         return base64.b64encode(f.read()).decode("utf-8")
 
 def process_background(image_path):
-    """Làm mờ nhẹ phần dưới ảnh nền để xoá logo."""
+    """Làm mờ nhẹ toàn ảnh, mờ nhiều hơn phía dưới (vintage-style)."""
     if not os.path.exists(image_path):
         return ""
     img = Image.open(image_path).convert("RGB")
     width, height = img.size
 
-    # Làm mờ vùng dưới
-    blur_region = img.crop((0, int(height * 0.75), width, height)).filter(ImageFilter.GaussianBlur(18))
-    img.paste(blur_region, (0, int(height * 0.75)))
+    # Mờ nhẹ toàn bộ ảnh
+    base_blur = img.filter(ImageFilter.GaussianBlur(3))
 
-    # Làm mờ dần (ngả vàng nhẹ)
-    overlay = Image.new("RGB", img.size, (245, 222, 179))
-    mask = Image.new("L", img.size, 0)
-    for y in range(int(height * 0.75), height):
-        alpha = int((y - height * 0.75) / (height * 0.25) * 180)
+    # Làm mờ mạnh hơn vùng dưới (xoá logo)
+    bottom_blur = img.crop((0, int(height * 0.7), width, height)).filter(ImageFilter.GaussianBlur(14))
+    base_blur.paste(bottom_blur, (0, int(height * 0.7)))
+
+    # Thêm lớp màu vàng nhẹ để tạo cảm giác vintage
+    overlay = Image.new("RGB", img.size, (245, 222, 179))  # màu vàng nhạt kiểu giấy cũ
+    mask = Image.new("L", img.size, 60)  # toàn ảnh ngả vàng nhẹ
+    for y in range(int(height * 0.7), height):
+        alpha = int((y - height * 0.7) / (height * 0.3) * 140)  # mạnh dần xuống dưới
         for x in range(width):
             mask.putpixel((x, y), alpha)
-    img = Image.composite(overlay, img, mask)
+    final_img = Image.composite(overlay, base_blur, mask)
 
+    # Xuất base64
     buffered = io.BytesIO()
-    img.save(buffered, format="JPEG", quality=90)
+    final_img.save(buffered, format="JPEG", quality=90)
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
+
 
 
 # ====== TRẠNG THÁI ======
