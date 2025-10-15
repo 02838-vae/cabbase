@@ -1,124 +1,139 @@
 import streamlit as st
 import base64
-import os
-from PIL import Image, ImageEnhance, ImageFilter
-from io import BytesIO
+import time
+from PIL import Image, ImageEnhance
+import io
 
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide", initial_sidebar_state="collapsed")
 
-# ===== HỖ TRỢ =====
+# ===== Hàm phụ =====
 def get_base64(file_path):
     with open(file_path, "rb") as f:
-        return base64.b64encode(f.read()).decode()
+        return base64.b64encode(f.read()).decode("utf-8")
 
-def process_background(image_path, blur=2, brightness=0.9):
-    img = Image.open(image_path).convert("RGB")
-    img = ImageEnhance.Brightness(img).enhance(brightness)
-    img = img.filter(ImageFilter.GaussianBlur(blur))
-    buf = BytesIO()
-    img.save(buf, format="JPEG")
-    return base64.b64encode(buf.getvalue()).decode()
+def process_background(image_path, blur_factor=1.8, tint=(245, 242, 200, 120)):
+    """Mở ảnh, làm mờ, phủ màu vàng nhạt vintage và trả về base64"""
+    img = Image.open(image_path).convert("RGBA")
+    # Làm mờ
+    enhancer = ImageEnhance.Brightness(img)
+    img = enhancer.enhance(0.9)  # giảm sáng
+    img = img.filter(Image.Filter.GaussianBlur(radius=blur_factor))
+    # Overlay vàng nhạt
+    overlay = Image.new("RGBA", img.size, tint)
+    img = Image.alpha_composite(img, overlay)
+    buffered = io.BytesIO()
+    img.convert("RGB").save(buffered, format="JPEG", quality=90)
+    return base64.b64encode(buffered.getvalue()).decode()
 
-# ===== STATE =====
+# ===== Trạng thái =====
 if "show_main" not in st.session_state:
     st.session_state.show_main = False
+if "video_start" not in st.session_state:
+    st.session_state.video_start = None
 
 video_file = "airplane.mp4"
-background_img = "cabbase.jpg"
-audio_file = "background.mp3"
+video_duration = 8.5  # thời lượng video intro
 
-# ===== VIDEO INTRO =====
+# ===== MÀN HÌNH INTRO =====
 if not st.session_state.show_main:
-    if not os.path.exists(video_file):
-        st.error("Không tìm thấy airplane.mp4")
+    st.video(video_file, format="video/mp4", start_time=0)
+
+    # Overlay chữ fade
+    st.markdown("""
+    <style>
+    .video-overlay {
+        position: fixed;
+        bottom: 12vh;
+        width: 100%;
+        text-align: center;
+        font-family: 'Special Elite', cursive;
+        font-size: clamp(24px, 5vw, 44px);
+        font-weight: bold;
+        color: #ffffff;
+        text-shadow:
+            0 0 20px rgba(255,255,255,0.8),
+            0 0 40px rgba(180,220,255,0.6),
+            0 0 60px rgba(255,255,255,0.4);
+        opacity: 0;
+        animation:
+            appear 3s ease-in forwards,
+            floatFade 3s ease-in 5s forwards;
+        z-index: 9999;
+    }
+    @keyframes appear {
+        0% { opacity: 0; filter: blur(8px); transform: translateY(40px);}
+        100% { opacity: 1; filter: blur(0); transform: translateY(0);}
+    }
+    @keyframes floatFade {
+        0% { opacity: 1; filter: blur(0); transform: translateY(0);}
+        100% { opacity: 0; filter: blur(12px); transform: translateY(-30px) scale(1.05);}
+    }
+    </style>
+    <div class="video-overlay">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+    """, unsafe_allow_html=True)
+
+    # Khởi tạo thời gian bắt đầu video
+    if st.session_state.video_start is None:
+        st.session_state.video_start = time.time()
         st.stop()
 
-    video_base64 = get_base64(video_file)
+    # Khi video kết thúc, chuyển trang chính
+    if time.time() - st.session_state.video_start > video_duration:
+        st.session_state.show_main = True
+        st.experimental_rerun()
+
+# ===== TRANG CHÍNH =====
+else:
+    # Xử lý background vintage
+    bg_file = "cabbase.jpg"
+    if not os.path.exists(bg_file):
+        st.error("Không tìm thấy cabbase.jpg")
+        st.stop()
+    img_base64 = process_background(bg_file, blur_factor=2.5, tint=(245, 242, 200, 140))
 
     st.markdown(f"""
     <style>
-    html, body, [data-testid="stAppViewContainer"] {{
-        margin:0; padding:0; height:100vh; width:100vw; overflow:hidden; background:black;
+    @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
+
+    .stApp {{
+        font-family: 'Special Elite', cursive !important;
+        background: linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
+                    url("data:image/jpeg;base64,{img_base64}") no-repeat center center fixed;
+        background-size: cover;
     }}
-    [data-testid="stHeader"] {{display:none !important;}}
-    .video-container {{
-        position: fixed; inset:0; width:100%; height:100%; display:flex;
-        justify-content:center; align-items:center; overflow:hidden; z-index:999;
+    .stApp::after {{
+        content: "";
+        position: fixed;
+        inset: 0;
+        background: url("https://www.transparenttextures.com/patterns/aged-paper.png");
+        opacity: 0.15;
+        pointer-events: none;
+        z-index: -1;
     }}
-    video {{
-        width:100%; height:100%; object-fit:cover;
+    header[data-testid="stHeader"] {{ display: none; }}
+    .block-container {{ padding-top: 2rem; }}
+
+    /* Tiêu đề */
+    .main-title {{
+        font-size: clamp(36px, 5vw, 48px);
+        font-weight: bold;
+        text-align: center;
+        color: #3e2723;
+        margin-top: 50px;
+        text-shadow: 2px 2px 0 #fff, 0 0 25px #f0d49b, 0 0 50px #bca27a;
     }}
-    .intro-text {{
-        position:absolute; bottom:12vh; width:100%; text-align:center;
-        font-family:'Special Elite', cursive;
-        font-size:clamp(20px,5vw,44px);
-        color:white; text-shadow:0 0 20px rgba(255,255,255,0.8);
-        animation: fadeIn 3s forwards, fadeOut 2s 5s forwards;
-        z-index:1000;
-    }}
-    @keyframes fadeIn {{0%{{opacity:0;}}100%{{opacity:1;}}}}
-    @keyframes fadeOut {{0%{{opacity:1;}}100%{{opacity:0;}}}}
     </style>
-
-    <div class="video-container">
-        <video autoplay muted playsinline id="introVideo">
-            <source src="data:video/mp4;base64,{video_base64}" type="video/mp4">
-        </video>
-        <div class="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-    </div>
-
-    <script>
-    const video = document.getElementById('introVideo');
-    video.onended = function(){{
-        const button = window.parent.document.querySelector('iframe').contentWindow.streamlitRerun;
-        if(button) {{
-            window.parent.document.querySelector('iframe').contentWindow.streamlitRerun();
-        }} else {{
-            window.parent.location.reload();
-        }}
-    }};
-    </script>
     """, unsafe_allow_html=True)
 
-    st.stop()
-
-# ===== TRANG CHÍNH =====
-if os.path.exists(background_img):
-    bg_base64 = process_background(background_img, blur=3, brightness=0.85)
-else:
-    bg_base64 = ""
-
-st.markdown(f"""
-<style>
-@import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
-html, body, [data-testid="stAppViewContainer"] {{margin:0; padding:0;}}
-.stApp {{
-    font-family:'Special Elite', cursive !important;
-    background: linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
-                url("data:image/jpeg;base64,{bg_base64}") no-repeat center center fixed;
-    background-size:cover;
-}}
-header[data-testid="stHeader"]{{display:none !important;}}
-.main-title {{
-    font-size:clamp(28px,6vw,54px); font-weight:bold;
-    text-align:center; color:#3e2723; margin-top:50px;
-    text-shadow:2px 2px 0 #fff,0 0 25px #f0d49b,0 0 50px #bca27a;
-}}
-.audio-top-left {{
-    position:fixed; top:10px; left:10px; width:160px; z-index:1000; opacity:0.85;
-}}
-</style>
-""", unsafe_allow_html=True)
-
-st.markdown('<div class="main-title">📜 TỔ BẢO DƯỠNG SỐ 1</div>', unsafe_allow_html=True)
-
-# ===== NHẠC NỀN =====
-if os.path.exists(audio_file):
-    audio_base64 = get_base64(audio_file)
-    st.markdown(f"""
-    <div class="audio-top-left">
-        <audio controls autoplay loop style="width:100%;">
+    # Thanh nhạc góc trên trái
+    audio_file = "background.mp3"
+    if os.path.exists(audio_file):
+        audio_base64 = get_base64(audio_file)
+        st.markdown(f"""
+        <audio autoplay loop controls style="position:fixed; top:10px; left:10px; width:200px; z-index:9999;">
             <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
         </audio>
-    </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
+
+    st.markdown('<div class="main-title">📜 TỔ BẢO DƯỠNG SỐ 1</div>', unsafe_allow_html=True)
+    st.write("Chào mừng bạn đến với website ✈️")
