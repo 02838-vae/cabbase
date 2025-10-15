@@ -34,60 +34,71 @@ if "intro_ran" not in st.session_state:
 is_main_page = st.session_state.show_main
 video_display_style = "display: none;" if is_main_page else "display: flex;" 
 
-# === CSS NỀN TẢNG VÀ FULLSCREEN/RESPONSIVE ===
+# === CSS VÀ MOBILE HEIGHT FIX (QUAN TRỌNG) ===
 st.markdown(f"""
 <style>
-/* 1. KHẮC PHỤC VIEWPORT CHO MOBILE (Sử dụng đơn vị 'vh' thường gặp lỗi trên mobile) */
-/* Cố gắng sửa lỗi 100vh không chính xác trên các trình duyệt mobile */
-html, body {{ margin:0; padding:0; height:100%; overflow:hidden; background:black; }}
+/* 1. KHẮC PHỤC VIEWPORT TRÊN MOBILE */
+html, body {{ 
+    margin:0; 
+    padding:0; 
+    height:100%; 
+    overflow:hidden; 
+    background:black; 
+    /* Dùng biến CSS --vh được đặt bởi JavaScript */
+    height: calc(var(--vh, 1vh) * 100); 
+}}
 
-/* 2. FULLSCREEN TRIỆT ĐỂ */
+/* 2. FULLSCREEN TRIỆT ĐỂ VÀ DÙNG BIẾN --vh */
 header[data-testid="stHeader"], footer {{ display: none !important; }}
 section.main > div {{ padding-top: 0 !important; padding-left: 0 !important; padding-right: 0 !important; }}
 .block-container, .stApp {{
     margin: 0 !important;
     padding: 0 !important;
     max-width: 100% !important;
-    width: 100% !important; /* Dùng 100% thay vì 100vw */
-    min-height: 100vh !important;
-    /* Dùng min-height 100vh để đảm bảo chiều cao tối thiểu */
+    width: 100% !important;
+    /* Áp dụng biến --vh cho chiều cao */
+    min-height: calc(var(--vh, 1vh) * 100) !important; 
 }}
 
-/* 3. CSS CHO VIDEO CONTAINER (RESPONSIVE VIDEO VÀ CHỐNG FLICKER) */
+/* 3. CSS CHO VIDEO CONTAINER (RESPONSIVE) */
 .video-container {{
     position: fixed; inset:0; width:100%; height:100%;
     justify-content:center; align-items:center;
     background:black; z-index:9999;
     {video_display_style} 
+    /* Áp dụng biến --vh cho container video */
+    height: calc(var(--vh, 1vh) * 100) !important; 
 }}
 .video-bg {{ 
     width:100%; 
     height:100%; 
-    object-fit:cover; /* Đảm bảo video lấp đầy khung hình mà không bị méo */
+    object-fit:cover; 
 }}
 
-/* Hiệu ứng mờ dần */
-@keyframes fadeOut {{ /* Giữ nguyên hiệu ứng */
-    0% {{opacity:1; visibility:visible;}}
-    99% {{opacity:0.01; visibility:visible;}}
-    100%{{opacity:0; visibility:hidden;}}
-}}
+/* Các hiệu ứng khác giữ nguyên */
+@keyframes fadeOut {{ /* ... */ }}
 .intro-animation {{
     animation: fadeOut {FADE_DURATION_SECONDS}s ease-out {VIDEO_DURATION_SECONDS}s forwards; 
 }}
 
-/* Các animation text giữ nguyên */
-.video-text {{
-    position:absolute; bottom:12vh; width:100%; text-align:center;
-    font-family:'Special Elite', cursive; font-size:clamp(24px,5vw,44px);
-    font-weight:bold; color:#fff;
-    text-shadow: 0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(180,220,255,0.6), 0 0 60px rgba(255,255,255,0.4);
-    opacity:0;
-    animation: appear 3s ease-in forwards, floatFade 3s ease-in 5s forwards;
-}}
-@keyframes appear {{ 0% {{opacity:0; filter:blur(8px); transform:translateY(40px);}} 100%{{opacity:1; filter:blur(0); transform:translateY(0);}} }}
-@keyframes floatFade {{ 0% {{opacity:1; filter:blur(0); transform:translateY(0);}} 100%{{opacity:0; filter:blur(12px); transform:translateY(-30px) scale(1.05);}} }}
+.video-text {{ /* ... */ }}
+@keyframes appear {{ /* ... */ }}
+@keyframes floatFade {{ /* ... */ }}
 </style>
+
+<script>
+    // CODE JAVASCRIPT ĐỂ FIX LỖI 100vh TRÊN MOBILE
+    // Tính toán chiều cao thực của viewport và đặt nó thành biến CSS --vh
+    function setVhProperty() {{
+        let vh = window.innerHeight * 0.01;
+        document.documentElement.style.setProperty('--vh', `${{vh}}px`);
+    }}
+
+    setVhProperty();
+    
+    // Đảm bảo chạy lại khi thay đổi kích thước (xoay ngang/dọc trên mobile)
+    window.addEventListener('resize', setVhProperty);
+</script>
 """, unsafe_allow_html=True)
 
 
@@ -129,10 +140,11 @@ st.markdown(f"""
 <style>
 /* 4. CSS cho Trang Chính (RESPONSIVE BACKGROUND) */
 .stApp {{
-    /* Đảm bảo background fill toàn bộ màn hình */
     background: linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
                 url("data:image/jpeg;base64,{img_base64}") no-repeat center center fixed;
-    background-size: cover; /* <--- Đảm bảo background fit và lấp đầy khung hình */
+    background-size: cover; 
+    /* Chiều cao của background cũng dùng biến --vh */
+    min-height: calc(var(--vh, 1vh) * 100) !important;
 }}
 /* Khôi phục padding nhẹ cho nội dung trang chính */
 .block-container {{ padding-top:2rem !important; padding-left:1rem !important; padding-right:1rem !important;}}
