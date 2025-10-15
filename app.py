@@ -22,7 +22,7 @@ video_file = "airplane.mp4"
 if not st.session_state.show_main:
     if os.path.exists(video_file):
         video_data = get_base64(video_file)
-        st.markdown(f"""
+       st.markdown(rf"""
         <style>
         html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] {{
             margin: 0 !important;
@@ -99,7 +99,7 @@ if not st.session_state.show_main:
 # ===== TRANG CHÍNH =====
 img_base64 = get_base64("cabbase.jpg") if os.path.exists("cabbase.jpg") else ""
 
-st.markdown(f"""
+st.markdown(rf"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
 
