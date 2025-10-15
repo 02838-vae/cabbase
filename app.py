@@ -24,7 +24,7 @@ if not st.session_state.show_main:
     if os.path.exists(video_file):
         video_data = get_base64(video_file)
 
-        st.markdown(rf"""
+        st.markdown(f"""
         <style>
         html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] {{
             margin: 0 !important;
@@ -103,7 +103,7 @@ if not st.session_state.show_main:
 # ===== TRANG CHÍNH =====
 img_base64 = get_base64("cabbase.jpg") if os.path.exists("cabbase.jpg") else ""
 
-st.markdown(rf"""
+st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
 
@@ -116,16 +116,15 @@ html, body, [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] 
 header[data-testid="stHeader"] {{ display: none !important; }}
 .block-container {{ padding-top: 0 !important; }}
 
-.stApp {
+.stApp {{
     font-family: 'Special Elite', cursive !important;
     background:
         linear-gradient(rgba(245, 222, 179, 0.35), rgba(245, 222, 179, 0.35)),
         url("data:image/jpeg;base64,{img_base64}") no-repeat center center fixed;
     background-size: cover;
     filter: sepia(0.25) brightness(0.9) contrast(1.05);
-    backdrop-filter: blur(5px); /* tăng từ 2px lên 5px để mờ hơn */
-}
-
+    backdrop-filter: blur(6px);
+}}
 </style>
 """, unsafe_allow_html=True)
 
@@ -139,7 +138,7 @@ st.markdown(
 try:
     with open("background.mp3", "rb") as f:
         audio_bytes = f.read()
-        st.markdown("<div style='height:25px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height:25px;'></div>", unsafe_allow_html=True)  # khoảng cách nhỏ dưới tiêu đề
         st.audio(audio_bytes, format="audio/mp3", start_time=0)
 except FileNotFoundError:
     pass
