@@ -33,9 +33,7 @@ if not st.session_state.show_main:
             overflow: hidden !important;
             height: 100vh !important;
         }}
-        [data-testid="stHeader"] {{
-            display: none !important;
-        }}
+        [data-testid="stHeader"] {{ display: none !important; }}
         .video-container {{
             position: fixed;
             inset: 0;
@@ -121,26 +119,26 @@ header[data-testid="stHeader"] {{ display: none !important; }}
 .stApp {{
     font-family: 'Special Elite', cursive !important;
     background:
-        linear-gradient(rgba(250, 245, 230, 0.25), rgba(250, 245, 230, 0.25)),
+        linear-gradient(rgba(245, 222, 179, 0.25), rgba(245, 222, 179, 0.25)),
         url("data:image/jpeg;base64,{img_base64}") no-repeat center center fixed;
     background-size: cover;
-    backdrop-filter: blur(1px);
+    filter: sepia(0.2) brightness(0.95) contrast(1.1);
+    backdrop-filter: blur(2px);
 }}
 </style>
 """, unsafe_allow_html=True)
 
 # ===== TIÊU ĐỀ =====
-st.markdown('<div style="text-align:center; font-size:50px; font-weight:bold; color:#3e2723; text-shadow:2px 2px 4px #fff;">📜 TỔ BẢO DƯỠNG SỐ 1</div>', unsafe_allow_html=True)
+st.markdown(
+    '<div style="text-align:center; font-size:50px; font-weight:bold; color:#3e2723; text-shadow:2px 2px 4px #fff;">📜 TỔ BẢO DƯỠNG SỐ 1</div>',
+    unsafe_allow_html=True,
+)
 
 # ===== NHẠC NỀN =====
 try:
     with open("background.mp3", "rb") as f:
         audio_bytes = f.read()
-        st.markdown("""
-        <div style='text-align:center; margin-top:5px; font-family:Special Elite; color:#3e2723; font-size:17px;'>
-            Nhạc nền (hãy nhấn Play để thưởng thức)
-        </div>
-        """, unsafe_allow_html=True)
+        st.markdown("<div style='height:25px;'></div>", unsafe_allow_html=True)
         st.audio(audio_bytes, format="audio/mp3", start_time=0)
 except FileNotFoundError:
-    st.warning("Không tìm thấy file background.mp3 — vui lòng thêm file vào cùng thư mục.")
+    pass
