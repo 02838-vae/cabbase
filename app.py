@@ -49,7 +49,7 @@ if not st.session_state.show_main:
             width: 100%;
             height: 100%;
             object-fit: cover;
-            object-position: center;
+            object-position: center center;
         }}
         .intro-text {{
             position: absolute;
@@ -111,38 +111,29 @@ def load_and_clean(sheet):
 
 img_base64 = get_base64("airplane.jpg") if os.path.exists("airplane.jpg") else ""
 
-# ===== CSS PHONG CÁCH VINTAGE (mờ nhẹ, full trang, không vùng trắng) =====
+# ===== CSS PHONG CÁCH VINTAGE ĐÚNG CHUẨN =====
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
 
-html, body, [data-testid="stAppViewContainer"] {{
-    height: 100vh !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: hidden !important;
-}}
-header[data-testid="stHeader"] {{ display: none !important; }}
-.block-container {{ padding-top: 0 !important; }}
-
-.stApp {{
-    font-family: 'Special Elite', cursive !important;
-    background:
-        linear-gradient(rgba(245, 240, 230, 0.6), rgba(245, 240, 230, 0.6)),
+[data-testid="stAppViewContainer"] {{
+    background: 
+        linear-gradient(rgba(245, 242, 230, 0.45), rgba(245, 242, 230, 0.45)),
         url("data:image/jpeg;base64,{img_base64}") no-repeat center center fixed;
     background-size: cover;
-    backdrop-filter: blur(2px);
-    overflow: hidden !important;
 }}
 .stApp::after {{
     content: "";
     position: fixed;
     inset: 0;
     background: url("https://www.transparenttextures.com/patterns/aged-paper.png");
-    opacity: 0.25;
+    opacity: 0.2;
     pointer-events: none;
     z-index: -1;
 }}
+
+header[data-testid="stHeader"] {{ display: none !important; }}
+.block-container {{ padding-top: 0 !important; }}
 
 .main-title {{
     font-size: 48px;
@@ -157,7 +148,6 @@ header[data-testid="stHeader"] {{ display: none !important; }}
     text-align: center;
     color: #6d4c41;
     margin-bottom: 25px;
-    letter-spacing: 1px;
     animation: glowTitle 3s ease-in-out infinite alternate;
 }}
 @keyframes glowTitle {{
@@ -168,7 +158,7 @@ header[data-testid="stHeader"] {{ display: none !important; }}
 table.dataframe {{
     width: 100%;
     border-collapse: collapse;
-    background: rgba(255,255,255,0.88);
+    background: rgba(255,255,255,0.9);
     font-size: 18px;
 }}
 table.dataframe thead th {{
