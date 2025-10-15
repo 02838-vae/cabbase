@@ -1,30 +1,39 @@
 import streamlit as st
+from pathlib import Path
+import base64
 
-# ============ CẤU HÌNH CƠ BẢN ============
 st.set_page_config(page_title="Airplane Intro", layout="wide", initial_sidebar_state="collapsed")
 
-# Ẩn sidebar + header + footer
+# Ẩn toàn bộ sidebar và toolbar
 st.markdown("""
     <style>
     [data-testid="stSidebar"], [data-testid="stToolbar"], header, footer {display: none !important;}
-    html, body, [class*="stAppViewContainer"], [class*="stMainBlockContainer"], [class*="stApp"] {
+    html, body, [class*="stAppViewContainer"], [class*="stApp"], [class*="stMainBlockContainer"] {
         margin: 0;
         padding: 0;
         height: 100%;
         overflow: hidden;
+        background: black;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# Trạng thái video intro
+# Quản lý trạng thái intro
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
-# ============ PHẦN INTRO ============
+# ---------- PHẦN VIDEO INTRO ----------
 if not st.session_state.intro_done:
-    # Video trong thư mục static
-    video_url = "static/airplane.mp4"
+    video_path = Path("airplane.mp4")
+    if not video_path.exists():
+        st.error("❌ Không tìm thấy file airplane.mp4 trong thư mục hiện tại!")
+        st.stop()
 
+    # Đọc và mã hóa base64 (để chắc chắn hiển thị được, không phụ thuộc static)
+    video_bytes = video_path.read_bytes()
+    video_base64 = base64.b64encode(video_bytes).decode("utf-8")
+
+    # HTML + CSS
     st.markdown(f"""
     <style>
     video {{
@@ -35,6 +44,7 @@ if not st.session_state.intro_done:
         height: 100vh;
         object-fit: cover;
         z-index: -1;
+        background-color: black;
     }}
     .overlay-text {{
         position: fixed;
@@ -58,34 +68,33 @@ if not st.session_state.intro_done:
     </style>
 
     <video id="introVideo" autoplay muted playsinline>
-        <source src="{video_url}" type="video/mp4">
-        Trình duyệt của bạn không hỗ trợ thẻ video.
+        <source src="data:video/mp4;base64,{video_base64}" type="video/mp4">
+        Your browser does not support the video tag.
     </video>
 
     <div class="overlay-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
 
     <script>
-    // Khi video kết thúc -> reload trang để vào trang chính
     const video = document.getElementById("introVideo");
-    video.onended = () => {{
+    video.addEventListener('ended', () => {{
         fetch("/_stcore/stream", {{method:"POST"}}).then(() => window.location.reload());
-    }};
+    }});
     </script>
     """, unsafe_allow_html=True)
 
     st.stop()
 
-# ============ TRANG CHÍNH ============
+# ---------- TRANG CHÍNH ----------
 st.session_state.intro_done = True
 
 st.markdown("""
     <style>
     .stApp {
-        background: url("static/cabbase.jpg") no-repeat center center fixed;
+        background: url("cabbase.jpg") no-repeat center center fixed;
         background-size: cover;
     }
     .main-box {
-        background-color: rgba(255, 255, 255, 0.85);
+        background-color: rgba(255, 255, 255, 0.8);
         padding: 2rem;
         border-radius: 20px;
         box-shadow: 0 0 20px rgba(0,0,0,0.3);
@@ -97,5 +106,5 @@ st.markdown("""
 
 st.markdown("<div class='main-box'>", unsafe_allow_html=True)
 st.title("🌍 Trang Chính")
-st.write("Video intro đã kết thúc. Chào mừng bạn đến với website của bạn ✈️")
+st.write("Video intro đã kết thúc — Chào mừng bạn đến với website ✈️")
 st.markdown("</div>", unsafe_allow_html=True)
