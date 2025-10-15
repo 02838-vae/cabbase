@@ -134,7 +134,7 @@ if not st.session_state.show_main:
         st.stop()
 
 # ==========================
-# 🌅 TRANG CHÍNH (vintage toàn màn hình)
+# 🌅 TRANG CHÍNH (vintage full screen, no white space)
 # ==========================
 st.session_state.intro_done = True
 
@@ -144,61 +144,71 @@ if os.path.exists(bg_path):
     bg_base64 = get_base64(bg_path)
     background_css = f"""
         <style>
-        /* NỀN ẢNH CHÍNH */
-        html, body, [data-testid="stApp"], [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"] {{
+        /* RESET TOÀN BỘ */
+        html, body, [data-testid="stApp"], [data-testid="stAppViewContainer"], [data-testid="stVerticalBlock"], [data-testid="stMainBlockContainer"] {{
             margin: 0 !important;
             padding: 0 !important;
             height: 100vh !important;
             width: 100vw !important;
-            background: url("data:image/jpeg;base64,{bg_base64}") no-repeat center center fixed !important;
-            background-size: cover !important;
             overflow: hidden !important;
+            background: none !important;
         }}
 
-        /* LỚP PHỦ MỜ + MÀU VINTAGE */
-        [data-testid="stApp"]::before {{
+        header, footer, [data-testid="stHeader"], [data-testid="stToolbar"], [data-testid="stSidebar"] {{
+            display: none !important;
+        }}
+
+        /* NỀN ẢNH FULL */
+        body::before {{
             content: "";
             position: fixed;
             inset: 0;
             width: 100%;
             height: 100%;
-            background: rgba(245, 228, 190, 0.22); /* vàng nhạt kiểu film */
-            backdrop-filter: blur(2.5px) brightness(0.95) contrast(1.05);
-            z-index: 0;
+            background: url("data:image/jpeg;base64,{bg_base64}") no-repeat center center fixed;
+            background-size: cover;
+            filter: brightness(0.9) sepia(0.15) contrast(1.05) saturate(0.9);
+            z-index: -2;
         }}
 
-        /* ẨN HOÀN TOÀN CÁC NỀN TRẮNG MẶC ĐỊNH */
-        [data-testid="stMainBlockContainer"], [data-testid="stMarkdownContainer"], .block-container {{
-            background: transparent !important;
-            padding-top: 0 !important;
-            margin-top: 0 !important;
+        /* LỚP MỜ PHỦ TRÊN ẢNH */
+        body::after {{
+            content: "";
+            position: fixed;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 248, 230, 0.18);
+            backdrop-filter: blur(3px);
+            z-index: -1;
+        }}
+
+        /* KHỐI NỘI DUNG */
+        .main-box {{
+            background-color: rgba(255, 255, 255, 0.82);
+            padding: 2.8rem;
+            border-radius: 20px;
+            box-shadow: 0 4px 30px rgba(0,0,0,0.25);
+            max-width: 900px;
+            margin: 13vh auto 0 auto;
             position: relative;
             z-index: 1;
-        }}
-
-        /* XÓA PHẦN TRẮNG TRÊN CÙNG (THƯỜNG DO HEADER ẨN ĐỂ LẠI) */
-        [data-testid="stHeader"], header, footer {{
-            display: none !important;
-        }}
-
-        /* HỘP NỘI DUNG CHÍNH */
-        .main-box {{
-            background-color: rgba(255, 255, 255, 0.78);
-            padding: 2.5rem;
-            border-radius: 20px;
-            box-shadow: 0 4px 25px rgba(0,0,0,0.3);
-            max-width: 900px;
-            margin: 12vh auto 5vh auto;
-            position: relative;
-            z-index: 2;
             backdrop-filter: blur(2px);
+            border: 1px solid rgba(255,255,255,0.4);
         }}
 
-        /* CHỮ PHONG CÁCH VINTAGE */
-        .main-box h1, .main-box p {{
-            color: #2b2b2b;
-            text-shadow: 0 0 6px rgba(255,255,255,0.6);
-            font-family: 'Georgia', 'Times New Roman', serif;
+        .main-box h1 {{
+            font-family: 'Georgia', serif;
+            color: #2a2a2a;
+            text-shadow: 0 0 6px rgba(255,255,255,0.7);
+            font-size: 2.2rem;
+            margin-bottom: 0.5rem;
+        }}
+
+        .main-box p {{
+            font-family: 'Georgia', serif;
+            font-size: 1.2rem;
+            color: #2e2e2e;
         }}
         </style>
     """
@@ -225,6 +235,7 @@ st.markdown("<div class='main-box'>", unsafe_allow_html=True)
 st.title("✈️ TỔ BẢO DƯỠNG SỐ 1")
 st.write("Video intro đã kết thúc — Chào mừng bạn đến với website 🌍")
 st.markdown("</div>", unsafe_allow_html=True)
+
 
 
 
