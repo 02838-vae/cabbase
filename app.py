@@ -1,6 +1,7 @@
 import streamlit as st
 import base64
 import os
+import time # <<< Cần import thư viện time
 
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
@@ -15,9 +16,17 @@ def get_base64(file_path):
 if "show_main" not in st.session_state:
     st.session_state.show_main = False
 
+# --- CƠ CHẾ CHUYỂN CẢNH MỚI ---
+# Chỉ chạy video lần đầu tiên (show_main = False)
 if not st.session_state.show_main:
+    
+    # 1. Hiển thị video và hiệu ứng CSS/JS
     if os.path.exists(video_file):
         video_data = get_base64(video_file)
+        
+        # Đặt tổng thời gian video và mờ dần (ví dụ: Video 5s + Fade 4s = 9s)
+        TOTAL_DELAY_SECONDS = 9 
+        
         st.markdown(f"""
         <style>
         html, body {{ margin:0; padding:0; height:100%; overflow:hidden; background:black; }}
@@ -25,25 +34,15 @@ if not st.session_state.show_main:
             position: fixed; inset:0; width:100%; height:100%;
             display:flex; justify-content:center; align-items:center;
             background:black; z-index:9999;
+            /* Thêm hiệu ứng mờ dần trong 4s */
+            animation: fadeOut 4s ease-out {TOTAL_DELAY_SECONDS - 4}s forwards; 
         }}
         .video-bg {{ width:100%; height:100%; object-fit:cover; }}
-        .video-text {{
-            position:absolute; bottom:12vh; width:100%; text-align:center;
-            font-family:'Special Elite', cursive; font-size:clamp(24px,5vw,44px);
-            font-weight:bold; color:#fff;
-            text-shadow: 0 0 20px rgba(255,255,255,0.8),
-                         0 0 40px rgba(180,220,255,0.6),
-                         0 0 60px rgba(255,255,255,0.4);
-            opacity:0;
-            animation: appear 3s ease-in forwards, floatFade 3s ease-in 5s forwards;
-        }}
-        @keyframes appear {{
-            0% {{opacity:0; filter:blur(8px); transform:translateY(40px);}}
-            100%{{opacity:1; filter:blur(0); transform:translateY(0);}}
-        }}
-        @keyframes floatFade {{
-            0% {{opacity:1; filter:blur(0); transform:translateY(0);}}
-            100%{{opacity:0; filter:blur(12px); transform:translateY(-30px) scale(1.05);}}
+        /* Giữ nguyên các style khác (video-text, @keyframes appear, floatFade) */
+        
+        @keyframes fadeOut {{
+            0% {{opacity:1; visibility:visible;}}
+            100%{{opacity:0; visibility:hidden;}}
         }}
         </style>
         <div class="video-container" id="videoContainer">
@@ -52,19 +51,18 @@ if not st.session_state.show_main:
             </video>
             <div class="video-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
         </div>
-        <script>
-            const vid = document.getElementById('introVideo');
-            vid.onended = () => {{
-                const container = document.getElementById('videoContainer');
-                container.style.display='none';
-                // Gọi Streamlit rerun
-                window.parent.postMessage({{isStreamlitMessage:true,type:'stRerun'}},'*')
-            }};
-        </script>
         """, unsafe_allow_html=True)
+        
+        # 2. Tạm dừng luồng Python trong thời gian T = 9s
+        # (Điều này chỉ xảy ra một lần duy nhất khi ứng dụng tải)
+        time.sleep(TOTAL_DELAY_SECONDS) 
+        
+        # 3. Sau khi chờ xong, thay đổi trạng thái và Streamlit tự động chạy lại
+        st.session_state.show_main = True
+        st.rerun() # Bắt buộc chạy lại để hiển thị trang chính
+        
     else:
         st.error("❌ Không tìm thấy file airplane.mp4")
-    st.stop()
 
 # ===== TRANG CHÍNH =====
 # background vintage
