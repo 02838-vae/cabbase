@@ -26,16 +26,18 @@ def process_background(image_path):
     img.paste(blur_region, (0, int(height * 0.75)))
 
     # Làm mờ dần (ngả vàng nhẹ)
-    overlay = Image.new("RGBA", img.size, (245, 222, 179, 0))
+    overlay = Image.new("RGB", img.size, (245, 222, 179))
+    mask = Image.new("L", img.size, 0)
     for y in range(int(height * 0.75), height):
         alpha = int((y - height * 0.75) / (height * 0.25) * 180)
         for x in range(width):
-            overlay.putpixel((x, y), (245, 222, 179, alpha))
-    img = Image.alpha_composite(img.convert("RGBA"), overlay)
+            mask.putpixel((x, y), alpha)
+    img = Image.composite(overlay, img, mask)
 
     buffered = io.BytesIO()
     img.save(buffered, format="JPEG", quality=90)
     return base64.b64encode(buffered.getvalue()).decode("utf-8")
+
 
 # ====== TRẠNG THÁI ======
 if "show_main" not in st.session_state:
