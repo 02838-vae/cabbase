@@ -124,21 +124,6 @@ if not st.session_state.show_main:
         st.stop()
 
 # ====== TRANG CHÍNH ======
-excel_file = "A787.xlsx"
-if not os.path.exists(excel_file):
-    st.error("❌ Không tìm thấy file A787.xlsx")
-    st.stop()
-
-xls = pd.ExcelFile(excel_file)
-
-def load_and_clean(sheet):
-    df = pd.read_excel(excel_file, sheet_name=sheet)
-    df.columns = df.columns.str.strip().str.upper()
-    df = df.replace(r'^\s*$', pd.NA, regex=True).dropna(how="all")
-    for col in df.columns:
-        if df[col].dtype == "object":
-            df[col] = df[col].fillna("").astype(str).str.strip()
-    return df
 
 # ====== XỬ LÝ ẢNH NỀN ======
 img_base64 = process_background("cabbase.jpg")
