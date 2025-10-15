@@ -174,7 +174,7 @@ try:
         st.markdown("""
         <div style='text-align:center; margin-top:5px;'>
             <p style='font-family:Special Elite; color:#3e2723; font-size:17px;'>
-                🎵 Nhạc nền (hãy nhấn Play để thưởng thức)
+                &#127925; Nhạc nền (hãy nhấn Play để thưởng thức)
             </p>
         </div>
         """, unsafe_allow_html=True)
