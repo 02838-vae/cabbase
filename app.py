@@ -57,7 +57,7 @@ if audio_base64 is None:
 is_main_page = st.session_state.show_main
 video_display_style = "display: none;" if is_main_page else "display: flex;" 
 
-# === CSS CHUNG VÀ VIDEO (FIX FLICKER & MOBILE FIT) ===
+# === CSS CHUNG VÀ VIDEO (FIX FLICKER DỨT ĐIỂM & MOBILE FIT) ===
 st.markdown(f"""
 <style>
 /* 1. KHẮC PHỤC VIEWPORT TRÊN MOBILE và FULL HEIGHT cho PC */
@@ -80,22 +80,24 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     height: 100vh !important;
 }}
 
-/* 3. CSS CHO VIDEO CONTAINER (FIX FLICKER Z-INDEX) */
+/* 3. CSS CHO VIDEO CONTAINER (FIX FLICKER BẰNG BLACK SCREEN TỐI THƯỢNG) */
 .video-container {{
-    position: fixed; inset:0; width:100vw; height:100vh;
+    position: fixed; inset:0; 
+    width:100vw; height:100vh;
     justify-content:center; 
     align-items:center;
-    background:black; 
+    background:black; /* BẮT BUỘC ĐEN */
     z-index:99999; /* Z-INDEX CỰC CAO ĐỂ CHỐNG FLICKER */
     {video_display_style} 
     flex-direction: column; 
 }}
 
-/* FIX VIDEO MOBILE FIT: Sử dụng cover để video luôn chiếm toàn bộ không gian, không còn dải đen */
+/* FIX VIDEO MOBILE FIT: Bắt video chiếm toàn bộ viewport */
 .video-bg {{ 
-    width: 100%; /* Đảm bảo video chiếm 100% của video-container */
-    height: 100%;
-    object-fit:cover; /* Chế độ quan trọng nhất để FIX FIT */
+    /* Dùng width/height 100% của viewport */
+    width: 100vw; 
+    height: 100vh;
+    object-fit:cover; /* Chế độ quan trọng nhất để FIX FIT, không còn dải đen */
 }}
 
 /* Keyframes và animations giữ nguyên */
@@ -108,9 +110,10 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     animation: fadeOut {FADE_DURATION_SECONDS}s ease-out {VIDEO_DURATION_SECONDS}s forwards; 
 }}
 
-
 /* 4. CSS CHO TRANG CHÍNH: BACKGROUND FIX */
 .stApp {{
+    /* Đảm bảo z-index thấp hơn video container */
+    z-index:1; 
     background-color: #333; 
     background-image: linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
                       url("data:image/jpeg;base64,{img_base64}");
@@ -122,7 +125,6 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     
     width: 100vw !important;
     height: 100vh !important;
-    z-index:1;
 }}
 
 /* 5. MEDIA QUERY (BACKGROUND MOBILE) */
@@ -143,6 +145,18 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     font-weight:bold; text-align:center;
     color:#3e2723; margin-top:50px;
     text-shadow:2px 2px 0 #fff,0 0 25px #f0d49b,0 0 50px #bca27a;
+}}
+
+/* ẨN NÚT DOWNLOAD CỦA VIDEO VÀ AUDIO */
+video::-webkit-media-controls-enclosure,
+audio::-webkit-media-controls-enclosure {{
+    border-radius: 8px; /* Giữ lại border radius cho đẹp */
+}}
+
+video::-webkit-media-controls-panel,
+audio::-webkit-media-controls-panel {{
+    border-radius: 8px; 
+    padding: 0 5px;
 }}
 </style>
 
@@ -191,6 +205,7 @@ st.write("Chào mừng bạn đến với website ✈️")
 
 # === KHÔI PHỤC THẺ AUDIO ĐƠN GIẢN (Tạm thời) ===
 if audio_base64:
+    # Thẻ audio tiêu chuẩn không có nút next/previous, nhưng sẽ đảm bảo phát nhạc ổn định
     st.markdown(f"""
     <audio autoplay loop controls style="position:fixed; top:10px; left:10px; width:200px; z-index:9999;">
         <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
