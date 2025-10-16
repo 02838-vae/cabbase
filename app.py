@@ -63,7 +63,6 @@ is_mobile = st.session_state.is_mobile
 # ===================================================
 
 # --- LOGIC PHÁT HIỆN THIẾT BỊ ---
-# FIX: Chỉ sử dụng st.query_params và lắng nghe tham số 'mobile_check' từ JS
 if st.query_params.get("mobile_check") == ["true"]:
     st.session_state.is_mobile = True
 elif st.query_params.get("mobile_check") == ["false"]:
@@ -74,7 +73,7 @@ is_mobile = st.session_state.is_mobile
 # --- CSS CHUNG VÀ JS FIX MOBILE VH & CHUYỂN CẢNH ---
 css_js_placeholder = st.empty() 
 
-# 💥 ĐÃ FIX: Thêm z-index cao cho text và điều chỉnh thời gian animation floatFade
+# Đã FIX: Thêm z-index, cân chỉnh animation và thêm flicker
 css_js_code = f"""
 <style>
 /* 1. KHẮC PHỤC VIEWPORT TRÊN MOBILE và FULL HEIGHT cho PC */
@@ -109,7 +108,7 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     display: none !important;
 }}
 
-/* 💥 FIX MOBILE VIDEO FIT (Quan trọng) */
+/* FIX MOBILE VIDEO FIT (Quan trọng) */
 .intro-media {{ 
     width: 100vw; 
     height: calc(var(--vh, 1vh) * 100); 
@@ -123,10 +122,12 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     font-weight:bold; color:#fff;
     text-shadow: 0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(180,220,255,0.6), 0 0 60px rgba(255,255,255,0.4);
     opacity:0;
-    /* 🔑 FIX: Z-INDEX cao để text không bị video che */
     z-index: 100000; 
-    /* 🔑 FIX: floatFade 4s delay 5s để kết thúc đồng bộ với video container fade (9s) */
-    animation: appear 3s ease-in forwards, floatFade {FADE_DURATION_SECONDS}s ease-in {VIDEO_DURATION_SECONDS}s forwards;
+    /* ÁP DỤNG CÁC HIỆU ỨNG MỚI: appear -> flicker -> floatFade */
+    animation: 
+        appear 1.5s ease-out forwards, /* Xuất hiện nhanh hơn */
+        flicker 0.2s linear infinite 1.5s, /* Flicker bắt đầu sau 1.5s (khi appear xong) */
+        floatFade {FADE_DURATION_SECONDS}s ease-in {VIDEO_DURATION_SECONDS}s forwards; /* Mờ dần khi kết thúc video */
 }}
 
 /* Keyframes */
@@ -136,6 +137,13 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 }}
 @keyframes appear {{ 0% {{opacity:0; filter:blur(8px); transform:translateY(40px);}} 100%{{opacity:1; filter:blur(0); transform:translateY(0);}} }}
 @keyframes floatFade {{ 0% {{opacity:1; filter:blur(0); transform:translateY(0);}} 100%{{opacity:0; filter:blur(12px); transform:translateY(-30px) scale(1.05);}} }}
+
+/* KEYFRAME MỚI: Thêm hiệu ứng flicker (nhấp nháy/lóa sáng) */
+@keyframes flicker {{
+    0%, 100% {{ text-shadow: 0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(180,220,255,0.6); opacity: 1; }}
+    50% {{ text-shadow: 0 0 10px rgba(255,255,255,0.5), 0 0 30px rgba(180,220,255,0.3); opacity: 0.95; }}
+    51% {{ text-shadow: 0 0 30px rgba(255,255,255,0.9), 0 0 50px rgba(180,220,255,0.7); opacity: 1; }}
+}}
 
 /* 3. CSS CHO TRANG CHÍNH: BACKGROUND FIX */
 .stApp {{
@@ -173,7 +181,7 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 </style>
 
 <script>
-    // 💥 FIX MOBILE VH: Tính toán và áp dụng chiều cao Viewport chính xác
+    // FIX MOBILE VH
     function setVhProperty() {{
         let vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty('--vh', `${{vh}}px`);
@@ -184,12 +192,11 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
         if (container) {{ container.style.height = `calc(${{vh}}px * 100)`; }}
     }}
     
-    // 💥 PHÁT HIỆN THIẾT BỊ VÀ RELOAD STREAMLIT CHỈ MỘT LẦN
+    // PHÁT HIỆN THIẾT BỊ VÀ RELOAD STREAMLIT CHỈ MỘT LẦN
     function checkDeviceAndReload() {{
         const isMobileDevice = /Mobi|Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent) || window.innerWidth < 768;
         const currentParams = new URLSearchParams(window.location.search);
         
-        // Reload chỉ khi tham số mobile_check chưa được set
         if (currentParams.get('mobile_check') === null) {{
             const newUrl = new URL(window.location.href);
             newUrl.searchParams.set('mobile_check', isMobileDevice ? 'true' : 'false');
@@ -205,17 +212,15 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
         const mainContent = document.getElementById('mainContentContainer');
         
         if (videoContainer) {{
-            // Áp dụng animation fadeOut
             videoContainer.style.animation = `fadeOut {FADE_DURATION_SECONDS}s ease-out {VIDEO_DURATION_SECONDS}s forwards`;
 
-            // Ẩn video và hiển thị nội dung chính sau khi animation kết thúc
             setTimeout(() => {{
                 videoContainer.classList.add('hidden'); 
                 
                 if (mainContent) {{
                     mainContent.classList.add('show-after-animation');
                 }}
-            }}, totalDuration + 500); // Thêm 500ms để đảm bảo mượt mà
+            }}, totalDuration + 500); 
         }} else if (mainContent) {{
             mainContent.classList.add('show-after-animation');
         }}
@@ -260,7 +265,7 @@ if not intro_rendered:
         """, unsafe_allow_html=True)
 
 
-# 2. RENDER NỘI DUNG CHÍNH (z-index thấp hơn, sẽ từ từ hiện ra)
+# 2. RENDER NỘI DUNG CHÍNH
 initial_main_class = 'hide-on-start'
 if intro_rendered:
     initial_main_class = 'show-after-animation'
@@ -285,10 +290,8 @@ if current_audio_base64:
             audioPlayer = document.getElementById('customAudioPlayer');
             
             if (audioPlayer) {{
-                // FIX: Play/Pause dựa trên Session State
                 if (isPlaying) {{
                     audioPlayer.play().catch(error => {{
-                        // Bắt lỗi autoplay fail (thường trên mobile)
                         document.getElementById('playPauseButton').innerHTML = '▶️';
                         isPlaying = false;
                         audioPlayer.pause();
@@ -297,10 +300,8 @@ if current_audio_base64:
                     audioPlayer.pause();
                 }}
 
-                // Gắn event listeners
                 audioPlayer.addEventListener('timeupdate', window.updateProgress);
                 audioPlayer.addEventListener('loadedmetadata', window.updateDuration);
-                // Tự động lặp lại
                 audioPlayer.addEventListener('ended', () => {{ 
                     audioPlayer.currentTime = 0;
                     audioPlayer.play();
@@ -408,4 +409,4 @@ if current_audio_base64:
     {js_code_player}
     """, unsafe_allow_html=True)
     
-st.markdown('</div>', unsafe_allow_html=True) # Kết thúc div mainContentContainer
+st.markdown('</div>', unsafe_allow_html=True) 
