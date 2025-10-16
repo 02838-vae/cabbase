@@ -15,7 +15,7 @@ AUDIO_FILES = ["background.mp3", "background2.mp3", "background3.mp3", "backgrou
 # Ước tính thời gian chuyển cảnh (Giữ nguyên)
 VIDEO_DURATION_SECONDS = 5  
 FADE_DURATION_SECONDS = 4   
-TOTAL_DELAY_SECONDS = VIDEO_DURATION_SECONDS + FADE_DURATION_SECONDS
+# KHÔNG CÒN DÙNG TOTAL_DELAY_SECONDS CHO PYTHON SLEEP
 # =========================================================================
 
 # --- CẤU HÌNH BAN ĐẦU ---
@@ -40,8 +40,10 @@ if "current_track_index" not in st.session_state:
 if "is_playing" not in st.session_state:
     st.session_state.is_playing = True # Mặc định là đang phát khi trang tải
 
-# === TẢI VÀ CHUYỂN ĐỔI TẤT CẢ FILE MP3 SANG BASE64 (Dùng cho JS) ===
+# === TẢI VÀ CHUYỂN ĐỔI TẤT CẢ FILE CẦN THIẾT ===
 img_base64 = get_base64(bg_file)
+if img_base64 is None: st.error(f"❌ Không tìm thấy file {bg_file}."); st.stop()
+    
 img_mobile_base64 = get_base64(bg_mobile_file)
 if img_mobile_base64 is None: img_mobile_base64 = img_base64 
 
@@ -65,9 +67,10 @@ audio_base64_json = str(AUDIO_BASE64_LIST).replace("'", '"')
 
 # CSS động để kiểm soát hiển thị video
 is_main_page = st.session_state.show_main
-video_display_style = "display: none;" if is_main_page else "display: flex;" 
+# KHÔNG DÙNG display: none, chỉ dùng opacity/z-index để chống flicker
+video_display_style = "opacity: 0; z-index: -1;" if is_main_page else "opacity: 1; z-index: 99999;" 
 
-# === CSS CHUNG VÀ VIDEO ===
+# === CSS CHUNG VÀ VIDEO (FIX FLICKER BẰNG Z-INDEX & OPACITY) ===
 st.markdown(f"""
 <style>
 /* 1. KHẮC PHỤC VIEWPORT TRÊN MOBILE và FULL HEIGHT cho PC */
@@ -85,20 +88,20 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     height: calc(var(--vh, 1vh) * 100) !important; min-height: calc(var(--vh, 1vh) * 100) !important;
 }}
 
-/* 3. CSS CHO VIDEO CONTAINER */
+/* 3. CSS CHO VIDEO CONTAINER (FIX FLICKER VỚI ANIMATION FORWARDS) */
 .video-container {{
     position: fixed; inset:0; 
     width:100vw; height:calc(var(--vh, 1vh) * 100);
     justify-content:center; align-items:center; background:black; 
-    z-index:99999; /* Z-INDEX CỰC CAO */
-    {video_display_style} 
+    {video_display_style} /* BẮT ĐẦU VỚI Z-INDEX CỰC CAO */
     flex-direction: column; 
+    transition: opacity 0.0s, z-index 0.0s; /* Tắt transition nếu dùng animation */
 }}
 
 /* FIX VIDEO MOBILE FIT */
 .video-bg {{ 
     width: 100vw; height: calc(var(--vh, 1vh) * 100);
-    object-fit:cover; /* Chế độ quan trọng nhất để FIX FIT */
+    object-fit:cover; 
 }}
 
 /* CSS CHO DÒNG CHỮ INTRO VÀ HIỆU ỨNG */
@@ -113,16 +116,18 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 
 /* Keyframes */
 @keyframes fadeOut {{ 
-    0% {{opacity:1;}} 99% {{opacity:0.01;}} 100%{{opacity:0; visibility:hidden; z-index:-1;}} 
+    0% {{opacity:1;}}
+    100%{{opacity:0;}} 
 }}
-.intro-animation {{ animation: fadeOut {FADE_DURATION_SECONDS}s ease-out {VIDEO_DURATION_SECONDS}s forwards; }}
-@keyframes appear {{ 0% {{opacity:0; filter:blur(8px); transform:translateY(40px);}} 100%{{opacity:1; filter:blur(0); transform:translateY(0);}} }}
-@keyframes floatFade {{ 0% {{opacity:1; filter:blur(0); transform:translateY(0);}} 100%{{opacity:0; filter:blur(12px); transform:translateY(-30px) scale(1.05);}} }}
+.intro-animation {{
+    /* Áp dụng fadeOut và duy trì trạng thái cuối cùng (opacity: 0) */
+    animation: fadeOut {FADE_DURATION_SECONDS}s ease-out {VIDEO_DURATION_SECONDS}s forwards;
+}}
 
 
 /* 4. CSS CHO TRANG CHÍNH: BACKGROUND FIX */
 .stApp {{
-    z-index:1; 
+    z-index:1; /* Luôn thấp hơn video intro */
     background-color: #333; 
     background-image: linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
                       url("data:image/jpeg;base64,{img_base64}");
@@ -139,11 +144,11 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     }}
 }}
 
-/* 6. CSS MỚI: CUSTOM AUDIO PLAYER */
+/* 6. CUSTOM AUDIO PLAYER */
 .custom-audio-player {{
     position: fixed; top: 10px; left: 10px; z-index: 9999;
     display: flex; flex-direction: column;
-    width: 380px; /* KÉO DÀI RA THÊM */
+    width: 380px; 
     background: rgba(0, 0, 0, 0.7);
     border-radius: 8px; padding: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }}
@@ -172,7 +177,7 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 </style>
 
 <script>
-    // CODE JAVASCRIPT ĐỂ FIX LỖI 100vh TRÊN MOBILE (Giữ nguyên)
+    // CODE JAVASCRIPT ĐỂ FIX LỖI 100vh TRÊN MOBILE 
     function setVhProperty() {{
         let vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty('--vh', `${{vh}}px`);
@@ -206,8 +211,8 @@ if not st.session_state.show_main and not st.session_state.intro_ran:
     </div>
     """, unsafe_allow_html=True)
     
-    time.sleep(TOTAL_DELAY_SECONDS) 
-    
+    # 💥 QUAN TRỌNG: KHÔNG DÙNG time.sleep()
+    # Chuyển trạng thái ngay lập tức, dựa vào CSS animation để kiểm soát thời gian biến mất.
     st.session_state.show_main = True
     st.session_state.intro_ran = True 
     st.rerun() 
@@ -235,38 +240,46 @@ if current_audio_base64:
             const remainingSeconds = Math.floor(seconds % 60);
             return `${{String(minutes).padStart(2, '0')}}:${{String(remainingSeconds).padStart(2, '0')}}`;
         }}
-
+        
         function updateTrackInfo() {{
             document.getElementById('trackInfo').textContent = 
                 `Track ${{currentTrackIndex + 1}}/${{TOTAL_TRACKS}}: ${{AUDIO_FILES_NAME[currentTrackIndex]}}`;
         }}
 
-        // Chức năng tải và phát bài hát
-        function loadTrack() {{
+        // Chức năng tải và phát bài hát - Cập nhật để nhận trạng thái phát
+        function loadTrack(shouldPlay = true) {{ 
             const player = document.getElementById('customAudioPlayer');
             const newTrackBase64 = AUDIO_BASE64_LIST[currentTrackIndex];
             const newSrc = `data:audio/mp3;base64,${{newTrackBase64}}`;
 
             player.src = newSrc;
+            player.load(); // 💥 QUAN TRỌNG: Buộc tải lại nguồn Base64 mới
             updateTrackInfo();
             
-            // Nếu đang play, tiếp tục play bài mới
-            if (isPlaying) {{
-                player.play();
+            if (shouldPlay) {{
+                // Chỉ gọi play() nếu player đã được tải 
+                player.play().catch(error => {{
+                    // Xử lý lỗi Autoplay bị chặn
+                    document.getElementById('playPauseButton').innerHTML = '▶️';
+                    isPlaying = false;
+                    player.pause();
+                }});
                 document.getElementById('playPauseButton').innerHTML = '⏸️';
+                isPlaying = true;
             }} else {{
                 player.pause();
                 document.getElementById('playPauseButton').innerHTML = '▶️';
+                isPlaying = false;
             }}
         }}
-        
-        // Chức năng chuyển bài (Không cần RERUN)
+
+        // Chức năng chuyển bài 
         function switchTrack(direction) {{
             const player = document.getElementById('customAudioPlayer');
-            isPlaying = !player.paused; // Lưu trạng thái hiện tại
+            const wasPlaying = !player.paused; // Capture current state
             
             currentTrackIndex = (currentTrackIndex + direction + TOTAL_TRACKS) % TOTAL_TRACKS;
-            loadTrack(); // Tải bài hát mới ngay lập tức
+            loadTrack(wasPlaying); 
         }}
 
         // Chức năng Play/Pause
@@ -275,7 +288,12 @@ if current_audio_base64:
             const button = document.getElementById('playPauseButton');
 
             if (player.paused) {{
-                player.play();
+                player.play().catch(error => {{
+                    // Xử lý lỗi Autoplay bị chặn
+                    document.getElementById('playPauseButton').innerHTML = '▶️';
+                    isPlaying = false;
+                    player.pause();
+                }});
                 button.innerHTML = '⏸️';
                 isPlaying = true;
             }} else {{
@@ -285,6 +303,10 @@ if current_audio_base64:
             }}
         }}
 
+        // Gắn các hàm JS vào window để có thể gọi từ HTML (Quan trọng cho Streamlit)
+        window.switchTrack = switchTrack;
+        window.togglePlayPause = togglePlayPause;
+
         // Đồng bộ thanh tiến trình và thời gian
         document.addEventListener('DOMContentLoaded', () => {{
             const player = document.getElementById('customAudioPlayer');
@@ -293,10 +315,10 @@ if current_audio_base64:
             const currentTimeDisplay = document.getElementById('currentTime');
             const durationTimeDisplay = document.getElementById('durationTime');
 
-            // Cần chạy loadTrack khi DOM tải xong
-            loadTrack(); 
+            // 1. Tải bài hát ban đầu
+            loadTrack({is_playing_state}); 
             
-            // Sự kiện cập nhật thời gian
+            // 2. Sự kiện cập nhật thời gian
             player.addEventListener('timeupdate', () => {{
                 if (player.duration) {{
                     const percentage = (player.currentTime / player.duration) * 100;
@@ -305,17 +327,17 @@ if current_audio_base64:
                 }}
             }});
             
-            // Sự kiện khi metadata được tải
+            // 3. Sự kiện khi metadata được tải
             player.addEventListener('loadedmetadata', () => {{
                 durationTimeDisplay.textContent = formatTime(player.duration);
             }});
 
-            // Sự kiện khi bài hát kết thúc (Tự động chuyển bài)
+            // 4. Sự kiện khi bài hát kết thúc (Tự động chuyển bài)
             player.addEventListener('ended', () => {{
                 switchTrack(1);
             }});
 
-            // Xử lý click thanh tiến trình
+            // 5. Xử lý click thanh tiến trình
             progressBar.addEventListener('click', (e) => {{
                 const rect = progressBar.getBoundingClientRect();
                 const clickPosition = e.clientX - rect.left;
@@ -326,21 +348,14 @@ if current_audio_base64:
                     player.currentTime = player.duration * clickRatio;
                 }}
             }});
-            
-            // Fix cho vấn đề Autoplay (Chromium)
-            player.play().catch(error => {{
-                // Autoplay bị chặn, hiển thị nút Play
-                document.getElementById('playPauseButton').innerHTML = '▶️';
-                isPlaying = false;
-                player.pause();
-            }});
         }});
     </script>
     """
     
+    # Ẩn thẻ audio gốc đi, nó chỉ dùng để chạy nhạc
     st.markdown(f"""
     <div style="display: none;">
-        <audio id="customAudioPlayer" src="data:audio/mp3;base64,{current_audio_base64}" loop></audio>
+        <audio id="customAudioPlayer" src="data:audio/mp3;base64,{current_audio_base64}"></audio>
     </div>
     <div class="custom-audio-player">
         <div class="player-info" id="trackInfo">Track {current_track_index + 1}/{total_tracks}: {current_track_name}</div>
