@@ -9,7 +9,7 @@ st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 # Tên các file cần thiết
 video_file = "airplane.mp4"
 bg_file = "cabbase.jpg"
-bg_mobile_file = "mobile.jpg" # <--- TÊN FILE MOBILE MỚI
+bg_mobile_file = "mobile.jpg" # TÊN FILE MOBILE MỚI
 audio_file = "background.mp3"
 
 # Ước tính thời gian chuyển cảnh (Cần điều chỉnh)
@@ -47,7 +47,7 @@ if img_mobile_base64 is None:
 is_main_page = st.session_state.show_main
 video_display_style = "display: none;" if is_main_page else "display: flex;" 
 
-# === CSS CHUNG VÀ VIDEO (FIX FLICKER MẠNH) ===
+# === CSS CHUNG VÀ VIDEO (FIX FLICKER DÙNG Z-INDEX) ===
 st.markdown(f"""
 <style>
 /* 1. KHẮC PHỤC VIEWPORT TRÊN MOBILE và FULL HEIGHT cho PC */
@@ -70,12 +70,13 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     height: 100vh !important;
 }}
 
-/* 3. CSS CHO VIDEO CONTAINER (Đã fix lỗi lệch chữ) */
+/* 3. CSS CHO VIDEO CONTAINER (FIX FLICKER MỚI: Z-INDEX CAO NHẤT) */
 .video-container {{
     position: fixed; inset:0; width:100vw; height:100vh;
     justify-content:center; 
     align-items:center;
-    background:black; z-index:9999;
+    background:black; 
+    z-index:99999; /* !!! Z-INDEX CỰC CAO ĐỂ CHE MỌI THỨ !!! */
     {video_display_style} 
     flex-direction: column; 
 }}
@@ -101,7 +102,7 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 @keyframes fadeOut {{ 
     0% {{opacity:1;}}
     99% {{opacity:0.01;}}
-    100%{{opacity:0; visibility:hidden;}}
+    100%{{opacity:0; visibility:hidden; z-index:-1;}} /* Đặt Z-index âm sau khi fade để hiển thị background trang chính */
 }}
 .intro-animation {{
     animation: fadeOut {FADE_DURATION_SECONDS}s ease-out {VIDEO_DURATION_SECONDS}s forwards; 
@@ -124,8 +125,8 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     width: 100vw !important;
     height: 100vh !important;
     
-    /* FIX FLICKER MỚI: Mặc định ẩn trang chính */
-    visibility: hidden;
+    /* Z-index thấp để bị video container che */
+    z-index:1;
 }}
 
 /* 5. MEDIA QUERY (FIX DỨT ĐIỂM BACKGROUND TRÊN MOBILE) */
@@ -137,11 +138,6 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
         background-size: cover; 
         background-color: #333; 
     }}
-}}
-
-/* 6. CSS KÍCH HOẠT: Hiển thị lại trang chính khi class được thêm */
-.show-main-page .stApp {{
-    visibility: visible;
 }}
 
 /* Khôi phục padding nhẹ cho nội dung trang chính */
@@ -165,15 +161,6 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 
     setVhProperty();
     window.addEventListener('resize', setVhProperty);
-    
-    // CODE JAVASCRIPT MỚI: Thêm class vào body để hiển thị trang chính
-    let isMain = {'true' if is_main_page else 'false'};
-    if (isMain) {{
-        document.body.classList.add('show-main-page');
-    }} else {{
-        // Đảm bảo không có class khi đang ở intro
-        document.body.classList.remove('show-main-page');
-    }}
 </script>
 """, unsafe_allow_html=True)
 
@@ -199,14 +186,11 @@ if not st.session_state.show_main and not st.session_state.intro_ran:
     
     st.session_state.show_main = True
     st.session_state.intro_ran = True 
-    
-    # RERUN và JavaScript sẽ kích hoạt hiển thị trang chính
     st.rerun() 
     
     st.stop() 
 
 # --- TRANG CHÍNH ---
-# ... (Nội dung trang chính) ...
 
 audio_base64 = get_base64(audio_file)
 if audio_base64:
@@ -215,6 +199,6 @@ if audio_base64:
         <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
     </audio>
     """, unsafe_allow_html=True)
-    
+
 st.markdown('<div class="main-title">📜 TỔ BẢO DƯỠNG SỐ 1</div>', unsafe_allow_html=True)
 st.write("Chào mừng bạn đến với website ✈️")
