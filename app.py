@@ -3,14 +3,16 @@ import base64
 import os
 import time
 
-# === ĐỊNH NGHĨA HẰNG SỐ VÀ FILE (ĐƯA LÊN ĐẦU TIÊN ĐỂ TRÁNH NameError) ===
+# === ĐỊNH NGHĨA HẰNG SỐ VÀ FILE ===
 # Tên các file cần thiết
 video_file = "airplane.mp4"
 bg_file = "cabbase.jpg"
 bg_mobile_file = "mobile.jpg" 
 
-# Danh sách bài hát
+# Danh sách bài hát (Dùng cho thẻ <audio> đơn giản)
 AUDIO_FILES = ["background.mp3", "background2.mp3", "background3.mp3", "background4.mp3", "background5.mp3"]
+# Bài hát mặc định sẽ play
+DEFAULT_AUDIO_FILE = AUDIO_FILES[0]
 
 # Ước tính thời gian chuyển cảnh (Cần điều chỉnh)
 VIDEO_DURATION_SECONDS = 5  
@@ -21,11 +23,9 @@ TOTAL_DELAY_SECONDS = VIDEO_DURATION_SECONDS + FADE_DURATION_SECONDS
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
-
 # Hàm đọc file và chuyển thành Base64
 def get_base64(file_path):
     try:
-        # Sử dụng base64.urlsafe_b64encode để đảm bảo chuỗi Base64 an toàn cho URL/HTML
         with open(file_path, "rb") as f:
             return base64.b64encode(f.read()).decode("utf-8")
     except FileNotFoundError:
@@ -36,12 +36,8 @@ if "show_main" not in st.session_state:
     st.session_state.show_main = False
 if "intro_ran" not in st.session_state:
     st.session_state.intro_ran = False
-if "current_track_index" not in st.session_state:
-    st.session_state.current_track_index = 0
-if "is_playing" not in st.session_state:
-    st.session_state.is_playing = True 
 
-# === TẢI TẤT CẢ FILE CẦN THIẾT (FIX NameError) ===
+# === TẢI TẤT CẢ FILE CẦN THIẾT ===
 img_base64 = get_base64(bg_file)
 if img_base64 is None:
     st.error(f"❌ Không tìm thấy file {bg_file}. Vui lòng kiểm tra lại tên và đường dẫn file.")
@@ -51,31 +47,17 @@ img_mobile_base64 = get_base64(bg_mobile_file)
 if img_mobile_base64 is None:
     img_mobile_base64 = img_base64 
 
-# Lấy Base64 của tất cả các bài hát VÀ LƯU VÀO DANH SÁCH
-AUDIO_BASE64_LIST = []
-for file in AUDIO_FILES:
-    b64 = get_base64(file)
-    if b64:
-        AUDIO_BASE64_LIST.append(b64)
-    else:
-        st.error(f"❌ Không tìm thấy file âm thanh: {file}. Vui lòng kiểm tra lại tên file.")
-        st.stop()
-
-# Biến Python để truyền vào JavaScript
-current_track_index = st.session_state.current_track_index
-current_audio_base64 = AUDIO_BASE64_LIST[current_track_index]
-current_track_name = AUDIO_FILES[current_track_index]
-total_tracks = len(AUDIO_FILES)
-is_playing_state = st.session_state.is_playing 
-
-# Chuyển danh sách Base64 sang chuỗi JSON để truyền vào JS
-audio_base64_json = str(AUDIO_BASE64_LIST).replace("'", '"')
+# Tải file âm thanh mặc định
+audio_base64 = get_base64(DEFAULT_AUDIO_FILE)
+if audio_base64 is None:
+    st.warning(f"⚠️ Không tìm thấy file âm thanh: {DEFAULT_AUDIO_FILE}. Sẽ không phát nhạc nền.")
+# ===================================================
 
 # CSS động để kiểm soát hiển thị video
 is_main_page = st.session_state.show_main
 video_display_style = "display: none;" if is_main_page else "display: flex;" 
 
-# === CSS CHUNG VÀ VIDEO (Đã Fix Lỗi) ===
+# === CSS CHUNG VÀ VIDEO (FIX FLICKER & MOBILE FIT) ===
 st.markdown(f"""
 <style>
 /* 1. KHẮC PHỤC VIEWPORT TRÊN MOBILE và FULL HEIGHT cho PC */
@@ -98,15 +80,22 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     height: 100vh !important;
 }}
 
-/* 3. CSS CHO VIDEO CONTAINER */
+/* 3. CSS CHO VIDEO CONTAINER (FIX FLICKER Z-INDEX) */
 .video-container {{
     position: fixed; inset:0; width:100vw; height:100vh;
     justify-content:center; 
     align-items:center;
     background:black; 
-    z-index:99999; 
+    z-index:99999; /* Z-INDEX CỰC CAO ĐỂ CHỐNG FLICKER */
     {video_display_style} 
     flex-direction: column; 
+}}
+
+/* FIX VIDEO MOBILE FIT: Sử dụng cover để video luôn chiếm toàn bộ không gian, không còn dải đen */
+.video-bg {{ 
+    width: 100%; /* Đảm bảo video chiếm 100% của video-container */
+    height: 100%;
+    object-fit:cover; /* Chế độ quan trọng nhất để FIX FIT */
 }}
 
 /* Keyframes và animations giữ nguyên */
@@ -118,6 +107,7 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 .intro-animation {{
     animation: fadeOut {FADE_DURATION_SECONDS}s ease-out {VIDEO_DURATION_SECONDS}s forwards; 
 }}
+
 
 /* 4. CSS CHO TRANG CHÍNH: BACKGROUND FIX */
 .stApp {{
@@ -135,7 +125,7 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     z-index:1;
 }}
 
-/* 5. MEDIA QUERY (FIX DỨT ĐIỂM BACKGROUND TRÊN MOBILE) */
+/* 5. MEDIA QUERY (BACKGROUND MOBILE) */
 @media screen and (max-width: 768px) {{
     .stApp {{
         background-image: linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
@@ -145,66 +135,15 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     }}
 }}
 
-/* 6. CSS MỚI: CUSTOM AUDIO PLAYER */
-.custom-audio-player {{
-    position: fixed; 
-    top: 10px; 
-    left: 10px; 
-    z-index: 9999;
-    display: flex;
-    flex-direction: column;
-    width: 280px; 
-    background: rgba(0, 0, 0, 0.7);
-    border-radius: 8px;
-    padding: 10px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-}}
-.player-info {{
-    color: #FFF;
-    font-size: 13px;
-    text-align: center;
-    margin-bottom: 8px;
-}}
-.player-controls {{
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-}}
-.control-button {{
-    background: none;
-    border: none;
-    color: #FFF;
-    font-size: 20px;
-    cursor: pointer;
-    padding: 5px;
-    transition: color 0.2s;
-}}
-.control-button:hover {{
-    color: #4A90E2;
-}}
-.progress-bar {{
-    height: 5px;
-    background: #555;
-    margin: 10px 0;
-    border-radius: 2px;
-    cursor: pointer;
-}}
-.progress-filled {{
-    height: 100%;
-    width: 0%; 
-    background: #4A90E2;
-    border-radius: 2px;
-}}
-.time-display {{
-    display: flex;
-    justify-content: space-between;
-    color: #AAA;
-    font-size: 11px;
-}}
-
 /* Khôi phục padding nhẹ cho nội dung trang chính */
 .block-container {{ padding-top:2rem !important; padding-left:1rem !important; padding-right:1rem !important;}}
-.main-title {{ /* Giữ nguyên CSS title */ }}
+.main-title {{
+    font-family:'Special Elite', cursive;
+    font-size: clamp(36px,5vw,48px);
+    font-weight:bold; text-align:center;
+    color:#3e2723; margin-top:50px;
+    text-shadow:2px 2px 0 #fff,0 0 25px #f0d49b,0 0 50px #bca27a;
+}}
 </style>
 
 <script>
@@ -250,145 +189,11 @@ if not st.session_state.show_main and not st.session_state.intro_ran:
 st.markdown('<div class="main-title">📜 TỔ BẢO DƯỠNG SỐ 1</div>', unsafe_allow_html=True)
 st.write("Chào mừng bạn đến với website ✈️")
 
-# === KHỐI PHÁT NHẠC TÙY CHỈNH (CUSTOM AUDIO PLAYER) ===
-if current_audio_base64:
-
-    js_code = f"""
-    <script>
-        const AUDIO_BASE64_LIST = {audio_base64_json};
-        const AUDIO_FILES_NAME = {AUDIO_FILES};
-        const TOTAL_TRACKS = {total_tracks};
-        let currentTrackIndex = {current_track_index};
-        let isPlaying = {'true' if is_playing_state else 'false'};
-
-        function formatTime(seconds) {{
-            const minutes = Math.floor(seconds / 60);
-            const remainingSeconds = Math.floor(seconds % 60);
-            return `${{String(minutes).padStart(2, '0')}}:${{String(remainingSeconds).padStart(2, '0')}}`;
-        }}
-
-        function updateTrackInfo() {{
-            document.getElementById('trackInfo').textContent = 
-                `Track ${{currentTrackIndex + 1}}/${{TOTAL_TRACKS}}: ${{AUDIO_FILES_NAME[currentTrackIndex]}}`;
-        }}
-
-        // Chức năng tải và phát bài hát
-        function loadTrack() {{
-            const player = document.getElementById('customAudioPlayer');
-            const newTrackBase64 = AUDIO_BASE64_LIST[currentTrackIndex];
-            const newSrc = `data:audio/mp3;base64,${{newTrackBase64}}`;
-
-            player.src = newSrc;
-            updateTrackInfo();
-            
-            if (isPlaying) {{
-                player.play();
-                document.getElementById('playPauseButton').innerHTML = '⏸️';
-            }} else {{
-                player.pause();
-                document.getElementById('playPauseButton').innerHTML = '▶️';
-            }}
-        }}
-        
-        // Chức năng chuyển bài (Không cần RERUN)
-        function switchTrack(direction) {{
-            const player = document.getElementById('customAudioPlayer');
-            isPlaying = !player.paused; // Lưu trạng thái hiện tại
-            
-            currentTrackIndex = (currentTrackIndex + direction + TOTAL_TRACKS) % TOTAL_TRACKS;
-            loadTrack(); // Tải bài hát mới ngay lập tức
-        }}
-
-        // Chức năng Play/Pause
-        function togglePlayPause() {{
-            const player = document.getElementById('customAudioPlayer');
-            const button = document.getElementById('playPauseButton');
-
-            if (player.paused) {{
-                player.play();
-                button.innerHTML = '⏸️';
-                isPlaying = true;
-            }} else {{
-                player.pause();
-                button.innerHTML = '▶️';
-                isPlaying = false;
-            }}
-        }}
-
-        // Đồng bộ thanh tiến trình và thời gian
-        document.addEventListener('DOMContentLoaded', () => {{
-            const player = document.getElementById('customAudioPlayer');
-            const progressBar = document.getElementById('progressBar');
-            const progressFilled = document.getElementById('progressFilled');
-            const currentTimeDisplay = document.getElementById('currentTime');
-            const durationTimeDisplay = document.getElementById('durationTime');
-
-            // Cần chạy loadTrack khi DOM tải xong để đảm bảo src được thiết lập
-            loadTrack(); 
-            
-            // Sự kiện cập nhật thời gian
-            player.addEventListener('timeupdate', () => {{
-                if (player.duration) {{
-                    const percentage = (player.currentTime / player.duration) * 100;
-                    progressFilled.style.width = percentage + '%';
-                    currentTimeDisplay.textContent = formatTime(player.currentTime);
-                }}
-            }});
-            
-            // Sự kiện khi metadata được tải
-            player.addEventListener('loadedmetadata', () => {{
-                durationTimeDisplay.textContent = formatTime(player.duration);
-            }});
-
-            // Sự kiện khi bài hát kết thúc (Tự động chuyển bài)
-            player.addEventListener('ended', () => {{
-                switchTrack(1);
-            }});
-
-            // Xử lý click thanh tiến trình
-            progressBar.addEventListener('click', (e) => {{
-                const rect = progressBar.getBoundingClientRect();
-                const clickPosition = e.clientX - rect.left;
-                const totalWidth = progressBar.offsetWidth;
-                const clickRatio = clickPosition / totalWidth;
-                
-                if (player.duration) {{
-                    player.currentTime = player.duration * clickRatio;
-                }}
-            }});
-            
-            // Fix cho vấn đề Autoplay (Chromium)
-            player.play().catch(error => {{
-                // Autoplay bị chặn, hiển thị nút Play
-                document.getElementById('playPauseButton').innerHTML = '▶️';
-                isPlaying = false;
-                player.pause();
-            }});
-        }});
-    </script>
-    """
-    
+# === KHÔI PHỤC THẺ AUDIO ĐƠN GIẢN (Tạm thời) ===
+if audio_base64:
     st.markdown(f"""
-    <div style="display: none;">
-        <audio id="customAudioPlayer" src="data:audio/mp3;base64,{current_audio_base64}" loop></audio>
-    </div>
-    <div class="custom-audio-player">
-        <div class="player-info" id="trackInfo">Track {current_track_index + 1}/{total_tracks}: {current_track_name}</div>
-        <div class="progress-bar" id="progressBar">
-            <div class="progress-filled" id="progressFilled"></div>
-        </div>
-        <div class="time-display">
-            <span id="currentTime">00:00</span>
-            <span id="durationTime">--:--</span>
-        </div>
-        <div class="player-controls">
-            <button class="control-button" onclick="switchTrack(-1)">⏮️</button>
-            <button class="control-button" id="playPauseButton" onclick="togglePlayPause()">
-                {'⏸️' if is_playing_state else '▶️'}
-            </button>
-            <button class="control-button" onclick="switchTrack(1)">⏭️</button>
-        </div>
-    </div>
-    {js_code}
+    <audio autoplay loop controls style="position:fixed; top:10px; left:10px; width:200px; z-index:9999;">
+        <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
+    </audio>
     """, unsafe_allow_html=True)
 # =================================================================================
