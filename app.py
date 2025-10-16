@@ -1,10 +1,10 @@
 import streamlit as st
 import base64
 import os
+import json
 import time
 
 # === ĐỊNH NGHĨA HẰNG SỐ VÀ FILE ===
-# Tên các file cần thiết
 video_file = "airplane.mp4"
 bg_file = "cabbase.jpg"
 bg_mobile_file = "mobile.jpg" 
@@ -12,16 +12,16 @@ bg_mobile_file = "mobile.jpg"
 # Danh sách bài hát 
 AUDIO_FILES = ["background.mp3", "background2.mp3", "background3.mp3", "background4.mp3", "background5.mp3"]
 
-# Ước tính thời gian chuyển cảnh (Giữ nguyên)
+# Thời gian chuyển cảnh (Giữ nguyên)
 VIDEO_DURATION_SECONDS = 5  
 FADE_DURATION_SECONDS = 4   
-# KHÔNG CÒN DÙNG TOTAL_DELAY_SECONDS CHO PYTHON SLEEP
 # =========================================================================
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
 # Hàm đọc file và chuyển thành Base64
+@st.cache_data
 def get_base64(file_path):
     try:
         with open(file_path, "rb") as f:
@@ -32,13 +32,10 @@ def get_base64(file_path):
 # --- Khởi tạo Session State ---
 if "show_main" not in st.session_state:
     st.session_state.show_main = False
-if "intro_ran" not in st.session_state:
-    st.session_state.intro_ran = False
-# Logic Playlist
 if "current_track_index" not in st.session_state:
     st.session_state.current_track_index = 0
 if "is_playing" not in st.session_state:
-    st.session_state.is_playing = True # Mặc định là đang phát khi trang tải
+    st.session_state.is_playing = True
 
 # === TẢI VÀ CHUYỂN ĐỔI TẤT CẢ FILE CẦN THIẾT ===
 img_base64 = get_base64(bg_file)
@@ -47,14 +44,12 @@ if img_base64 is None: st.error(f"❌ Không tìm thấy file {bg_file}."); st.s
 img_mobile_base64 = get_base64(bg_mobile_file)
 if img_mobile_base64 is None: img_mobile_base64 = img_base64 
 
-AUDIO_BASE64_LIST = []
-for file in AUDIO_FILES:
-    b64 = get_base64(file)
-    if b64:
-        AUDIO_BASE64_LIST.append(b64)
-    else:
-        st.error(f"❌ Không tìm thấy file âm thanh: {file}. Vui lòng kiểm tra lại tên file.")
-        st.stop()
+# Tải Base64 cho tất cả audio files
+AUDIO_BASE64_LIST = [get_base64(f) for f in AUDIO_FILES if get_base64(f)]
+
+if len(AUDIO_BASE64_LIST) != len(AUDIO_FILES):
+    st.error("❌ Thiếu một hoặc nhiều file âm thanh. Vui lòng kiểm tra lại.")
+    st.stop()
         
 # Biến Python để truyền vào JavaScript
 current_track_index = st.session_state.current_track_index
@@ -62,23 +57,121 @@ current_audio_base64 = AUDIO_BASE64_LIST[current_track_index]
 current_track_name = AUDIO_FILES[current_track_index]
 total_tracks = len(AUDIO_FILES)
 is_playing_state = st.session_state.is_playing 
-audio_base64_json = str(AUDIO_BASE64_LIST).replace("'", '"')
+audio_base64_json = json.dumps(AUDIO_BASE64_LIST) # Dùng json.dumps để đảm bảo định dạng JS chính xác
 # ===================================================
 
-# CSS động để kiểm soát hiển thị video
-is_main_page = st.session_state.show_main
-# KHÔNG DÙNG display: none, chỉ dùng opacity/z-index để chống flicker
-video_display_style = "opacity: 0; z-index: -1;" if is_main_page else "opacity: 1; z-index: 99999;" 
+# --- LOGIC CHUYỂN CẢNH (Dùng session state để tránh render video liên tục) ---
+if not st.session_state.show_main:
+    # --- GIAO DIỆN CHUYỂN CẢNH (VIDEO INTRO) ---
+    video_data = get_base64(video_file)
+    if video_data is None:
+        st.error(f"❌ Không tìm thấy file {video_file}.")
+        st.stop()
+    
+    # CSS cho video intro
+    st.markdown(f"""
+    <style>
+    /* 1. KHẮC PHỤC VIEWPORT TRÊN MOBILE và FULL HEIGHT cho PC */
+    html, body {{ 
+        margin:0; padding:0; height:100%; overflow:hidden; background:black; height: 100%; 
+    }}
+    header[data-testid="stHeader"], footer {{ display: none !important; }}
+    .stApp, section.main {{
+        height: calc(var(--vh, 1vh) * 100) !important; min-height: calc(var(--vh, 1vh) * 100) !important;
+    }}
+    .block-container, section.main > div {{
+        margin: 0 !important; padding: 0 !important; max-width: 100% !important;
+        width: 100vw !important; height: calc(var(--vh, 1vh) * 100) !important;
+    }}
 
-# === CSS CHUNG VÀ VIDEO (FIX FLICKER BẰNG Z-INDEX & OPACITY) ===
+    /* 2. CSS CHO VIDEO CONTAINER (FIX FLICKER VỚI ANIMATION FORWARDS) */
+    .video-container {{
+        position: fixed; inset:0; 
+        width:100vw; height:calc(var(--vh, 1vh) * 100);
+        justify-content:center; align-items:center; background:black; 
+        z-index: 99999;
+        display: flex; /* BẮT BUỘC DISPLAY: FLEX */
+        flex-direction: column; 
+        animation: fadeOut {FADE_DURATION_SECONDS}s ease-out {VIDEO_DURATION_SECONDS}s forwards;
+    }}
+
+    /* FIX VIDEO MOBILE FIT */
+    .video-bg {{ 
+        width: 100vw; height: calc(var(--vh, 1vh) * 100);
+        object-fit:cover; 
+    }}
+
+    /* CSS CHO DÒNG CHỮ INTRO VÀ HIỆU ỨNG */
+    .video-text {{
+        position:absolute; bottom:12vh; width:100%; text-align:center;
+        font-family:'Special Elite', cursive; font-size:clamp(24px,5vw,44px);
+        font-weight:bold; color:#fff;
+        text-shadow: 0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(180,220,255,0.6), 0 0 60px rgba(255,255,255,0.4);
+        opacity:0;
+        animation: appear 3s ease-in forwards, floatFade 3s ease-in 5s forwards;
+    }}
+
+    /* Keyframes */
+    @keyframes fadeOut {{ 
+        0% {{opacity:1;}}
+        99% {{opacity:0.01;}} /* Giữ opacity > 0 một chút để browser không hide ngay */
+        100%{{opacity:0; visibility:hidden; z-index:-1;}} 
+    }}
+    @keyframes appear {{ 0% {{opacity:0; filter:blur(8px); transform:translateY(40px);}} 100%{{opacity:1; filter:blur(0); transform:translateY(0);}} }}
+    @keyframes floatFade {{ 0% {{opacity:1; filter:blur(0); transform:translateY(0);}} 100%{{opacity:0; filter:blur(12px); transform:translateY(-30px) scale(1.05);}} }}
+    </style>
+    
+    <script>
+        // JS Fix VH (Giữ nguyên)
+        function setVhProperty() {{
+            let vh = window.innerHeight * 0.01;
+            document.documentElement.style.setProperty('--vh', `${{vh}}px`);
+            const stApp = window.parent.document.querySelector('.stApp');
+            if (stApp) {{ stApp.style.height = `calc(${{vh}}px * 100)`; }}
+        }}
+        window.addEventListener('load', setVhProperty);
+        window.addEventListener('resize', setVhProperty);
+        if (document.readyState === 'complete') {{ setVhProperty(); }}
+        
+        // 💥 QUAN TRỌNG: JS để tự động chuyển trạng thái sau khi hết video + fade
+        const totalDuration = {VIDEO_DURATION_SECONDS} + {FADE_DURATION_SECONDS};
+        setTimeout(() => {{
+            const url = new URL(window.location.href);
+            url.searchParams.set('show_main', 'true');
+            // Dùng window.location.replace để không bị lưu state cũ vào history
+            window.location.replace(url); 
+        }}, totalDuration * 1000 + 100); // Thêm 100ms buffer
+    </script>
+    """, unsafe_allow_html=True)
+    
+    # 💥 QUAN TRỌNG: Chỉ render video container
+    st.markdown(f"""
+    <div class="video-container" id="videoContainer">
+        <video id="introVideo" class="video-bg" autoplay muted playsinline>
+            <source src="data:video/mp4;base64,{video_data}" type="video/mp4">
+        </video>
+        <div class="video-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Kiểm tra URL parameter để chuyển trạng thái nếu JS hoạt động
+    if st.query_params.get("show_main") == "true":
+        st.session_state.show_main = True
+        del st.query_params["show_main"]
+        st.rerun()
+
+    st.stop()
+
+
+# --- TRANG CHÍNH ---
+
+# Thiết lập lại CSS cho trang chính
 st.markdown(f"""
 <style>
 /* 1. KHẮC PHỤC VIEWPORT TRÊN MOBILE và FULL HEIGHT cho PC */
 html, body {{ 
     margin:0; padding:0; height:100%; overflow:hidden; background:black; height: 100%; 
 }}
-
-/* 2. FULLSCREEN TRIỆT ĐỂ & FIX Mobile VH */
 header[data-testid="stHeader"], footer {{ display: none !important; }}
 .block-container, section.main > div {{
     margin: 0 !important; padding: 0 !important; max-width: 100% !important;
@@ -88,54 +181,21 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     height: calc(var(--vh, 1vh) * 100) !important; min-height: calc(var(--vh, 1vh) * 100) !important;
 }}
 
-/* 3. CSS CHO VIDEO CONTAINER (FIX FLICKER VỚI ANIMATION FORWARDS) */
+/* 2. CSS CHO VIDEO CONTAINER - ẨN HOÀN TOÀN KHI VÀO TRANG CHÍNH */
 .video-container {{
-    position: fixed; inset:0; 
-    width:100vw; height:calc(var(--vh, 1vh) * 100);
-    justify-content:center; align-items:center; background:black; 
-    {video_display_style} /* BẮT ĐẦU VỚI Z-INDEX CỰC CAO */
-    flex-direction: column; 
-    transition: opacity 0.0s, z-index 0.0s; /* Tắt transition nếu dùng animation */
+    display: none !important;
 }}
 
-/* FIX VIDEO MOBILE FIT */
-.video-bg {{ 
-    width: 100vw; height: calc(var(--vh, 1vh) * 100);
-    object-fit:cover; 
-}}
-
-/* CSS CHO DÒNG CHỮ INTRO VÀ HIỆU ỨNG */
-.video-text {{
-    position:absolute; bottom:12vh; width:100%; text-align:center;
-    font-family:'Special Elite', cursive; font-size:clamp(24px,5vw,44px);
-    font-weight:bold; color:#fff;
-    text-shadow: 0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(180,220,255,0.6), 0 0 60px rgba(255,255,255,0.4);
-    opacity:0;
-    animation: appear 3s ease-in forwards, floatFade 3s ease-in 5s forwards;
-}}
-
-/* Keyframes */
-@keyframes fadeOut {{ 
-    0% {{opacity:1;}}
-    100%{{opacity:0;}} 
-}}
-.intro-animation {{
-    /* Áp dụng fadeOut và duy trì trạng thái cuối cùng (opacity: 0) */
-    animation: fadeOut {FADE_DURATION_SECONDS}s ease-out {VIDEO_DURATION_SECONDS}s forwards;
-}}
-
-
-/* 4. CSS CHO TRANG CHÍNH: BACKGROUND FIX */
+/* 3. CSS CHO TRANG CHÍNH: BACKGROUND FIX */
 .stApp {{
-    z-index:1; /* Luôn thấp hơn video intro */
+    z-index:1; 
     background-color: #333; 
     background-image: linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
                       url("data:image/jpeg;base64,{img_base64}");
-    
     background-attachment: fixed; background-size: cover; background-repeat: no-repeat; background-position: center center; 
 }}
 
-/* 5. MEDIA QUERY cho Mobile Background */
+/* 4. MEDIA QUERY cho Mobile Background */
 @media screen and (max-width: 768px) {{
     .stApp {{
         background-image: linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
@@ -144,11 +204,11 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     }}
 }}
 
-/* 6. CUSTOM AUDIO PLAYER */
+/* 5. CUSTOM AUDIO PLAYER (FIX DESIGN MOBILE) */
 .custom-audio-player {{
     position: fixed; top: 10px; left: 10px; z-index: 9999;
     display: flex; flex-direction: column;
-    width: 380px; 
+    width: 300px; /* 💥 FIX: THU NHỎ CHO MOBILE */
     background: rgba(0, 0, 0, 0.7);
     border-radius: 8px; padding: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }}
@@ -174,19 +234,18 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     font-weight:bold; text-align:center; color:#3e2723; margin-top:50px;
     text-shadow:2px 2px 0 #fff,0 0 25px #f0d49b,0 0 50px #bca27a;
 }}
+/* Khôi phục padding nhẹ cho nội dung trang chính */
+.block-container {{ padding-top:2rem !important; padding-left:1rem !important; padding-right:1rem !important;}}
 </style>
 
 <script>
-    // CODE JAVASCRIPT ĐỂ FIX LỖI 100vh TRÊN MOBILE 
+    // JS Fix VH (Giữ nguyên)
     function setVhProperty() {{
         let vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty('--vh', `${{vh}}px`);
         const stApp = window.parent.document.querySelector('.stApp');
-        if (stApp) {{
-            stApp.style.height = `calc(${{vh}}px * 100)`;
-        }}
+        if (stApp) {{ stApp.style.height = `calc(${{vh}}px * 100)`; }}
     }}
-
     window.addEventListener('load', setVhProperty);
     window.addEventListener('resize', setVhProperty);
     if (document.readyState === 'complete') {{ setVhProperty(); }}
@@ -194,32 +253,7 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 """, unsafe_allow_html=True)
 
 
-# --- GIAO DIỆN CHUYỂN CẢNH (VIDEO INTRO) ---
-if not st.session_state.show_main and not st.session_state.intro_ran:
-    
-    video_data = get_base64(video_file)
-    if video_data is None:
-        st.error(f"❌ Không tìm thấy file {video_file}.")
-        st.stop()
-    
-    st.markdown(f"""
-    <div class="video-container intro-animation" id="videoContainer">
-        <video id="introVideo" class="video-bg" autoplay muted playsinline>
-            <source src="data:video/mp4;base64,{video_data}" type="video/mp4">
-        </video>
-        <div class="video-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # 💥 QUAN TRỌNG: KHÔNG DÙNG time.sleep()
-    # Chuyển trạng thái ngay lập tức, dựa vào CSS animation để kiểm soát thời gian biến mất.
-    st.session_state.show_main = True
-    st.session_state.intro_ran = True 
-    st.rerun() 
-    
-    st.stop() 
-
-# --- TRANG CHÍNH ---
+# --- NỘI DUNG TRANG CHÍNH ---
 
 st.markdown('<div class="main-title">📜 TỔ BẢO DƯỠNG SỐ 1</div>', unsafe_allow_html=True)
 st.write("Chào mừng bạn đến với website ✈️")
@@ -246,14 +280,15 @@ if current_audio_base64:
                 `Track ${{currentTrackIndex + 1}}/${{TOTAL_TRACKS}}: ${{AUDIO_FILES_NAME[currentTrackIndex]}}`;
         }}
 
-        // Chức năng tải và phát bài hát - Cập nhật để nhận trạng thái phát
+        // Chức năng tải và phát bài hát
         function loadTrack(shouldPlay = true) {{ 
             const player = document.getElementById('customAudioPlayer');
             const newTrackBase64 = AUDIO_BASE64_LIST[currentTrackIndex];
             const newSrc = `data:audio/mp3;base64,${{newTrackBase64}}`;
 
             player.src = newSrc;
-            player.load(); // 💥 QUAN TRỌNG: Buộc tải lại nguồn Base64 mới
+            player.load(); // 💥 FIX LỖI CHUYỂN BÀI: Buộc tải lại nguồn Base64 mới
+
             updateTrackInfo();
             
             if (shouldPlay) {{
@@ -289,7 +324,6 @@ if current_audio_base64:
 
             if (player.paused) {{
                 player.play().catch(error => {{
-                    // Xử lý lỗi Autoplay bị chặn
                     document.getElementById('playPauseButton').innerHTML = '▶️';
                     isPlaying = false;
                     player.pause();
@@ -352,7 +386,8 @@ if current_audio_base64:
     </script>
     """
     
-    # Ẩn thẻ audio gốc đi, nó chỉ dùng để chạy nhạc
+    # Ẩn thẻ audio gốc đi, nó chỉ dùng để chạy nhạc. 
+    # 💥 FIX LỖI KHÔNG PHÁT NHẠC: Đảm bảo src có Base64 ban đầu
     st.markdown(f"""
     <div style="display: none;">
         <audio id="customAudioPlayer" src="data:audio/mp3;base64,{current_audio_base64}"></audio>
