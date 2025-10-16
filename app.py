@@ -8,7 +8,6 @@ import time
 video_file = "airplane.mp4"
 bg_file = "cabbase.jpg"
 bg_mobile_file = "mobile.jpg" 
-# File ảnh tĩnh cho PC intro (nếu không tìm thấy video)
 video_fallback_image = "airplane_fallback.jpg" 
 
 # Danh sách bài hát 
@@ -37,6 +36,12 @@ if "current_track_index" not in st.session_state:
     st.session_state.current_track_index = 0
 if "is_playing" not in st.session_state:
     st.session_state.is_playing = True
+if "is_mobile" not in st.session_state:
+    # Mặc định là False, sẽ được JS cập nhật
+    st.session_state.is_mobile = False 
+if "intro_rendered" not in st.session_state:
+    st.session_state.intro_rendered = False
+
 
 # === TẢI VÀ CHUYỂN ĐỔI TẤT CẢ FILE CẦN THIẾT ===
 img_base64 = get_base64(bg_file)
@@ -62,23 +67,21 @@ current_track_name = AUDIO_FILES[current_track_index]
 total_tracks = len(AUDIO_FILES)
 is_playing_state = st.session_state.is_playing 
 audio_base64_json = json.dumps(AUDIO_BASE64_LIST)
+is_mobile = st.session_state.is_mobile
 # ===================================================
 
 # --- CSS CHUNG VÀ JS FIX MOBILE VH ---
-# Sử dụng st.empty() để chứa CSS/JS một lần duy nhất
 css_js_placeholder = st.empty() 
 
-# Xác định loại intro (Video hay Ảnh Tĩnh)
-intro_type = "video" if video_data and video_fallback_data else "image"
-if not video_data and video_fallback_data:
-    intro_type = "image" # Chỉ có ảnh tĩnh
-elif not video_data and not video_fallback_data:
-    intro_type = "none" # Không có intro
+# 💥 FIX: Đã loại bỏ logic st.experimental_get_query_params()
+# Thay vào đó, chúng ta sẽ dựa vào JS để set tham số 'mobile_check'
+if st.query_params.get("mobile_check") == ["true"]:
+    st.session_state.is_mobile = True
+elif st.query_params.get("mobile_check") == ["false"]:
+    st.session_state.is_mobile = False
+is_mobile = st.session_state.is_mobile
 
-# Thiết lập intro source
-intro_source_b64 = video_data if intro_type == "video" else video_fallback_data
 
-# CSS/JS Code
 css_js_code = f"""
 <style>
 /* 1. KHẮC PHỤC VIEWPORT TRÊN MOBILE và FULL HEIGHT cho PC */
@@ -113,11 +116,11 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     display: none !important;
 }}
 
-/* 💥 FIX MOBILE VIDEO FIT (Áp dụng cho cả video và image) */
+/* FIX MOBILE VIDEO FIT (Áp dụng cho cả video và image) */
 .intro-media {{ 
     width: 100vw; 
     height: calc(var(--vh, 1vh) * 100); 
-    object-fit:cover; /* Luôn đảm bảo lấp đầy */
+    object-fit:cover; 
 }}
 
 /* 3. CSS CHO TRANG CHÍNH: BACKGROUND FIX */
@@ -135,7 +138,7 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     opacity: 0;
 }}
 
-/* Hiển thị nội dung trang chính */
+/* Hiển thị nội dung chính */
 .show-after-animation {{
     opacity: 1 !important;
     transition: opacity 1s ease-in 0.5s; 
@@ -149,7 +152,8 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
         background-size: cover; background-color: #333; 
     }}
 }}
-/* Các CSS Player và Title khác giữ nguyên */
+
+/* Khối CSS cho Player và Title giữ nguyên... */
 .player-info {{ color: #FFF; font-size: 13px; text-align: center; margin-bottom: 8px; }}
 .main-title {{
     font-family:'Special Elite', cursive; font-size: clamp(36px,5vw,48px);
@@ -165,16 +169,26 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
         let vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty('--vh', `${{vh}}px`);
         
-        // Cập nhật kích thước media và container
         const media = document.getElementById('introMedia');
         const container = document.getElementById('videoContainer');
         if (media) {{ media.style.height = `calc(${{vh}}px * 100)`; }}
         if (container) {{ container.style.height = `calc(${{vh}}px * 100)`; }}
     }}
     
-    setVhProperty();
-    window.addEventListener('resize', setVhProperty);
-    document.addEventListener('DOMContentLoaded', setVhProperty);
+    // 💥 PHÁT HIỆN THIẾT BỊ VÀ RELOAD STREAMLIT CHỈ MỘT LẦN
+    function checkDeviceAndReload() {{
+        // Logic phát hiện mobile
+        const isMobileDevice = /Mobi|Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent) || window.innerWidth < 768;
+        const currentParams = new URLSearchParams(window.location.search);
+        
+        // Chỉ reload nếu tham số chưa được set hoặc giá trị bị lệch
+        if (currentParams.get('mobile_check') === null) {{
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.set('mobile_check', isMobileDevice ? 'true' : 'false');
+            // Dùng replace để tránh tạo lịch sử
+            window.location.replace(newUrl);
+        }}
+    }}
     
     // LOGIC CHUYỂN CẢNH HOÀN TOÀN BẰNG JS (FIX TREO MÀN HÌNH)
     const totalDuration = {TOTAL_ANIMATION_TIME_MS};
@@ -184,25 +198,29 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
         const mainContent = document.getElementById('mainContentContainer');
         
         if (videoContainer) {{
-            // 1. Áp dụng animation fadeOut cho video container
             videoContainer.style.animation = `fadeOut {FADE_DURATION_SECONDS}s ease-out {VIDEO_DURATION_SECONDS}s forwards`;
 
-            // 2. Ẩn video và hiển thị nội dung chính sau khi animation kết thúc
             setTimeout(() => {{
                 videoContainer.classList.add('hidden'); 
                 
                 if (mainContent) {{
                     mainContent.classList.add('show-after-animation');
                 }}
-                
             }}, totalDuration + 500); 
         }} else if (mainContent) {{
-            // Nếu không có video intro (ví dụ: màn hình đã refresh), hiển thị nội dung chính ngay
+            // Nếu đã vượt qua intro (do refresh), hiển thị nội dung chính ngay
             mainContent.classList.add('show-after-animation');
         }}
     }}
     
-    document.addEventListener('DOMContentLoaded', handleIntroTransition);
+    // Chạy các hàm
+    setVhProperty();
+    window.addEventListener('resize', setVhProperty);
+    document.addEventListener('DOMContentLoaded', () => {{
+        checkDeviceAndReload(); // Chạy kiểm tra thiết bị trước
+        handleIntroTransition();
+        setVhProperty();
+    }});
 </script>
 """
 css_js_placeholder.markdown(css_js_code, unsafe_allow_html=True)
@@ -210,24 +228,18 @@ css_js_placeholder.markdown(css_js_code, unsafe_allow_html=True)
 
 # --- RENDER VIDEO VÀ NỘI DUNG CHÍNH (Đồng thời) ---
 
-# 1. RENDER VIDEO INTRO (Chỉ hiển thị nếu là Mobile HOẶC có video_data)
-# Dùng User Agent để xác định PC/Mobile 
-user_agent = st.experimental_get_query_params().get("user_agent", [""])[0] or st.query_params.get("user_agent", [""])[0] 
-is_mobile = 'mobile' in user_agent.lower() or 'android' in user_agent.lower() or 'ios' in user_agent.lower()
+# 1. RENDER VIDEO INTRO (z-index cao hơn, sẽ tự ẩn bằng JS)
+# Quyết định có nên phát video không
+should_play_video = is_mobile and video_data
+intro_rendered = st.session_state.intro_rendered
 
-# Nếu không phải lần refresh đầu tiên, không hiển thị intro
-if "intro_rendered" not in st.session_state:
+if not intro_rendered:
     
     st.session_state.intro_rendered = True
     
-    # Quyết định có nên phát video không
-    should_play_video = is_mobile and video_data
-    
     if should_play_video or video_fallback_data:
         
-        # Thiết lập media source
         media_tag = ""
-        media_source = ""
         
         if should_play_video:
             media_source = f"data:video/mp4;base64,{video_data}"
@@ -237,7 +249,6 @@ if "intro_rendered" not in st.session_state:
             </video>
             """
         elif video_fallback_data:
-            # Nếu là PC hoặc không có video, dùng ảnh tĩnh
             media_source = f"data:image/jpeg;base64,{video_fallback_data}"
             media_tag = f"""
             <img id="introMedia" class="intro-media" src="{media_source}" alt="Background Intro Image">
@@ -254,9 +265,8 @@ if "intro_rendered" not in st.session_state:
 # 2. RENDER NỘI DUNG CHÍNH (z-index thấp hơn, sẽ từ từ hiện ra)
 # Thêm một class 'show-after-animation' nếu là lần render lại, hoặc 'hide-on-start'
 initial_main_class = 'hide-on-start'
-if "main_content_shown" in st.session_state:
-    initial_main_class = 'show-after-animation'
-st.session_state.main_content_shown = True
+if intro_rendered:
+    initial_main_class = 'show-after-animation' # Hiển thị nếu đã render intro (hoặc là lần thứ 2)
 
 st.markdown(f'<div id="mainContentContainer" class="{initial_main_class}">', unsafe_allow_html=True)
 
@@ -269,7 +279,6 @@ if current_audio_base64:
 
     js_code_player = f"""
     <script>
-        // JS Player logic (Giữ nguyên)
         const AUDIO_BASE64_LIST = {audio_base64_json};
         const AUDIO_FILES_NAME = {json.dumps(AUDIO_FILES)};
         const TOTAL_TRACKS = {total_tracks};
@@ -282,6 +291,7 @@ if current_audio_base64:
             
             if (audioPlayer) {{
                 if (isPlaying) {{
+                    // Bỏ qua lỗi Autoplay và chỉ phát nếu người dùng đã tương tác (hoặc browser cho phép)
                     audioPlayer.play().catch(error => {{
                         document.getElementById('playPauseButton').innerHTML = '▶️';
                         isPlaying = false;
@@ -306,13 +316,13 @@ if current_audio_base64:
             updateDuration(); 
         }}
 
-        function formatTime(seconds) {{
+        function formatTime(seconds) {{ /* Logic format time giữ nguyên */
             const minutes = Math.floor(seconds / 60);
             const remainingSeconds = Math.floor(seconds % 60);
             return `${{String(minutes).padStart(2, '0')}}:${{String(remainingSeconds).padStart(2, '0')}}`;
         }}
         
-        function updateTrackInfo() {{
+        function updateTrackInfo() {{ /* Logic update info giữ nguyên */
             const infoElement = document.getElementById('trackInfo');
             if(infoElement) {{
                  infoElement.textContent = 
@@ -320,7 +330,7 @@ if current_audio_base64:
             }}
         }}
         
-        window.updateDuration = function() {{
+        window.updateDuration = function() {{ /* Logic update duration giữ nguyên */
             const durationTimeDisplay = document.getElementById('durationTime');
             if (audioPlayer && durationTimeDisplay) {{
                 if (audioPlayer.duration && isFinite(audioPlayer.duration)) {{
@@ -331,7 +341,7 @@ if current_audio_base64:
             }}
         }}
         
-        window.updateProgress = function() {{
+        window.updateProgress = function() {{ /* Logic update progress giữ nguyên */
             const progressFilled = document.getElementById('progressFilled');
             const currentTimeDisplay = document.getElementById('currentTime');
             if (audioPlayer && progressFilled && currentTimeDisplay && audioPlayer.duration) {{
@@ -341,7 +351,7 @@ if current_audio_base64:
             }}
         }}
 
-        function loadTrack(shouldPlay) {{ 
+        function loadTrack(shouldPlay) {{ /* Logic load track giữ nguyên */
             const newTrackBase64 = AUDIO_BASE64_LIST[currentTrackIndex];
             const newSrc = `data:audio/mp3;base64,${{newTrackBase64}}`;
 
@@ -365,13 +375,13 @@ if current_audio_base64:
             }}
         }}
 
-        window.switchTrack = function(direction) {{
+        window.switchTrack = function(direction) {{ /* Logic switch track giữ nguyên */
             const wasPlaying = !audioPlayer.paused;
             currentTrackIndex = (currentTrackIndex + direction + TOTAL_TRACKS) % TOTAL_TRACKS;
             loadTrack(wasPlaying); 
         }}
 
-        window.togglePlayPause = function() {{
+        window.togglePlayPause = function() {{ /* Logic toggle play/pause giữ nguyên */
             const button = document.getElementById('playPauseButton');
 
             if (audioPlayer.paused) {{
@@ -389,7 +399,7 @@ if current_audio_base64:
             }}
         }}
         
-        window.seekAudio = function(e) {{
+        window.seekAudio = function(e) {{ /* Logic seek audio giữ nguyên */
             const progressBar = document.getElementById('progressBar');
             const rect = progressBar.getBoundingClientRect();
             const clickPosition = e.clientX - rect.left;
@@ -401,6 +411,7 @@ if current_audio_base64:
             }}
         }}
 
+        // Khởi tạo player sau khi DOM tải xong
         document.addEventListener('DOMContentLoaded', initPlayer);
     </script>
     """
