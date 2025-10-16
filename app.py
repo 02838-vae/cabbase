@@ -31,9 +31,9 @@ def get_base64(file_path):
         return None
 
 # --- Khởi tạo Session State ---
-if "show_main" not in st.session_state:
-    # Mặc định là FALSE, nhưng nếu là lần render lại sau khi chuyển cảnh (từ JS), nó sẽ là True
-    st.session_state.show_main = False 
+# SỬ DỤNG session_state.intro_finished để kiểm soát việc render video
+if "intro_finished" not in st.session_state:
+    st.session_state.intro_finished = False 
 if "current_track_index" not in st.session_state:
     st.session_state.current_track_index = 0
 if "is_playing" not in st.session_state:
@@ -50,7 +50,6 @@ if img_mobile_base64 is None: img_mobile_base64 = img_base64
 AUDIO_BASE64_LIST = [get_base64(f) for f in AUDIO_FILES if get_base64(f)]
 
 if len(AUDIO_BASE64_LIST) != len(AUDIO_FILES):
-    # Dừng nếu thiếu file âm thanh
     st.error("❌ Thiếu một hoặc nhiều file âm thanh. Vui lòng kiểm tra lại tên và vị trí file.")
     st.stop()
         
@@ -63,17 +62,9 @@ is_playing_state = st.session_state.is_playing
 audio_base64_json = json.dumps(AUDIO_BASE64_LIST)
 # ===================================================
 
-# --- LOGIC CHUYỂN CẢNH VÀ CSS CHUNG ---
+# --- LOGIC RENDER CHÍNH ---
 
-# Kiểm tra query parameter do JS gửi lên để biết khi nào chuyển sang trang chính
-if st.query_params.get("show_main") == "true":
-    st.session_state.show_main = True
-    # Xóa query param để không bị render lại liên tục
-    del st.query_params["show_main"] 
-
-is_main_page = st.session_state.show_main
-
-# CSS cho tất cả các trạng thái
+# Bắt đầu với một khối CSS chung cho tất cả các trạng thái
 st.markdown(f"""
 <style>
 /* 1. KHẮC PHỤC VIEWPORT TRÊN MOBILE và FULL HEIGHT cho PC */
@@ -89,7 +80,7 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     height: calc(var(--vh, 1vh) * 100) !important; min-height: calc(var(--vh, 1vh) * 100) !important;
 }}
 
-/* 2. CSS CHO VIDEO CONTAINER */
+/* 2. CSS CHO VIDEO CONTAINER (CHỈ DÙNG KHI INTRO CHƯA XONG) */
 .video-container {{
     position: fixed; inset:0; 
     width:100vw; height:calc(var(--vh, 1vh) * 100);
@@ -97,20 +88,22 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     z-index: 99999;
     display: flex; 
     flex-direction: column; 
-    opacity: 1; /* Bắt đầu luôn hiển thị */
-    /* Animation fadeOut chỉ áp dụng khi cần */
+    opacity: 1; 
+    transition: opacity 0.5s; /* Dùng transition để ẩn mượt mà hơn */
 }}
 
-/* ẨN video ngay lập tức nếu đã chuyển sang trang chính */
+/* Lớp ẩn hoàn toàn */
 .video-container.hidden {{
-    display: none !important;
+    opacity: 0 !important;
     z-index: -1 !important;
+    display: none !important;
 }}
 
-/* FIX VIDEO MOBILE FIT */
+/* FIX MOBILE VIDEO FIT (Quan trọng: Dùng vh) */
 .video-bg {{ 
-    width: 100vw; height: calc(var(--vh, 1vh) * 100);
-    object-fit:cover; 
+    width: 100vw; 
+    height: calc(var(--vh, 1vh) * 100); 
+    object-fit:cover; /* FIX: Đảm bảo lấp đầy */
 }}
 
 /* CSS CHO DÒNG CHỮ INTRO VÀ HIỆU ỨNG */
@@ -145,11 +138,11 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 /* Ẩn nội dung trang chính lúc khởi động để tránh flicker */
 .hide-on-start {{
     opacity: 0;
-    transition: opacity 1s ease-in;
 }}
-/* Hiển thị nội dung trang chính khi animation xong */
+/* Hiển thị nội dung trang chính khi video kết thúc (Được thêm bởi JS) */
 .show-after-animation {{
     opacity: 1 !important;
+    transition: opacity 1s ease-in 0.5s; /* Hiển thị mượt mà sau khi video ẩn */
 }}
 
 /* 4. MEDIA QUERY cho Mobile Background */
@@ -161,11 +154,11 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     }}
 }}
 
-/* 5. CUSTOM AUDIO PLAYER (FIX DESIGN MOBILE) */
+/* 5. CUSTOM AUDIO PLAYER */
 .custom-audio-player {{
     position: fixed; top: 10px; left: 10px; z-index: 9999;
     display: flex; flex-direction: column;
-    width: 300px; /* FIX: THU NHỎ CHO MOBILE */
+    width: 300px; 
     background: rgba(0, 0, 0, 0.7);
     border-radius: 8px; padding: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }}
@@ -196,113 +189,127 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 </style>
 
 <script>
-    // JS Fix VH (Giữ nguyên)
+    // JS Fix VH 
     function setVhProperty() {{
         let vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty('--vh', `${{vh}}px`);
         const stApp = window.parent.document.querySelector('.stApp');
         if (stApp) {{ stApp.style.height = `calc(${{vh}}px * 100)`; }}
+        
+        // Fix kích thước video khi resize (Quan trọng cho mobile)
+        const video = document.getElementById('introVideo');
+        if (video) {{
+            video.style.height = `calc(${{vh}}px * 100)`;
+        }}
     }}
-    window.addEventListener('load', setVhProperty);
+    
+    // Chạy ngay lập tức khi script được tải
+    setVhProperty();
     window.addEventListener('resize', setVhProperty);
-    if (document.readyState === 'complete') {{ setVhProperty(); }}
+    
+    // Chạy lại sau khi DOM tải xong
+    document.addEventListener('DOMContentLoaded', setVhProperty);
+    
+    
+    // LOGIC CHUYỂN CẢNH HOÀN TOÀN BẰNG JS (FIX TREO MÀN HÌNH)
+    const totalDuration = {TOTAL_ANIMATION_TIME_MS};
+    
+    function handleIntroTransition() {{
+        const videoContainer = document.getElementById('videoContainer');
+        const mainContent = document.getElementById('mainContentContainer');
+        
+        if (videoContainer) {{
+            // 1. Áp dụng animation fadeOut cho video container
+            videoContainer.style.animation = `fadeOut {FADE_DURATION_SECONDS}s ease-out {VIDEO_DURATION_SECONDS}s forwards`;
+
+            // 2. Ẩn video và hiển thị nội dung chính sau khi animation kết thúc
+            setTimeout(() => {{
+                // Ẩn container video
+                videoContainer.classList.add('hidden'); 
+                
+                // Hiển thị nội dung chính
+                if (mainContent) {{
+                    mainContent.classList.add('show-after-animation');
+                }}
+                
+            }}, totalDuration + 500); // Thêm 500ms buffer an toàn
+        }} else if (mainContent) {{
+            // Nếu video không tồn tại (đã refresh trang chính), đảm bảo nội dung chính hiển thị
+            mainContent.classList.add('show-after-animation');
+        }}
+    }}
+    
+    // Gắn hàm chuyển cảnh vào DOMContentLoaded
+    document.addEventListener('DOMContentLoaded', handleIntroTransition);
 </script>
 """, unsafe_allow_html=True)
 
 
-# --- LOGIC RENDER ---
+# --- RENDER NỘI DUNG CHÍNH (Được bọc trong một div để JS điều khiển hiển thị) ---
+# Tạm thời chỉ bọc nội dung trang chính vào một div
+st.markdown(f'<div id="mainContentContainer" class="hide-on-start">', unsafe_allow_html=True)
 
-# 1. RENDER VIDEO INTRO VÀ CƠ CHẾ CHUYỂN CẢNH
-if not is_main_page:
+st.markdown('<div class="main-title">📜 TỔ BẢO DƯỠNG SỐ 1</div>', unsafe_allow_html=True)
+st.write("Chào mừng bạn đến với website ✈️")
+
+
+# 1. RENDER VIDEO INTRO (Chỉ render nếu chưa chuyển cảnh)
+if not st.session_state.intro_finished:
     video_data = get_base64(video_file)
     if video_data is None:
         st.error(f"❌ Không tìm thấy file {video_file}.")
         st.stop()
         
-    # Thêm class intro-animation vào container và lắng nghe sự kiện
+    # Render video container riêng biệt
     st.markdown(f"""
     <div class="video-container" id="videoContainer">
-        <video id="introVideo" class="video-bg intro-animation" autoplay muted playsinline>
+        <video id="introVideo" class="video-bg" autoplay muted playsinline>
             <source src="data:video/mp4;base64,{video_data}" type="video/mp4">
         </video>
         <div class="video-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
     </div>
-    
-    <script>
-        // 💥 FIX LỖI TỐI ĐEN: Dùng setTimeout để ẩn container và reload trang chính xác
-        const totalDuration = {TOTAL_ANIMATION_TIME_MS};
-        
-        // 1. Áp dụng animation fadeOut
-        const videoContainer = document.getElementById('videoContainer');
-        videoContainer.style.animation = `fadeOut {FADE_DURATION_SECONDS}s ease-out {VIDEO_DURATION_SECONDS}s forwards`;
-        
-        // 2. Tự động chuyển trạng thái và ẩn video container sau khi animation kết thúc
-        setTimeout(() => {{
-            videoContainer.classList.add('hidden'); // Ẩn video container
-            
-            // Dùng Streamlit.setComponentValue để giao tiếp với Python (cần thư viện Streamlit Components nếu muốn clean hơn, nhưng ta dùng cách này để đơn giản hóa)
-            // Thay thế bằng cách đơn giản nhất: thay đổi URL và reload
-            const url = new URL(window.location.href);
-            url.searchParams.set('show_main', 'true');
-            window.location.replace(url); 
-            
-        }}, totalDuration + 100); 
-    </script>
     """, unsafe_allow_html=True)
     
-    # 💥 QUAN TRỌNG: Chỉ dừng nếu không có query param, nếu có thì sẽ để JS xử lý.
-    if st.query_params.get("show_main") != "true":
-        st.stop() 
+    # 💥 Báo hiệu cho Python rằng video đã được render. JS sẽ lo phần ẩn video.
+    st.session_state.intro_finished = True
 
 
-# 2. RENDER TRANG CHÍNH VÀ PLAYER (Luôn chạy sau khi có tín hiệu chuyển cảnh)
-
-# Thêm class để ẩn nội dung trang chính khi mới vào
-content_class = "hide-on-start"
-if is_main_page:
-    # Nếu đã chuyển cảnh, nội dung sẽ từ từ hiển thị
-    content_class = "show-after-animation"
-
-st.markdown(f'<div class="{content_class}">', unsafe_allow_html=True)
-st.markdown('<div class="main-title">📜 TỔ BẢO DƯỠNG SỐ 1</div>', unsafe_allow_html=True)
-st.write("Chào mừng bạn đến với website ✈️")
-
-
-# === KHỐI PHÁT NHẠC TÙY CHỈNH (CUSTOM AUDIO PLAYER) ===
+# 2. KHỐI PHÁT NHẠC TÙY CHỈNH (CUSTOM AUDIO PLAYER)
 if current_audio_base64:
 
     js_code = f"""
     <script>
         const AUDIO_BASE64_LIST = {audio_base64_json};
-        const AUDIO_FILES_NAME = {json.dumps(AUDIO_FILES)}; // Đảm bảo list tên file cũng là JSON hợp lệ
+        const AUDIO_FILES_NAME = {json.dumps(AUDIO_FILES)};
         const TOTAL_TRACKS = {total_tracks};
         let currentTrackIndex = {current_track_index};
         let isPlaying = {'true' if is_playing_state else 'false'};
         let audioPlayer; 
         
-        // Hàm này chạy sau khi DOMContentLoaded
         function initPlayer() {{
             audioPlayer = document.getElementById('customAudioPlayer');
             
-            // Gán lại trạng thái ban đầu của player
-            if (isPlaying) {{
-                audioPlayer.play().catch(error => {{
-                    document.getElementById('playPauseButton').innerHTML = '▶️';
-                    isPlaying = false;
+            // Fix: Chỉ chạy play/pause nếu đã có element
+            if (audioPlayer) {{
+                if (isPlaying) {{
+                    audioPlayer.play().catch(error => {{
+                        document.getElementById('playPauseButton').innerHTML = '▶️';
+                        isPlaying = false;
+                        audioPlayer.pause();
+                    }});
+                }} else {{
                     audioPlayer.pause();
-                }});
-            }} else {{
-                audioPlayer.pause();
-            }}
+                }}
 
-            // Gắn event listeners
-            audioPlayer.addEventListener('timeupdate', updateProgress);
-            audioPlayer.addEventListener('loadedmetadata', updateDuration);
-            audioPlayer.addEventListener('ended', () => switchTrack(1));
-            document.getElementById('progressBar').addEventListener('click', seekAudio);
+                // Gắn event listeners
+                audioPlayer.addEventListener('timeupdate', window.updateProgress);
+                audioPlayer.addEventListener('loadedmetadata', window.updateDuration);
+                audioPlayer.addEventListener('ended', () => window.switchTrack(1));
+                document.getElementById('progressBar').addEventListener('click', window.seekAudio);
+            }}
             
             updateTrackInfo();
-            updateDuration(); // Gọi lần đầu để hiển thị --:-- hoặc thời lượng
+            updateDuration(); 
         }}
 
         function formatTime(seconds) {{
@@ -312,23 +319,28 @@ if current_audio_base64:
         }}
         
         function updateTrackInfo() {{
-            document.getElementById('trackInfo').textContent = 
-                `Track ${{currentTrackIndex + 1}}/${{TOTAL_TRACKS}}: ${{AUDIO_FILES_NAME[currentTrackIndex]}}`;
-        }}
-        
-        function updateDuration() {{
-            const durationTimeDisplay = document.getElementById('durationTime');
-            if (audioPlayer.duration) {{
-                durationTimeDisplay.textContent = formatTime(audioPlayer.duration);
-            }} else {{
-                durationTimeDisplay.textContent = '--:--';
+            const infoElement = document.getElementById('trackInfo');
+            if(infoElement) {{
+                 infoElement.textContent = 
+                    `Track ${{currentTrackIndex + 1}}/${{TOTAL_TRACKS}}: ${{AUDIO_FILES_NAME[currentTrackIndex]}}`;
             }}
         }}
         
-        function updateProgress() {{
+        window.updateDuration = function() {{
+            const durationTimeDisplay = document.getElementById('durationTime');
+            if (audioPlayer && durationTimeDisplay) {{
+                if (audioPlayer.duration && isFinite(audioPlayer.duration)) {{
+                    durationTimeDisplay.textContent = formatTime(audioPlayer.duration);
+                }} else {{
+                    durationTimeDisplay.textContent = '--:--';
+                }}
+            }}
+        }}
+        
+        window.updateProgress = function() {{
             const progressFilled = document.getElementById('progressFilled');
             const currentTimeDisplay = document.getElementById('currentTime');
-            if (audioPlayer.duration) {{
+            if (audioPlayer && progressFilled && currentTimeDisplay && audioPlayer.duration) {{
                 const percentage = (audioPlayer.currentTime / audioPlayer.duration) * 100;
                 progressFilled.style.width = percentage + '%';
                 currentTimeDisplay.textContent = formatTime(audioPlayer.currentTime);
@@ -341,7 +353,7 @@ if current_audio_base64:
             const newSrc = `data:audio/mp3;base64,${{newTrackBase64}}`;
 
             audioPlayer.src = newSrc;
-            audioPlayer.load(); // 💥 FIX LỖI CHUYỂN BÀI: Buộc tải lại nguồn Base64 mới
+            audioPlayer.load(); // Buộc tải lại nguồn Base64 mới
 
             updateTrackInfo();
             
@@ -360,7 +372,7 @@ if current_audio_base64:
             }}
         }}
 
-        // Chức năng chuyển bài 
+        // Chức năng chuyển bài (Gắn vào window)
         window.switchTrack = function(direction) {{
             const wasPlaying = !audioPlayer.paused;
             
@@ -368,7 +380,7 @@ if current_audio_base64:
             loadTrack(wasPlaying); 
         }}
 
-        // Chức năng Play/Pause
+        // Chức năng Play/Pause (Gắn vào window)
         window.togglePlayPause = function() {{
             const button = document.getElementById('playPauseButton');
 
@@ -387,8 +399,8 @@ if current_audio_base64:
             }}
         }}
         
-        // Chức năng tua nhạc
-        function seekAudio(e) {{
+        // Chức năng tua nhạc (Gắn vào window)
+        window.seekAudio = function(e) {{
             const progressBar = document.getElementById('progressBar');
             const rect = progressBar.getBoundingClientRect();
             const clickPosition = e.clientX - rect.left;
@@ -404,7 +416,6 @@ if current_audio_base64:
     </script>
     """
     
-    # Ẩn thẻ audio gốc đi
     st.markdown(f"""
     <div style="display: none;">
         <audio id="customAudioPlayer" src="data:audio/mp3;base64,{current_audio_base64}" autoplay></audio>
@@ -419,15 +430,15 @@ if current_audio_base64:
             <span id="durationTime">--:--</span>
         </div>
         <div class="player-controls">
-            <button class="control-button" onclick="switchTrack(-1)">⏮️</button>
-            <button class="control-button" id="playPauseButton" onclick="togglePlayPause()">
+            <button class="control-button" onclick="window.switchTrack(-1)">⏮️</button>
+            <button class="control-button" id="playPauseButton" onclick="window.togglePlayPause()">
                 {'⏸️' if is_playing_state else '▶️'}
             </button>
-            <button class="control-button" onclick="switchTrack(1)">⏭️</button>
+            <button class="control-button" onclick="window.switchTrack(1)">⏭️</button>
         </div>
     </div>
     {js_code}
     """, unsafe_allow_html=True)
     
-st.markdown('</div>', unsafe_allow_html=True) # Kết thúc div content_class
+st.markdown('</div>', unsafe_allow_html=True) # Kết thúc div mainContentContainer
 # =================================================================================
