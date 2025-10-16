@@ -23,6 +23,7 @@ st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 # Hàm đọc file và chuyển thành Base64
 @st.cache_data
 def get_base64(file_path):
+    """Đọc file và chuyển thành chuỗi Base64."""
     try:
         with open(file_path, "rb") as f:
             return base64.b64encode(f.read()).decode("utf-8")
@@ -37,7 +38,7 @@ if "is_mobile" not in st.session_state:
 if "intro_rendered" not in st.session_state:
     st.session_state.intro_rendered = False
 if "current_track_index" not in st.session_state:
-    st.session_state.current_track_index = 0 # Chỉ có 1 track (index 0)
+    st.session_state.current_track_index = 0
 
 # === TẢI VÀ CHUYỂN ĐỔI TẤT CẢ FILE CẦN THIẾT ===
 img_base64 = get_base64(bg_file)
@@ -61,7 +62,7 @@ is_playing_state = st.session_state.is_playing
 is_mobile = st.session_state.is_mobile
 # ===================================================
 
-# --- LOGIC PHÁT HIỆN THIẾT BỊ (SỬA LỖI API) ---
+# --- LOGIC PHÁT HIỆN THIẾT BỊ ---
 # FIX: Chỉ sử dụng st.query_params và lắng nghe tham số 'mobile_check' từ JS
 if st.query_params.get("mobile_check") == ["true"]:
     st.session_state.is_mobile = True
@@ -73,7 +74,7 @@ is_mobile = st.session_state.is_mobile
 # --- CSS CHUNG VÀ JS FIX MOBILE VH & CHUYỂN CẢNH ---
 css_js_placeholder = st.empty() 
 
-# 💥 FIX: Đảm bảo logic video fit mobile và chuyển cảnh mượt
+# 💥 ĐÃ FIX: Thêm z-index cao cho text và điều chỉnh thời gian animation floatFade
 css_js_code = f"""
 <style>
 /* 1. KHẮC PHỤC VIEWPORT TRÊN MOBILE và FULL HEIGHT cho PC */
@@ -122,7 +123,10 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     font-weight:bold; color:#fff;
     text-shadow: 0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(180,220,255,0.6), 0 0 60px rgba(255,255,255,0.4);
     opacity:0;
-    animation: appear 3s ease-in forwards, floatFade 3s ease-in 5s forwards;
+    /* 🔑 FIX: Z-INDEX cao để text không bị video che */
+    z-index: 100000; 
+    /* 🔑 FIX: floatFade 4s delay 5s để kết thúc đồng bộ với video container fade (9s) */
+    animation: appear 3s ease-in forwards, floatFade {FADE_DURATION_SECONDS}s ease-in {VIDEO_DURATION_SECONDS}s forwards;
 }}
 
 /* Keyframes */
@@ -157,6 +161,13 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 
 /* Các CSS Player và Title khác giữ nguyên */
 .custom-audio-player {{ position: fixed; top: 10px; left: 10px; z-index: 9999; display: flex; flex-direction: column; width: 300px; background: rgba(0, 0, 0, 0.7); border-radius: 8px; padding: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); }}
+.player-info {{ color: white; font-size: 0.9em; margin-bottom: 5px; }}
+.progress-bar {{ width: 100%; height: 5px; background: #555; cursor: pointer; border-radius: 3px; margin: 5px 0; }}
+.progress-filled {{ height: 100%; background: #4CAF50; width: 0%; border-radius: 3px; transition: width 0.1s linear; }}
+.time-display {{ display: flex; justify-content: space-between; color: white; font-size: 0.8em; }}
+.player-controls {{ display: flex; justify-content: center; margin-top: 10px; }}
+.control-button {{ background: none; border: none; color: white; font-size: 1.5em; cursor: pointer; padding: 0 10px; }}
+
 .main-title {{ font-family:'Special Elite', cursive; font-size: clamp(36px,5vw,48px); font-weight:bold; text-align:center; color:#3e2723; margin-top:50px; text-shadow:2px 2px 0 #fff,0 0 25px #f0d49b,0 0 50px #bca27a; }}
 .block-container {{ padding-top:2rem !important; padding-left:1rem !important; padding-right:1rem !important;}}
 </style>
@@ -173,7 +184,7 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
         if (container) {{ container.style.height = `calc(${{vh}}px * 100)`; }}
     }}
     
-    // 💥 PHÁT HIỆN THIẾT BỊ VÀ RELOAD STREAMLIT CHỈ MỘT LẦN (FIX LỖI API)
+    // 💥 PHÁT HIỆN THIẾT BỊ VÀ RELOAD STREAMLIT CHỈ MỘT LẦN
     function checkDeviceAndReload() {{
         const isMobileDevice = /Mobi|Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent) || window.innerWidth < 768;
         const currentParams = new URLSearchParams(window.location.search);
@@ -204,7 +215,7 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
                 if (mainContent) {{
                     mainContent.classList.add('show-after-animation');
                 }}
-            }}, totalDuration + 500); 
+            }}, totalDuration + 500); // Thêm 500ms để đảm bảo mượt mà
         }} else if (mainContent) {{
             mainContent.classList.add('show-after-animation');
         }}
@@ -274,8 +285,10 @@ if current_audio_base64:
             audioPlayer = document.getElementById('customAudioPlayer');
             
             if (audioPlayer) {{
+                // FIX: Play/Pause dựa trên Session State
                 if (isPlaying) {{
                     audioPlayer.play().catch(error => {{
+                        // Bắt lỗi autoplay fail (thường trên mobile)
                         document.getElementById('playPauseButton').innerHTML = '▶️';
                         isPlaying = false;
                         audioPlayer.pause();
@@ -303,7 +316,7 @@ if current_audio_base64:
             updateDuration(); 
         }}
 
-        function formatTime(seconds) {{ /* Logic format time */
+        function formatTime(seconds) {{ 
             const minutes = Math.floor(seconds / 60);
             const remainingSeconds = Math.floor(seconds % 60);
             return `${{String(minutes).padStart(2, '0')}}:${{String(remainingSeconds).padStart(2, '0')}}`;
@@ -316,7 +329,7 @@ if current_audio_base64:
             }}
         }}
         
-        window.updateDuration = function() {{ /* Logic update duration */
+        window.updateDuration = function() {{ 
             const durationTimeDisplay = document.getElementById('durationTime');
             if (audioPlayer && durationTimeDisplay) {{
                 if (audioPlayer.duration && isFinite(audioPlayer.duration)) {{
@@ -327,7 +340,7 @@ if current_audio_base64:
             }}
         }}
         
-        window.updateProgress = function() {{ /* Logic update progress */
+        window.updateProgress = function() {{ 
             const progressFilled = document.getElementById('progressFilled');
             const currentTimeDisplay = document.getElementById('currentTime');
             if (audioPlayer && progressFilled && currentTimeDisplay && audioPlayer.duration) {{
@@ -337,7 +350,7 @@ if current_audio_base64:
             }}
         }}
 
-        window.togglePlayPause = function() {{ /* Logic toggle play/pause */
+        window.togglePlayPause = function() {{ 
             const button = document.getElementById('playPauseButton');
 
             if (audioPlayer.paused) {{
@@ -355,7 +368,7 @@ if current_audio_base64:
             }}
         }}
         
-        window.seekAudio = function(e) {{ /* Logic seek audio */
+        window.seekAudio = function(e) {{ 
             const progressBar = document.getElementById('progressBar');
             const rect = progressBar.getBoundingClientRect();
             const clickPosition = e.clientX - rect.left;
