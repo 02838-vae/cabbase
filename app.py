@@ -31,9 +31,6 @@ def get_base64(file_path):
         return None
 
 # --- Khởi tạo Session State ---
-# SỬ DỤNG session_state.intro_finished để kiểm soát việc render video
-if "intro_finished" not in st.session_state:
-    st.session_state.intro_finished = False 
 if "current_track_index" not in st.session_state:
     st.session_state.current_track_index = 0
 if "is_playing" not in st.session_state:
@@ -62,9 +59,7 @@ is_playing_state = st.session_state.is_playing
 audio_base64_json = json.dumps(AUDIO_BASE64_LIST)
 # ===================================================
 
-# --- LOGIC RENDER CHÍNH ---
-
-# Bắt đầu với một khối CSS chung cho tất cả các trạng thái
+# --- CSS CHUNG VÀ JS FIX MOBILE VH ---
 st.markdown(f"""
 <style>
 /* 1. KHẮC PHỤC VIEWPORT TRÊN MOBILE và FULL HEIGHT cho PC */
@@ -80,7 +75,7 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     height: calc(var(--vh, 1vh) * 100) !important; min-height: calc(var(--vh, 1vh) * 100) !important;
 }}
 
-/* 2. CSS CHO VIDEO CONTAINER (CHỈ DÙNG KHI INTRO CHƯA XONG) */
+/* 2. CSS CHO VIDEO CONTAINER (Sẽ được ẩn bằng JS sau animation) */
 .video-container {{
     position: fixed; inset:0; 
     width:100vw; height:calc(var(--vh, 1vh) * 100);
@@ -89,7 +84,7 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     display: flex; 
     flex-direction: column; 
     opacity: 1; 
-    transition: opacity 0.5s; /* Dùng transition để ẩn mượt mà hơn */
+    transition: opacity 0.5s; 
 }}
 
 /* Lớp ẩn hoàn toàn */
@@ -99,11 +94,11 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     display: none !important;
 }}
 
-/* FIX MOBILE VIDEO FIT (Quan trọng: Dùng vh) */
+/* FIX MOBILE VIDEO FIT (Quan trọng: Dùng vh và object-fit) */
 .video-bg {{ 
     width: 100vw; 
     height: calc(var(--vh, 1vh) * 100); 
-    object-fit:cover; /* FIX: Đảm bảo lấp đầy */
+    object-fit:cover; 
 }}
 
 /* CSS CHO DÒNG CHỮ INTRO VÀ HIỆU ỨNG */
@@ -121,9 +116,6 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     0% {{opacity:1;}}
     100%{{opacity:0;}} 
 }}
-@keyframes appear {{ 0% {{opacity:0; filter:blur(8px); transform:translateY(40px);}} 100%{{opacity:1; filter:blur(0); transform:translateY(0);}} }}
-@keyframes floatFade {{ 0% {{opacity:1; filter:blur(0); transform:translateY(0);}} 100%{{opacity:0; filter:blur(12px); transform:translateY(-30px) scale(1.05);}} }}
-
 
 /* 3. CSS CHO TRANG CHÍNH: BACKGROUND FIX */
 .stApp {{
@@ -135,14 +127,15 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     background-attachment: fixed; background-size: cover; background-repeat: no-repeat; background-position: center center; 
 }}
 
-/* Ẩn nội dung trang chính lúc khởi động để tránh flicker */
+/* Ẩn nội dung trang chính lúc khởi động */
 .hide-on-start {{
     opacity: 0;
 }}
-/* Hiển thị nội dung trang chính khi video kết thúc (Được thêm bởi JS) */
+
+/* Hiển thị nội dung trang chính */
 .show-after-animation {{
     opacity: 1 !important;
-    transition: opacity 1s ease-in 0.5s; /* Hiển thị mượt mà sau khi video ẩn */
+    transition: opacity 1s ease-in 0.5s; 
 }}
 
 /* 4. MEDIA QUERY cho Mobile Background */
@@ -162,54 +155,30 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     background: rgba(0, 0, 0, 0.7);
     border-radius: 8px; padding: 10px; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }}
-.player-info {{ color: #FFF; font-size: 13px; text-align: center; margin-bottom: 8px; }}
-.player-controls {{
-    display: flex; justify-content: space-around; align-items: center;
-}}
-.control-button {{
-    background: none; border: none; color: #FFF; font-size: 20px;
-    cursor: pointer; padding: 5px; transition: color 0.2s;
-}}
-.control-button:hover {{ color: #4A90E2; }}
-.progress-bar {{
-    height: 5px; background: #555; margin: 10px 0;
-    border-radius: 2px; cursor: pointer;
-}}
-.progress-filled {{ height: 100%; width: 0%; background: #4A90E2; border-radius: 2px; }}
-.time-display {{
-    display: flex; justify-content: space-between; color: #AAA; font-size: 11px;
-}}
 .main-title {{
     font-family:'Special Elite', cursive; font-size: clamp(36px,5vw,48px);
     font-weight:bold; text-align:center; color:#3e2723; margin-top:50px;
     text-shadow:2px 2px 0 #fff,0 0 25px #f0d49b,0 0 50px #bca27a;
 }}
-/* Khôi phục padding nhẹ cho nội dung trang chính */
 .block-container {{ padding-top:2rem !important; padding-left:1rem !important; padding-right:1rem !important;}}
 </style>
 
 <script>
-    // JS Fix VH 
+    // 💥 FIX MOBILE VH: Tính toán và áp dụng chiều cao Viewport chính xác
     function setVhProperty() {{
         let vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty('--vh', `${{vh}}px`);
-        const stApp = window.parent.document.querySelector('.stApp');
-        if (stApp) {{ stApp.style.height = `calc(${{vh}}px * 100)`; }}
         
-        // Fix kích thước video khi resize (Quan trọng cho mobile)
+        // Cập nhật chiều cao video/container
         const video = document.getElementById('introVideo');
-        if (video) {{
-            video.style.height = `calc(${{vh}}px * 100)`;
-        }}
+        const container = document.getElementById('videoContainer');
+        if (video) {{ video.style.height = `calc(${{vh}}px * 100)`; }}
+        if (container) {{ container.style.height = `calc(${{vh}}px * 100)`; }}
     }}
     
-    // Chạy ngay lập tức khi script được tải
     setVhProperty();
     window.addEventListener('resize', setVhProperty);
-    
-    // Chạy lại sau khi DOM tải xong
     document.addEventListener('DOMContentLoaded', setVhProperty);
-    
     
     // LOGIC CHUYỂN CẢNH HOÀN TOÀN BẰNG JS (FIX TREO MÀN HÌNH)
     const totalDuration = {TOTAL_ANIMATION_TIME_MS};
@@ -224,8 +193,7 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
 
             // 2. Ẩn video và hiển thị nội dung chính sau khi animation kết thúc
             setTimeout(() => {{
-                // Ẩn container video
-                videoContainer.classList.add('hidden'); 
+                videoContainer.classList.add('hidden'); // Ẩn video container
                 
                 // Hiển thị nội dung chính
                 if (mainContent) {{
@@ -234,33 +202,21 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
                 
             }}, totalDuration + 500); // Thêm 500ms buffer an toàn
         }} else if (mainContent) {{
-            // Nếu video không tồn tại (đã refresh trang chính), đảm bảo nội dung chính hiển thị
+            // Nếu video không tồn tại (đã refresh trang), đảm bảo nội dung chính hiển thị
             mainContent.classList.add('show-after-animation');
         }}
     }}
     
-    // Gắn hàm chuyển cảnh vào DOMContentLoaded
     document.addEventListener('DOMContentLoaded', handleIntroTransition);
 </script>
 """, unsafe_allow_html=True)
 
 
-# --- RENDER NỘI DUNG CHÍNH (Được bọc trong một div để JS điều khiển hiển thị) ---
-# Tạm thời chỉ bọc nội dung trang chính vào một div
-st.markdown(f'<div id="mainContentContainer" class="hide-on-start">', unsafe_allow_html=True)
+# --- RENDER VIDEO VÀ NỘI DUNG CHÍNH (Đồng thời) ---
 
-st.markdown('<div class="main-title">📜 TỔ BẢO DƯỠNG SỐ 1</div>', unsafe_allow_html=True)
-st.write("Chào mừng bạn đến với website ✈️")
-
-
-# 1. RENDER VIDEO INTRO (Chỉ render nếu chưa chuyển cảnh)
-if not st.session_state.intro_finished:
-    video_data = get_base64(video_file)
-    if video_data is None:
-        st.error(f"❌ Không tìm thấy file {video_file}.")
-        st.stop()
-        
-    # Render video container riêng biệt
+# 1. RENDER VIDEO INTRO (z-index cao hơn, sẽ tự ẩn bằng JS)
+video_data = get_base64(video_file)
+if video_data:
     st.markdown(f"""
     <div class="video-container" id="videoContainer">
         <video id="introVideo" class="video-bg" autoplay muted playsinline>
@@ -269,12 +225,16 @@ if not st.session_state.intro_finished:
         <div class="video-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
     </div>
     """, unsafe_allow_html=True)
-    
-    # 💥 Báo hiệu cho Python rằng video đã được render. JS sẽ lo phần ẩn video.
-    st.session_state.intro_finished = True
 
 
-# 2. KHỐI PHÁT NHẠC TÙY CHỈNH (CUSTOM AUDIO PLAYER)
+# 2. RENDER NỘI DUNG CHÍNH (z-index thấp hơn, sẽ từ từ hiện ra)
+st.markdown(f'<div id="mainContentContainer" class="hide-on-start">', unsafe_allow_html=True)
+
+st.markdown('<div class="main-title">📜 TỔ BẢO DƯỠNG SỐ 1</div>', unsafe_allow_html=True)
+st.write("Chào mừng bạn đến với website ✈️")
+
+
+# 3. KHỐI PHÁT NHẠC TÙY CHỈNH (CUSTOM AUDIO PLAYER)
 if current_audio_base64:
 
     js_code = f"""
@@ -289,7 +249,6 @@ if current_audio_base64:
         function initPlayer() {{
             audioPlayer = document.getElementById('customAudioPlayer');
             
-            // Fix: Chỉ chạy play/pause nếu đã có element
             if (audioPlayer) {{
                 if (isPlaying) {{
                     audioPlayer.play().catch(error => {{
@@ -305,7 +264,12 @@ if current_audio_base64:
                 audioPlayer.addEventListener('timeupdate', window.updateProgress);
                 audioPlayer.addEventListener('loadedmetadata', window.updateDuration);
                 audioPlayer.addEventListener('ended', () => window.switchTrack(1));
-                document.getElementById('progressBar').addEventListener('click', window.seekAudio);
+                
+                // Kiểm tra xem các element tồn tại trước khi thêm listener
+                const progressBarElement = document.getElementById('progressBar');
+                if (progressBarElement) {{
+                    progressBarElement.addEventListener('click', window.seekAudio);
+                }}
             }}
             
             updateTrackInfo();
@@ -441,4 +405,3 @@ if current_audio_base64:
     """, unsafe_allow_html=True)
     
 st.markdown('</div>', unsafe_allow_html=True) # Kết thúc div mainContentContainer
-# =================================================================================
