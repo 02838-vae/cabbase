@@ -49,15 +49,13 @@ if img_mobile_base64 is None:
 
 # Tải file âm thanh mặc định
 audio_base64 = get_base64(DEFAULT_AUDIO_FILE)
-if audio_base64 is None:
-    st.warning(f"⚠️ Không tìm thấy file âm thanh: {DEFAULT_AUDIO_FILE}. Sẽ không phát nhạc nền.")
 # ===================================================
 
 # CSS động để kiểm soát hiển thị video
 is_main_page = st.session_state.show_main
 video_display_style = "display: none;" if is_main_page else "display: flex;" 
 
-# === CSS CHUNG VÀ VIDEO (FIX FLICKER DỨT ĐIỂM & MOBILE FIT) ===
+# === CSS CHUNG VÀ VIDEO (FIX FLICKER DÙNG LỚP PHỦ ĐEN) ===
 st.markdown(f"""
 <style>
 /* 1. KHẮC PHỤC VIEWPORT TRÊN MOBILE và FULL HEIGHT cho PC */
@@ -70,49 +68,73 @@ html, body {{
     height: 100%; 
 }}
 
-/* 2. FULLSCREEN TRIỆT ĐỂ */
+/* 2. FULLSCREEN TRIỆT ĐỂ & FIX Mobile VH */
 header[data-testid="stHeader"], footer {{ display: none !important; }}
 .block-container, section.main > div {{
     margin: 0 !important;
     padding: 0 !important;
     max-width: 100% !important;
     width: 100vw !important;
-    height: 100vh !important;
+    height: calc(var(--vh, 1vh) * 100) !important;
+}}
+.stApp, section.main {{
+    height: calc(var(--vh, 1vh) * 100) !important;
+    min-height: calc(var(--vh, 1vh) * 100) !important;
 }}
 
-/* 3. CSS CHO VIDEO CONTAINER (FIX FLICKER BẰNG BLACK SCREEN TỐI THƯỢNG) */
+/* 3. CSS CHO LỚP PHỦ ĐEN (FIX FLICKER DỨT ĐIỂM) */
+#blackOverlay {{
+    position: fixed; inset:0; 
+    width:100vw; height:calc(var(--vh, 1vh) * 100);
+    background:black; 
+    z-index:100000; /* Z-INDEX CAO NHẤT */
+    opacity: 1; /* Bắt đầu với màn hình đen */
+    transition: opacity {FADE_DURATION_SECONDS}s ease-out;
+    animation: fadeOut {FADE_DURATION_SECONDS}s ease-out {VIDEO_DURATION_SECONDS}s forwards;
+}}
+
+/* 4. CSS CHO VIDEO CONTAINER (VẪN ĐANG CHẠY BÊN DƯỚI OVERLAY) */
 .video-container {{
     position: fixed; inset:0; 
-    width:100vw; height:100vh;
+    width:100vw; height:calc(var(--vh, 1vh) * 100);
     justify-content:center; 
     align-items:center;
-    background:black; /* BẮT BUỘC ĐEN */
-    z-index:99999; /* Z-INDEX CỰC CAO ĐỂ CHỐNG FLICKER */
+    background:black; 
+    z-index:99999; /* Cao hơn trang chính, thấp hơn Overlay */
     {video_display_style} 
     flex-direction: column; 
+    opacity: 1; /* Đảm bảo video hiển thị khi overlay biến mất */
 }}
 
 /* FIX VIDEO MOBILE FIT: Bắt video chiếm toàn bộ viewport */
 .video-bg {{ 
-    /* Dùng width/height 100% của viewport */
     width: 100vw; 
-    height: 100vh;
-    object-fit:cover; /* Chế độ quan trọng nhất để FIX FIT, không còn dải đen */
+    height: calc(var(--vh, 1vh) * 100);
+    object-fit:cover; /* Chế độ quan trọng nhất để FIX FIT */
 }}
 
-/* Keyframes và animations giữ nguyên */
+/* CSS CHO DÒNG CHỮ INTRO VÀ HIỆU ỨNG (KHÔI PHỤC) */
+.video-text {{
+    position:absolute; bottom:12vh; width:100%; text-align:center;
+    font-family:'Special Elite', cursive; font-size:clamp(24px,5vw,44px);
+    font-weight:bold; color:#fff;
+    text-shadow: 0 0 20px rgba(255,255,255,0.8), 0 0 40px rgba(180,220,255,0.6), 0 0 60px rgba(255,255,255,0.4);
+    opacity:0;
+    animation: appear 3s ease-in forwards, floatFade 3s ease-in 5s forwards;
+}}
+
+/* Keyframes */
 @keyframes fadeOut {{ 
     0% {{opacity:1;}}
     99% {{opacity:0.01;}}
     100%{{opacity:0; visibility:hidden; z-index:-1;}} 
 }}
-.intro-animation {{
-    animation: fadeOut {FADE_DURATION_SECONDS}s ease-out {VIDEO_DURATION_SECONDS}s forwards; 
-}}
+@keyframes appear {{ 0% {{opacity:0; filter:blur(8px); transform:translateY(40px);}} 100%{{opacity:1; filter:blur(0); transform:translateY(0);}} }}
+@keyframes floatFade {{ 0% {{opacity:1; filter:blur(0); transform:translateY(0);}} 100%{{opacity:0; filter:blur(12px); transform:translateY(-30px) scale(1.05);}} }}
 
-/* 4. CSS CHO TRANG CHÍNH: BACKGROUND FIX */
+
+/* 5. CSS CHO TRANG CHÍNH: BACKGROUND FIX */
 .stApp {{
-    /* Đảm bảo z-index thấp hơn video container */
     z-index:1; 
     background-color: #333; 
     background-image: linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
@@ -122,12 +144,9 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     background-size: cover; 
     background-repeat: no-repeat;
     background-position: center center; 
-    
-    width: 100vw !important;
-    height: 100vh !important;
 }}
 
-/* 5. MEDIA QUERY (BACKGROUND MOBILE) */
+/* Media Query cho Mobile Background */
 @media screen and (max-width: 768px) {{
     .stApp {{
         background-image: linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
@@ -146,29 +165,26 @@ header[data-testid="stHeader"], footer {{ display: none !important; }}
     color:#3e2723; margin-top:50px;
     text-shadow:2px 2px 0 #fff,0 0 25px #f0d49b,0 0 50px #bca27a;
 }}
-
-/* ẨN NÚT DOWNLOAD CỦA VIDEO VÀ AUDIO */
-video::-webkit-media-controls-enclosure,
-audio::-webkit-media-controls-enclosure {{
-    border-radius: 8px; /* Giữ lại border radius cho đẹp */
-}}
-
-video::-webkit-media-controls-panel,
-audio::-webkit-media-controls-panel {{
-    border-radius: 8px; 
-    padding: 0 5px;
-}}
 </style>
 
 <script>
-    // CODE JAVASCRIPT ĐỂ FIX LỖI 100vh TRÊN MOBILE (Giữ nguyên)
+    // CODE JAVASCRIPT ĐỂ FIX LỖI 100vh TRÊN MOBILE (Đã sửa lỗi)
     function setVhProperty() {{
         let vh = window.innerHeight * 0.01;
         document.documentElement.style.setProperty('--vh', `${{vh}}px`);
+        
+        const stApp = window.parent.document.querySelector('.stApp');
+        if (stApp) {{
+            stApp.style.height = `calc(${{vh}}px * 100)`;
+        }}
     }}
 
-    setVhProperty();
+    window.addEventListener('load', setVhProperty);
     window.addEventListener('resize', setVhProperty);
+    
+    if (document.readyState === 'complete') {{
+        setVhProperty();
+    }}
 </script>
 """, unsafe_allow_html=True)
 
@@ -181,8 +197,11 @@ if not st.session_state.show_main and not st.session_state.intro_ran:
         st.error(f"❌ Không tìm thấy file {video_file}.")
         st.stop()
     
+    # Lớp phủ đen tuyệt đối
+    st.markdown('<div id="blackOverlay"></div>', unsafe_allow_html=True)
+    
     st.markdown(f"""
-    <div class="video-container intro-animation" id="videoContainer">
+    <div class="video-container" id="videoContainer">
         <video id="introVideo" class="video-bg" autoplay muted playsinline>
             <source src="data:video/mp4;base64,{video_data}" type="video/mp4">
         </video>
@@ -203,7 +222,7 @@ if not st.session_state.show_main and not st.session_state.intro_ran:
 st.markdown('<div class="main-title">📜 TỔ BẢO DƯỠNG SỐ 1</div>', unsafe_allow_html=True)
 st.write("Chào mừng bạn đến với website ✈️")
 
-# === KHÔI PHỤC THẺ AUDIO ĐƠN GIẢN (Tạm thời) ===
+# === KHÔI PHỤC THẺ AUDIO ĐƠN GIẢN ===
 if audio_base64:
     # Thẻ audio tiêu chuẩn không có nút next/previous, nhưng sẽ đảm bảo phát nhạc ổn định
     st.markdown(f"""
