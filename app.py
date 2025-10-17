@@ -1,281 +1,197 @@
 import streamlit as st
-import base64
-import os
-import json
+import random
 import time
 
-# === CÁC FILE NGUỒN ===
-video_file = "airplane.mp4"
-bg_file = "cabbase.jpg"
-bg_mobile_file = "mobile.jpg"
-AUDIO_FILES = ["background.mp3"]
+# --- Cấu hình Trang (Luôn đặt ở đầu) ---
+st.set_page_config(layout="wide", page_title="Tổ Bảo Dưỡng Số 1")
 
-# Thời lượng video & thời gian fade
-VIDEO_DURATION_SECONDS = 5
-FADE_DURATION_SECONDS = 4
-TOTAL_ANIMATION_TIME_MS = (VIDEO_DURATION_SECONDS + FADE_DURATION_SECONDS) * 1000
+# --- Khởi tạo Session State ---
+# 'intro_complete' là cờ để kiểm tra xem Intro đã chạy chưa
+if 'intro_complete' not in st.session_state:
+    st.session_state['intro_complete'] = False
 
-# --- Cấu hình ---
-st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
+# --- CSS Tùy chỉnh (Định nghĩa Phong cách Vintage và Hiệu ứng) ---
+def local_css(file_name):
+    """Hàm nhúng CSS từ file hoặc chuỗi"""
+    with open(file_name) as f:
+        st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
 
-# === Hàm tiện ích ===
-@st.cache_data
-def get_base64(file_path):
-    try:
-        with open(file_path, "rb") as f:
-            return base64.b64encode(f.read()).decode("utf-8")
-    except FileNotFoundError:
-        return None
-
-# --- Session state ---
-if "is_playing" not in st.session_state:
-    st.session_state.is_playing = True
-if "is_mobile" not in st.session_state:
-    st.session_state.is_mobile = False
-if "intro_rendered" not in st.session_state:
-    st.session_state.intro_rendered = False
-if "current_track_index" not in st.session_state:
-    st.session_state.current_track_index = 0
-
-# === Load file ===
-img_base64 = get_base64(bg_file)
-if img_base64 is None: st.error(f"❌ Không tìm thấy file {bg_file}."); st.stop()
-
-img_mobile_base64 = get_base64(bg_mobile_file)
-if img_mobile_base64 is None: img_mobile_base64 = img_base64
-
-video_data = get_base64(video_file)
-if video_data is None: st.error(f"❌ Không tìm thấy file {video_file}."); st.stop()
-
-AUDIO_BASE64 = get_base64(AUDIO_FILES[0])
-if AUDIO_BASE64 is None: st.error(f"❌ Không tìm thấy file {AUDIO_FILES[0]}."); st.stop()
-
-current_audio_base64 = AUDIO_BASE64
-current_track_name = AUDIO_FILES[0]
-is_playing_state = st.session_state.is_playing
-is_mobile = st.session_state.is_mobile
-
-# --- Thiết bị ---
-if st.query_params.get("mobile_check") == ["true"]:
-    st.session_state.is_mobile = True
-elif st.query_params.get("mobile_check") == ["false"]:
-    st.session_state.is_mobile = False
-is_mobile = st.session_state.is_mobile
-
-# --- CSS + JS ---
-css_js_placeholder = st.empty()
-
-css_js_code = f"""
-<style>
-html, body {{
-    margin:0; padding:0; height:100%; overflow:hidden; background:black;
-}}
-header[data-testid="stHeader"], footer {{ display:none !important; }}
-.block-container, section.main > div {{
-    margin:0!important; padding:0!important; max-width:100%!important;
-    width:100vw!important; height:calc(var(--vh,1vh)*100)!important;
-}}
-.stApp, section.main {{
-    height:calc(var(--vh,1vh)*100)!important; min-height:calc(var(--vh,1vh)*100)!important;
-}}
-
-/* VIDEO CONTAINER */
-.video-container {{
-    position:fixed; inset:0;
-    width:100vw; height:calc(var(--vh,1vh)*100);
-    justify-content:center; align-items:center; background:black;
-    z-index:99999; display:flex; flex-direction:column;
-    opacity:1; transition:opacity 0.5s;
-}}
-.video-container.hidden {{
-    opacity:0!important; z-index:-1!important; display:none!important;
-}}
-.intro-media {{
-    width:100vw; height:calc(var(--vh,1vh)*100); object-fit:cover;
-}}
-
-/* DÒNG CHỮ TRÊN VIDEO */
-.video-text {{
-    position:absolute; bottom:12vh; width:100%; text-align:center;
-    font-family:'Special Elite', cursive;
-    font-size:clamp(24px,5vw,44px); font-weight:bold; color:#fff;
-    text-shadow:0 0 20px rgba(255,255,255,0.8),0 0 40px rgba(180,220,255,0.6),0 0 60px rgba(255,255,255,0.4);
-    opacity:0; z-index:100000;
-    animation:
-        appear 1.2s ease-out forwards,
-        flicker 0.25s linear infinite 1.2s,
-        floatFade {FADE_DURATION_SECONDS}s ease-in {VIDEO_DURATION_SECONDS - 1}s forwards;
-}}
-
-@keyframes appear {{
-    0% {{opacity:0; filter:blur(8px); transform:translateY(40px);}}
-    100% {{opacity:1; filter:blur(0); transform:translateY(0);}}
-}}
-@keyframes floatFade {{
-    0% {{opacity:1; transform:translateY(0); filter:blur(0);}}
-    100% {{opacity:0; transform:translateY(-30px) scale(1.05); filter:blur(8px);}}
-}}
-@keyframes flicker {{
-    0%,100% {{text-shadow:0 0 20px rgba(255,255,255,0.8),0 0 40px rgba(180,220,255,0.6);opacity:1;}}
-    50% {{text-shadow:0 0 10px rgba(255,255,255,0.5),0 0 30px rgba(180,220,255,0.3);opacity:0.95;}}
-    51% {{text-shadow:0 0 30px rgba(255,255,255,0.9),0 0 50px rgba(180,220,255,0.7);opacity:1;}}
-}}
-
-/* BACKGROUND CHÍNH */
-.stApp {{
-    z-index:1;
-    background-color:#333;
-    background-image:linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
-                      url("data:image/jpeg;base64,{img_base64}");
-    background-size:cover; background-repeat:no-repeat; background-position:center;
-}}
-.hide-on-start {{opacity:0;}}
-.show-after-animation {{opacity:1!important;transition:opacity 1s ease-in 0.5s;}}
-
-@media screen and (max-width:768px){{
+def custom_css():
+    """CSS nhúng trực tiếp"""
+    # Lấy tên file ảnh nền dựa vào thiết bị (Streamlit không có hàm kiểm tra trực tiếp)
+    # Tạm thời ta chỉ dùng 1 ảnh nền hoặc cần JS để check. Dùng 'cabbage.jpg' làm mặc định.
+    # Trong thực tế, bạn cần JS để check viewport width và nhúng CSS tương ứng.
+    # Dưới đây là phong cách vintage cơ bản:
+    
+    # CSS cho nền và font chữ Vintage
+    vintage_css = f"""
+    <style>
+    /* Ẩn thanh cuộn mặc định của Streamlit và làm cho nền ảnh bao phủ */
     .stApp {{
-        background-image:linear-gradient(rgba(245,242,200,0.4), rgba(245,242,200,0.4)),
-                          url("data:image/jpeg;base64,{img_mobile_base64}");
+        background-image: url("cabbage.jpg"); /* Ảnh nền PC/Default */
+        background-size: cover;
+        background-attachment: fixed; /* Giữ ảnh nền cố định khi cuộn */
+        background-position: center;
     }}
-}}
-
-/* AUDIO PLAYER */
-.custom-audio-player {{
-    position:fixed; top:10px; left:10px; z-index:9999;
-    display:flex; flex-direction:column; width:300px;
-    background:rgba(0,0,0,0.7); border-radius:8px; padding:10px;
-    box-shadow:0 4px 15px rgba(0,0,0,0.5);
-}}
-.player-info {{color:white; font-size:0.9em; margin-bottom:5px;}}
-.progress-bar {{width:100%; height:5px; background:#555; cursor:pointer; border-radius:3px; margin:5px 0;}}
-.progress-filled {{height:100%; background:#4CAF50; width:0%; border-radius:3px; transition:width 0.1s linear;}}
-.time-display {{display:flex; justify-content:space-between; color:white; font-size:0.8em;}}
-.player-controls {{display:flex; justify-content:center; margin-top:10px;}}
-.control-button {{background:none; border:none; color:white; font-size:1.5em; cursor:pointer; padding:0 10px;}}
-
-/* TITLE */
-.main-title {{
-    font-family:'Special Elite', cursive;
-    font-size:clamp(36px,5vw,48px); font-weight:bold;
-    text-align:center; color:#3e2723; margin-top:50px;
-    text-shadow:2px 2px 0 #fff,0 0 25px #f0d49b,0 0 50px #bca27a;
-}}
-</style>
-
-<script>
-function setVhProperty(){{
-    let vh=window.innerHeight*0.01;
-    document.documentElement.style.setProperty('--vh',`${{vh}}px`);
-}}
-function checkDeviceAndReload(){{
-    const isMobile=/Mobi|Android|iPhone|iPad|iPod|Windows Phone/i.test(navigator.userAgent)||window.innerWidth<768;
-    const currentParams=new URLSearchParams(window.location.search);
-    if(currentParams.get('mobile_check')===null){{
-        const newUrl=new URL(window.location.href);
-        newUrl.searchParams.set('mobile_check',isMobile?'true':'false');
-        window.location.replace(newUrl);
+    
+    /* Thiết lập font chữ kiểu cổ điển (Cần cài đặt font nếu muốn chính xác) */
+    h1, h2, h3, h4, .stText, p, .stMarkdown, label {{
+        font-family: 'Times New Roman', serif; /* Font cổ điển */
+        color: #5D4037; /* Màu nâu đậm, cổ kính */
     }}
-}}
-const totalDuration={TOTAL_ANIMATION_TIME_MS};
-function handleIntroTransition(){{
-    const videoContainer=document.getElementById('videoContainer');
-    const mainContent=document.getElementById('mainContentContainer');
-    if(videoContainer){{
-        videoContainer.style.animation=`fadeOut {FADE_DURATION_SECONDS}s ease-out {VIDEO_DURATION_SECONDS}s forwards`;
-        setTimeout(() => {{
-            videoContainer.classList.add('hidden');
-            if(mainContent) mainContent.classList.add('show-after-animation');
-        }}, totalDuration + 500);
-    }} else if(mainContent){{
-        mainContent.classList.add('show-after-animation');
+    
+    /* Màu nền cho các khung/widget để tăng tính cổ điển */
+    .stMarkdown, .stText, .stButton > button, .stAudio {{
+        background-color: rgba(255, 255, 240, 0.7); /* Màu trắng ngà mờ */
+        border-radius: 5px;
+        padding: 10px;
+        box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3); /* Tạo bóng nhẹ */
     }}
-}}
-setVhProperty();
-window.addEventListener('resize', setVhProperty);
-document.addEventListener('DOMContentLoaded', ()=>{
-    checkDeviceAndReload();
-    handleIntroTransition();
-    setVhProperty();
-});
-</script>
-"""
-css_js_placeholder.markdown(css_js_code, unsafe_allow_html=True)
-
-# --- VIDEO INTRO ---
-if not st.session_state.intro_rendered:
-    st.session_state.intro_rendered = True
-    if video_data:
-        media_source = f"data:video/mp4;base64,{video_data}"
-        st.markdown(f"""
-        <div class="video-container" id="videoContainer">
-            <video id="introMedia" class="intro-media" autoplay muted playsinline>
-                <source src="{media_source}" type="video/mp4">
-            </video>
-            <div class="video-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-        </div>
-        """, unsafe_allow_html=True)
-
-# --- MAIN CONTENT ---
-initial_main_class = 'hide-on-start' if st.session_state.intro_rendered else 'show-after-animation'
-st.markdown(f'<div id="mainContentContainer" class="{initial_main_class}">', unsafe_allow_html=True)
-
-st.markdown('<div class="main-title">📜 TỔ BẢO DƯỠNG SỐ 1</div>', unsafe_allow_html=True)
-st.write("Chào mừng bạn đến với website ✈️")
-
-# --- AUDIO PLAYER ---
-if current_audio_base64:
-    js_code_player = f"""
-    <script>
-        const AUDIO_BASE64="{current_audio_base64}";
-        const TRACK_NAME="{current_track_name}";
-        let isPlaying={'true' if is_playing_state else 'false'};
-        let audioPlayer;
-
-        function initPlayer(){{
-            audioPlayer=document.getElementById('customAudioPlayer');
-            if(audioPlayer){{
-                if(isPlaying) audioPlayer.play().catch(()=>{{isPlaying=false;}});
-                else audioPlayer.pause();
-                audioPlayer.addEventListener('timeupdate',window.updateProgress);
-                audioPlayer.addEventListener('loadedmetadata',window.updateDuration);
-                audioPlayer.addEventListener('ended',()=>{{audioPlayer.currentTime=0;audioPlayer.play();}});
-                const pb=document.getElementById('progressBar');
-                if(pb) pb.addEventListener('click',window.seekAudio);
-            }}
-            updateTrackInfo(); updateDuration();
-        }}
-        function formatTime(s){{const m=Math.floor(s/60),r=Math.floor(s%60);return `${{String(m).padStart(2,'0')}}:${{String(r).padStart(2,'0')}}`;}}
-        function updateTrackInfo(){{const i=document.getElementById('trackInfo'); if(i) i.textContent=`Bài hát: ${{TRACK_NAME}}`;}}
-        window.updateDuration=function(){{const d=document.getElementById('durationTime');if(audioPlayer&&d){{d.textContent=isFinite(audioPlayer.duration)?formatTime(audioPlayer.duration):'--:--';}}}}
-        window.updateProgress=function(){{const p=document.getElementById('progressFilled');const c=document.getElementById('currentTime');if(audioPlayer&&p&&c&&audioPlayer.duration){{const perc=(audioPlayer.currentTime/audioPlayer.duration)*100;p.style.width=perc+'%';c.textContent=formatTime(audioPlayer.currentTime);}}}}
-        window.togglePlayPause=function(){{const b=document.getElementById('playPauseButton');if(audioPlayer.paused){{audioPlayer.play();b.innerHTML='⏸️';isPlaying=true;}}else{{audioPlayer.pause();b.innerHTML='▶️';isPlaying=false;}}}}
-        window.seekAudio=function(e){{const pb=document.getElementById('progressBar');const r=pb.getBoundingClientRect();const pos=e.clientX-r.left;const ratio=pos/pb.offsetWidth;if(audioPlayer.duration)audioPlayer.currentTime=audioPlayer.duration*ratio;}}
-        document.addEventListener('DOMContentLoaded',initPlayer);
-    </script>
+    
+    /* Hiệu ứng chữ Intro */
+    @keyframes fade_in_out {{
+        0% {{ opacity: 0; }}
+        25% {{ opacity: 1; }}
+        75% {{ opacity: 1; }}
+        100% {{ opacity: 0; }}
+    }}
+    
+    .intro_text {{
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 3em;
+        color: white;
+        text-shadow: 2px 2px 4px #000000;
+        animation: fade_in_out 4s forwards; /* 4s để khớp với video 5s (1s cuối mờ) */
+        z-index: 1000;
+        pointer-events: none;
+    }}
+    
+    /* CSS cho hiệu ứng mờ dần */
+    @keyframes fade_out {{
+        0% {{ opacity: 1; }}
+        100% {{ opacity: 0; }}
+    }}
+    
+    .video_fade_out {{
+        animation: fade_out 1s forwards; /* 1s để mờ dần */
+        animation-delay: 4s; /* Chờ 4s trước khi bắt đầu mờ (Video 5s) */
+    }}
+    </style>
     """
+    st.markdown(vintage_css, unsafe_allow_html=True)
 
-    st.markdown(f"""
-    <div style="display:none;">
-        <audio id="customAudioPlayer" src="data:audio/mp3;base64,{current_audio_base64}" autoplay></audio>
-    </div>
-    <div class="custom-audio-player">
-        <div class="player-info" id="trackInfo">Bài hát: {current_track_name}</div>
-        <div class="progress-bar" id="progressBar">
-            <div class="progress-filled" id="progressFilled"></div>
-        </div>
-        <div class="time-display">
-            <span id="currentTime">00:00</span>
-            <span id="durationTime">--:--</span>
-        </div>
-        <div class="player-controls">
-            <button class="control-button" style="visibility:hidden;">&nbsp;</button>
-            <button class="control-button" id="playPauseButton" onclick="window.togglePlayPause()">
-                {'⏸️' if is_playing_state else '▶️'}
-            </button>
-            <button class="control-button" style="visibility:hidden;">&nbsp;</button>
-        </div>
-    </div>
-    {js_code_player}
-    """, unsafe_allow_html=True)
+# --- Định nghĩa các Màn hình ---
 
-st.markdown('</div>', unsafe_allow_html=True)
+def intro_screen():
+    """Màn hình Intro với Video và Chữ"""
+    st.empty() # Xóa hết nội dung trước
+    
+    # Áp dụng CSS mờ dần cho Video
+    video_html = """
+    <div class="video_fade_out" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 999; background-color: black;">
+        <video width="100%" height="100%" autoplay muted playsinline style="object-fit: cover;">
+            <source src="airplane.mp4" type="video/mp4">
+            Your browser does not support the video tag.
+        </video>
+    </div>
+    <div class="intro_text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+    """
+    st.markdown(video_html, unsafe_allow_html=True)
+
+    # Đặt hẹn giờ để chuyển trạng thái sau 5 giây (Thời lượng video)
+    # Streamlit không chạy background thread, nên ta dùng JS/HTML để check time thực tế.
+    # Trong môi trường Streamlit, ta dùng `time.sleep` hoặc một trick nhỏ:
+    
+    # --- TRICK Streamlit để chuyển trạng thái sau time.sleep ---
+    # Ta dùng một placeholder và đợi, sau đó cập nhật session state.
+    # Lưu ý: Điều này sẽ làm ứng dụng "đứng" 5s. Nếu bạn muốn trải nghiệm mượt hơn, 
+    # cần dùng JavaScript để thông báo khi video kết thúc.
+    
+    if not st.session_state.get('intro_ran'):
+        with st.empty():
+            time.sleep(5) # Đợi 5 giây
+            st.session_state['intro_complete'] = True
+            st.session_state['intro_ran'] = True
+            st.rerun() # Tải lại trang để chuyển sang Trang chính
+
+def main_page():
+    """Trang Chính theo phong cách Vintage"""
+    custom_css() # Áp dụng CSS Vintage cho Trang Chính
+
+    # 1. Thanh phát nhạc ngẫu nhiên (Góc trên bên trái)
+    music_files = ["background.mp3", "background1.mp3", "background2.mp3", "background3.mp3", "background4.mp3", "background5.mp3"]
+    # Chọn ngẫu nhiên một bài để bắt đầu phát
+    random_track = random.choice(music_files)
+    
+    # Sử dụng st.sidebar để đặt thanh nhạc góc trên bên trái
+    with st.sidebar:
+        st.subheader("🎶 Nhạc Nền Cổ Điển")
+        # Dùng st.audio để phát nhạc
+        st.audio(random_track, format="audio/mp3", start_time=0)
+        st.caption(f"Đang phát: **{random_track}**")
+        st.markdown(
+            """
+            <style>
+            /* Định dạng lại st.audio trong sidebar cho phong cách Vintage */
+            .stAudio {{
+                background-color: rgba(245, 245, 220, 0.8); /* Màu be nhạt */
+                border: 1px solid #A1887F; /* Viền nâu cổ */
+                border-radius: 10px;
+                padding: 5px;
+            }}
+            </style>
+            """, unsafe_allow_html=True
+        )
+
+    # 2. Tiêu đề canh giữa
+    st.markdown("<h1 style='text-align: center; color: #4E342E; font-size: 3.5em; text-shadow: 1px 1px 2px #FFF8DC;'>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
+    
+    st.write("---")
+
+    # 3. Nội dung trang chính (Vintage Content)
+    col1, col2 = st.columns([1, 2])
+    
+    with col1:
+        st.markdown(
+            """
+            <div style="border: 2px solid #A1887F; padding: 15px; border-radius: 5px; background-color: rgba(255, 255, 240, 0.8);">
+                <h2 style='color: #6D4C41;'>📜 Châm Ngôn Phục Hưng</h2>
+                <p>
+                *Mỗi cỗ máy là một câu chuyện cần được gìn giữ. Chúng tôi không chỉ sửa chữa, chúng tôi hồi sinh Ký ức.*
+                </p>
+                <p>
+                Thời đại không thể xóa nhòa đi giá trị của sự Tinh Xảo. Hãy để những cổ vật của bạn lại Tỏa Sáng!
+                </p>
+            </div>
+            """, unsafe_allow_html=True
+        )
+
+    with col2:
+        st.markdown(
+            """
+            <div style="border: 2px solid #A1887F; padding: 15px; border-radius: 5px; background-color: rgba(255, 255, 240, 0.8);">
+                <h2 style='color: #6D4C41;'>⚙️ Dịch Vụ Của Chúng Tôi</h2>
+                <ul>
+                    <li>Phục hồi đồng hồ cổ và máy đánh chữ.</li>
+                    <li>Bảo dưỡng xe đạp, xe máy cổ.</li>
+                    <li>Sửa chữa các thiết bị cơ khí thủ công.</li>
+                </ul>
+                <p style="text-align: right; font-style: italic;">Liên hệ: 1800-VINTAGE</p>
+            </div>
+            """, unsafe_allow_html=True
+        )
+    
+    # Giả lập thêm một số nội dung nữa
+    st.write("\n")
+    st.subheader("Bộ Sưu Tập Tiêu Biểu")
+    st.image("cabbage.jpg", caption="Hình ảnh chỉ mang tính minh họa cho phong cách cổ điển", width=400)
+
+
+# --- Luồng Ứng Dụng Chính ---
+if st.session_state['intro_complete']:
+    main_page()
+else:
+    intro_screen()
