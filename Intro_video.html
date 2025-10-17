@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Video Intro</title>
+    <style>
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: black;
+        }
+        #intro-video {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 100%; 
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            transform: translate(-50%, -50%);
+            object-fit: cover;
+        }
+        /* Hiệu ứng chữ */
+        @keyframes fade_in_out {
+            0% { opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+        #intro-text {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 3em;
+            color: white;
+            text-shadow: 2px 2px 4px #000000;
+            animation: fade_in_out 4s forwards;
+            z-index: 10000;
+            font-family: 'Times New Roman', serif;
+        }
+
+        /* Hiệu ứng mờ dần */
+        @keyframes video_fade_out {
+            0% { opacity: 1; }
+            100% { opacity: 0; visibility: hidden; }
+        }
+        #video-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 9999;
+            opacity: 1;
+            /* Bắt đầu mờ sau 4s, kéo dài 1s (tổng cộng 5s) */
+            animation: video_fade_out 1s forwards; 
+            animation-delay: 4s;
+            background-color: black;
+        }
+    </style>
+</head>
+<body>
+    <div id="video-container">
+        <video id="intro-video" autoplay muted playsinline>
+            <source src="airplane.mp4" type="video/mp4">
+            Trình duyệt của bạn không hỗ trợ video.
+        </video>
+    </div>
+    <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+
+    <script>
+        const videoDuration = 5000; // 5 giây
+        
+        // Sau 5 giây, chúng ta sẽ chuyển trang.
+        setTimeout(() => {
+            // Đây là cách thông báo cho Streamlit biết để chuyển trạng thái (dùng window.parent)
+            window.parent.postMessage({ type: 'intro_done' }, '*');
+        }, videoDuration);
+    </script>
+</body>
+</html>
