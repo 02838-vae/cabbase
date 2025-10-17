@@ -3,10 +3,10 @@ import random
 import time
 import os
 
-# Tên file ảnh nền chính xác
-PC_BACKGROUND = "cabbase.jpg" # Đã sửa lại theo yêu cầu của bạn
+# Tên file chính xác
+PC_BACKGROUND = "cabbase.jpg" 
 MOBILE_BACKGROUND = "mobile.jpg"
-VIDEO_INTRO = "airplane.mp4"
+VIDEO_INTRO = "airplane.mp4" 
 
 # --- Cấu hình Trang (Luôn đặt ở đầu) ---
 st.set_page_config(layout="wide", page_title="Tổ Bảo Dưỡng Số 1")
@@ -14,16 +14,17 @@ st.set_page_config(layout="wide", page_title="Tổ Bảo Dưỡng Số 1")
 # --- Khởi tạo Session State ---
 if 'intro_complete' not in st.session_state:
     st.session_state['intro_complete'] = False
-if 'intro_start_time' not in st.session_state:
-    st.session_state['intro_start_time'] = time.time()
+if 'video_loaded' not in st.session_state:
+    st.session_state['video_loaded'] = False
 
 # --- CSS Tùy chỉnh (Định nghĩa Phong cách Vintage và Hiệu ứng) ---
 def custom_css():
-    """CSS cho Trang Chính (kèm Media Query cho nền) và hiệu ứng Intro"""
+    """CSS cho Trang Chính và hiệu ứng Intro"""
     
     vintage_css = f"""
     <style>
-    /* CSS Chung cho nền Trang Chính */
+    /* Ẩn sidebar trong màn hình Intro */
+    .stApp > header {{ display: {'none' if not st.session_state.intro_complete else 'block'} !important; }}
     .stApp {{
         background-size: cover;
         background-attachment: fixed;
@@ -40,14 +41,14 @@ def custom_css():
     /* Media Query cho Mobile */
     @media only screen and (max-width: 768px) {{
         .stApp.main-page-bg {{
-            background-image: url("{MOBILE_BACKGROUND}"); /* Ảnh nền Mobile */
+            background-image: url("{MOBILE_BACKGROUND}");
         }}
     }}
-
-    /* Thiết lập font chữ kiểu cổ điển */
+    
+    /* Thiết lập font chữ và màu cổ điển */
     h1, .stText, p, .stMarkdown, label {{
         font-family: 'Times New Roman', serif; 
-        color: #4E342E; /* Màu nâu đậm */
+        color: #4E342E;
     }}
 
     /* Hiệu ứng chữ Intro */
@@ -66,43 +67,27 @@ def custom_css():
         font-size: 3em;
         color: white;
         text-shadow: 2px 2px 4px #000000;
-        animation: fade_in_out 4s forwards; 
+        animation: fade_in_out 4.5s forwards; /* Tăng thời gian animation */
         z-index: 10000; 
         pointer-events: none;
     }}
     
-    /* Hiệu ứng chuyển cảnh video mờ dần */
-    @keyframes video_fade_out {{
-        0% {{ opacity: 1; }}
-        100% {{ opacity: 0; visibility: hidden; }}
-    }}
-    
-    /* Container video */
-    #video-container-fade {{
+    /* Container video (dùng cho màn hình đen) */
+    .intro-screen-container {{
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        z-index: 9999;
-        opacity: 1;
-        animation: video_fade_out 1s forwards; /* Hiệu ứng mờ 1s */
-        animation-delay: 4s; /* Bắt đầu mờ sau 4s (tổng video 5s) */
-        overflow: hidden;
         background-color: black;
+        z-index: 999;
+        transition: opacity 1s ease-out;
     }}
     
-    /* Căn giữa video trong container */
-    #video-container-fade video {{
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        min-width: 100%; 
-        min-height: 100%;
-        width: auto;
-        height: auto;
-        transform: translate(-50%, -50%);
-        object-fit: cover;
+    /* Hiệu ứng mờ dần (chuyển qua trang chính) */
+    .intro-screen-container.fade-out {{
+        opacity: 0;
+        pointer-events: none;
     }}
     
     /* Định dạng sidebar */
@@ -117,8 +102,8 @@ def custom_css():
 
 # --- Định nghĩa các Màn hình ---
 
-def embed_intro_video_and_text():
-    """Nhúng video và chữ intro sử dụng HTML/CSS trực tiếp"""
+def intro_screen():
+    """Màn hình Intro (Sử dụng st.video và HTML cho hiệu ứng)"""
     custom_css()
     
     if not os.path.exists(VIDEO_INTRO):
@@ -128,31 +113,43 @@ def embed_intro_video_and_text():
         st.rerun()
         return
 
-    # Sử dụng st.markdown để nhúng video HTML
-    video_html = f"""
-    <div id="video-container-fade">
-        <video id="intro-video" autoplay muted playsinline loop
-               style="object-fit: cover; width: 100%; height: 100%;"
-               src="{VIDEO_INTRO}">
-            Trình duyệt của bạn không hỗ trợ video.
-        </video>
-    </div>
-    <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-    """
+    # 1. Hiển thị chữ Intro
+    st.markdown('<div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>', unsafe_allow_html=True)
     
-    st.markdown(video_html, unsafe_allow_html=True)
+    # 2. Sử dụng st.video để tải video
+    # Dùng st.empty() để đặt video và đảm bảo nó luôn hiển thị ở trên cùng
     
-    # --- KÍCH HOẠT CHUYỂN TRANG SAU 5 GIÂY ---
-    time_elapsed = time.time() - st.session_state['intro_start_time']
+    video_placeholder = st.empty()
     
-    if time_elapsed > 5.5: # 5 giây video + 0.5s buffer
-        st.session_state['intro_complete'] = True
-        st.rerun() 
-    else:
-        # Tạm dừng 1 giây và buộc rerender để đếm ngược
-        st.empty().write(f"Đang tải Intro... ({int(time_elapsed)}s)")
-        time.sleep(1) 
-        st.rerun()
+    # Đọc file video dưới dạng bytes để Streamlit phục vụ
+    video_bytes = open(VIDEO_INTRO, 'rb').read()
+    
+    # Hiển thị video. Streamlit không có thuộc tính autoplay/muted trực tiếp cho st.video
+    # Nó chỉ hoạt động nếu người dùng tương tác.
+    # Tuy nhiên, nếu nó từng chạy, chúng ta vẫn dùng nó.
+    video_placeholder.video(video_bytes, format="video/mp4", start_time=0)
+    
+    # 3. Kích hoạt hiệu ứng mờ dần và chuyển trang
+    # Chúng ta phải dùng time.sleep và st.rerun để mô phỏng thời gian 5s
+    
+    # Thêm một container đen ở trên cùng để mô phỏng hiệu ứng mờ dần
+    st.markdown("""
+        <div class="intro-screen-container"></div>
+        <script>
+            // JavaScript để kích hoạt hiệu ứng mờ dần sau 4s
+            setTimeout(() => {
+                const container = document.querySelector('.intro-screen-container');
+                if (container) {
+                    container.classList.add('fade-out');
+                }
+            }, 4000); 
+        </script>
+        """, unsafe_allow_html=True)
+
+    # Dùng logic Python để chuyển trạng thái sau 5.5s
+    time.sleep(5.5) 
+    st.session_state['intro_complete'] = True
+    st.rerun()
 
 
 def main_page():
@@ -161,7 +158,7 @@ def main_page():
     
     # Gắn class nền cho Trang Chính
     st.markdown('<div class="stApp main-page-bg">', unsafe_allow_html=True)
-
+    
     # 1. Thanh phát nhạc ngẫu nhiên (Góc trên bên trái)
     music_files = ["background.mp3", "background1.mp3", "background2.mp3", "background3.mp3", "background4.mp3", "background5.mp3"]
     random_track = random.choice(music_files)
@@ -184,4 +181,4 @@ def main_page():
 if st.session_state['intro_complete']:
     main_page()
 else:
-    embed_intro_video_and_text()
+    intro_screen()
