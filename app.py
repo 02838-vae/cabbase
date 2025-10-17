@@ -1,7 +1,12 @@
 import streamlit as st
 import random
 import time
-import base64 # Cần thiết để nhúng HTML local
+import os
+
+# Tên file ảnh nền chính xác
+PC_BACKGROUND = "cabbase.jpg" # Đã sửa lại theo yêu cầu của bạn
+MOBILE_BACKGROUND = "mobile.jpg"
+VIDEO_INTRO = "airplane.mp4"
 
 # --- Cấu hình Trang (Luôn đặt ở đầu) ---
 st.set_page_config(layout="wide", page_title="Tổ Bảo Dưỡng Số 1")
@@ -9,10 +14,12 @@ st.set_page_config(layout="wide", page_title="Tổ Bảo Dưỡng Số 1")
 # --- Khởi tạo Session State ---
 if 'intro_complete' not in st.session_state:
     st.session_state['intro_complete'] = False
+if 'intro_start_time' not in st.session_state:
+    st.session_state['intro_start_time'] = time.time()
 
 # --- CSS Tùy chỉnh (Định nghĩa Phong cách Vintage và Hiệu ứng) ---
 def custom_css():
-    """CSS cho Trang Chính (kèm Media Query cho nền)"""
+    """CSS cho Trang Chính (kèm Media Query cho nền) và hiệu ứng Intro"""
     
     vintage_css = f"""
     <style>
@@ -27,13 +34,13 @@ def custom_css():
     
     /* Thiết lập ảnh nền mặc định (PC) */
     .stApp.main-page-bg {{
-        background-image: url("cabbage.jpg");
+        background-image: url("{PC_BACKGROUND}");
     }}
     
     /* Media Query cho Mobile */
     @media only screen and (max-width: 768px) {{
         .stApp.main-page-bg {{
-            background-image: url("mobile.jpg"); /* Ảnh nền Mobile */
+            background-image: url("{MOBILE_BACKGROUND}"); /* Ảnh nền Mobile */
         }}
     }}
 
@@ -43,48 +50,114 @@ def custom_css():
         color: #4E342E; /* Màu nâu đậm */
     }}
 
-    /* Định dạng lại st.audio trong sidebar cho phong cách Vintage */
-    [data-testid="stSidebarContent"] {{
-        background-color: rgba(255, 255, 240, 0.9); /* Nền sidebar màu ngà */
-        padding: 15px;
-        border-right: 2px solid #A1887F; /* Thêm viền cổ */
+    /* Hiệu ứng chữ Intro */
+    @keyframes fade_in_out {{
+        0% {{ opacity: 0; }}
+        10% {{ opacity: 1; }} 
+        90% {{ opacity: 1; }}
+        100% {{ opacity: 0; }} 
     }}
-    .stAudio {{
-        background-color: rgba(245, 245, 220, 0.8);
-        border: 1px solid #A1887F;
-        border-radius: 10px;
-        padding: 5px;
+    
+    #intro-text {{
+        position: fixed; 
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 3em;
+        color: white;
+        text-shadow: 2px 2px 4px #000000;
+        animation: fade_in_out 4s forwards; 
+        z-index: 10000; 
+        pointer-events: none;
+    }}
+    
+    /* Hiệu ứng chuyển cảnh video mờ dần */
+    @keyframes video_fade_out {{
+        0% {{ opacity: 1; }}
+        100% {{ opacity: 0; visibility: hidden; }}
+    }}
+    
+    /* Container video */
+    #video-container-fade {{
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 9999;
+        opacity: 1;
+        animation: video_fade_out 1s forwards; /* Hiệu ứng mờ 1s */
+        animation-delay: 4s; /* Bắt đầu mờ sau 4s (tổng video 5s) */
+        overflow: hidden;
+        background-color: black;
+    }}
+    
+    /* Căn giữa video trong container */
+    #video-container-fade video {{
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        min-width: 100%; 
+        min-height: 100%;
+        width: auto;
+        height: auto;
+        transform: translate(-50%, -50%);
+        object-fit: cover;
+    }}
+    
+    /* Định dạng sidebar */
+    [data-testid="stSidebarContent"] {{
+        background-color: rgba(255, 255, 240, 0.9);
+        padding: 15px;
+        border-right: 2px solid #A1887F;
     }}
     </style>
     """
     st.markdown(vintage_css, unsafe_allow_html=True)
 
-def embed_intro_video():
-    """Nhúng file HTML video intro sử dụng base64"""
-    try:
-        with open("intro_video.html", "r") as f:
-            html_code = f.read()
-        
-        # Mã hóa HTML sang base64 để nhúng vào iframe (giải pháp tốt nhất cho Streamlit)
-        b64_html = base64.b64encode(html_code.encode()).decode()
-        
-        # Nhúng iframe
-        st.components.v1.html(
-            f'<iframe src="data:text/html;base64,{b64_html}" width="100%" height="100%" frameborder="0" style="position:fixed; top:0; left:0; z-index:9999;"></iframe>',
-            height=700, # Chiều cao tạm thời, iframe sẽ chiếm toàn màn hình
-            scrolling=False
-        )
+# --- Định nghĩa các Màn hình ---
 
-    except FileNotFoundError:
-        st.error("Lỗi: Không tìm thấy file 'intro_video.html' hoặc 'airplane.mp4'. Vui lòng kiểm tra lại đường dẫn.")
-        # Tự động chuyển trang nếu video lỗi
-        time.sleep(1)
+def embed_intro_video_and_text():
+    """Nhúng video và chữ intro sử dụng HTML/CSS trực tiếp"""
+    custom_css()
+    
+    if not os.path.exists(VIDEO_INTRO):
+        st.error(f"Lỗi: Không tìm thấy file video **{VIDEO_INTRO}**. Vui lòng kiểm tra lại đường dẫn.")
+        time.sleep(2)
         st.session_state['intro_complete'] = True
         st.rerun()
+        return
+
+    # Sử dụng st.markdown để nhúng video HTML
+    video_html = f"""
+    <div id="video-container-fade">
+        <video id="intro-video" autoplay muted playsinline loop
+               style="object-fit: cover; width: 100%; height: 100%;"
+               src="{VIDEO_INTRO}">
+            Trình duyệt của bạn không hỗ trợ video.
+        </video>
+    </div>
+    <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+    """
+    
+    st.markdown(video_html, unsafe_allow_html=True)
+    
+    # --- KÍCH HOẠT CHUYỂN TRANG SAU 5 GIÂY ---
+    time_elapsed = time.time() - st.session_state['intro_start_time']
+    
+    if time_elapsed > 5.5: # 5 giây video + 0.5s buffer
+        st.session_state['intro_complete'] = True
+        st.rerun() 
+    else:
+        # Tạm dừng 1 giây và buộc rerender để đếm ngược
+        st.empty().write(f"Đang tải Intro... ({int(time_elapsed)}s)")
+        time.sleep(1) 
+        st.rerun()
+
 
 def main_page():
     """Trang Chính Tối Giản theo phong cách Vintage"""
-    custom_css() # Áp dụng CSS
+    custom_css()
     
     # Gắn class nền cho Trang Chính
     st.markdown('<div class="stApp main-page-bg">', unsafe_allow_html=True)
@@ -103,29 +176,12 @@ def main_page():
     st.markdown("<h1 style='text-align: center; font-size: 3.5em; text-shadow: 1px 1px 2px #FFF8DC;'>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
     
     # 3. Nội dung rỗng
-    st.empty()
-    st.markdown('<div style="height: 50vh;"></div>', unsafe_allow_html=True) # Giữ cho trang không bị trống rỗng
+    st.markdown('<div style="height: 50vh;"></div>', unsafe_allow_html=True)
 
     st.markdown('</div>', unsafe_allow_html=True)
 
 # --- Luồng Ứng Dụng Chính ---
-
-if not st.session_state['intro_complete']:
-    embed_intro_video()
-    
-    # --- XỬ LÝ SỰ KIỆN CHUYỂN TRANG TỪ IFRAME ---
-    # Nghe thông điệp từ JavaScript trong iframe
-    st.components.v1.html("""
-        <script>
-            window.addEventListener('message', event => {
-                if (event.data && event.data.type === 'intro_done') {
-                    // Cập nhật session state của Streamlit để kích hoạt chuyển trang
-                    // Tự động reload trang sau khi nhận thông điệp
-                    window.parent.location.reload(); 
-                }
-            });
-        </script>
-    """, height=0, width=0)
-
-else:
+if st.session_state['intro_complete']:
     main_page()
+else:
+    embed_intro_video_and_text()
