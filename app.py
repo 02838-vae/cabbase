@@ -84,15 +84,13 @@ def intro_screen(is_mobile=False):
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
-    # THAY ĐỔI LỚN: Xác định vị trí căn video dựa trên thiết bị
+    # 💡 Nếu là mobile, ta kéo khung video lên cao 10-15%
     if is_mobile:
-        # Trên mobile (tỉ lệ dọc), ưu tiên hiển thị phần DƯỚI video (máy bay)
-        object_position_css = "center bottom;" 
-        text_bottom_css = "25%;" # Nâng chữ lên cao hơn máy bay
+        object_position_css = "center 30%;"  # dịch khung nhìn lên trên (hiện rõ máy bay)
+        text_bottom_css = "22%;"  # đẩy dòng chữ lên một chút
     else:
-        # Trên PC (tỉ lệ ngang), căn giữa là tốt nhất
-        object_position_css = "center;"
-        text_bottom_css = "18%;" # Vị trí mặc định
+        object_position_css = "center center;"
+        text_bottom_css = "18%;"
 
     intro_html = f"""
     <!DOCTYPE html>
@@ -100,16 +98,15 @@ def intro_screen(is_mobile=False):
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
         <style>
-            /* Dùng biến CSS để xử lý lỗi thanh địa chỉ Mobile */
             :root {{
-                --dynamic-vh: 100vh; 
+                --dynamic-vh: 100vh;
             }}
-            
+
             html, body {{
                 margin: 0; padding: 0;
                 width: 100vw;
-                height: var(--dynamic-vh); 
-                overflow: hidden; 
+                height: var(--dynamic-vh);
+                overflow: hidden;
                 background-color: black;
                 font-family: 'Playfair Display', serif;
                 touch-action: none;
@@ -118,17 +115,16 @@ def intro_screen(is_mobile=False):
                 position: absolute;
                 top: 0; left: 0;
                 width: 100vw;
-                height: 100%; 
+                height: 100%;
                 object-fit: cover;
-                /* ÁP DỤNG VỊ TRÍ TÍNH TOÁN BẰNG PYTHON */
-                object-position: {object_position_css}; 
+                object-position: {object_position_css};  /* 🔥 Kéo khung nhìn lên cao trên mobile */
+                transform: translateY(-5%);  /* tinh chỉnh mượt hơn cho mobile */
                 z-index: 1;
             }}
             #intro-text {{
                 position: absolute;
                 left: 50%;
-                /* ÁP DỤNG VỊ TRÍ TÍNH TOÁN BẰNG PYTHON */
-                bottom: {text_bottom_css}; 
+                bottom: {text_bottom_css};
                 transform: translateX(-50%);
                 font-size: clamp(18px, 2.5vw, 40px);
                 color: white;
@@ -168,7 +164,7 @@ def intro_screen(is_mobile=False):
             const fade = document.getElementById("fade");
             const root = document.documentElement;
 
-            // XỬ LÝ LỖI MOBILE VIEWPORT
+            // ✅ Fix viewport thực trên Android Chrome
             function setViewportHeight() {{
                 let vh = window.innerHeight * 0.01;
                 root.style.setProperty('--dynamic-vh', `${{vh * 100}}px`);
@@ -177,7 +173,6 @@ def intro_screen(is_mobile=False):
             setViewportHeight();
             window.addEventListener('resize', setViewportHeight);
             window.addEventListener('orientationchange', setViewportHeight);
-            
             if ('visualViewport' in window) {{
                 window.visualViewport.addEventListener('resize', setViewportHeight);
             }}
@@ -190,11 +185,8 @@ def intro_screen(is_mobile=False):
             }}
 
             vid.onended = finishIntro;
-            
-            // LỜI GỌI PLAY CUỐI CÙNG: Đây là phần quan trọng nhất cho Autoplay
             vid.play().catch(() => {{
                 console.log("Autoplay bị chặn → fallback");
-                // Giữ nguyên logic timer dự phòng 9 giây
                 setTimeout(finishIntro, 9000);
             }});
         </script>
@@ -204,7 +196,6 @@ def intro_screen(is_mobile=False):
 
     components.html(intro_html, height=1300, scrolling=False)
 
-    # Logic giữ nguyên
     if st.session_state.start_time is None:
         st.session_state.start_time = time.time()
     if time.time() - st.session_state.start_time < 9.5:
@@ -214,6 +205,7 @@ def intro_screen(is_mobile=False):
         st.session_state.intro_done = True
         st.session_state.start_time = None
         st.rerun()
+
 
 
 # ================== TRANG CHÍNH ==================
