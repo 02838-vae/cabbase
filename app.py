@@ -4,7 +4,7 @@ import base64
 import random
 import time
 import streamlit.components.v1 as components
-from streamlit_js_eval import streamlit_js_eval # <-- Thư viện mới
+from streamlit_js_eval import streamlit_js_eval # Cần cài đặt: pip install streamlit-js-eval
 
 # ================== CẤU HÌNH ==================
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
@@ -16,25 +16,26 @@ BG_MOBILE = "mobile.jpg"
 MUSIC_FILES = ["background.mp3", "background2.mp3", "background3.mp3", "background4.mp3", "background5.mp3"]
 
 # ================== TRẠNG THÁI ==================
-# Khởi tạo trạng thái intro_done
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
-
-# Khởi tạo trạng thái is_mobile và kích hoạt xác định thiết bị
 if "is_mobile" not in st.session_state:
-    st.session_state.is_mobile = None
-    # Lần chạy đầu tiên: Yêu cầu JS xác định thiết bị
-    is_mobile_js = streamlit_js_eval(js_expressions='(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent))', key='mobile_detector')
+    st.session_state.is_mobile = None # Khởi tạo là None, chờ JS xác định
+
+# --- XÁC ĐỊNH THIẾT BỊ NGAY LẬP TỨC (Dùng streamlit_js_eval) ---
+if st.session_state.is_mobile is None:
+    # Lần chạy đầu tiên: Gọi JS để xác định thiết bị
+    # Sử dụng time.time() để đảm bảo key là duy nhất và JS được thực thi
+    js_result = streamlit_js_eval(js_expressions='(/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent))', 
+                                 key=f'mobile_detector_{time.time()}')
     
-    # Nếu có kết quả trả về từ JS, cập nhật trạng thái và rerun
-    if is_mobile_js is not None:
-        st.session_state.is_mobile = is_mobile_js
+    if js_result is not None:
+        # Nhận kết quả từ JS (True/False)
+        st.session_state.is_mobile = js_result
         st.rerun()
     else:
-        # Chờ JS chạy lần đầu (Mặc định PC nếu không có phản hồi)
+        # Nếu chưa có kết quả (đang chờ), mặc định là PC
         st.session_state.is_mobile = False
-        st.rerun() # Rerun để vào luồng chính sau khi gán mặc định
-
+        # Không cần rerun ở đây vì nó sẽ rerun sau khi nhận kết quả hoặc khi tiếp tục luồng.
 
 # ================== ẨN HEADER STREAMLIT ==================
 def hide_streamlit_ui():
@@ -49,11 +50,10 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ================== MÀN HÌNH INTRO SỬ DỤNG st.video ==================
+# ================== MÀN HÌNH INTRO VỚI AUTOPLAY (Dùng components.html + muted) ==================
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     
-    # Sử dụng logic chọn video đơn giản, KHÔNG DÙNG BASE64
     video_path = VIDEO_MOBILE if is_mobile else VIDEO_PC
     
     if not os.path.exists(video_path):
@@ -62,31 +62,21 @@ def intro_screen(is_mobile=False):
         st.rerun()
         return
 
-    # Ẩn tất cả nội dung trừ video
-    st.markdown("""
-    <style>
-    .stApp { overflow: hidden; background-color: black; }
-    </style>
-    """, unsafe_allow_html=True)
+    # Mã hóa video thành base64 (Chỉ cho video được chọn)
+    with open(video_path, "rb") as f:
+        video_b64 = base64.b64encode(f.read()).decode()
 
-    # Hiển thị video bằng st.video
-    st.video(video_path, format='video/mp4', start_time=0)
-    
-    # Sử dụng HTML/CSS để hiển thị text và căn video full màn hình
-    # LƯU Ý: st.video khó căn full màn hình như components.html
-    # Chúng ta phải dùng cách CSS bao bọc thủ công hơn.
-    intro_css = f"""
+    intro_html = f"""
+    <!DOCTYPE html>
+    <html lang="vi">
+    <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* CSS căn giữa/full màn hình cho video (phức tạp trong Streamlit) */
-        /* Đây chỉ là ví dụ để đảm bảo video được hiển thị */
+        html, body {{ margin: 0; padding: 0; height: 100%; overflow: hidden; background-color: black; }}
+        video {{ width: 100vw; height: 100vh; object-fit: cover; object-position: center; }}
         #intro-text {{
-            position: fixed;
-            bottom: 18%;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 1000;
-            font-size: clamp(1em, 4vw, 2em);
-            color: white;
+            position: fixed; bottom: 18%; left: 50%; transform: translateX(-50%);
+            font-size: clamp(1em, 4vw, 2em); color: white;
             font-family: 'Playfair Display', serif;
             text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
             animation: fadeInOut 6s ease-in-out forwards;
@@ -97,18 +87,41 @@ def intro_screen(is_mobile=False):
             80% {{ opacity: 1; transform: translate(-50%, 0); }}
             100% {{ opacity: 0; transform: translate(-50%, -10px); }}
         }}
+        #fade {{
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: black; opacity: 0; z-index: 10;
+            transition: opacity 1s ease-in-out;
+        }}
     </style>
-    <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+    </head>
+    <body>
+        <video id="introVid" autoplay muted playsinline> <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
+        </video>
+        <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+        <div id="fade"></div>
+        <script>
+            const vid = document.getElementById("introVid");
+            const fade = document.getElementById("fade");
+            vid.onended = () => {{
+                fade.style.opacity = 1;
+                setTimeout(() => {{
+                    // Gửi tín hiệu hoàn thành intro
+                    window.parent.postMessage({{type: "intro_done"}}, "*");
+                }}, 1200);
+            }};
+        </script>
+    </body>
+    </html>
     """
-    st.markdown(intro_css, unsafe_allow_html=True)
+    components.html(intro_html, height=800, scrolling=False)
 
-    # Đợi cho video kết thúc (Giả định video dài 9 giây)
+    # Đợi cho video kết thúc
     time.sleep(9)
     st.session_state.intro_done = True
     st.rerun()
 
 
-# ================== TRANG CHÍNH (Giữ nguyên) ==================
+# ================== TRANG CHÍNH ==================
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -131,7 +144,10 @@ def main_page(is_mobile=False):
         background-attachment: fixed;
         animation: fadeInBg 1s ease-in-out forwards;
     }}
-    /* ... (CSS còn lại) ... */
+    @keyframes fadeInBg {{
+        from {{ opacity: 0; }}
+        to {{ opacity: 1; }}
+    }}
     h1 {{
         text-align: center;
         margin-top: 60px;
@@ -148,7 +164,8 @@ def main_page(is_mobile=False):
         chosen = random.choice(available_music)
         with st.sidebar:
             st.subheader("🎵 Nhạc nền")
-            st.audio(chosen)
+            # st.audio() sẽ tạo thanh phát nhạc, có thể bị ẩn trên mobile
+            st.audio(chosen, start_time=0) 
             st.caption(f"Đang phát: **{os.path.basename(chosen)}**")
 
     st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
@@ -157,10 +174,9 @@ def main_page(is_mobile=False):
 # ================== LUỒNG CHÍNH ==================
 hide_streamlit_ui()
 
-# Kiểm tra nếu is_mobile vẫn là None, nó sẽ tự động chạy lại nhờ logic ở trên
+# Kiểm tra nếu is_mobile vẫn đang chờ kết quả, hiển thị thông báo
 if st.session_state.is_mobile is None:
-    # Nếu đến đây, có nghĩa là đang ở lần chạy đầu tiên và đang chờ JS trả lời
-    st.info("Đang xác định thiết bị...")
+    st.info("Đang xác định thiết bị và tải...")
 elif not st.session_state.intro_done:
     # is_mobile đã có giá trị (True/False)
     intro_screen(st.session_state.is_mobile)
