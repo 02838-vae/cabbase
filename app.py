@@ -84,17 +84,17 @@ def intro_screen(is_mobile=False):
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
-    # Căn chỉnh theo thiết bị
+    # ====== Tuỳ chỉnh theo thiết bị ======
     if is_mobile:
-        object_position = "center 12%"   # nâng máy bay lên cao
-        text_bottom = "40%"
-        video_translate = "-10%"
-        font_size = "clamp(22px, 5vw, 38px)"
+        object_position = "center 15%"  # đưa máy bay lên cao hơn
+        text_bottom = "18%"             # hạ dòng chữ thấp hơn
+        font_size = "clamp(18px, 5vw, 30px)"
+        text_width = "90vw"
     else:
         object_position = "center center"
         text_bottom = "22%"
-        video_translate = "0"
-        font_size = "clamp(26px, 3vw, 48px)"
+        font_size = "clamp(26px, 3vw, 46px)"
+        text_width = "70vw"
 
     intro_html = f"""
     <html lang="vi">
@@ -109,7 +109,6 @@ def intro_screen(is_mobile=False):
                 height: 100vh;
                 overflow: hidden;
                 background: black;
-                touch-action: none;
             }}
 
             video {{
@@ -119,7 +118,6 @@ def intro_screen(is_mobile=False):
                 height: 100vh;
                 object-fit: cover;
                 object-position: {object_position};
-                transform: translateY({video_translate});
                 z-index: 1;
             }}
 
@@ -130,29 +128,43 @@ def intro_screen(is_mobile=False):
                 transform: translateX(-50%);
                 font-family: 'Cinzel', serif;
                 font-size: {font_size};
+                width: {text_width};
+                text-align: center;
                 font-weight: 700;
                 letter-spacing: 2px;
-                text-transform: uppercase;
-                white-space: nowrap;
+                color: rgba(255, 255, 255, 0);
+                text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
+                white-space: normal;
                 z-index: 2;
-                background: linear-gradient(90deg, #e0c17b 0%, #ffffff 25%, #e0c17b 50%, #ffffff 75%, #e0c17b 100%);
-                background-size: 200% auto;
-                -webkit-background-clip: text;
-                -webkit-text-fill-color: transparent;
-                text-shadow: 0 0 12px rgba(255, 215, 128, 0.6), 0 0 24px rgba(255, 255, 255, 0.3);
-                animation: fadeInOut 7s ease-in-out forwards, lightSweep 4s linear infinite;
+                animation: fadeAppear 7s ease-in-out forwards;
+                overflow-wrap: break-word;
             }}
 
-            @keyframes fadeInOut {{
-                0% {{ opacity: 0; transform: translate(-50%, 25px); }}
-                20% {{ opacity: 1; transform: translate(-50%, 0); }}
-                80% {{ opacity: 1; transform: translate(-50%, 0); }}
-                100% {{ opacity: 0; transform: translate(-50%, -15px); }}
-            }}
-
-            @keyframes lightSweep {{
-                0% {{ background-position: 200% center; }}
-                100% {{ background-position: -200% center; }}
+            /* ✨ Hiệu ứng xuất hiện – sáng – tan biến */
+            @keyframes fadeAppear {{
+                0% {{
+                    opacity: 0;
+                    color: rgba(255, 255, 255, 0);
+                    text-shadow: 0 0 2px rgba(255, 255, 255, 0.1);
+                    transform: translate(-50%, 40px);
+                }}
+                30% {{
+                    opacity: 1;
+                    color: #fff8dc;
+                    text-shadow: 0 0 12px rgba(255, 240, 180, 0.6), 0 0 24px rgba(255,255,255,0.4);
+                    transform: translate(-50%, 0);
+                }}
+                70% {{
+                    opacity: 1;
+                    color: #fff5d2;
+                    text-shadow: 0 0 18px rgba(255, 235, 170, 0.8);
+                }}
+                100% {{
+                    opacity: 0;
+                    color: rgba(255, 255, 255, 0);
+                    transform: translate(-50%, -30px);
+                    text-shadow: 0 0 2px rgba(255,255,255,0.1);
+                }}
             }}
 
             #fade {{
@@ -163,7 +175,7 @@ def intro_screen(is_mobile=False):
                 background: black;
                 opacity: 0;
                 z-index: 3;
-                transition: opacity 1.5s ease-in-out;
+                transition: opacity 1.2s ease-in-out;
             }}
         </style>
     </head>
@@ -177,15 +189,6 @@ def intro_screen(is_mobile=False):
         <script>
             const vid = document.getElementById("introVid");
             const fade = document.getElementById("fade");
-
-            // Fix viewport height cho mobile
-            function fixVH() {{
-                const vh = window.innerHeight * 0.01;
-                document.documentElement.style.setProperty('--vh', `${{vh}}px`);
-            }}
-            fixVH();
-            window.addEventListener('resize', fixVH);
-            window.addEventListener('orientationchange', fixVH);
 
             function finishIntro() {{
                 fade.style.opacity = 1;
@@ -204,8 +207,9 @@ def intro_screen(is_mobile=False):
     </html>
     """
 
-    components.html(intro_html, height=900, scrolling=False)
+    components.html(intro_html, height=950, scrolling=False)
 
+    # Giữ logic thời gian cũ
     if st.session_state.start_time is None:
         st.session_state.start_time = time.time()
     if time.time() - st.session_state.start_time < 9.5:
@@ -215,6 +219,7 @@ def intro_screen(is_mobile=False):
         st.session_state.intro_done = True
         st.session_state.start_time = None
         st.rerun()
+
 
 
 # ================== TRANG CHÍNH ==================
