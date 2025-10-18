@@ -1,3 +1,76 @@
+import streamlit as st
+import os
+import base64
+import random
+import time
+from streamlit_javascript import st_javascript
+from user_agents import parse
+import streamlit.components.v1 as components
+
+# ================== CẤU HÌNH & TRẠNG THÁI ==================
+st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
+
+VIDEO_PC = "media/airplane.mp4"
+VIDEO_MOBILE = "media/mobile.mp4"
+BG_PC = "cabbase.jpg"
+BG_MOBILE = "mobile.jpg"
+MUSIC_FILES = [
+    "background.mp3", "background2.mp3", "background3.mp3",
+    "background4.mp3", "background5.mp3"
+]
+
+if "intro_done" not in st.session_state:
+    st.session_state.intro_done = False
+if "is_mobile" not in st.session_state:
+    st.session_state.is_mobile = None
+if "start_time" not in st.session_state:
+    st.session_state.start_time = None
+
+
+# ================== XÁC ĐỊNH THIẾT BỊ ==================
+if st.session_state.is_mobile is None:
+    st.session_state.intro_done = False
+    ua_string = st_javascript("""window.navigator.userAgent;""")
+
+    if ua_string:
+        user_agent = parse(ua_string)
+        st.session_state.is_mobile = not user_agent.is_pc
+        st.rerun()
+    else:
+        st.info("Đang xác định thiết bị và tải...")
+        st.stop()
+
+
+# ================== ẨN GIAO DIỆN STREAMLIT ==================
+def hide_streamlit_ui():
+    st.markdown("""
+    <style>
+    [data-testid="stToolbar"], header, footer,
+    iframe[title*="keyboard"], [tabindex="0"][aria-live] {
+        display: none !important;
+        visibility: hidden !important;
+    }
+
+    .stApp, .main, .block-container, [data-testid="stVerticalBlock"] {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100vw !important;
+        width: 100vw !important;
+        min-height: 100vh !important;
+    }
+
+    [data-testid*="stHtmlComponents"] {
+        position: fixed !important;
+        top: 0; left: 0;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 9999;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+# ================== MÀN HÌNH INTRO ==================
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
 
@@ -10,6 +83,16 @@ def intro_screen(is_mobile=False):
 
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
+
+    # THAY ĐỔI LỚN: Xác định vị trí căn video dựa trên thiết bị
+    if is_mobile:
+        # Trên mobile (tỉ lệ dọc), ưu tiên hiển thị phần DƯỚI video (máy bay)
+        object_position_css = "center bottom;" 
+        text_bottom_css = "25%;" # Nâng chữ lên cao hơn máy bay
+    else:
+        # Trên PC (tỉ lệ ngang), căn giữa là tốt nhất
+        object_position_css = "center;"
+        text_bottom_css = "18%;" # Vị trí mặc định
 
     intro_html = f"""
     <!DOCTYPE html>
@@ -25,7 +108,7 @@ def intro_screen(is_mobile=False):
             html, body {{
                 margin: 0; padding: 0;
                 width: 100vw;
-                height: var(--dynamic-vh); /* Chiều cao động cho Mobile */
+                height: var(--dynamic-vh); 
                 overflow: hidden; 
                 background-color: black;
                 font-family: 'Playfair Display', serif;
@@ -37,15 +120,15 @@ def intro_screen(is_mobile=False):
                 width: 100vw;
                 height: 100%; 
                 object-fit: cover;
-                /* THAY ĐỔI LỚN: Ưu tiên hiển thị phần DƯỚI cùng của video (nơi có máy bay) */
-                object-position: center bottom; 
+                /* ÁP DỤNG VỊ TRÍ TÍNH TOÁN BẰNG PYTHON */
+                object-position: {object_position_css}; 
                 z-index: 1;
             }}
             #intro-text {{
                 position: absolute;
                 left: 50%;
-                /* Điều chỉnh vị trí: Đặt dòng chữ cao hơn một chút so với bottom: 18% để tránh bị máy bay che*/
-                bottom: 25%; 
+                /* ÁP DỤNG VỊ TRÍ TÍNH TOÁN BẰNG PYTHON */
+                bottom: {text_bottom_css}; 
                 transform: translateX(-50%);
                 font-size: clamp(18px, 2.5vw, 40px);
                 color: white;
@@ -107,8 +190,11 @@ def intro_screen(is_mobile=False):
             }}
 
             vid.onended = finishIntro;
+            
+            // LỜI GỌI PLAY CUỐI CÙNG: Đây là phần quan trọng nhất cho Autoplay
             vid.play().catch(() => {{
                 console.log("Autoplay bị chặn → fallback");
+                // Giữ nguyên logic timer dự phòng 9 giây
                 setTimeout(finishIntro, 9000);
             }});
         </script>
@@ -128,3 +214,56 @@ def intro_screen(is_mobile=False):
         st.session_state.intro_done = True
         st.session_state.start_time = None
         st.rerun()
+
+
+# ================== TRANG CHÍNH ==================
+def main_page(is_mobile=False):
+    hide_streamlit_ui()
+    bg = BG_MOBILE if is_mobile else BG_PC
+
+    try:
+        with open(bg, "rb") as f:
+            bg_b64 = base64.b64encode(f.read()).decode()
+    except FileNotFoundError:
+        st.error(f"⚠️ Không tìm thấy ảnh nền: {bg}")
+        bg_b64 = ""
+
+    st.markdown(f"""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap');
+    .stApp {{
+        background-image: url("data:image/jpeg;base64,{bg_b64}");
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        animation: fadeInBg 1s ease-in-out forwards;
+    }}
+    @keyframes fadeInBg {{ from {{ opacity: 0; }} to {{ opacity: 1; }} }}
+    h1 {{
+        text-align: center; margin-top: 60px; color: #2E1C14;
+        text-shadow: 2px 2px 6px #FFF8DC;
+        font-family: 'Playfair Display', serif;
+    }}
+    </style>
+    """, unsafe_allow_html=True)
+
+    available_music = [m for m in MUSIC_FILES if os.path.exists(m)]
+    if available_music:
+        chosen = random.choice(available_music)
+        with st.sidebar:
+            st.subheader("🎵 Nhạc nền")
+            st.audio(chosen, start_time=0)
+            st.caption(f"Đang phát: **{os.path.basename(chosen)}**")
+
+    st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
+
+
+# ================== LUỒNG CHÍNH ==================
+hide_streamlit_ui()
+
+if st.session_state.is_mobile is None:
+    pass
+elif not st.session_state.intro_done:
+    intro_screen(st.session_state.is_mobile)
+else:
+    main_page(st.session_state.is_mobile)
