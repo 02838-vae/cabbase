@@ -1,11 +1,9 @@
 import streamlit as st
-import base64
 import os
 import random
-import time
-from streamlit.components.v1 import html
+import base64
 
-# ---------------- Cấu hình ----------------
+# ------------------ CẤU HÌNH CƠ BẢN ------------------
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
 VIDEO_INTRO = "airplane.mp4"
@@ -19,42 +17,24 @@ MUSIC_FILES = [
     "background5.mp3"
 ]
 
-# **QUAN TRỌNG:** Tự động chuyển qua trang chính sau 8 giây nếu intro chưa hoàn thành
-INTRO_DURATION_SEC = 7.5
-
 if "intro_complete" not in st.session_state:
     st.session_state["intro_complete"] = False
-if "intro_start_time" not in st.session_state:
-    st.session_state["intro_start_time"] = time.time()
 
-
-# ---------------- CSS ẩn header Streamlit ----------------
+# ------------------ CSS ẨN GIAO DIỆN STREAMLIT ------------------
 def hide_streamlit_ui():
-    """Ẩn các thành phần giao diện mặc định của Streamlit."""
     st.markdown("""
     <style>
-    /* Ẩn UI chính của Streamlit */
+    [data-testid="stToolbar"],
     [data-testid="stDecoration"],
-    header, footer, [data-testid="stToolbar"],
-    iframe, svg, [title*="keyboard"], [tabindex="0"][aria-live] {
+    header, footer, iframe, svg, [title*="keyboard"], [tabindex="0"][aria-live] {
         display: none !important;
         visibility: hidden !important;
-    }
-    /* Đảm bảo nội dung Streamlit bị ẩn hoàn toàn khi intro đang chạy */
-    .stApp > div:nth-child(1) > div:nth-child(1) {
-        visibility: hidden;
-    }
-    /* Fix cho lỗi màn hình đen: Đặt nền trang luôn là màu đen khi ở Intro */
-    .stApp {
-        background-color: black !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
-
-# ---------------- CSS nền trang chính ----------------
-def apply_main_css():
-    """Áp dụng CSS nền trang chính."""
+# ------------------ CSS NỀN TRANG CHÍNH ------------------
+def main_page_style():
     st.markdown(f"""
     <style>
     .stApp {{
@@ -63,7 +43,6 @@ def apply_main_css():
         background-position: center;
         background-attachment: fixed;
         transition: background 1s ease-in-out;
-        background-color: transparent !important; /* Đảm bảo hình nền hiển thị */
     }}
     @media only screen and (max-width: 768px) {{
         .stApp {{
@@ -75,19 +54,12 @@ def apply_main_css():
         color: #4E342E;
         text-shadow: 2px 2px 4px #FFF8DC;
     }}
-    /* Tắt ẩn Streamlit UI khi ở trang chính */
-    .stApp > div:nth-child(1) > div:nth-child(1) {{
-        visibility: visible !important;
-    }}
     </style>
     """, unsafe_allow_html=True)
 
-
-# ---------------- Màn hình Intro (Tối ưu lần cuối) ----------------
+# ------------------ MÀN HÌNH INTRO ------------------
 def intro_screen():
-    """Hiển thị video intro và tự động chuyển trang sau khi video kết thúc."""
-    
-    hide_streamlit_ui() 
+    hide_streamlit_ui()
 
     if not os.path.exists(VIDEO_INTRO):
         st.error("⚠️ Không tìm thấy file airplane.mp4")
@@ -95,46 +67,39 @@ def intro_screen():
         st.rerun()
         return
 
-    # **CƠ CHẾ THOÁT KHỎI MÀN HÌNH ĐEN (PYTHON FALLBACK)**
-    # Nếu refresh và đã ở trạng thái intro quá 8.5 giây, tự động chuyển trang
-    if time.time() - st.session_state["intro_start_time"] > INTRO_DURATION_SEC + 1:
-        st.session_state["intro_complete"] = True
-        st.rerun()
-        return
-
-    # Encode video base64
+    # Đọc video và mã hóa base64
     with open(VIDEO_INTRO, "rb") as f:
-        video_b64 = base64.b64encode(f.read()).decode()
+        video_bytes = f.read()
+    video_base64 = base64.b64encode(video_bytes).decode()
 
-    # HTML content
-    intro_html_content = f"""
+    # HTML phát video toàn màn hình và chuyển trang sau khi hết
+    intro_html = f"""
     <style>
-    /* CSS nhúng để đảm bảo video luôn được hiển thị */
     html, body {{
-        margin: 0; padding: 0;
-        width: 100%; height: 100%;
+        margin: 0;
+        padding: 0;
         overflow: hidden;
         background-color: black;
     }}
     video {{
         position: fixed;
-        top: 0; left: 0;
+        top: 0;
+        left: 0;
         width: 100vw;
         height: 100vh;
         object-fit: cover;
-        z-index: -1;
     }}
     #intro-text {{
         position: fixed;
         bottom: 10%;
         left: 50%;
         transform: translateX(-50%);
-        font-size: clamp(1em, 5vw, 1.8em);
+        font-size: clamp(1.2em, 5vw, 2.5em);
         color: white;
         font-family: 'Times New Roman', serif;
         text-shadow: 2px 2px 8px black;
-        animation: fadeInOut 6s forwards;
-        z-index: 10;
+        animation: fadeInOut 6s ease-in-out;
+        z-index: 2;
     }}
     @keyframes fadeInOut {{
         0% {{ opacity: 0; }}
@@ -142,99 +107,63 @@ def intro_screen():
         85% {{ opacity: 1; }}
         100% {{ opacity: 0; }}
     }}
-    #fadeout {{
-        position: fixed;
-        top: 0; left: 0;
-        width: 100vw; height: 100vh;
-        background: black;
-        opacity: 0;
-        transition: opacity 1s ease-in-out;
-        z-index: 20;
-    }}
     </style>
 
-    <video id="introVideo" autoplay muted playsinline preload="auto">
-        <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
+    <video id="introVideo" autoplay muted playsinline>
+        <source src="data:video/mp4;base64,{video_base64}" type="video/mp4">
     </video>
-
     <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-    <div id="fadeout"></div>
 
     <script>
-    const v = document.getElementById('introVideo');
-    const fadeout = document.getElementById('fadeout');
-    
-    // Kích hoạt video (cần cho mobile)
-    v.play().catch(() => {{
-        document.body.addEventListener('click', () => v.play(), {{once:true}});
+    const video = document.getElementById('introVideo');
+    video.play().catch(() => {{
+        document.body.addEventListener('click', () => video.play(), {{once: true}});
     }});
 
-    // **Thay vì reload, ta sẽ sử dụng postMessage để kích hoạt Python**
-    const totalDuration = {INTRO_DURATION_SEC} * 1000; 
-
-    setTimeout(() => {{
-        fadeout.style.opacity = 1;
-        setTimeout(() => {{
-            // **Thông báo cho Streamlit qua parent window**
-            window.parent.postMessage({{type: 'intro_done'}}, '*');
-            
-            // **Thêm một fallback nhẹ: Chuyển hướng sau khi post message**
-            setTimeout(() => {{
-                // Ép reload nếu Streamlit không phản hồi postMessage
-                window.parent.location.reload(); 
-            }}, 500); 
-        }}, 1000); // 1s cho hiệu ứng fade
-    }}, totalDuration - 1000); 
+    // Khi video kết thúc → gửi tín hiệu sang Python
+    video.addEventListener('ended', () => {{
+        window.parent.postMessage({{type: 'intro_done'}}, '*');
+    }});
     </script>
     """
-    
-    # Hiển thị component HTML tùy chỉnh
-    html(intro_html_content, height=1, width=1)
-    
-    # **Cơ chế nghe PostMessage từ JavaScript (không áp dụng trong Streamlit)**
-    # Vì Streamlit không có API đơn giản để lắng nghe postMessage, 
-    # ta vẫn phải dựa vào timeout (Python Fallback) hoặc thủ thuật Form/Button.
-    
-    # Ở đây, ta chỉ cần dựa vào Python Fallback Timeout và JS reload nhẹ.
-    st.markdown("</div>", unsafe_allow_html=True) # Kết thúc div ẩn (nếu có)
-    
-    # **Thêm nút ẩn có thể click thủ công**
-    # Nút này KHÔNG được ẩn bằng CSS, nó sẽ bị ẩn bởi 'visibility: hidden' chung.
-    # Nhưng nếu bạn bị kẹt màn hình đen, bạn có thể cố gắng click vào khu vực này.
-    
-    if st.button("Bỏ qua Intro", key="skip_intro"):
+
+    st.markdown(intro_html, unsafe_allow_html=True)
+
+    # Chờ tín hiệu hoặc thời lượng video
+    from streamlit.runtime.scriptrunner import add_script_run_ctx
+    import threading, time
+
+    def wait_and_finish():
+        time.sleep(10)  # Thời lượng video
         st.session_state["intro_complete"] = True
-        st.rerun()
+        st.experimental_rerun()
 
+    t = threading.Thread(target=wait_and_finish)
+    add_script_run_ctx(t)
+    t.start()
 
-# ---------------- Trang chính ----------------
+# ------------------ TRANG CHÍNH ------------------
 def main_page():
-    """Hiển thị trang chính."""
-    
-    apply_main_css()
-    # Reset thời gian bắt đầu khi vào trang chính
-    if "intro_start_time" in st.session_state:
-         del st.session_state["intro_start_time"] 
+    hide_streamlit_ui()
+    main_page_style()
 
     # Nhạc nền
     available = [m for m in MUSIC_FILES if os.path.exists(m)]
     if available:
-        track = random.choice(available)
+        random_track = random.choice(available)
         with st.sidebar:
-            st.subheader("🎶 Nhạc nền")
-            st.audio(track, format="audio/mp3", loop=True)
-            st.caption(f"Đang phát: **{os.path.basename(track)}**")
+            st.subheader("🎶 Nhạc nền cổ điển")
+            st.audio(random_track, format="audio/mp3")
+            st.caption(f"Đang phát: **{os.path.basename(random_track)}**")
 
     # Tiêu đề
     st.markdown("""
-    <h1 style='text-align:center; font-size:3.2em; margin-top:50px;'>
+    <h1 style='text-align:center; font-size:3em; margin-top:60px;'>
         TỔ BẢO DƯỠNG SỐ 1
     </h1>
     """, unsafe_allow_html=True)
-    st.markdown("<div style='height:70vh'></div>", unsafe_allow_html=True)
 
-
-# ---------------- Logic chính ----------------
+# ------------------ LOGIC CHÍNH ------------------
 if st.session_state["intro_complete"]:
     main_page()
 else:
