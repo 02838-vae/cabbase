@@ -4,7 +4,7 @@ import random
 import base64
 import time
 
-# ------------------ CẤU HÌNH CƠ BẢN ------------------
+# ================= CẤU HÌNH =================
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
 VIDEO_INTRO = "airplane.mp4"
@@ -22,7 +22,7 @@ if "intro_complete" not in st.session_state:
     st.session_state["intro_complete"] = False
 
 
-# ------------------ CSS ẨN GIAO DIỆN STREAMLIT ------------------
+# ================= CSS ẨN STREAMLIT =================
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -36,10 +36,12 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ------------------ CSS NỀN TRANG CHÍNH ------------------
+# ================= CSS TRANG CHÍNH =================
 def main_page_style():
     st.markdown(f"""
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap');
+
     .stApp {{
         background-image: url("{PC_BACKGROUND}");
         background-size: cover;
@@ -53,15 +55,15 @@ def main_page_style():
         }}
     }}
     h1 {{
-        font-family: 'Times New Roman', serif;
-        color: #4E342E;
-        text-shadow: 2px 2px 4px #FFF8DC;
+        font-family: 'Playfair Display', serif;
+        color: #3E2723;
+        text-shadow: 2px 2px 6px #FFF8DC;
     }}
     </style>
     """, unsafe_allow_html=True)
 
 
-# ------------------ MÀN HÌNH INTRO ------------------
+# ================= MÀN HÌNH INTRO =================
 def intro_screen():
     hide_streamlit_ui()
 
@@ -75,9 +77,10 @@ def intro_screen():
         video_bytes = f.read()
     video_b64 = base64.b64encode(video_bytes).decode()
 
-    # HTML video + hiệu ứng chữ + tự chuyển cảnh
     intro_html = f"""
     <style>
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap');
+
     html, body {{
         margin: 0;
         padding: 0;
@@ -95,37 +98,40 @@ def intro_screen():
         height: 100%;
         object-fit: contain;
         background-color: black;
+        z-index: 0;
     }}
 
     #intro-text {{
         position: fixed;
-        bottom: 18%;
+        bottom: 22%;
         left: 50%;
         transform: translateX(-50%);
-        font-size: clamp(1em, 4vw, 2.5em);
-        color: white;
+        font-size: clamp(1.2em, 4vw, 2.2em);
+        color: #ffffff;
         white-space: nowrap;
-        font-family: 'Times New Roman', serif;
-        text-shadow: 2px 2px 8px black;
+        font-family: 'Playfair Display', serif;
+        text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
         animation: fadeInOut 6s ease-in-out forwards;
-        z-index: 10;
+        z-index: 2;
     }}
 
     @keyframes fadeInOut {{
-        0% {{ opacity: 0; }}
-        20% {{ opacity: 1; }}
-        80% {{ opacity: 1; }}
-        100% {{ opacity: 0; }}
+        0% {{ opacity: 0; transform: translate(-50%, 10px); }}
+        20% {{ opacity: 1; transform: translate(-50%, 0); }}
+        80% {{ opacity: 1; transform: translate(-50%, 0); }}
+        100% {{ opacity: 0; transform: translate(-50%, -10px); }}
     }}
 
     #fade-overlay {{
         position: fixed;
-        top: 0; left: 0;
-        width: 100vw; height: 100vh;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
         background: black;
         opacity: 0;
-        transition: opacity 1.2s ease-in-out;
-        z-index: 15;
+        z-index: 5;
+        transition: opacity 1.5s ease-in-out;
     }}
     </style>
 
@@ -140,30 +146,30 @@ def intro_screen():
     const video = document.getElementById('introVideo');
     const overlay = document.getElementById('fade-overlay');
 
-    // Nếu autoplay bị chặn, phát khi user chạm
+    // Nếu autoplay bị chặn, kích hoạt bằng click
     video.play().catch(() => {{
         document.body.addEventListener('click', () => video.play(), {{ once: true }});
     }});
 
-    // Khi video gần kết thúc → fade đen và báo Python
+    // Khi video kết thúc: fade mượt rồi chuyển trang
     video.addEventListener('ended', () => {{
         overlay.style.opacity = 1;
         setTimeout(() => {{
             window.parent.postMessage({{ type: 'intro_done' }}, '*');
-        }}, 1000);
+        }}, 1500);
     }});
     </script>
     """
 
     st.markdown(intro_html, unsafe_allow_html=True)
 
-    # Cơ chế dự phòng (sau 12s tự chuyển trang nếu JS không gửi tín hiệu)
+    # Fallback nếu JS không chạy: sau 12s tự chuyển
     time.sleep(12)
     st.session_state["intro_complete"] = True
     st.rerun()
 
 
-# ------------------ TRANG CHÍNH ------------------
+# ================= TRANG CHÍNH =================
 def main_page():
     hide_streamlit_ui()
     main_page_style()
@@ -177,14 +183,24 @@ def main_page():
             st.caption(f"Đang phát: **{os.path.basename(random_track)}**")
 
     st.markdown("""
-    <h1 style='text-align:center; font-size:3em; margin-top:60px;'>
-        TỔ BẢO DƯỠNG SỐ 1
-    </h1>
+    <div style='animation: fadeIn 1.5s ease-in;'>
+        <h1 style='text-align:center; font-size:3em; margin-top:60px;'>
+            TỔ BẢO DƯỠNG SỐ 1
+        </h1>
+    </div>
+
+    <style>
+    @keyframes fadeIn {{
+        from {{ opacity: 0; }}
+        to {{ opacity: 1; }}
+    }}
+    </style>
     """, unsafe_allow_html=True)
-    st.markdown("<div style='height:70vh'></div>", unsafe_allow_html=True)
+
+    st.markdown("<div style='height:70vh;'></div>", unsafe_allow_html=True)
 
 
-# ------------------ LOGIC CHÍNH ------------------
+# ================= LOGIC CHÍNH =================
 if st.session_state["intro_complete"]:
     main_page()
 else:
