@@ -1,21 +1,23 @@
 import streamlit as st
 import os
-import base64
 import random
 import time
+import base64 # Vẫn cần cho ảnh nền
 from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
-# ================== CẤU HÌNH & TRẠNG THÁI (Giữ Nguyên) ==================
+# ================== CẤU HÌNH ==================
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
-VIDEO_PC = "airplane.mp4"
-VIDEO_MOBILE = "mobile.mp4"
+# GIẢ ĐỊNH: VIDEO ĐƯỢC ĐẶT TRONG THƯ MỤC media/
+VIDEO_PC = "media/airplane.mp4"
+VIDEO_MOBILE = "media/mobile.mp4"
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 MUSIC_FILES = ["background.mp3", "background2.mp3", "background3.mp3", "background4.mp3", "background5.mp3"]
 
+# ================== TRẠNG THÁI (Giữ Nguyên) ==================
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 if "is_mobile" not in st.session_state:
@@ -37,13 +39,12 @@ if st.session_state.is_mobile is None:
 def hide_streamlit_ui():
     st.markdown("""
     <style>
-    /* 1. Ẩn các thành phần Streamlit mặc định */
+    /* CSS ghi đè mạnh nhất vẫn được giữ lại */
     [data-testid="stToolbar"], header, footer, iframe[title*="keyboard"], [tabindex="0"][aria-live] {
         display: none !important;
         visibility: hidden !important;
     }
     
-    /* 2. GHI ĐÈ CSS CỦA STREAMLIT TỐI ƯU */
     .stApp, .stApp > header, .main, .block-container {
         padding: 0 !important;
         margin: 0 !important;
@@ -52,33 +53,30 @@ def hide_streamlit_ui():
         min-height: 100vh !important;
     }
     
-    /* QUY TẮC MẠNH NHẤT: Buộc các div con cấp cao nhất phải full-screen */
-    .stApp > div {
+    .stApp > div, .st-emotion-cache-1jicfl2, .st-emotion-cache-z5in9b { 
         padding: 0 !important;
         margin: 0 !important;
     }
-
-    /* 3. Đảm bảo iframe của components.html full screen */
-    [data-testid*="stHtmlComponents"] {
-        position: absolute !important; 
-        top: 0;
-        left: 0;
+    
+    /* QUY TẮC MỚI: Đảm bảo iframe và video được nhúng hiển thị full screen */
+    .stVideo {
+        position: fixed !important;
+        top: 0 !important;
+        left: 0 !important;
         width: 100vw !important;
         height: 100vh !important;
-        z-index: 9999; 
+        z-index: 9999;
     }
-    
-    /* 4. Quy tắc bổ sung để khắc phục lỗi padding/margin trên mobile */
-    .st-emotion-cache-1jicfl2, .st-emotion-cache-z5in9b, .st-emotion-cache-1cypn32 { 
-        padding: 0 !important;
-        margin: 0 !important;
+    .stVideo > video {
+        width: 100% !important;
+        height: 100% !important;
+        object-fit: cover !important;
     }
-    
     </style>
     """, unsafe_allow_html=True)
 
 
-# ================== MÀN HÌNH INTRO CUỐI CÙNG (Base64 Video bên trong iFrame) ==================
+# ================== MÀN HÌNH INTRO TỐI GIẢN (Dùng st.video) ==================
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     
@@ -90,80 +88,36 @@ def intro_screen(is_mobile=False):
         st.rerun()
         return
 
-    # MÃ HÓA VIDEO THÀNH BASE64
-    with open(video_path, "rb") as f:
-        video_b64 = base64.b64encode(f.read()).decode()
+    # SỬ DỤNG st.video THAY VÌ components.html/Base64
+    # Hy vọng Streamlit sẽ tạo thẻ video dễ kiểm soát hơn
+    col1, col2, col3 = st.columns([0.01, 0.98, 0.01])
+    with col2:
+        st.video(video_path, format="video/mp4", start_time=0) 
 
-    # 1. Tạo chuỗi iFrame HTML
-    iframe_src = f"""
-    <!DOCTYPE html>
-    <html lang="vi">
-    <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    # --- Dòng chữ trên video (Tạm thời không hiển thị trực tiếp lên video) ---
+    st.markdown(f"""
     <style>
-        /* QUAN TRỌNG: Đã sửa lỗi full-screen và font size */
-        html, body {{ 
-            margin: 0 !important; padding: 0 !important; height: 100%; width: 100%; overflow: hidden; background-color: black;
-            font-family: 'Arial', sans-serif, 'Playfair Display'; 
-        }}
-        video {{ 
-            width: 100%; height: 100%; /* SỬA LỖI: Dùng % thay cho vw/vh để nó vừa với iFrame mẹ */
-            object-fit: cover; object-position: center; 
-        }}
-        #intro-text {{
-            position: fixed; bottom: 18%; left: 50%; transform: translateX(-50%);
-            /* SỬA LỖI: Dùng max-width và clamp để font không quá to trên PC */
-            font-size: clamp(18px, 2.5vw, 40px); 
-            color: white; z-index: 10;
-            text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
-            animation: fadeInOut 6s ease-in-out forwards;
-        }}
-        @keyframes fadeInOut {{
-            0% {{ opacity: 0; transform: translate(-50%, 20px); }} 20% {{ opacity: 1; transform: translate(-50%, 0); }}
-            80% {{ opacity: 1; transform: translate(-50%, 0); }} 100% {{ opacity: 0; transform: translate(-50%, -10px); }}
-        }}
+    /* CSS cho text */
+    #intro-text-final {{
+        position: fixed; 
+        bottom: 20vh; 
+        left: 50%; 
+        transform: translateX(-50%);
+        font-size: clamp(18px, 3vw, 40px); 
+        color: white; 
+        z-index: 10000;
+        text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
+        font-family: 'Arial', sans-serif;
+    }}
     </style>
-    </head>
-    <body>
-        <video id="introVid" autoplay muted playsinline>
-            <source src="data:video/mp4;base64,{video_b64}" type="video/mp4"> 
-        </video>
-        <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-        <div id="fade"></div>
-        <script>
-            const vid = document.getElementById("introVid");
-            const finishIntro = () => {{
-                window.parent.postMessage({{"type": "intro_done"}}, "*");
-            }};
-
-            vid.onended = finishIntro;
-            
-            // Xử lý chặn Autoplay
-            vid.play().catch(error => {{
-                setTimeout(finishIntro, 9000); 
-            }});
-        </script>
-    </body>
-    </html>
-    """
-    
-    # 2. MÃ HÓA IFRAME VÀ THÊM CHARSET=UTF-8
-    iframe_b64 = base64.b64encode(iframe_src.encode('utf-8')).decode('utf-8')
-    
-    # Thêm charset=utf-8 vào Data URI để sửa lỗi dấu tiếng Việt
-    final_html = f"""
-    <iframe src="data:text/html;charset=utf-8;base64,{iframe_b64}" 
-            style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; border: none; z-index: 9999;">
-    </iframe>
-    """
-    
-    # 3. Nhúng vào Streamlit
-    components.html(final_html, scrolling=False) 
+    <div id="intro-text-final">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+    """, unsafe_allow_html=True)
 
     # --- Cơ chế Chuyển Trang dựa trên thời gian ---
     if "start_time" not in st.session_state:
         st.session_state.start_time = time.time()
     
+    # Kích hoạt chuyển trang sau 9.5 giây (thay cho sự kiện video.onended)
     if time.time() - st.session_state.start_time < 9.5: 
         time.sleep(1) 
         st.rerun()
@@ -175,6 +129,7 @@ def intro_screen(is_mobile=False):
 
 # ================== TRANG CHÍNH (Giữ Nguyên) ==================
 def main_page(is_mobile=False):
+    # Phần này tương tự như trước, nhưng không bị ảnh hưởng bởi lỗi video
     hide_streamlit_ui() 
     bg = BG_MOBILE if is_mobile else BG_PC
     
@@ -214,7 +169,7 @@ def main_page(is_mobile=False):
     st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
 
 
-# ================== LUỒNG CHÍNH (Giữ Nguyên) ==================
+# ================== LUỒNG CHÍNH ==================
 hide_streamlit_ui()
 
 if st.session_state.is_mobile is None:
