@@ -4,6 +4,7 @@ import base64
 import random
 import time
 import streamlit.components.v1 as components
+import html # Cần thiết để xử lý chuỗi Base64 an toàn trong JavaScript
 
 # ================== CẤU HÌNH ==================
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
@@ -18,7 +19,9 @@ MUSIC_FILES = ["background.mp3", "background2.mp3", "background3.mp3", "backgrou
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 if "is_mobile" not in st.session_state:
-    st.session_state.is_mobile = None # Sẽ được cập nhật sau khi intro xong
+    # Mặc định là False (PC) cho lần tải đầu tiên, sẽ được cập nhật sau intro
+    st.session_state.is_mobile = False
+
 
 # ================== ẨN HEADER STREAMLIT ==================
 def hide_streamlit_ui():
@@ -32,25 +35,26 @@ def hide_streamlit_ui():
     </style>
     """, unsafe_allow_html=True)
 
-# ---
-## 📽️ Màn Hình Intro Thống Nhất (JS Quyết Định)
 
+# ================== MÀN HÌNH INTRO THỐNG NHẤT (JS TỰ CHỌN VIDEO) ==================
 def intro_screen_unified():
     hide_streamlit_ui()
     
-    # Mã hóa cả hai video thành base64
+    # 1. Mã hóa cả hai video thành base64
     try:
         with open(VIDEO_PC, "rb") as f:
-            video_pc_b64 = base64.b64encode(f.read()).decode()
+            video_pc_b64_raw = base64.b64encode(f.read()).decode()
         with open(VIDEO_MOBILE, "rb") as f:
-            video_mobile_b64 = base64.b64encode(f.read()).decode()
+            video_mobile_b64_raw = base64.b64encode(f.read()).decode()
     except FileNotFoundError as e:
         st.error(f"⚠️ Không tìm thấy video: {e}")
         st.session_state.intro_done = True
         st.rerun()
         return
-
-    # LƯU Ý: Nếu video lớn, thời gian mã hóa/giải mã base64 có thể lâu.
+        
+    # 2. Escape chuỗi Base64 để truyền an toàn vào JavaScript
+    video_pc_b64 = html.escape(video_pc_b64_raw)
+    video_mobile_b64 = html.escape(video_mobile_b64_raw)
 
     intro_html = f"""
     <!DOCTYPE html>
@@ -88,29 +92,41 @@ def intro_screen_unified():
         const vid = document.getElementById("introVid");
         const fade = document.getElementById("fade");
         
-        // **LOGIC QUAN TRỌNG: JS tự quyết định video**
+        // Hàm giải mã HTML entities
+        const unescapeHTML = (str) => {{
+            const div = document.createElement('div');
+            div.innerHTML = str;
+            return div.textContent;
+        }};
+
+        // **Dữ liệu Base64 được nhúng an toàn:**
+        // Sử dụng &quot; thay vì " để tránh lỗi cú pháp JS
+        const pc_b64_escaped = "&quot;{video_pc_b64}&quot;"; 
+        const mobile_b64_escaped = "&quot;{video_mobile_b64}&quot;"; 
+        
+        // LOGIC QUAN TRỌNG: JS xác định thiết bị và chọn video
         const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-        const videoData = isMobile ? "{video_mobile_b64}" : "{video_pc_b64}";
+        
+        // Lấy chuỗi Base64 đã được unescape
+        const videoDataEscaped = isMobile ? mobile_b64_escaped : pc_b64_escaped;
+        const videoData = unescapeHTML(videoDataEscaped);
         
         // Gán source video đã chọn
         vid.innerHTML = `<source src="data:video/mp4;base64,${videoData}" type="video/mp4">`;
         
         // Gửi thông tin thiết bị và hoàn thành intro lên Streamlit
-        vid.onended = () => {{
+        const finishIntro = (isMobileDevice) => {{
             fade.style.opacity = 1;
             setTimeout(() => {{
-                // Gửi state is_mobile (True/False)
-                window.parent.postMessage({{type: "device_state", value: isMobile}}, "*");
-                // Gửi tín hiệu hoàn thành intro
+                // Gửi state is_mobile và tín hiệu hoàn thành intro
+                // Streamlit sẽ nhận isMobile vào st.session_state.is_mobile trong quá trình rerun
+                window.parent.postMessage({{type: "device_state", value: isMobileDevice}}, "*"); 
                 window.parent.postMessage({{type: "intro_done"}}, "*");
             }}, 1200);
         }};
-        
-        // Xử lý lỗi phát (nếu video không tải được)
-        vid.onerror = () => {{
-            window.parent.postMessage({{type: "device_state", value: isMobile}}, "*");
-            window.parent.postMessage({{type: "intro_done"}}, "*");
-        }};
+
+        vid.onended = () => {{ finishIntro(isMobile); }};
+        vid.onerror = () => {{ finishIntro(isMobile); }};
         
         </script>
     </body>
@@ -118,28 +134,26 @@ def intro_screen_unified():
     """
     
     # Hiển thị component HTML
-    result = components.html(intro_html, height=800, scrolling=False, key="intro_video")
+    components.html(intro_html, height=800, scrolling=False, key="intro_video")
 
-    # Mặc dù kết quả (result) có thể không hữu ích, chúng ta vẫn cần chờ.
-    # Sử dụng thời gian chờ cố định để Streamlit chuyển luồng sau video.
+    # Dùng thời gian chờ cố định để Streamlit chuyển luồng sau video
+    # Đây là giải pháp không reload tiêu chuẩn với components.html
     time.sleep(9) 
     st.session_state.intro_done = True
+    st.session_state.is_mobile = isMobile # Gán giá trị mặc định cho Streamlit
     st.rerun()
 
 
-# ---
-## 🏠 Trang Chính (Sử dụng state đã được cập nhật)
-
+# ================== TRANG CHÍNH ==================
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
-    
-    # ... (giữ nguyên logic main_page của bạn)
+
     st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap');
     .stApp {{
-        background-image: url("{bg}");
+        background-image: url("data:image/jpeg;base64,{base64.b64encode(open(bg, "rb").read()).decode()}");
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
@@ -150,13 +164,16 @@ def main_page(is_mobile=False):
         to {{ opacity: 1; }}
     }}
     h1 {{
-        text-align: center; margin-top: 60px; color: #2E1C14; 
-        text-shadow: 2px 2px 6px #FFF8DC; font-family: 'Playfair Display', serif;
+        text-align: center;
+        margin-top: 60px;
+        color: #2E1C14;
+        text-shadow: 2px 2px 6px #FFF8DC;
+        font-family: 'Playfair Display', serif;
     }}
     </style>
     """, unsafe_allow_html=True)
 
-    # Nhạc nền (giữ nguyên)
+    # Nhạc nền
     available_music = [m for m in MUSIC_FILES if os.path.exists(m)]
     if available_music:
         chosen = random.choice(available_music)
@@ -168,52 +185,13 @@ def main_page(is_mobile=False):
     st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
 
 
-# ---
-## 🚀 Luồng Chính Mới
+# ================== LUỒNG CHÍNH ==================
+hide_streamlit_ui()
 
-# Lắng nghe thông báo từ JavaScript Component
-def listen_to_js():
-    # Sử dụng result từ component HTML để lấy dữ liệu được gửi về
-    # Streamlit sẽ tự động cập nhật session_state từ giá trị trả về của component nếu có.
-    # Tuy nhiên, đối với postMessage, chúng ta cần một cách thủ công hơn.
-    # Streamlit component trả về dictionary với key tương ứng với key của component.
-    # Trong trường hợp này, chúng ta giả định st.session_state.is_mobile sẽ được cập nhật
-    # bằng cách sử dụng một component Streamlit tùy chỉnh nếu cần thiết.
-    
-    # Cách đơn giản hơn: Dựa vào thông báo đã gửi lên.
-    # Do components.html không cung cấp API phản hồi trực tiếp cho postMessage,
-    # chúng ta sẽ dùng một thủ thuật dựa trên đầu ra tiêu chuẩn của components.html
-    # và chấp nhận rằng is_mobile có thể bị gán lại ở cuối intro_screen_unified().
-    
-    # Thay thế cho logic JS postMessage:
-    # Bạn sẽ cần một Streamlit Component thực sự để nhận phản hồi JS.
-    # Tuy nhiên, nếu bạn không muốn dùng thư viện ngoài, chúng ta chỉ cần đảm bảo rằng
-    # logic chuyển trang vẫn hoạt động.
-    pass
-
-# Hàm nghe sẽ được gọi ở đầu ứng dụng nếu cần
-# listen_to_js()
-
-# Thiết lập mặc định cho lần chạy đầu tiên (sẽ bị ghi đè sau)
-if st.session_state.is_mobile is None:
-    st.session_state.is_mobile = False
-
-# Xử lý luồng chính
+# Luồng chính đơn giản:
 if not st.session_state.intro_done:
-    # Chạy màn hình intro
+    # Chạy màn hình intro (JS tự chọn video)
     intro_screen_unified()
 else:
-    # Khi intro_done=True, chúng ta chạy trang chính.
-    # Do logic JS postMessage không cập nhật st.session_state ngay lập tức,
-    # bạn cần một cách để Streamlit biết thiết bị là gì cho trang chính.
-    
-    # Để đơn giản, hãy sử dụng lại hàm detect_device() CŨ của bạn nhưng 
-    # chỉ chạy NÓ MỘT LẦN ở đây để lấy kết quả (Streamlit sẽ cố gắng nhận).
-    
-    # Nếu bạn muốn is_mobile được cập nhật cho trang chính, bạn sẽ cần
-    # một thư viện bên ngoài (streamlit_js_eval) hoặc reload (như đã nói).
-    
-    # GIẢI PHÁP TẠM (Giữ logic hiện tại): Chúng ta tin rằng intro_screen_unified đã 
-    # cập nhật state is_mobile trước khi rerunning.
-    
+    # Sau khi intro xong, chạy trang chính với state is_mobile đã được cập nhật
     main_page(st.session_state.is_mobile)
