@@ -88,19 +88,18 @@ def intro_screen(is_mobile=False):
     <!DOCTYPE html>
     <html lang="vi">
     <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"> 
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
         <style>
-            /* 1. KHAI BÁO BIẾN CSS TÙY CHỈNH CHO MOBILE */
+            /* Dùng biến CSS để xử lý lỗi thanh địa chỉ Mobile */
             :root {{
-                --dynamic-vh: 100vh;
+                --dynamic-vh: 100vh; 
             }}
             
-            /* 2. SỬ DỤNG BIẾN NÀY ĐỂ TRÁNH LỖI THANH ĐỊA CHỈ TRÊN MOBILE */
             html, body {{
                 margin: 0; padding: 0;
                 width: 100vw;
-                height: var(--dynamic-vh); /* Sử dụng chiều cao động */
-                overflow: hidden;
+                height: var(--dynamic-vh); /* Chiều cao động cho Mobile */
+                overflow: hidden; /* NGĂN CHẶN CUỘN TRONG IFRAME */
                 background-color: black;
                 font-family: 'Playfair Display', serif;
                 touch-action: none;
@@ -109,7 +108,7 @@ def intro_screen(is_mobile=False):
                 position: absolute;
                 top: 0; left: 0;
                 width: 100vw;
-                height: 100%; /* Sẽ sử dụng chiều cao từ body */
+                height: 100%; /* Dùng 100% của body có chiều cao động */
                 object-fit: cover;
                 object-position: center;
                 z-index: 1;
@@ -117,7 +116,7 @@ def intro_screen(is_mobile=False):
             #intro-text {{
                 position: absolute;
                 left: 50%;
-                bottom: 18%; /* KHÔNG GÁN LẠI TỪ JS */
+                bottom: 18%; 
                 transform: translateX(-50%);
                 font-size: clamp(18px, 2.5vw, 40px);
                 color: white;
@@ -157,16 +156,15 @@ def intro_screen(is_mobile=False):
             const fade = document.getElementById("fade");
             const root = document.documentElement;
 
-            // ✅ SỬA LỖI MOBILE VIEWPORT
+            // XỬ LÝ LỖI MOBILE VIEWPORT: Cập nhật biến CSS --dynamic-vh
             function setViewportHeight() {{
                 // Tính toán chiều cao viewport chính xác (loại bỏ thanh địa chỉ)
                 let vh = window.innerHeight * 0.01;
                 // Gán vào biến CSS tùy chỉnh
                 root.style.setProperty('--dynamic-vh', `${{vh * 100}}px`);
-                
-                // KHÔNG CỐ GẮNG THAY ĐỔI IFRAME CHA HOẶC GÁN LẠI VỊ TRÍ TEXT
             }}
 
+            // Gọi hàm tính toán ban đầu và khi kích thước thay đổi
             setViewportHeight();
             window.addEventListener('resize', setViewportHeight);
             window.addEventListener('orientationchange', setViewportHeight);
@@ -175,7 +173,6 @@ def intro_screen(is_mobile=False):
             if ('visualViewport' in window) {{
                 window.visualViewport.addEventListener('resize', setViewportHeight);
             }}
-
 
             function finishIntro() {{
                 fade.style.opacity = 1;
@@ -194,8 +191,8 @@ def intro_screen(is_mobile=False):
     </html>
     """
 
-    # THAY ĐỔI 3: VẪN KHÔNG ĐẶT CHIỀU CAO CỐ ĐỊNH HOẶC CỰC LỚN
-    components.html(intro_html, scrolling=False)
+    # TÁI SỬ DỤNG: height=1300 để Streamlit đặt chiều cao ban đầu
+    components.html(intro_html, height=1300, scrolling=False)
 
     # Logic giữ nguyên
     if st.session_state.start_time is None:
