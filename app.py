@@ -7,12 +7,10 @@ from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
-# ================== CẤU HÌNH & TRẠNG THÁI ==================
+# ================== CẤU HÌNH & TRẠNG THÁI (Giữ Nguyên) ==================
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
-# THAY THẾ: Dùng ảnh nền cho màn hình intro (khắc phục lỗi full-screen)
-INTRO_BG = "intro_bg.jpg" # <--- Tên file ảnh nền cho intro
-
+# Vẫn giữ nguyên các đường dẫn
 VIDEO_PC = "media/airplane.mp4"
 VIDEO_MOBILE = "media/mobile.mp4"
 BG_PC = "cabbase.jpg"
@@ -28,7 +26,7 @@ if "start_time" not in st.session_state:
 
 # --- XÁC ĐỊNH THIẾT BỊ DÙNG USER AGENT ---
 if st.session_state.is_mobile is None:
-    # FIX AUTOPLAY REFRESH: Reset trạng thái khi F5
+    # FIX AUTOPLAY REFRESH
     st.session_state.intro_done = False
     
     ua_string = st_javascript("""window.navigator.userAgent;""")
@@ -41,7 +39,7 @@ if st.session_state.is_mobile is None:
         st.info("Đang xác định thiết bị và tải...")
         st.stop()
 
-# ================== ẨN HEADER STREAMLIT & CSS CHÍNH ==================
+# ================== ẨN HEADER STREAMLIT & CSS CHÍNH (Giữ Nguyên) ==================
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -80,25 +78,23 @@ def hide_streamlit_ui():
 
 
 # -------------------------------------------------------------
-## 🎬 MÀN HÌNH INTRO CUỐI CÙNG (Sử dụng Ảnh nền và Video ẩn)
+## 🎬 MÀN HÌNH INTRO CUỐI CÙNG (Video Background)
 # -------------------------------------------------------------
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     
     video_path = VIDEO_MOBILE if is_mobile else VIDEO_PC
     
-    if not os.path.exists(video_path) or not os.path.exists(INTRO_BG):
-        st.error(f"⚠️ Không tìm thấy file video hoặc ảnh nền intro.")
+    if not os.path.exists(video_path):
+        st.error(f"⚠️ Không tìm thấy video: {video_path}. Vui lòng kiểm tra lại đường dẫn.")
+        # Chuyển cảnh dự phòng sau 3 giây
+        time.sleep(3)
         st.session_state.intro_done = True
         st.rerun()
         return
 
-    # MÃ HÓA ẢNH NỀN THÀNH BASE64
-    with open(INTRO_BG, "rb") as f:
-        bg_b64 = base64.b64encode(f.read()).decode()
-
-    # KHÔNG MÃ HÓA VIDEO - CHỈ DÙNG ĐƯỜNG DẪN CỤC BỘ TRONG THẺ VIDEO ẨN
-    # Video sẽ chạy ẩn để kích hoạt sự kiện "onended" và Autoplay
+    # SỬ DỤNG ĐƯỜNG DẪN TRỰC TIẾP (KHÔNG DÙNG BASE64)
+    # Hy vọng Streamlit Cloud sẽ cung cấp đường dẫn cho file tĩnh
     
     intro_html = f"""
     <!DOCTYPE html>
@@ -106,22 +102,23 @@ def intro_screen(is_mobile=False):
     <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* SỬ DỤNG ẢNH NỀN CSS ĐỂ TẠO HIỆU ỨNG FULL-SCREEN */
+        /* CSS MỚI: KỸ THUẬT VIDEO BACKGROUND */
         html, body {{ 
             margin: 0 !important; padding: 0 !important; 
             height: 100vh; width: 100vw; 
-            overflow: hidden; 
-            background-image: url("data:image/jpeg;base64,{bg_b64}");
-            background-size: cover;
-            background-position: center;
-            background-repeat: no-repeat;
-            background-color: black; 
+            overflow: hidden; background-color: black; 
             font-family: 'Arial', sans-serif; 
+            position: relative; /* Dành cho video tuyệt đối */
         }}
-        /* ẨN VIDEO - CHỈ DÙNG ĐỂ CHẠY AUTOPLAY/TIMER */
-        video {{ 
-            display: none; 
-            opacity: 0;
+        #introVid {{ 
+            position: absolute; /* Video tuyệt đối */
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            min-width: 100%; /* Buộc chiều rộng full */
+            min-height: 100%; /* Buộc chiều cao full */
+            width: auto; height: auto;
+            object-fit: cover; /* Đảm bảo video che phủ toàn bộ */
+            z-index: -1; /* Đặt dưới lớp text */
         }}
         #intro-text {{
             position: fixed; bottom: 18%; left: 50%; transform: translateX(-50%);
@@ -141,7 +138,7 @@ def intro_screen(is_mobile=False):
     </style>
     </head>
     <body>
-        <video id="introVid" autoplay muted playsinline>
+        <video id="introVid" autoplay muted playsinline loop=false>
             <source src="{video_path}" type="video/mp4"> 
         </video>
         <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
@@ -158,7 +155,6 @@ def intro_screen(is_mobile=False):
                 }}, 1200);
             }};
 
-            // Dùng onended nếu trình duyệt cho phép autoplay
             vid.onended = finishIntro;
             
             // Xử lý chặn Autoplay bằng cách cố gắng play và fallback về timer
@@ -175,7 +171,6 @@ def intro_screen(is_mobile=False):
     components.html(intro_html, scrolling=False) 
 
     # --- Cơ chế Chuyển Trang dựa trên thời gian (Cơ chế dự phòng) ---
-    # Luôn giữ cơ chế dự phòng này để đảm bảo chuyển trang nếu JS bị lỗi
     if st.session_state.start_time is None:
         st.session_state.start_time = time.time()
     
@@ -232,7 +227,7 @@ def main_page(is_mobile=False):
 
 
 # -------------------------------------------------------------
-## ⚙️ LUỒNG CHÍNH
+## ⚙️ LUỒNG CHÍNH (Giữ Nguyên)
 # -------------------------------------------------------------
 hide_streamlit_ui()
 
