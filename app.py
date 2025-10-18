@@ -2,7 +2,7 @@ import streamlit as st
 import base64
 import os
 import random
-import time
+# Không cần import time nữa
 
 # ---------------- Cấu hình ----------------
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
@@ -27,11 +27,16 @@ def hide_streamlit_ui():
     """Ẩn các thành phần giao diện mặc định của Streamlit."""
     st.markdown("""
     <style>
+    /* Ẩn Streamlit UI */
     [data-testid="stDecoration"],
     header, footer, [data-testid="stToolbar"],
     iframe, svg, [title*="keyboard"], [tabindex="0"][aria-live] {
         display: none !important;
         visibility: hidden !important;
+    }
+    /* Ẩn các widgets Streamlit trong khi intro */
+    .stApp > div:nth-child(1) > div:nth-child(1) {
+        visibility: hidden;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -63,10 +68,12 @@ def apply_main_css():
     """, unsafe_allow_html=True)
 
 
-# ---------------- Màn hình Intro (Đã sửa lỗi) ----------------
+# ---------------- Màn hình Intro (ĐÃ FIX LỖI MÀN HÌNH ĐEN) ----------------
 def intro_screen():
     """Hiển thị video intro và tự động chuyển trang sau khi video kết thúc."""
-    hide_streamlit_ui()
+    
+    # Ẩn UI Streamlit chung
+    hide_streamlit_ui() 
 
     if not os.path.exists(VIDEO_INTRO):
         st.error("⚠️ Không tìm thấy file airplane.mp4")
@@ -75,11 +82,17 @@ def intro_screen():
         return
 
     # **Sử dụng Form ẩn để kích hoạt State Change:**
-    # Khi JavaScript nhấn nút "Done", Streamlit sẽ xử lý logic Python.
+    # Form này sẽ tạo ra một nút ẩn để JavaScript click.
     with st.form("intro_form", clear_on_submit=False):
-        # Nút submit ẩn. Cần có một nút để JS click.
-        st.form_submit_button("Done", key="intro_done_button", help="Nút ẩn kích hoạt chuyển trang.")
+        # Nút submit ẩn. Key phải khác với form ID.
+        submit_clicked = st.form_submit_button("Done", key="intro_done_button_submit")
         
+        # Nếu nút được nhấn, cập nhật session state và reruns
+        if submit_clicked:
+            st.session_state["intro_complete"] = True
+            st.session_state["intro_done_button_submit"] = False # Reset trạng thái
+            st.rerun() # Kích hoạt chuyển trang
+
         # Encode video base64
         with open(VIDEO_INTRO, "rb") as f:
             video_b64 = base64.b64encode(f.read()).decode()
@@ -87,12 +100,14 @@ def intro_screen():
         # Tạo HTML trực tiếp
         intro_html = f"""
         <style>
+        /* CSS để tạo ra màn hình đen bao phủ */
         html, body {{
             margin: 0; padding: 0;
             width: 100%; height: 100%;
             overflow: hidden;
             background-color: black;
         }}
+        /* Đảm bảo video nằm cố định trên màn hình */
         video {{
             position: fixed;
             top: 0; left: 0;
@@ -101,6 +116,7 @@ def intro_screen():
             object-fit: cover;
             z-index: -1;
         }}
+        /* Text intro */
         #intro-text {{
             position: fixed;
             bottom: 10%;
@@ -128,9 +144,13 @@ def intro_screen():
             transition: opacity 1s ease-in-out;
             z-index: 20;
         }}
-        /* Ẩn hoàn toàn form Streamlit để người dùng không thấy */
+        /* **QUAN TRỌNG:** Ẩn hoàn toàn form Streamlit để người dùng không thấy */
         [data-testid="stForm"] {{
             display: none !important;
+        }}
+        /* Đảm bảo mọi thứ khác bị ẩn */
+        .stApp > div:nth-child(1) > div:nth-child(1) {{
+            visibility: hidden;
         }}
         </style>
 
@@ -145,17 +165,23 @@ def intro_screen():
         const v = document.getElementById('introVideo');
         const fadeout = document.getElementById('fadeout');
         
-        // Tìm nút ẩn trong form
+        // **TÌM NÚT ẨN DỰA TRÊN KEY STREAMLIT ĐÃ DÙNG TRONG FORM**
+        // Tìm button "Done" (giá trị của nút ẩn) trong form
         const form = window.parent.document.querySelector('[data-testid="stForm"]');
-        const doneButton = form ? form.querySelector('button') : null;
+        let doneButton = null;
+        if (form) {{
+            doneButton = form.querySelector('button');
+        }}
 
         // Nếu autoplay bị chặn → phát khi user chạm (cần thiết cho mobile)
         v.play().catch(() => {{
             document.body.addEventListener('click', () => v.play(), {{once:true}});
         }});
 
-        // Kích hoạt fadeout và sau đó nhấn nút Streamlit để chuyển trang
-        // 6500ms là thời gian chạy video + text animation
+        // Kích hoạt fadeout và sau đó nhấn nút Streamlit
+        // Đặt thời gian chuyển đổi cố định (Ví dụ: 7.5 giây)
+        const totalDuration = 7500; // 6.5s intro + 1s buffer
+
         setTimeout(() => {{
             fadeout.style.opacity = 1;
             setTimeout(() => {{
@@ -164,25 +190,23 @@ def intro_screen():
                     doneButton.click();
                 }} else {{
                     console.error("Nút Streamlit ẩn không tìm thấy.");
+                    // Để tránh bị kẹt, có thể yêu cầu reload hoàn toàn
+                    // window.location.reload(); 
                 }}
             }}, 1000); // 1s cho hiệu ứng fade
-        }}, 6500); 
+        }}, totalDuration - 1000); 
         </script>
         """
 
-        # Hiển thị video trực tiếp (không iframe)
+        # Hiển thị video trực tiếp
         st.markdown(intro_html, unsafe_allow_html=True)
-
-    # Logic chuyển trạng thái dựa trên việc nút ẩn được click
-    if st.session_state.get("intro_done_button"):
-        st.session_state["intro_complete"] = True
-        st.session_state["intro_done_button"] = False # Đặt lại trạng thái nút
-        st.rerun() # Kích hoạt chuyển trang
 
 
 # ---------------- Trang chính ----------------
 def main_page():
     """Hiển thị trang chính."""
+    
+    # Ẩn UI Streamlit chung
     hide_streamlit_ui()
     apply_main_css()
 
@@ -192,7 +216,6 @@ def main_page():
         track = random.choice(available)
         with st.sidebar:
             st.subheader("🎶 Nhạc nền")
-            # Lưu ý: Người dùng vẫn cần click vào control audio để bắt đầu phát
             st.audio(track, format="audio/mp3", loop=True)
             st.caption(f"Đang phát: **{os.path.basename(track)}**")
 
@@ -206,7 +229,9 @@ def main_page():
 
 
 # ---------------- Logic chính ----------------
+# Logic này sẽ chạy lại mỗi khi trang được refresh
 if st.session_state["intro_complete"]:
     main_page()
 else:
+    # Nếu intro_complete là False (mới load hoặc refresh), chạy intro
     intro_screen()
