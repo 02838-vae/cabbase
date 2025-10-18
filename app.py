@@ -1,13 +1,12 @@
 import streamlit as st
 import base64
-import random
 import os
+import random
 import time
 
-# --- Cấu hình trang ---
+# ---------------- Cấu hình ----------------
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
-# --- Tên file ---
 VIDEO_INTRO = "airplane.mp4"
 PC_BACKGROUND = "cabbase.jpg"
 MOBILE_BACKGROUND = "mobile.jpg"
@@ -19,11 +18,11 @@ MUSIC_FILES = [
     "background5.mp3"
 ]
 
-# --- Session state ---
 if "intro_complete" not in st.session_state:
     st.session_state["intro_complete"] = False
 
-# --- Ẩn header, toolbar, icon Streamlit ---
+
+# ---------------- CSS ẩn header Streamlit ----------------
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -36,7 +35,8 @@ def hide_streamlit_ui():
     </style>
     """, unsafe_allow_html=True)
 
-# --- CSS nền trang chính ---
+
+# ---------------- CSS nền trang chính ----------------
 def apply_main_css():
     st.markdown(f"""
     <style>
@@ -45,6 +45,7 @@ def apply_main_css():
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
+        transition: background 1s ease-in-out;
     }}
     @media only screen and (max-width: 768px) {{
         .stApp {{
@@ -59,34 +60,33 @@ def apply_main_css():
     </style>
     """, unsafe_allow_html=True)
 
-# --- Màn hình Intro (HTML inline, autoplay bảo đảm hoạt động) ---
+
+# ---------------- Màn hình Intro ----------------
 def intro_screen():
     hide_streamlit_ui()
 
     if not os.path.exists(VIDEO_INTRO):
-        st.error("⚠️ Không tìm thấy file airplane.mp4 trong thư mục.")
+        st.error("⚠️ Không tìm thấy file airplane.mp4")
         st.session_state["intro_complete"] = True
         st.rerun()
         return
 
-    # Encode video base64 để nhúng trực tiếp
+    # Encode video base64
     with open(VIDEO_INTRO, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
+    # Tạo HTML trực tiếp (st.markdown không sandbox → autoplay được)
     intro_html = f"""
     <style>
     html, body {{
-        margin: 0;
-        padding: 0;
-        width: 100%;
-        height: 100%;
-        background-color: black;
+        margin: 0; padding: 0;
+        width: 100%; height: 100%;
         overflow: hidden;
+        background-color: black;
     }}
     video {{
         position: fixed;
-        top: 0;
-        left: 0;
+        top: 0; left: 0;
         width: 100vw;
         height: 100vh;
         object-fit: cover;
@@ -97,13 +97,12 @@ def intro_screen():
         bottom: 10%;
         left: 50%;
         transform: translateX(-50%);
-        font-size: clamp(1.2em, 4vw, 1.8em);
+        font-size: clamp(1em, 5vw, 1.8em);
         color: white;
         font-family: 'Times New Roman', serif;
         text-shadow: 2px 2px 8px black;
         animation: fadeInOut 6s forwards;
         z-index: 10;
-        white-space: nowrap;
     }}
     @keyframes fadeInOut {{
         0% {{ opacity: 0; }}
@@ -111,12 +110,10 @@ def intro_screen():
         85% {{ opacity: 1; }}
         100% {{ opacity: 0; }}
     }}
-    #blackout {{
+    #fadeout {{
         position: fixed;
-        top: 0;
-        left: 0;
-        width: 100vw;
-        height: 100vh;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
         background: black;
         opacity: 0;
         transition: opacity 1s ease-in-out;
@@ -124,46 +121,47 @@ def intro_screen():
     }}
     </style>
 
-    <video id="introVideo" muted autoplay playsinline preload="auto">
+    <video id="introVideo" autoplay muted playsinline preload="auto">
         <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
     </video>
+
     <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-    <div id="blackout"></div>
+    <div id="fadeout"></div>
 
     <script>
-    const video = document.getElementById('introVideo');
-    // Nếu autoplay bị chặn (mobile), play lại khi user chạm
-    video.play().catch(() => {{
-        document.body.addEventListener('click', () => video.play(), {{once:true}});
+    const v = document.getElementById('introVideo');
+    // Nếu autoplay bị chặn → phát khi user chạm
+    v.play().catch(() => {{
+        document.body.addEventListener('click', () => v.play(), {{once:true}});
     }});
 
-    // Sau 6.5s fade sang màu đen và gửi tín hiệu về Streamlit
     setTimeout(() => {{
-        document.getElementById('blackout').style.opacity = 1;
+        document.getElementById('fadeout').style.opacity = 1;
         setTimeout(() => {{
-            window.parent.postMessage({{type: 'streamlit:setComponentValue', value: 'done'}}, '*');
+            window.parent.postMessage({{type:'intro_done'}}, '*');
         }}, 1000);
     }}, 6500);
     </script>
     """
 
-    # Hiển thị HTML inline trong Streamlit DOM (không bị sandbox)
-    st.components.v1.html(intro_html, height=720, scrolling=False)
+    # Hiển thị video trực tiếp (không iframe)
+    st.markdown(intro_html, unsafe_allow_html=True)
 
-    # Chờ thời gian video chạy, sau đó chuyển trang
-    time.sleep(7.5)
+    # Sau 7s thì chuyển qua trang chính
+    time.sleep(7)
     st.session_state["intro_complete"] = True
     st.rerun()
 
-# --- Trang chính ---
+
+# ---------------- Trang chính ----------------
 def main_page():
     hide_streamlit_ui()
     apply_main_css()
 
-    # Thanh nhạc nền
-    available_music = [m for m in MUSIC_FILES if os.path.exists(m)]
-    if available_music:
-        track = random.choice(available_music)
+    # Nhạc nền
+    available = [m for m in MUSIC_FILES if os.path.exists(m)]
+    if available:
+        track = random.choice(available)
         with st.sidebar:
             st.subheader("🎶 Nhạc nền")
             st.audio(track, format="audio/mp3")
@@ -177,7 +175,8 @@ def main_page():
     """, unsafe_allow_html=True)
     st.markdown("<div style='height:70vh'></div>", unsafe_allow_html=True)
 
-# --- Chạy ứng dụng ---
+
+# ---------------- Logic chính ----------------
 if st.session_state["intro_complete"]:
     main_page()
 else:
