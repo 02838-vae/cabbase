@@ -2,6 +2,7 @@ import streamlit as st
 import os
 import random
 import base64
+import time
 
 # ------------------ CẤU HÌNH CƠ BẢN ------------------
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
@@ -20,6 +21,7 @@ MUSIC_FILES = [
 if "intro_complete" not in st.session_state:
     st.session_state["intro_complete"] = False
 
+
 # ------------------ CSS ẨN GIAO DIỆN STREAMLIT ------------------
 def hide_streamlit_ui():
     st.markdown("""
@@ -32,6 +34,7 @@ def hide_streamlit_ui():
     }
     </style>
     """, unsafe_allow_html=True)
+
 
 # ------------------ CSS NỀN TRANG CHÍNH ------------------
 def main_page_style():
@@ -57,6 +60,7 @@ def main_page_style():
     </style>
     """, unsafe_allow_html=True)
 
+
 # ------------------ MÀN HÌNH INTRO ------------------
 def intro_screen():
     hide_streamlit_ui()
@@ -67,12 +71,11 @@ def intro_screen():
         st.rerun()
         return
 
-    # Đọc video và mã hóa base64
     with open(VIDEO_INTRO, "rb") as f:
         video_bytes = f.read()
-    video_base64 = base64.b64encode(video_bytes).decode()
+    video_b64 = base64.b64encode(video_bytes).decode()
 
-    # HTML phát video toàn màn hình và chuyển trang sau khi hết
+    # HTML video + hiệu ứng chữ + tự chuyển cảnh
     intro_html = f"""
     <style>
     html, body {{
@@ -80,74 +83,91 @@ def intro_screen():
         padding: 0;
         overflow: hidden;
         background-color: black;
+        width: 100%;
+        height: 100%;
     }}
+
     video {{
         position: fixed;
         top: 0;
         left: 0;
-        width: 100vw;
-        height: 100vh;
-        object-fit: cover;
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+        background-color: black;
     }}
+
     #intro-text {{
         position: fixed;
-        bottom: 10%;
+        bottom: 18%;
         left: 50%;
         transform: translateX(-50%);
-        font-size: clamp(1.2em, 5vw, 2.5em);
+        font-size: clamp(1em, 4vw, 2.5em);
         color: white;
+        white-space: nowrap;
         font-family: 'Times New Roman', serif;
         text-shadow: 2px 2px 8px black;
-        animation: fadeInOut 6s ease-in-out;
-        z-index: 2;
+        animation: fadeInOut 6s ease-in-out forwards;
+        z-index: 10;
     }}
+
     @keyframes fadeInOut {{
         0% {{ opacity: 0; }}
-        15% {{ opacity: 1; }}
-        85% {{ opacity: 1; }}
+        20% {{ opacity: 1; }}
+        80% {{ opacity: 1; }}
         100% {{ opacity: 0; }}
+    }}
+
+    #fade-overlay {{
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        background: black;
+        opacity: 0;
+        transition: opacity 1.2s ease-in-out;
+        z-index: 15;
     }}
     </style>
 
     <video id="introVideo" autoplay muted playsinline>
-        <source src="data:video/mp4;base64,{video_base64}" type="video/mp4">
+        <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
     </video>
+
     <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+    <div id="fade-overlay"></div>
 
     <script>
     const video = document.getElementById('introVideo');
+    const overlay = document.getElementById('fade-overlay');
+
+    // Nếu autoplay bị chặn, phát khi user chạm
     video.play().catch(() => {{
-        document.body.addEventListener('click', () => video.play(), {{once: true}});
+        document.body.addEventListener('click', () => video.play(), {{ once: true }});
     }});
 
-    // Khi video kết thúc → gửi tín hiệu sang Python
+    // Khi video gần kết thúc → fade đen và báo Python
     video.addEventListener('ended', () => {{
-        window.parent.postMessage({{type: 'intro_done'}}, '*');
+        overlay.style.opacity = 1;
+        setTimeout(() => {{
+            window.parent.postMessage({{ type: 'intro_done' }}, '*');
+        }}, 1000);
     }});
     </script>
     """
 
     st.markdown(intro_html, unsafe_allow_html=True)
 
-    # Chờ tín hiệu hoặc thời lượng video
-    from streamlit.runtime.scriptrunner import add_script_run_ctx
-    import threading, time
+    # Cơ chế dự phòng (sau 12s tự chuyển trang nếu JS không gửi tín hiệu)
+    time.sleep(12)
+    st.session_state["intro_complete"] = True
+    st.rerun()
 
-    def wait_and_finish():
-        time.sleep(10)  # Thời lượng video
-        st.session_state["intro_complete"] = True
-        st.experimental_rerun()
-
-    t = threading.Thread(target=wait_and_finish)
-    add_script_run_ctx(t)
-    t.start()
 
 # ------------------ TRANG CHÍNH ------------------
 def main_page():
     hide_streamlit_ui()
     main_page_style()
 
-    # Nhạc nền
     available = [m for m in MUSIC_FILES if os.path.exists(m)]
     if available:
         random_track = random.choice(available)
@@ -156,12 +176,13 @@ def main_page():
             st.audio(random_track, format="audio/mp3")
             st.caption(f"Đang phát: **{os.path.basename(random_track)}**")
 
-    # Tiêu đề
     st.markdown("""
     <h1 style='text-align:center; font-size:3em; margin-top:60px;'>
         TỔ BẢO DƯỠNG SỐ 1
     </h1>
     """, unsafe_allow_html=True)
+    st.markdown("<div style='height:70vh'></div>", unsafe_allow_html=True)
+
 
 # ------------------ LOGIC CHÍNH ------------------
 if st.session_state["intro_complete"]:
