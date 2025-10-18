@@ -43,33 +43,22 @@ def hide_streamlit_ui():
     st.markdown("""
     <style>
     /* 1. Ẩn các thành phần Streamlit mặc định */
-    [data-testid="stToolbar"], header, iframe[title*="keyboard"], [tabindex="0"][aria-live] {
+    [data-testid="stToolbar"], header, footer, iframe[title*="keyboard"], [tabindex="0"][aria-live] {
         display: none !important;
         visibility: hidden !important;
     }
     
-    /* 2. GHI ĐÈ FOOTER VÀ CONTAINER CHÍNH */
-    footer {
-        height: 0 !important; /* Xóa chiều cao footer */
-        visibility: hidden !important; /* Đảm bảo ẩn hoàn toàn */
-        margin: 0 !important;
-        padding: 0 !important;
-    }
-
+    /* 2. GHI ĐÈ CONTAINER CHÍNH */
     .stApp, .stApp > header, .main, .block-container, [data-testid="stVerticalBlock"] {
         padding: 0 !important;
         margin: 0 !important;
+        /* Giữ 100vw/100vh để chống lại các wrapper khác */
         max-width: 100vw !important; 
         width: 100vw !important;
         min-height: 100vh !important;
     }
     
-    .stApp > div {
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-
-    /* 3. Đảm bảo iframe của components.html full screen */
+    /* 3. Đảm bảo iframe của components.html full screen (FIX HEIGHT) */
     [data-testid*="stHtmlComponents"] {
         position: fixed !important; 
         top: 0;
@@ -79,8 +68,8 @@ def hide_streamlit_ui():
         z-index: 9999; 
     }
     
-    /* Các quy tắc bổ sung */
-    .st-emotion-cache-1jicfl2, .st-emotion-cache-z5in9b, .st-emotion-cache-1cypn32 { 
+    /* 4. Quy tắc bổ sung */
+    .stApp > div, .st-emotion-cache-1jicfl2, .st-emotion-cache-z5in9b, .st-emotion-cache-1cypn32 { 
         padding: 0 !important;
         margin: 0 !important;
     }
@@ -88,7 +77,9 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ================== MÀN HÌNH INTRO CUỐI CÙNG (Dùng Base64 & components.html) ==================
+# -------------------------------------------------------------
+## 🎬 MÀN HÌNH INTRO CUỐI CÙNG (Dùng Base64 & components.html)
+# -------------------------------------------------------------
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     
@@ -114,7 +105,7 @@ def intro_screen(is_mobile=False):
         /* FIX HEIGHT: SỬ DỤNG 100VH CHO IFRAME CON */
         html, body {{ 
             margin: 0 !important; padding: 0 !important; 
-            height: 100vh; width: 100%; 
+            height: 100vh; width: 100%; /* SỬ DỤNG 100vh cho body iFrame */
             overflow: hidden; background-color: black; 
             font-family: 'Arial', sans-serif, 'Playfair Display'; 
         }}
@@ -169,8 +160,7 @@ def intro_screen(is_mobile=False):
     </html>
     """
     
-    # 2. Nhúng vào Streamlit
-    # Bỏ height=800 để CSS full-screen xử lý.
+    # 2. Nhúng vào Streamlit (KHÔNG ĐẶT CHIỀU CAO CỤ THỂ)
     components.html(intro_html, scrolling=False) 
 
     # --- Cơ chế Chuyển Trang dựa trên thời gian ---
@@ -187,7 +177,9 @@ def intro_screen(is_mobile=False):
         st.rerun()
 
 
-# ================== TRANG CHÍNH (Giữ Nguyên) ==================
+# -------------------------------------------------------------
+## 🖼️ TRANG CHÍNH (Giữ Nguyên)
+# -------------------------------------------------------------
 def main_page(is_mobile=False):
     hide_streamlit_ui() 
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -228,7 +220,9 @@ def main_page(is_mobile=False):
     st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
 
 
-# ================== LUỒNG CHÍNH ==================
+# -------------------------------------------------------------
+## ⚙️ LUỒNG CHÍNH
+# -------------------------------------------------------------
 hide_streamlit_ui()
 
 if st.session_state.is_mobile is None:
