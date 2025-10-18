@@ -3,10 +3,9 @@ import os
 import base64
 import random
 import time
-import streamlit.components.v1 as components
-# Import thư viện User Agent và Javascript
 from streamlit_javascript import st_javascript
 from user_agents import parse
+import streamlit.components.v1 as components
 
 # ================== CẤU HÌNH ==================
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
@@ -25,21 +24,17 @@ if "is_mobile" not in st.session_state:
 
 # --- XÁC ĐỊNH THIẾT BỊ DÙNG USER AGENT ---
 if st.session_state.is_mobile is None:
-    # Lấy chuỗi User Agent từ trình duyệt
     ua_string = st_javascript("""window.navigator.userAgent;""")
     
     if ua_string:
-        # Phân tích chuỗi User Agent
         user_agent = parse(ua_string)
-        # Gán trạng thái: True nếu không phải PC (tức là mobile, tablet, v.v.)
         st.session_state.is_mobile = not user_agent.is_pc
         st.rerun()
     else:
-        # Dừng luồng khi đang chờ JS phản hồi (chỉ ở lần chạy đầu tiên)
         st.info("Đang xác định thiết bị và tải...")
         st.stop()
 
-# ================== ẨN HEADER STREAMLIT & BẬT FULL SCREEN CSS ==================
+# ================== ẨN HEADER STREAMLIT & BẬT FULL SCREEN CSS TỐI ƯU ==================
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -49,15 +44,19 @@ def hide_streamlit_ui():
         visibility: hidden !important;
     }
     
-    /* 2. FORCE FULL-SCREEN cho Streamlit App và Container */
-    .stApp {
+    /* 2. FORCE FULL-SCREEN: Loại bỏ khoảng trắng và padding từ gốc */
+    .stApp, .stApp > header, .main {
         padding: 0 !important;
         margin: 0 !important;
+        max-width: 100vw !important; 
+        min-width: 100vw !important;
+        width: 100vw !important;
+        min-height: 100vh !important; /* Đảm bảo chiều cao tối thiểu */
     }
-    .main .block-container {
+    .block-container {
         padding: 0 !important;
         margin: 0 !important;
-        max-width: 100vw;
+        max-width: 100vw !important;
     }
     
     /* 3. Đảm bảo iframe của components.html (video intro) full screen */
@@ -65,8 +64,8 @@ def hide_streamlit_ui():
         position: fixed !important; 
         top: 0;
         left: 0;
-        width: 100vw;
-        height: 100vh;
+        width: 100vw !important;
+        height: 100vh !important;
         z-index: 9999; 
     }
     
@@ -151,18 +150,17 @@ def intro_screen(is_mobile=False):
     </html>
     """
     
-    components.html(intro_html, height=1000, scrolling=False) 
+    # Bỏ tham số height để CSS fixed quyết định
+    components.html(intro_html, scrolling=False) 
 
     # --- Cơ chế Chuyển Trang dựa trên thời gian ---
     if "start_time" not in st.session_state:
         st.session_state.start_time = time.time()
     
-    # Rerun cho đến khi hết 9.5 giây
     if time.time() - st.session_state.start_time < 9.5: 
         time.sleep(1) 
         st.rerun()
     else:
-        # Hoàn thành sau khi hết thời gian chờ
         st.session_state.intro_done = True
         del st.session_state.start_time
         st.rerun()
@@ -212,9 +210,9 @@ def main_page(is_mobile=False):
 # ================== LUỒNG CHÍNH ==================
 hide_streamlit_ui()
 
-# Sau khi is_mobile đã được xác định (không còn None)
-if st.session_state.is_mobile is not None:
-    if not st.session_state.intro_done:
-        intro_screen(st.session_state.is_mobile)
-    else:
-        main_page(st.session_state.is_mobile)
+if st.session_state.is_mobile is None:
+    pass 
+elif not st.session_state.intro_done:
+    intro_screen(st.session_state.is_mobile)
+else:
+    main_page(st.session_state.is_mobile)
