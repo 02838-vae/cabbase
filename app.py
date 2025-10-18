@@ -44,30 +44,37 @@ def hide_streamlit_ui():
         visibility: hidden !important;
     }
     
-    /* 2. FORCE FULL-SCREEN: Loại bỏ khoảng trắng và padding từ gốc */
-    .stApp, .stApp > header, .main {
+    /* 2. GHI ĐÈ CSS CỦA STREAMLIT (Sử dụng selector mạnh) */
+    /* Đây là quy tắc tổng quát để loại bỏ padding/margin khỏi các container chính */
+    .stApp, .stApp > header, .main, .block-container {
         padding: 0 !important;
         margin: 0 !important;
+        /* Đảm bảo chiếm toàn bộ không gian */
         max-width: 100vw !important; 
-        min-width: 100vw !important;
         width: 100vw !important;
-        min-height: 100vh !important; /* Đảm bảo chiều cao tối thiểu */
-    }
-    .block-container {
-        padding: 0 !important;
-        margin: 0 !important;
-        max-width: 100vw !important;
+        min-height: 100vh !important;
     }
     
     /* 3. Đảm bảo iframe của components.html (video intro) full screen */
     [data-testid*="stHtmlComponents"] {
-        position: fixed !important; 
+        /* Chuyển từ fixed sang absolute để tránh xung đột z-index/fixed */
+        position: absolute !important; 
         top: 0;
         left: 0;
         width: 100vw !important;
         height: 100vh !important;
         z-index: 9999; 
     }
+    
+    /* 4. Quy tắc bổ sung để khắc phục lỗi padding/margin trên mobile (thường là .main) */
+    /* Sử dụng selector tổng quát cho các phiên bản Streamlit mới */
+    .st-emotion-cache-1jicfl2, /* Ví dụ từ bạn */
+    .st-emotion-cache-z5in9b, 
+    .st-emotion-cache-1cypn32 { 
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
     
     </style>
     """, unsafe_allow_html=True)
@@ -85,7 +92,6 @@ def intro_screen(is_mobile=False):
         st.rerun()
         return
 
-    # Mã hóa video thành base64
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
@@ -95,12 +101,15 @@ def intro_screen(is_mobile=False):
     <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
+        /* QUAN TRỌNG: CSS bên trong components.html */
         html, body {{ 
             margin: 0 !important; padding: 0 !important; 
             height: 100vh; width: 100vw; 
             overflow: hidden; background-color: black; 
         }}
         video {{ 
+            position: absolute; /* Đảm bảo video nằm trong iframe */
+            top: 0; left: 0;
             width: 100vw; height: 100vh; 
             object-fit: cover; object-position: center; 
         }}
