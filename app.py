@@ -84,57 +84,60 @@ def intro_screen(is_mobile=False):
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
-    # ✅ Tinh chỉnh lại góc nhìn cho mobile
+    # ⚙️ Thiết lập riêng cho mobile và PC
     if is_mobile:
-        # Đưa khung nhìn lên cao hơn nữa (hiển thị toàn bộ máy bay)
-        object_position_css = "center 15%;"  # từ 30% → 15% (kéo lên cao)
-        text_bottom_css = "32%;"  # nâng dòng chữ lên cao hơn để thấy rõ
-        translate_y = "-10%"  # dịch video lên thêm 10%
+        object_position = "center 10%"   # kéo máy bay lên cao hơn
+        text_bottom = "35%"              # đưa chữ cao hơn
+        video_translate = "-12%"         # nâng toàn video
     else:
-        object_position_css = "center center;"
-        text_bottom_css = "18%;"
-        translate_y = "0"
+        object_position = "center center"
+        text_bottom = "20%"
+        video_translate = "0"
 
     intro_html = f"""
-    <!DOCTYPE html>
     <html lang="vi">
     <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <style>
-            :root {{
-                --dynamic-vh: 100vh;
-            }}
-
             html, body {{
                 margin: 0; padding: 0;
                 width: 100vw;
-                height: var(--dynamic-vh);
+                height: 100vh;
                 overflow: hidden;
                 background-color: black;
                 font-family: 'Playfair Display', serif;
                 touch-action: none;
             }}
+            #container {{
+                position: fixed;
+                top: 0; left: 0;
+                width: 100vw;
+                height: 100vh;
+                overflow: hidden;
+                background: black;
+            }}
             video {{
                 position: absolute;
                 top: 0; left: 0;
                 width: 100vw;
-                height: 100%;
+                height: 100vh;
                 object-fit: cover;
-                object-position: {object_position_css};
-                transform: translateY({translate_y});
+                object-position: {object_position};
+                transform: translateY({video_translate});
                 z-index: 1;
             }}
             #intro-text {{
                 position: absolute;
                 left: 50%;
-                bottom: {text_bottom_css};
+                bottom: {text_bottom};
                 transform: translateX(-50%);
-                font-size: clamp(20px, 3vw, 44px);
                 color: white;
-                text-shadow: 2px 2px 10px rgba(0,0,0,0.9);
-                z-index: 2;
-                animation: fadeInOut 6s ease-in-out forwards;
+                font-size: clamp(20px, 3.5vw, 42px);
                 text-align: center;
+                text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+                opacity: 0;
+                animation: fadeInOut 6s ease-in-out forwards;
+                z-index: 2;
                 white-space: nowrap;
             }}
             @keyframes fadeInOut {{
@@ -156,28 +159,25 @@ def intro_screen(is_mobile=False):
         </style>
     </head>
     <body>
-        <video id="introVid" autoplay muted playsinline>
-            <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
-        </video>
-        <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-        <div id="fade"></div>
-
+        <div id="container">
+            <video id="introVid" autoplay muted playsinline>
+                <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
+            </video>
+            <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+            <div id="fade"></div>
+        </div>
         <script>
             const vid = document.getElementById("introVid");
             const fade = document.getElementById("fade");
-            const root = document.documentElement;
 
-            function setViewportHeight() {{
-                let vh = window.innerHeight * 0.01;
-                root.style.setProperty('--dynamic-vh', `${{vh * 100}}px`);
+            // đảm bảo video fit toàn màn hình trên mobile
+            function resizeFix() {{
+                const vh = window.innerHeight * 0.01;
+                document.documentElement.style.setProperty('--vh', `${{vh}}px`);
             }}
-
-            setViewportHeight();
-            window.addEventListener('resize', setViewportHeight);
-            window.addEventListener('orientationchange', setViewportHeight);
-            if ('visualViewport' in window) {{
-                window.visualViewport.addEventListener('resize', setViewportHeight);
-            }}
+            resizeFix();
+            window.addEventListener('resize', resizeFix);
+            window.addEventListener('orientationchange', resizeFix);
 
             function finishIntro() {{
                 fade.style.opacity = 1;
@@ -188,7 +188,7 @@ def intro_screen(is_mobile=False):
 
             vid.onended = finishIntro;
             vid.play().catch(() => {{
-                console.log("Autoplay bị chặn → fallback");
+                console.log("⚠️ Autoplay bị chặn, fallback sau 9s");
                 setTimeout(finishIntro, 9000);
             }});
         </script>
@@ -196,7 +196,7 @@ def intro_screen(is_mobile=False):
     </html>
     """
 
-    components.html(intro_html, height=1300, scrolling=False)
+    components.html(intro_html, height=900, scrolling=False)
 
     if st.session_state.start_time is None:
         st.session_state.start_time = time.time()
@@ -207,8 +207,6 @@ def intro_screen(is_mobile=False):
         st.session_state.intro_done = True
         st.session_state.start_time = None
         st.rerun()
-
-
 
 
 # ================== TRANG CHÍNH ==================
