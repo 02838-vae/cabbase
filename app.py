@@ -5,7 +5,7 @@ import random
 import time
 import streamlit.components.v1 as components
 
-# ================== CẤU HÌNH ==================
+# ===== CẤU HÌNH =====
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
 VIDEO_PC = "airplane.mp4"
@@ -14,14 +14,14 @@ BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 MUSIC_FILES = ["background.mp3", "background2.mp3", "background3.mp3", "background4.mp3", "background5.mp3"]
 
-# ================== TRẠNG THÁI ==================
+# ===== SESSION STATE =====
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 if "is_mobile" not in st.session_state:
     st.session_state.is_mobile = None
 
 
-# ================== ẨN HEADER STREAMLIT ==================
+# ===== ẨN UI STREAMLIT =====
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -34,22 +34,26 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ================== XÁC ĐỊNH THIẾT BỊ ==================
+# ===== NHẬN DẠNG THIẾT BỊ =====
 def detect_device():
-    components.html("""
+    """Dùng JavaScript gửi thông tin thiết bị về Streamlit"""
+    device_html = """
     <script>
     const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-    window.parent.postMessage({type: "device_detected", value: isMobile}, "*");
+    window.parent.postMessage({type: "streamlit:setComponentValue", value: isMobile}, "*");
     </script>
-    """, height=0)
+    """
+    return components.html(device_html, height=0)
 
 
-# ================== MÀN HÌNH INTRO ==================
+# ===== MÀN HÌNH INTRO =====
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_path = VIDEO_MOBILE if is_mobile else VIDEO_PC
+
     if not os.path.exists(video_path):
-        st.error(f"⚠️ Không tìm thấy video: {video_path}")
+        st.error(f"Không tìm thấy video: {video_path}")
+        time.sleep(2)
         st.session_state.intro_done = True
         st.rerun()
         return
@@ -64,12 +68,21 @@ def intro_screen(is_mobile=False):
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
         html, body {{
-            margin: 0; padding: 0; height: 100%; overflow: hidden;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
             background-color: black;
         }}
         video {{
-            width: 100vw; height: 100vh;
-            object-fit: cover; object-position: center;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
         }}
         #intro-text {{
             position: fixed;
@@ -81,6 +94,8 @@ def intro_screen(is_mobile=False):
             font-family: 'Playfair Display', serif;
             text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
             animation: fadeInOut 6s ease-in-out forwards;
+            white-space: nowrap;
+            z-index: 2;
         }}
         @keyframes fadeInOut {{
             0% {{ opacity: 0; transform: translate(-50%, 20px); }}
@@ -120,13 +135,12 @@ def intro_screen(is_mobile=False):
     """
     components.html(intro_html, height=800, scrolling=False)
 
-    # Đợi cho video kết thúc
     time.sleep(9)
     st.session_state.intro_done = True
     st.rerun()
 
 
-# ================== TRANG CHÍNH ==================
+# ===== TRANG CHÍNH =====
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -139,7 +153,7 @@ def main_page(is_mobile=False):
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
-        animation: fadeInBg 1s ease-in-out forwards;
+        animation: fadeInBg 1.2s ease-in-out forwards;
     }}
     @keyframes fadeInBg {{
         from {{ opacity: 0; }}
@@ -155,7 +169,6 @@ def main_page(is_mobile=False):
     </style>
     """, unsafe_allow_html=True)
 
-    # Nhạc nền
     available_music = [m for m in MUSIC_FILES if os.path.exists(m)]
     if available_music:
         chosen = random.choice(available_music)
@@ -167,15 +180,25 @@ def main_page(is_mobile=False):
     st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
 
 
-# ================== LUỒNG CHÍNH ==================
+# ===== LUỒNG CHÍNH =====
 hide_streamlit_ui()
 
 if st.session_state.is_mobile is None:
-    # Xác định thiết bị (mặc định False nếu chưa có phản hồi)
-    st.session_state.is_mobile = "mobile" in st.query_params.get("device", "").lower()
-    if not st.session_state.is_mobile:
-        st.session_state.is_mobile = False
-    intro_screen(False)
+    # Gửi JS để xác định thiết bị
+    st.write("🔍 Đang phát hiện thiết bị...")
+    is_mobile_component = components.html(
+        """
+        <script>
+        const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+        window.parent.postMessage({type: "streamlit:setComponentValue", value: isMobile}, "*");
+        </script>
+        """,
+        height=0
+    )
+    # Mặc định desktop lần đầu
+    st.session_state.is_mobile = False
+    st.rerun()
+
 else:
     if not st.session_state.intro_done:
         intro_screen(st.session_state.is_mobile)
