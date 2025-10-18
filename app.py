@@ -5,7 +5,7 @@ import time
 import os
 import base64
 
-# --- Cấu hình ---
+# --- Cấu hình trang ---
 st.set_page_config(layout="wide", page_title="Tổ Bảo Dưỡng Số 1")
 
 PC_BACKGROUND = "cabbase.jpg"
@@ -20,7 +20,7 @@ if "intro_complete" not in st.session_state:
 def apply_css():
     css = f"""
     <style>
-    /* Ẩn header khi intro */
+    /* Ẩn header và thanh menu khi intro */
     .stApp > header {{
         display: {'none' if not st.session_state.intro_complete else 'block'} !important;
     }}
@@ -42,15 +42,20 @@ def apply_css():
         }}
     }}
 
-    /* Phông chữ */
+    /* Phông chữ chung */
     h1, p, label, div, span {{
         font-family: 'Times New Roman', serif !important;
     }}
 
-    /* Ẩn focus trap “keyboard_...” */
-    div[data-testid="stDecoration"], div[tabindex="0"][aria-live="polite"] {{
+    /* Ẩn các phần tử lạ Streamlit tự sinh */
+    div[tabindex="0"][aria-live="polite"],
+    div[data-testid="stDecoration"],
+    div[data-testid="stStatusWidget"],
+    div[role="complementary"],
+    section[data-testid="stSidebar"] > div:first-child {{
         display: none !important;
         visibility: hidden !important;
+        height: 0 !important;
     }}
 
     /* Sidebar */
@@ -76,7 +81,7 @@ def intro_screen():
         video_bytes = f.read()
     video_b64 = base64.b64encode(video_bytes).decode()
 
-    # HTML intro — dùng object-fit:cover và viewport chuẩn mobile
+    # HTML Intro video + chữ nhỏ dưới máy bay
     intro_html = f"""
     <html>
     <head>
@@ -99,22 +104,23 @@ def intro_screen():
             }}
             #intro-text {{
                 position: fixed;
-                top: 50%;
+                bottom: 10%;
                 left: 50%;
-                transform: translate(-50%, -50%);
-                font-size: 3em;
+                transform: translateX(-50%);
+                font-size: clamp(1.2em, 3vw, 2em);
                 color: white;
                 font-family: 'Times New Roman', serif;
-                text-shadow: 2px 2px 6px black;
+                text-shadow: 2px 2px 5px black;
                 animation: fade_in_out 6s forwards;
                 white-space: nowrap;
                 text-align: center;
+                letter-spacing: 2px;
             }}
             @keyframes fade_in_out {{
-                0% {{ opacity: 0; }}
-                15% {{ opacity: 1; }}
+                0% {{ opacity: 0; transform: translate(-50%, 20%); }}
+                15% {{ opacity: 1; transform: translate(-50%, 0); }}
                 85% {{ opacity: 1; }}
-                100% {{ opacity: 0; }}
+                100% {{ opacity: 0; transform: translate(-50%, -10%); }}
             }}
             .fade-black {{
                 position: fixed;
@@ -147,8 +153,6 @@ def intro_screen():
     """
 
     components.html(intro_html, height=720, width=None)
-
-    # Đợi kết thúc rồi chuyển
     time.sleep(7)
     st.session_state["intro_complete"] = True
     st.rerun()
@@ -157,14 +161,14 @@ def intro_screen():
 def main_page():
     apply_css()
 
-    # Sidebar nhạc nền
+    # Sidebar: nhạc nền ngẫu nhiên
     music_files = [
         "background.mp3",
         "background1.mp3",
         "background2.mp3",
         "background3.mp3",
         "background4.mp3",
-        "background5.mp3"
+        "background5.mp3",
     ]
     available = [m for m in music_files if os.path.exists(m)]
     if available:
@@ -186,7 +190,7 @@ def main_page():
 
     st.markdown("<div style='height:60vh'></div>", unsafe_allow_html=True)
 
-# --- Luồng chính ---
+# --- Điều hướng ---
 if st.session_state["intro_complete"]:
     main_page()
 else:
