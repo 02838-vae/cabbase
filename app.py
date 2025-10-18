@@ -85,15 +85,21 @@ def intro_screen(is_mobile=False):
         video_b64 = base64.b64encode(f.read()).decode()
 
     intro_html = f"""
+    <!DOCTYPE html>
     <html lang="vi">
     <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no"> 
         <style>
-            /* THAY ĐỔI 1: Sử dụng biến CSS --vh thay vì 100% hoặc 100vh */
+            /* 1. KHAI BÁO BIẾN CSS TÙY CHỈNH CHO MOBILE */
+            :root {{
+                --dynamic-vh: 100vh;
+            }}
+            
+            /* 2. SỬ DỤNG BIẾN NÀY ĐỂ TRÁNH LỖI THANH ĐỊA CHỈ TRÊN MOBILE */
             html, body {{
                 margin: 0; padding: 0;
                 width: 100vw;
-                height: 100vh; /* Sẽ được JS gán lại giá trị --vh */
+                height: var(--dynamic-vh); /* Sử dụng chiều cao động */
                 overflow: hidden;
                 background-color: black;
                 font-family: 'Playfair Display', serif;
@@ -103,7 +109,7 @@ def intro_screen(is_mobile=False):
                 position: absolute;
                 top: 0; left: 0;
                 width: 100vw;
-                height: 100%; /* Sẽ sử dụng 100% của body đã được gán --vh */
+                height: 100%; /* Sẽ sử dụng chiều cao từ body */
                 object-fit: cover;
                 object-position: center;
                 z-index: 1;
@@ -111,7 +117,7 @@ def intro_screen(is_mobile=False):
             #intro-text {{
                 position: absolute;
                 left: 50%;
-                /* top/bottom sẽ được JS gán giá trị chính xác */
+                bottom: 18%; /* KHÔNG GÁN LẠI TỪ JS */
                 transform: translateX(-50%);
                 font-size: clamp(18px, 2.5vw, 40px);
                 color: white;
@@ -131,7 +137,7 @@ def intro_screen(is_mobile=False):
                 position: absolute;
                 top: 0; left: 0;
                 width: 100%;
-                height: 100%; /* Sẽ sử dụng 100% của body đã được gán --vh */
+                height: 100%;
                 background: black;
                 opacity: 0;
                 z-index: 3;
@@ -149,40 +155,27 @@ def intro_screen(is_mobile=False):
         <script>
             const vid = document.getElementById("introVid");
             const fade = document.getElementById("fade");
-            const text = document.getElementById("intro-text");
+            const root = document.documentElement;
 
-            // SỬA LỖI MOBILE: Hàm này sẽ ép iframe & nội dung chiếm đúng viewport thật
-            function resizeToViewport() {{
-                const vh = window.innerHeight || document.documentElement.clientHeight;
+            // ✅ SỬA LỖI MOBILE VIEWPORT
+            function setViewportHeight() {{
+                // Tính toán chiều cao viewport chính xác (loại bỏ thanh địa chỉ)
+                let vh = window.innerHeight * 0.01;
+                // Gán vào biến CSS tùy chỉnh
+                root.style.setProperty('--dynamic-vh', `${{vh * 100}}px`);
                 
-                // Gán chiều cao chính xác cho body (container chính)
-                document.body.style.height = vh + "px";
-                
-                // Căn chỉnh dòng chữ ở vị trí cố định từ đáy
-                text.style.bottom = (vh * 0.18) + "px"; 
-                
-                // Kích hoạt lại resize của Streamlit cha (chỉ trong môi trường Streamlit)
-                try {{
-                    if (window.parent && window.parent.document) {{
-                        const iframe = window.frameElement;
-                        if (iframe) {{
-                            iframe.style.height = vh + "px";
-                        }}
-                    }}
-                }} catch (e) {{
-                    console.error("Không thể thay đổi chiều cao iFrame cha.");
-                }}
+                // KHÔNG CỐ GẮNG THAY ĐỔI IFRAME CHA HOẶC GÁN LẠI VỊ TRÍ TEXT
             }}
 
-            resizeToViewport();
-            window.addEventListener('resize', resizeToViewport);
-            window.addEventListener('orientationchange', resizeToViewport);
-
-            // Bắt sự kiện hiển thị/thanh URL thay đổi
+            setViewportHeight();
+            window.addEventListener('resize', setViewportHeight);
+            window.addEventListener('orientationchange', setViewportHeight);
+            
+            // Dùng VisualViewport API để bắt sự kiện ẩn/hiện thanh URL
             if ('visualViewport' in window) {{
-                window.visualViewport.addEventListener('resize', resizeToViewport);
-                window.visualViewport.addEventListener('scroll', resizeToViewport);
+                window.visualViewport.addEventListener('resize', setViewportHeight);
             }}
+
 
             function finishIntro() {{
                 fade.style.opacity = 1;
@@ -201,7 +194,7 @@ def intro_screen(is_mobile=False):
     </html>
     """
 
-    # THAY ĐỔI 2: KHÔNG ĐẶT CHIỀU CAO CỐ ĐỊNH, để CSS/JS lo việc đó
+    # THAY ĐỔI 3: VẪN KHÔNG ĐẶT CHIỀU CAO CỐ ĐỊNH HOẶC CỰC LỚN
     components.html(intro_html, scrolling=False)
 
     # Logic giữ nguyên
