@@ -1,30 +1,73 @@
 import streamlit as st
 import streamlit.components.v1 as components
 import random
-import time
-import os
 import base64
+import os
+import time
 
-# --- Cấu hình ---
-st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide", initial_sidebar_state="collapsed")
+# === Cấu hình cơ bản ===
+st.set_page_config(layout="wide", page_title="Tổ Bảo Dưỡng Số 1")
 
+# === File Tài Nguyên ===
 VIDEO_INTRO = "airplane.mp4"
 PC_BACKGROUND = "cabbase.jpg"
 MOBILE_BACKGROUND = "mobile.jpg"
+MUSIC_FILES = [
+    "background.mp3", "background2.mp3",
+    "background3.mp3", "background4.mp3", "background5.mp3"
+]
 
+# === Khởi tạo session state ===
 if "intro_complete" not in st.session_state:
     st.session_state["intro_complete"] = False
 
 
-# --- Hàm phụ ---
-def get_base64_file(path):
-    if not os.path.exists(path):
-        return ""
-    with open(path, "rb") as f:
+# === Hàm tiện ích ===
+def get_base64_file(filepath):
+    with open(filepath, "rb") as f:
         return base64.b64encode(f.read()).decode()
 
 
-# --- Màn hình intro (HTML thuần, không hiển thị phần Streamlit nào) ---
+# === CSS nền chính ===
+def apply_main_css():
+    css = f"""
+    <style>
+    /* Ẩn toàn bộ thanh toolbar và icon Streamlit */
+    [data-testid="stDecoration"],
+    header, footer, [data-testid="stToolbar"], iframe,
+    svg, [title*="keyboard"], [tabindex="0"][aria-live] {{
+        display: none !important;
+        visibility: hidden !important;
+    }}
+
+    /* Nền trang */
+    .stApp {{
+        background-size: cover;
+        background-position: center;
+        background-attachment: fixed;
+        transition: background-image 1s ease-in-out;
+        min-height: 100vh;
+    }}
+    .main-bg {{
+        background-image: url("{PC_BACKGROUND}");
+    }}
+    @media only screen and (max-width: 768px) {{
+        .main-bg {{
+            background-image: url("{MOBILE_BACKGROUND}");
+        }}
+    }}
+
+    /* Font & màu cổ điển */
+    h1, .stText, p, .stMarkdown, label {{
+        font-family: 'Times New Roman', serif;
+        color: #4E342E;
+    }}
+    </style>
+    """
+    st.markdown(css, unsafe_allow_html=True)
+
+
+# === Màn hình intro ===
 def intro_screen():
     if not os.path.exists(VIDEO_INTRO):
         st.error("Không tìm thấy video airplane.mp4")
@@ -42,28 +85,32 @@ def intro_screen():
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
             html, body {{
-                margin: 0; padding: 0;
-                width: 100%; height: 100%;
+                margin: 0;
+                padding: 0;
+                width: 100%;
+                height: 100%;
                 overflow: hidden;
                 background-color: black;
             }}
             video {{
                 position: fixed;
-                top: 0;
-                left: 0;
-                width: 100vw;
-                height: 100vh;
+                top: 50%;
+                left: 50%;
                 min-width: 100%;
                 min-height: 100%;
+                width: auto;
+                height: auto;
+                transform: translate(-50%, -50%);
                 object-fit: cover;
                 object-position: center;
+                z-index: -1;
             }}
             #intro-text {{
                 position: fixed;
                 bottom: 10%;
                 left: 50%;
                 transform: translateX(-50%);
-                font-size: clamp(1em, 4vw, 1.4em);
+                font-size: clamp(1em, 4vw, 1.6em);
                 color: white;
                 font-family: 'Times New Roman', serif;
                 text-shadow: 2px 2px 8px black;
@@ -84,88 +131,64 @@ def intro_screen():
                 background-color: black;
                 opacity: 0;
                 transition: opacity 1s ease-out;
+                z-index: 2000;
             }}
         </style>
     </head>
     <body>
-        <video autoplay muted playsinline>
+        <video autoplay muted playsinline preload="auto">
             <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
         </video>
         <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
         <div id="fadeout"></div>
         <script>
+            // Sau 6s làm tối dần và báo về Streamlit
             setTimeout(() => {{
                 document.getElementById("fadeout").style.opacity = 1;
                 setTimeout(() => {{
                     window.parent.postMessage({{type: "intro_done"}}, "*");
                 }}, 1000);
-            }}, 6200);
+            }}, 6000);
         </script>
     </body>
     </html>
     """
 
-    # Render fullscreen, không hiển thị header Streamlit
-    components.html(intro_html, height=800, width=None, scrolling=False)
+    components.html(intro_html, height=800, scrolling=False)
     time.sleep(7)
     st.session_state["intro_complete"] = True
     st.rerun()
 
 
-# --- CSS cho trang chính ---
-def apply_main_css(pc_img, mobile_img):
-    st.markdown(f"""
-    <style>
-    [data-testid="stDecoration"], header, footer, [data-testid="stToolbar"], svg,
-    [title*="keyboard"], [tabindex="0"][aria-live], iframe {{
-        display: none !important;
-    }}
-    html, body, [data-testid="stAppViewContainer"] {{
-        background: url("data:image/jpeg;base64,{pc_img}") center center / cover no-repeat fixed;
-    }}
-    @media (max-width: 768px) {{
-        html, body, [data-testid="stAppViewContainer"] {{
-            background: url("data:image/jpeg;base64,{mobile_img}") center center / cover no-repeat fixed;
-        }}
-    }}
-    h1 {{
-        font-family: 'Times New Roman', serif;
-        color: #fff8dc;
-        text-align: center;
-        text-shadow: 2px 2px 8px black;
-        font-size: 3.2em;
-        margin-top: 40px;
-    }}
-    </style>
+# === Trang chính ===
+def main_page():
+    apply_main_css()
+
+    st.markdown('<div class="stApp main-bg">', unsafe_allow_html=True)
+
+    # Thanh nhạc
+    with st.sidebar:
+        st.subheader("🎶 Nhạc Nền")
+        random_track = random.choice(MUSIC_FILES)
+        st.audio(random_track, format="audio/mp3", start_time=0)
+        st.caption(f"Đang phát: **{random_track}**")
+
+    # Tiêu đề chính
+    st.markdown("""
+        <h1 style='text-align: center;
+                   font-size: 3.5em;
+                   text-shadow: 1px 1px 2px #FFF8DC;
+                   margin-top: 40px;'>
+            TỔ BẢO DƯỠNG SỐ 1
+        </h1>
     """, unsafe_allow_html=True)
 
-
-# --- Trang chính ---
-def main_page():
-    pc_img = get_base64_file(PC_BACKGROUND)
-    mobile_img = get_base64_file(MOBILE_BACKGROUND)
-    apply_main_css(pc_img, mobile_img)
-
-    # --- Phát nhạc nền ---
-    music_files = [
-        "background.mp3", "background1.mp3", "background2.mp3",
-        "background3.mp3", "background4.mp3", "background5.mp3"
-    ]
-    available = [m for m in music_files if os.path.exists(m)]
-    if available:
-        track = random.choice(available)
-        audio_b64 = get_base64_file(track)
-        st.markdown(f"""
-        <audio autoplay loop controls style="position:fixed; top:15px; left:15px; z-index:1000; opacity:0.8;">
-            <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
-        </audio>
-        """, unsafe_allow_html=True)
-
-    # --- Tiêu đề chính ---
-    st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
+    # Khoảng trống
+    st.markdown('<div style="height: 60vh;"></div>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
 
 
-# --- Logic ---
+# === Logic chính ===
 if st.session_state["intro_complete"]:
     main_page()
 else:
