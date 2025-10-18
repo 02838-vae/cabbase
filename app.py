@@ -91,7 +91,8 @@ def intro_screen(is_mobile=False):
         <style>
             html, body {{
                 margin: 0; padding: 0;
-                width: 100vw; height: 100%;
+                width: 100vw;
+                height: 100dvh; /* ✅ dynamic viewport height */
                 overflow: hidden;
                 background-color: black;
                 font-family: 'Playfair Display', serif;
@@ -99,16 +100,16 @@ def intro_screen(is_mobile=False):
             video {{
                 position: fixed;
                 top: 0; left: 0;
-                width: 100%;
-                height: 100%;
+                width: 100vw;
+                height: 100dvh; /* ✅ full dynamic height */
                 object-fit: cover;
                 object-position: center;
                 z-index: 1;
             }}
             #intro-text {{
                 position: fixed;
-                bottom: 18%;
                 left: 50%;
+                bottom: 18%;
                 transform: translateX(-50%);
                 font-size: clamp(18px, 2.5vw, 40px);
                 color: white;
@@ -127,8 +128,8 @@ def intro_screen(is_mobile=False):
             #fade {{
                 position: fixed;
                 top: 0; left: 0;
-                width: 100%;
-                height: 100%;
+                width: 100vw;
+                height: 100dvh;
                 background: black;
                 opacity: 0;
                 z-index: 3;
@@ -148,19 +149,19 @@ def intro_screen(is_mobile=False):
             const fade = document.getElementById("fade");
             const text = document.getElementById("intro-text");
 
-            // ✅ Đặt chiều cao thực tế theo viewport (fix cho mobile)
-            function setRealHeight() {{
-                let vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-                document.body.style.height = vh + "px";
-                document.documentElement.style.height = vh + "px";
-                vid.style.height = vh + "px";
-                fade.style.height = vh + "px";
-                text.style.bottom = (vh * 0.18) + "px";
+            // ✅ Fallback cho browser không hỗ trợ 100dvh
+            function adjustHeight() {{
+                const realHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+                document.body.style.height = realHeight + "px";
+                document.documentElement.style.height = realHeight + "px";
+                vid.style.height = realHeight + "px";
+                fade.style.height = realHeight + "px";
+                text.style.bottom = (realHeight * 0.18) + "px";
             }}
 
-            setRealHeight();
-            window.addEventListener('resize', setRealHeight);
-            window.addEventListener('orientationchange', setRealHeight);
+            adjustHeight();
+            window.addEventListener("resize", adjustHeight);
+            window.addEventListener("orientationchange", adjustHeight);
 
             function finishIntro() {{
                 fade.style.opacity = 1;
@@ -179,8 +180,10 @@ def intro_screen(is_mobile=False):
     </html>
     """
 
-    components.html(intro_html, height=1000, scrolling=False)
+    # height lớn để đảm bảo iframe chiếm đủ khung Streamlit
+    components.html(intro_html, height=1200, scrolling=False)
 
+    # Timer tự động chuyển sang trang chính
     if st.session_state.start_time is None:
         st.session_state.start_time = time.time()
     if time.time() - st.session_state.start_time < 9.5:
@@ -190,8 +193,6 @@ def intro_screen(is_mobile=False):
         st.session_state.intro_done = True
         st.session_state.start_time = None
         st.rerun()
-
-
 
 # ================== TRANG CHÍNH ==================
 def main_page(is_mobile=False):
