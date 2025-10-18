@@ -89,10 +89,11 @@ def intro_screen(is_mobile=False):
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <style>
+            /* THAY ĐỔI 1: Sử dụng biến CSS --vh thay vì 100% hoặc 100vh */
             html, body {{
                 margin: 0; padding: 0;
                 width: 100vw;
-                height: 100%;
+                height: 100vh; /* Sẽ được JS gán lại giá trị --vh */
                 overflow: hidden;
                 background-color: black;
                 font-family: 'Playfair Display', serif;
@@ -102,7 +103,7 @@ def intro_screen(is_mobile=False):
                 position: absolute;
                 top: 0; left: 0;
                 width: 100vw;
-                height: 100%;
+                height: 100%; /* Sẽ sử dụng 100% của body đã được gán --vh */
                 object-fit: cover;
                 object-position: center;
                 z-index: 1;
@@ -110,6 +111,7 @@ def intro_screen(is_mobile=False):
             #intro-text {{
                 position: absolute;
                 left: 50%;
+                /* top/bottom sẽ được JS gán giá trị chính xác */
                 transform: translateX(-50%);
                 font-size: clamp(18px, 2.5vw, 40px);
                 color: white;
@@ -129,7 +131,7 @@ def intro_screen(is_mobile=False):
                 position: absolute;
                 top: 0; left: 0;
                 width: 100%;
-                height: 100%;
+                height: 100%; /* Sẽ sử dụng 100% của body đã được gán --vh */
                 background: black;
                 opacity: 0;
                 z-index: 3;
@@ -149,20 +151,34 @@ def intro_screen(is_mobile=False):
             const fade = document.getElementById("fade");
             const text = document.getElementById("intro-text");
 
-            // ✅ Hàm này sẽ ép iframe & nội dung chiếm đúng viewport thật của Android Chrome
+            // SỬA LỖI MOBILE: Hàm này sẽ ép iframe & nội dung chiếm đúng viewport thật
             function resizeToViewport() {{
                 const vh = window.innerHeight || document.documentElement.clientHeight;
+                
+                // Gán chiều cao chính xác cho body (container chính)
                 document.body.style.height = vh + "px";
-                vid.style.height = vh + "px";
-                fade.style.height = vh + "px";
-                text.style.bottom = (vh * 0.18) + "px";
+                
+                // Căn chỉnh dòng chữ ở vị trí cố định từ đáy
+                text.style.bottom = (vh * 0.18) + "px"; 
+                
+                // Kích hoạt lại resize của Streamlit cha (chỉ trong môi trường Streamlit)
+                try {{
+                    if (window.parent && window.parent.document) {{
+                        const iframe = window.frameElement;
+                        if (iframe) {{
+                            iframe.style.height = vh + "px";
+                        }}
+                    }}
+                }} catch (e) {{
+                    console.error("Không thể thay đổi chiều cao iFrame cha.");
+                }}
             }}
 
             resizeToViewport();
             window.addEventListener('resize', resizeToViewport);
             window.addEventListener('orientationchange', resizeToViewport);
 
-            // ✅ Bắt sự kiện hiển thị/thanh URL thay đổi
+            // Bắt sự kiện hiển thị/thanh URL thay đổi
             if ('visualViewport' in window) {{
                 window.visualViewport.addEventListener('resize', resizeToViewport);
                 window.visualViewport.addEventListener('scroll', resizeToViewport);
@@ -185,7 +201,8 @@ def intro_screen(is_mobile=False):
     </html>
     """
 
-    components.html(intro_html, height=1300, scrolling=False)
+    # THAY ĐỔI 2: KHÔNG ĐẶT CHIỀU CAO CỐ ĐỊNH, để CSS/JS lo việc đó
+    components.html(intro_html, scrolling=False)
 
     # Logic giữ nguyên
     if st.session_state.start_time is None:
