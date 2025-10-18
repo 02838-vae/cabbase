@@ -84,38 +84,42 @@ def intro_screen(is_mobile=False):
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
-    # ⚙️ Thiết lập riêng cho mobile và PC
+    # ⚙️ Điều chỉnh riêng cho mobile & PC
     if is_mobile:
-        object_position = "center 10%"   # kéo máy bay lên cao hơn
-        text_bottom = "35%"              # đưa chữ cao hơn
-        video_translate = "-12%"         # nâng toàn video
+        object_position = "center 10%"   # đẩy máy bay lên cao hơn
+        text_bottom = "38%"              # chữ nằm cao hơn
+        video_translate = "-10%"         # nâng toàn video
+        font_size = "clamp(20px, 5vw, 36px)"
     else:
         object_position = "center center"
-        text_bottom = "20%"
+        text_bottom = "22%"
         video_translate = "0"
+        font_size = "clamp(22px, 2.5vw, 42px)"
 
     intro_html = f"""
     <html lang="vi">
     <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
         <style>
+            @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap');
+
             html, body {{
                 margin: 0; padding: 0;
                 width: 100vw;
                 height: 100vh;
                 overflow: hidden;
-                background-color: black;
-                font-family: 'Playfair Display', serif;
+                background: black;
                 touch-action: none;
             }}
+
             #container {{
                 position: fixed;
                 top: 0; left: 0;
                 width: 100vw;
                 height: 100vh;
                 overflow: hidden;
-                background: black;
             }}
+
             video {{
                 position: absolute;
                 top: 0; left: 0;
@@ -126,26 +130,38 @@ def intro_screen(is_mobile=False):
                 transform: translateY({video_translate});
                 z-index: 1;
             }}
+
             #intro-text {{
                 position: absolute;
                 left: 50%;
                 bottom: {text_bottom};
                 transform: translateX(-50%);
-                color: white;
-                font-size: clamp(20px, 3.5vw, 42px);
+                font-family: 'Poppins', sans-serif;
+                font-size: {font_size};
+                font-weight: 700;
                 text-align: center;
-                text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
-                opacity: 0;
-                animation: fadeInOut 6s ease-in-out forwards;
-                z-index: 2;
                 white-space: nowrap;
+                z-index: 2;
+                background: linear-gradient(90deg, #f9d423, #ff4e50, #f9d423);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                text-shadow: 0 0 12px rgba(255, 255, 255, 0.3),
+                             0 0 24px rgba(255, 255, 255, 0.2);
+                animation: fadeInOut 6s ease-in-out forwards, shimmer 3s infinite;
             }}
+
             @keyframes fadeInOut {{
                 0% {{ opacity: 0; transform: translate(-50%, 20px); }}
                 20% {{ opacity: 1; transform: translate(-50%, 0); }}
                 80% {{ opacity: 1; transform: translate(-50%, 0); }}
                 100% {{ opacity: 0; transform: translate(-50%, -10px); }}
             }}
+
+            @keyframes shimmer {{
+                0% {{ background-position: -200% center; }}
+                100% {{ background-position: 200% center; }}
+            }}
+
             #fade {{
                 position: absolute;
                 top: 0; left: 0;
@@ -166,18 +182,19 @@ def intro_screen(is_mobile=False):
             <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
             <div id="fade"></div>
         </div>
+
         <script>
             const vid = document.getElementById("introVid");
             const fade = document.getElementById("fade");
 
-            // đảm bảo video fit toàn màn hình trên mobile
-            function resizeFix() {{
+            // Fix viewport height for mobile
+            function fixVH() {{
                 const vh = window.innerHeight * 0.01;
                 document.documentElement.style.setProperty('--vh', `${{vh}}px`);
             }}
-            resizeFix();
-            window.addEventListener('resize', resizeFix);
-            window.addEventListener('orientationchange', resizeFix);
+            fixVH();
+            window.addEventListener('resize', fixVH);
+            window.addEventListener('orientationchange', fixVH);
 
             function finishIntro() {{
                 fade.style.opacity = 1;
@@ -207,7 +224,6 @@ def intro_screen(is_mobile=False):
         st.session_state.intro_done = True
         st.session_state.start_time = None
         st.rerun()
-
 
 # ================== TRANG CHÍNH ==================
 def main_page(is_mobile=False):
