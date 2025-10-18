@@ -7,7 +7,7 @@ from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
-# ================== CẤU HÌNH ==================
+# ================== CẤU HÌNH & TRẠNG THÁI (Giữ Nguyên) ==================
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
 VIDEO_PC = "airplane.mp4"
@@ -16,13 +16,12 @@ BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 MUSIC_FILES = ["background.mp3", "background2.mp3", "background3.mp3", "background4.mp3", "background5.mp3"]
 
-# ================== TRẠNG THÁI ==================
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 if "is_mobile" not in st.session_state:
     st.session_state.is_mobile = None 
 
-# --- XÁC ĐỊNH THIẾT BỊ DÙNG USER AGENT ---
+# --- XÁC ĐỊNH THIẾT BỊ DÙNG USER AGENT (Giữ Nguyên) ---
 if st.session_state.is_mobile is None:
     ua_string = st_javascript("""window.navigator.userAgent;""")
     
@@ -34,7 +33,7 @@ if st.session_state.is_mobile is None:
         st.info("Đang xác định thiết bị và tải...")
         st.stop()
 
-# ================== ẨN HEADER STREAMLIT & BẬT FULL SCREEN CSS TỐI ƯU ==================
+# ================== ẨN HEADER STREAMLIT & BẬT FULL SCREEN CSS TỐI ƯU (Giữ Nguyên) ==================
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -44,7 +43,7 @@ def hide_streamlit_ui():
         visibility: hidden !important;
     }
     
-    /* 2. GHI ĐÈ CSS CỦA STREAMLIT TỐI ĐA (Dùng selector mẹ-con) */
+    /* 2. GHI ĐÈ CSS CỦA STREAMLIT TỐI ƯU */
     .stApp, .stApp > header, .main, .block-container {
         padding: 0 !important;
         margin: 0 !important;
@@ -102,19 +101,20 @@ def intro_screen(is_mobile=False):
     <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* SỬ DỤNG FONT-FAMILY HỖ TRỢ TIẾNG VIỆT */
+        /* QUAN TRỌNG: Đã sửa lỗi full-screen và font size */
         html, body {{ 
-            margin: 0 !important; padding: 0 !important; height: 100vh; width: 100vw; overflow: hidden; background-color: black;
+            margin: 0 !important; padding: 0 !important; height: 100%; width: 100%; overflow: hidden; background-color: black;
             font-family: 'Arial', sans-serif, 'Playfair Display'; 
         }}
         video {{ 
-            width: 100vw; height: 100vh; 
+            width: 100%; height: 100%; /* SỬA LỖI: Dùng % thay cho vw/vh để nó vừa với iFrame mẹ */
             object-fit: cover; object-position: center; 
         }}
         #intro-text {{
             position: fixed; bottom: 18%; left: 50%; transform: translateX(-50%);
-            /* Dùng đơn vị viewport cho font để chống lỗi font nhỏ/vỡ */
-            font-size: 4vw; color: white; z-index: 10;
+            /* SỬA LỖI: Dùng max-width và clamp để font không quá to trên PC */
+            font-size: clamp(18px, 2.5vw, 40px); 
+            color: white; z-index: 10;
             text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
             animation: fadeInOut 6s ease-in-out forwards;
         }}
@@ -150,7 +150,7 @@ def intro_screen(is_mobile=False):
     # 2. MÃ HÓA IFRAME VÀ THÊM CHARSET=UTF-8
     iframe_b64 = base64.b64encode(iframe_src.encode('utf-8')).decode('utf-8')
     
-    # THAY ĐỔI QUAN TRỌNG: Thêm charset=utf-8 vào Data URI để sửa lỗi dấu tiếng Việt
+    # Thêm charset=utf-8 vào Data URI để sửa lỗi dấu tiếng Việt
     final_html = f"""
     <iframe src="data:text/html;charset=utf-8;base64,{iframe_b64}" 
             style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; border: none; z-index: 9999;">
