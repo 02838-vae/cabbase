@@ -1,24 +1,29 @@
 import streamlit as st
-import random
-import time
-import os
 import base64
-import streamlit.components.v1 as components
+import random
+import os
+import time
 
-# --- File cấu hình ---
+# --- Cấu hình trang ---
+st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
+
+# --- Tên file ---
+VIDEO_INTRO = "airplane.mp4"
 PC_BACKGROUND = "cabbase.jpg"
 MOBILE_BACKGROUND = "mobile.jpg"
-VIDEO_INTRO = "airplane.mp4"
-MUSIC_FILES = ["background.mp3", "background2.mp3", "background3.mp3", "background4.mp3", "background5.mp3"]
-
-# --- Cấu hình Trang ---
-st.set_page_config(layout="wide", page_title="Tổ Bảo Dưỡng Số 1")
+MUSIC_FILES = [
+    "background.mp3",
+    "background2.mp3",
+    "background3.mp3",
+    "background4.mp3",
+    "background5.mp3"
+]
 
 # --- Session state ---
-if 'intro_complete' not in st.session_state:
-    st.session_state['intro_complete'] = False
+if "intro_complete" not in st.session_state:
+    st.session_state["intro_complete"] = False
 
-# --- CSS Ẩn header, toolbar ---
+# --- Ẩn header, toolbar, icon Streamlit ---
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -31,8 +36,7 @@ def hide_streamlit_ui():
     </style>
     """, unsafe_allow_html=True)
 
-
-# --- CSS trang chính ---
+# --- CSS nền trang chính ---
 def apply_main_css():
     st.markdown(f"""
     <style>
@@ -41,7 +45,6 @@ def apply_main_css():
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
-        transition: background 1s ease-in-out;
     }}
     @media only screen and (max-width: 768px) {{
         .stApp {{
@@ -56,22 +59,20 @@ def apply_main_css():
     </style>
     """, unsafe_allow_html=True)
 
-
-# --- Màn hình intro ---
+# --- Màn hình Intro (HTML inline, autoplay bảo đảm hoạt động) ---
 def intro_screen():
     hide_streamlit_ui()
 
     if not os.path.exists(VIDEO_INTRO):
-        st.error(f"Không tìm thấy file video: {VIDEO_INTRO}")
-        time.sleep(1)
-        st.session_state['intro_complete'] = True
+        st.error("⚠️ Không tìm thấy file airplane.mp4 trong thư mục.")
+        st.session_state["intro_complete"] = True
         st.rerun()
         return
 
-    # Đọc video và encode base64 để nhúng
-    video_b64 = base64.b64encode(open(VIDEO_INTRO, "rb").read()).decode()
+    # Encode video base64 để nhúng trực tiếp
+    with open(VIDEO_INTRO, "rb") as f:
+        video_b64 = base64.b64encode(f.read()).decode()
 
-    # HTML hiển thị video full màn hình + text
     intro_html = f"""
     <style>
     html, body {{
@@ -79,20 +80,16 @@ def intro_screen():
         padding: 0;
         width: 100%;
         height: 100%;
-        overflow: hidden;
         background-color: black;
+        overflow: hidden;
     }}
     video {{
         position: fixed;
-        top: 50%;
-        left: 50%;
-        min-width: 100%;
-        min-height: 100%;
-        width: auto;
-        height: auto;
-        transform: translate(-50%, -50%);
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
         object-fit: cover;
-        object-position: center;
         z-index: -1;
     }}
     #intro-text {{
@@ -105,8 +102,8 @@ def intro_screen():
         font-family: 'Times New Roman', serif;
         text-shadow: 2px 2px 8px black;
         animation: fadeInOut 6s forwards;
-        white-space: nowrap;
         z-index: 10;
+        white-space: nowrap;
     }}
     @keyframes fadeInOut {{
         0% {{ opacity: 0; }}
@@ -114,40 +111,49 @@ def intro_screen():
         85% {{ opacity: 1; }}
         100% {{ opacity: 0; }}
     }}
-    #fadeout {{
+    #blackout {{
         position: fixed;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background-color: black;
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        background: black;
         opacity: 0;
         transition: opacity 1s ease-in-out;
         z-index: 20;
     }}
     </style>
 
-    <video id="introVideo" autoplay muted playsinline preload="auto">
+    <video id="introVideo" muted autoplay playsinline preload="auto">
         <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
     </video>
     <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-    <div id="fadeout"></div>
+    <div id="blackout"></div>
 
     <script>
-    const v = document.getElementById('introVideo');
-    v.play().catch(() => {{
-        document.body.addEventListener('click', () => v.play(), {{once:true}});
+    const video = document.getElementById('introVideo');
+    // Nếu autoplay bị chặn (mobile), play lại khi user chạm
+    video.play().catch(() => {{
+        document.body.addEventListener('click', () => video.play(), {{once:true}});
     }});
+
+    // Sau 6.5s fade sang màu đen và gửi tín hiệu về Streamlit
     setTimeout(() => {{
-        document.getElementById('fadeout').style.opacity = 1;
-    }}, 6200);
+        document.getElementById('blackout').style.opacity = 1;
+        setTimeout(() => {{
+            window.parent.postMessage({{type: 'streamlit:setComponentValue', value: 'done'}}, '*');
+        }}, 1000);
+    }}, 6500);
     </script>
     """
 
-    components.html(intro_html, height=800, scrolling=False)
+    # Hiển thị HTML inline trong Streamlit DOM (không bị sandbox)
+    st.components.v1.html(intro_html, height=720, scrolling=False)
 
-    time.sleep(7)
-    st.session_state['intro_complete'] = True
+    # Chờ thời gian video chạy, sau đó chuyển trang
+    time.sleep(7.5)
+    st.session_state["intro_complete"] = True
     st.rerun()
-
 
 # --- Trang chính ---
 def main_page():
@@ -155,28 +161,24 @@ def main_page():
     apply_main_css()
 
     # Thanh nhạc nền
-    valid_tracks = [m for m in MUSIC_FILES if os.path.exists(m)]
-    if valid_tracks:
-        track = random.choice(valid_tracks)
+    available_music = [m for m in MUSIC_FILES if os.path.exists(m)]
+    if available_music:
+        track = random.choice(available_music)
         with st.sidebar:
             st.subheader("🎶 Nhạc nền")
             st.audio(track, format="audio/mp3")
             st.caption(f"Đang phát: **{os.path.basename(track)}**")
-    else:
-        st.sidebar.warning("⚠️ Không tìm thấy file nhạc nền nào")
 
-    # Tiêu đề chính
+    # Tiêu đề
     st.markdown("""
     <h1 style='text-align:center; font-size:3.2em; margin-top:50px;'>
         TỔ BẢO DƯỠNG SỐ 1
     </h1>
     """, unsafe_allow_html=True)
+    st.markdown("<div style='height:70vh'></div>", unsafe_allow_html=True)
 
-    st.markdown("<div style='height:75vh'></div>", unsafe_allow_html=True)
-
-
-# --- Điều hướng chính ---
-if st.session_state['intro_complete']:
+# --- Chạy ứng dụng ---
+if st.session_state["intro_complete"]:
     main_page()
 else:
     intro_screen()
