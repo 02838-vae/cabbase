@@ -38,7 +38,7 @@ if st.session_state.is_mobile is None:
         st.info("Đang xác định thiết bị và tải...")
         st.stop()
 
-# ================== ẨN HEADER STREAMLIT & CSS CHÍNH (Giữ Nguyên) ==================
+# ================== ẨN HEADER STREAMLIT & CSS CHÍNH ==================
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -77,7 +77,7 @@ def hide_streamlit_ui():
 
 
 # -------------------------------------------------------------
-## 🎬 MÀN HÌNH INTRO CUỐI CÙNG (Video Base64 + CSS Background)
+## 🎬 MÀN HÌNH INTRO CUỐI CÙNG (Video Base64 + CSS Background + Click Play)
 # -------------------------------------------------------------
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
@@ -86,7 +86,6 @@ def intro_screen(is_mobile=False):
     
     if not os.path.exists(video_path):
         st.error(f"⚠️ Không tìm thấy video: {video_path}.")
-        # Chuyển cảnh dự phòng sau 3 giây
         time.sleep(3)
         st.session_state.intro_done = True
         st.rerun()
@@ -121,15 +120,39 @@ def intro_screen(is_mobile=False):
             object-fit: cover; /* Đảm bảo video che phủ toàn bộ */
             z-index: -1; 
         }}
+        /* NÚT PLAY VÀ LỚP PHỦ */
+        #overlay {{
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            transition: opacity 0.5s;
+        }}
+        #playButton {{
+            background: #4A90E2; 
+            color: white; 
+            border: none; 
+            padding: 15px 30px; 
+            font-size: 24px; 
+            cursor: pointer;
+            border-radius: 8px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+            transition: background 0.3s;
+        }}
+        #playButton:hover {{
+            background: #357ABD;
+        }}
+
         #intro-text {{
             position: fixed; bottom: 18%; left: 50%; transform: translateX(-50%);
             font-size: clamp(18px, 2.5vw, 40px); color: white; z-index: 10;
             text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
-            animation: fadeInOut 6s ease-in-out forwards;
-        }}
-        @keyframes fadeInOut {{
-            0% {{ opacity: 0; transform: translate(-50%, 20px); }} 20% {{ opacity: 1; transform: translate(-50%, 0); }}
-            80% {{ opacity: 1; transform: translate(-50%, 0); }} 100% {{ opacity: 0; transform: translate(-50%, -10px); }}
+            /* Loại bỏ animation để chỉ hiển thị khi video chạy */
+            opacity: 0; 
+            transition: opacity 1s;
         }}
         #fade {{
             position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
@@ -139,14 +162,25 @@ def intro_screen(is_mobile=False):
     </style>
     </head>
     <body>
-        <video id="introVid" autoplay muted playsinline loop=false>
+        <video id="introVid" muted playsinline loop=false>
             <source src="data:video/mp4;base64,{video_b64}" type="video/mp4"> 
         </video>
+
+        <div id="overlay">
+            <button id="playButton">▶️ BẮT ĐẦU</button>
+            <p style="color: white; margin-top: 20px;">Nhấn để xem giới thiệu</p>
+        </div>
+
         <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
         <div id="fade"></div>
+        
         <script>
             const vid = document.getElementById("introVid");
             const fade = document.getElementById("fade");
+            const overlay = document.getElementById("overlay");
+            const playButton = document.getElementById("playButton");
+            const introText = document.getElementById("intro-text");
+
 
             const finishIntro = () => {{
                 fade.style.opacity = 1;
@@ -158,12 +192,27 @@ def intro_screen(is_mobile=False):
 
             vid.onended = finishIntro;
             
-            // Xử lý chặn Autoplay bằng cách cố gắng play và fallback về timer
-            // Streamlit thường không chặn autoplay nếu đã có 'muted' và 'playsinline'
-            vid.play().catch(error => {{
-                console.log("Autoplay blocked, falling back to timer.");
-                // Tự động chuyển trang sau 9 giây nếu Autoplay bị chặn
-                setTimeout(finishIntro, 9000); 
+            // Xử lý sự kiện click nút Play
+            playButton.addEventListener('click', () => {{
+                // Cố gắng chạy video
+                const playPromise = vid.play();
+                
+                if (playPromise !== undefined) {{
+                    playPromise.then(() => {{
+                        // Chạy thành công: Ẩn overlay và hiển thị chữ
+                        overlay.style.opacity = 0;
+                        setTimeout(() => {{ overlay.style.display = 'none'; }}, 500);
+                        introText.style.opacity = 1; // Hiển thị chữ sau khi video chạy
+
+                    }}).catch(error => {{
+                        console.error("Lỗi phát video sau khi tương tác:", error);
+                        // Fallback: Ẩn overlay và bắt đầu timer nếu lỗi
+                        overlay.style.opacity = 0;
+                        setTimeout(() => {{ overlay.style.display = 'none'; }}, 500);
+                        introText.style.opacity = 1;
+                        setTimeout(finishIntro, 9000); // Bắt đầu timer dự phòng
+                    }});
+                }}
             }});
         </script>
     </body>
@@ -172,11 +221,12 @@ def intro_screen(is_mobile=False):
     
     components.html(intro_html, scrolling=False) 
 
-    # --- Cơ chế Chuyển Trang dựa trên thời gian (Cơ chế dự phòng) ---
+    # --- Cơ chế Chuyển Trang dựa trên thời gian (Cơ chế dự phòng Python) ---
     if st.session_state.start_time is None:
         st.session_state.start_time = time.time()
     
-    if time.time() - st.session_state.start_time < 9.5: 
+    # Giữ timer Python dự phòng để đảm bảo chuyển cảnh kể cả khi JS lỗi
+    if time.time() - st.session_state.start_time < 12.0: # Tăng thời gian chờ thêm 3s cho người dùng nhấn nút
         time.sleep(1) 
         st.rerun()
     else:
@@ -190,6 +240,7 @@ def intro_screen(is_mobile=False):
 # -------------------------------------------------------------
 def main_page(is_mobile=False):
     hide_streamlit_ui() 
+    #... (Giữ nguyên hàm main_page)
     bg = BG_MOBILE if is_mobile else BG_PC
     
     try:
