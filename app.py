@@ -84,15 +84,15 @@ def intro_screen(is_mobile=False):
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
-    # ====== Tuỳ chỉnh theo thiết bị ======
+    # --- Cấu hình cho từng thiết bị ---
     if is_mobile:
-        object_position = "center 15%"  # đưa máy bay lên cao hơn
-        text_bottom = "18%"             # hạ dòng chữ thấp hơn
-        font_size = "clamp(18px, 5vw, 30px)"
-        text_width = "90vw"
+        object_position = "center 15%"
+        text_bottom = "12%"               # thấp hơn nữa, chắc chắn trong khung
+        font_size = "clamp(16px, 4.5vw, 26px)"
+        text_width = "92vw"
     else:
         object_position = "center center"
-        text_bottom = "22%"
+        text_bottom = "20%"
         font_size = "clamp(26px, 3vw, 46px)"
         text_width = "70vw"
 
@@ -130,38 +130,35 @@ def intro_screen(is_mobile=False):
                 font-size: {font_size};
                 width: {text_width};
                 text-align: center;
+                color: #fff8dc;
                 font-weight: 700;
                 letter-spacing: 2px;
-                color: rgba(255, 255, 255, 0);
-                text-shadow: 0 0 8px rgba(255, 255, 255, 0.2);
-                white-space: normal;
-                z-index: 2;
+                text-shadow: 0 0 6px rgba(255, 255, 255, 0.3), 0 0 18px rgba(255, 240, 180, 0.5);
+                z-index: 10;
+                opacity: 0;
                 animation: fadeAppear 7s ease-in-out forwards;
+                white-space: normal;
                 overflow-wrap: break-word;
             }}
 
-            /* ✨ Hiệu ứng xuất hiện – sáng – tan biến */
+            /* ✨ cinematic fade xuất hiện – sáng – tan biến */
             @keyframes fadeAppear {{
                 0% {{
                     opacity: 0;
-                    color: rgba(255, 255, 255, 0);
-                    text-shadow: 0 0 2px rgba(255, 255, 255, 0.1);
                     transform: translate(-50%, 40px);
+                    text-shadow: none;
                 }}
-                30% {{
+                25% {{
                     opacity: 1;
-                    color: #fff8dc;
-                    text-shadow: 0 0 12px rgba(255, 240, 180, 0.6), 0 0 24px rgba(255,255,255,0.4);
+                    text-shadow: 0 0 10px rgba(255, 240, 180, 0.8), 0 0 20px rgba(255,255,255,0.4);
                     transform: translate(-50%, 0);
                 }}
                 70% {{
                     opacity: 1;
-                    color: #fff5d2;
-                    text-shadow: 0 0 18px rgba(255, 235, 170, 0.8);
+                    text-shadow: 0 0 16px rgba(255, 255, 220, 0.8);
                 }}
                 100% {{
                     opacity: 0;
-                    color: rgba(255, 255, 255, 0);
                     transform: translate(-50%, -30px);
                     text-shadow: 0 0 2px rgba(255,255,255,0.1);
                 }}
@@ -174,7 +171,7 @@ def intro_screen(is_mobile=False):
                 height: 100%;
                 background: black;
                 opacity: 0;
-                z-index: 3;
+                z-index: 9;
                 transition: opacity 1.2s ease-in-out;
             }}
         </style>
@@ -209,7 +206,6 @@ def intro_screen(is_mobile=False):
 
     components.html(intro_html, height=950, scrolling=False)
 
-    # Giữ logic thời gian cũ
     if st.session_state.start_time is None:
         st.session_state.start_time = time.time()
     if time.time() - st.session_state.start_time < 9.5:
@@ -219,8 +215,6 @@ def intro_screen(is_mobile=False):
         st.session_state.intro_done = True
         st.session_state.start_time = None
         st.rerun()
-
-
 
 # ================== TRANG CHÍNH ==================
 def main_page(is_mobile=False):
