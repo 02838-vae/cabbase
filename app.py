@@ -7,10 +7,9 @@ from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
-# ================== CẤU HÌNH & TRẠNG THÁI (Giữ Nguyên) ==================
+# ================== CẤU HÌNH & TRẠNG THÁI ==================
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
-# Vẫn giữ nguyên các đường dẫn
 VIDEO_PC = "media/airplane.mp4"
 VIDEO_MOBILE = "media/mobile.mp4"
 BG_PC = "cabbase.jpg"
@@ -78,7 +77,7 @@ def hide_streamlit_ui():
 
 
 # -------------------------------------------------------------
-## 🎬 MÀN HÌNH INTRO CUỐI CÙNG (Video Background)
+## 🎬 MÀN HÌNH INTRO CUỐI CÙNG (Video Base64 + CSS Background)
 # -------------------------------------------------------------
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
@@ -86,15 +85,16 @@ def intro_screen(is_mobile=False):
     video_path = VIDEO_MOBILE if is_mobile else VIDEO_PC
     
     if not os.path.exists(video_path):
-        st.error(f"⚠️ Không tìm thấy video: {video_path}. Vui lòng kiểm tra lại đường dẫn.")
+        st.error(f"⚠️ Không tìm thấy video: {video_path}.")
         # Chuyển cảnh dự phòng sau 3 giây
         time.sleep(3)
         st.session_state.intro_done = True
         st.rerun()
         return
 
-    # SỬ DỤNG ĐƯỜNG DẪN TRỰC TIẾP (KHÔNG DÙNG BASE64)
-    # Hy vọng Streamlit Cloud sẽ cung cấp đường dẫn cho file tĩnh
+    # SỬ DỤNG BASE64 LẠI ĐỂ ĐẢM BẢO VIDEO LOAD ĐƯỢC
+    with open(video_path, "rb") as f:
+        video_b64 = base64.b64encode(f.read()).decode()
     
     intro_html = f"""
     <!DOCTYPE html>
@@ -102,23 +102,24 @@ def intro_screen(is_mobile=False):
     <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* CSS MỚI: KỸ THUẬT VIDEO BACKGROUND */
+        /* CSS CHUNG */
         html, body {{ 
             margin: 0 !important; padding: 0 !important; 
             height: 100vh; width: 100vw; 
             overflow: hidden; background-color: black; 
             font-family: 'Arial', sans-serif; 
-            position: relative; /* Dành cho video tuyệt đối */
+            position: relative; 
         }}
+        /* KỸ THUẬT VIDEO BACKGROUND FULL-SCREEN MẠNH MẼ */
         #introVid {{ 
-            position: absolute; /* Video tuyệt đối */
+            position: absolute; 
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            min-width: 100%; /* Buộc chiều rộng full */
-            min-height: 100%; /* Buộc chiều cao full */
+            min-width: 100%; 
+            min-height: 100%; 
             width: auto; height: auto;
             object-fit: cover; /* Đảm bảo video che phủ toàn bộ */
-            z-index: -1; /* Đặt dưới lớp text */
+            z-index: -1; 
         }}
         #intro-text {{
             position: fixed; bottom: 18%; left: 50%; transform: translateX(-50%);
@@ -139,7 +140,7 @@ def intro_screen(is_mobile=False):
     </head>
     <body>
         <video id="introVid" autoplay muted playsinline loop=false>
-            <source src="{video_path}" type="video/mp4"> 
+            <source src="data:video/mp4;base64,{video_b64}" type="video/mp4"> 
         </video>
         <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
         <div id="fade"></div>
@@ -158,6 +159,7 @@ def intro_screen(is_mobile=False):
             vid.onended = finishIntro;
             
             // Xử lý chặn Autoplay bằng cách cố gắng play và fallback về timer
+            // Streamlit thường không chặn autoplay nếu đã có 'muted' và 'playsinline'
             vid.play().catch(error => {{
                 console.log("Autoplay blocked, falling back to timer.");
                 // Tự động chuyển trang sau 9 giây nếu Autoplay bị chặn
