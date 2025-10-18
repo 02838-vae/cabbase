@@ -7,7 +7,7 @@ from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
-# ================== CẤU HÌNH & TRẠNG THÁI (Giữ Nguyên) ==================
+# ================== CẤU HÌNH ==================
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
 # GIẢ ĐỊNH: VIDEO ĐƯỢC ĐẶT TRONG THƯ MỤC media/
@@ -17,13 +17,19 @@ BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 MUSIC_FILES = ["background.mp3", "background2.mp3", "background3.mp3", "background4.mp3", "background5.mp3"]
 
+# ================== TRẠNG THÁI ==================
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 if "is_mobile" not in st.session_state:
     st.session_state.is_mobile = None 
 
-# --- XÁC ĐỊNH THIẾT BỊ DÙNG USER AGENT (Giữ Nguyên) ---
+# --- XÁC ĐỊNH THIẾT BỊ DÙNG USER AGENT ---
 if st.session_state.is_mobile is None:
+    # --- FIX AUTOPLAY: Reset trạng thái khi F5 hoặc load lại ---
+    # Nếu lần đầu load trang (is_mobile là None), xóa trạng thái intro để chạy lại intro_screen
+    if "intro_done" in st.session_state and st.session_state.intro_done == True:
+        st.session_state.intro_done = False
+    
     ua_string = st_javascript("""window.navigator.userAgent;""")
     
     if ua_string:
@@ -49,7 +55,6 @@ def hide_streamlit_ui():
     [data-testid="stVerticalBlock"] {
         padding: 0 !important;
         margin: 0 !important;
-        /* QUAN TRỌNG: Đảm bảo chiều rộng là 100vw trên mọi container cha */
         max-width: 100vw !important; 
         width: 100vw !important;
         min-height: 100vh !important;
@@ -60,9 +65,10 @@ def hide_streamlit_ui():
         margin: 0 !important;
     }
     
-    /* 3. TĂNG ĐỘ ƯU TIÊN CHO THẺ VIDEO WRAPPER */
+    /* 3. TĂNG ĐỘ ƯU TIÊN CHO THẺ VIDEO WRAPPER (FIX FULL SCREEN PC) */
     .stVideo {
-        position: fixed !important;
+        /* Chuyển sang absolute/fixed mạnh mẽ hơn để tránh lỗi bề rộng */
+        position: absolute !important; 
         top: 0 !important;
         left: 0 !important;
         width: 100vw !important;
@@ -98,8 +104,7 @@ def intro_screen(is_mobile=False):
         st.rerun()
         return
 
-    # SỬ DỤNG st.video THAY VÌ components.html/Base64
-    # Không cần dùng columns [0.01, 0.98, 0.01] nữa vì CSS đã làm việc đó
+    # SỬ DỤNG st.video
     st.video(video_path, format="video/mp4", start_time=0) 
 
     # --- Dòng chữ trên video ---
@@ -174,7 +179,7 @@ def main_page(is_mobile=False):
     st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
 
 
-# ================== LUỒNG CHÍNH (Giữ Nguyên) ==================
+# ================== LUỒNG CHÍNH ==================
 hide_streamlit_ui()
 
 if st.session_state.is_mobile is None:
