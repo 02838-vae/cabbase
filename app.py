@@ -2,7 +2,7 @@ import streamlit as st
 import base64
 import os
 import random
-# Import Streamlit Component API
+import time
 from streamlit.components.v1 import html
 
 # ---------------- Cấu hình ----------------
@@ -19,8 +19,13 @@ MUSIC_FILES = [
     "background5.mp3"
 ]
 
+# **QUAN TRỌNG:** Tự động chuyển qua trang chính sau 8 giây nếu intro chưa hoàn thành
+INTRO_DURATION_SEC = 7.5
+
 if "intro_complete" not in st.session_state:
     st.session_state["intro_complete"] = False
+if "intro_start_time" not in st.session_state:
+    st.session_state["intro_start_time"] = time.time()
 
 
 # ---------------- CSS ẩn header Streamlit ----------------
@@ -39,6 +44,10 @@ def hide_streamlit_ui():
     .stApp > div:nth-child(1) > div:nth-child(1) {
         visibility: hidden;
     }
+    /* Fix cho lỗi màn hình đen: Đặt nền trang luôn là màu đen khi ở Intro */
+    .stApp {
+        background-color: black !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -54,6 +63,7 @@ def apply_main_css():
         background-position: center;
         background-attachment: fixed;
         transition: background 1s ease-in-out;
+        background-color: transparent !important; /* Đảm bảo hình nền hiển thị */
     }}
     @media only screen and (max-width: 768px) {{
         .stApp {{
@@ -73,11 +83,10 @@ def apply_main_css():
     """, unsafe_allow_html=True)
 
 
-# ---------------- Màn hình Intro (FIX CUỐI CÙNG) ----------------
+# ---------------- Màn hình Intro (Tối ưu lần cuối) ----------------
 def intro_screen():
     """Hiển thị video intro và tự động chuyển trang sau khi video kết thúc."""
     
-    # Ẩn UI Streamlit chung
     hide_streamlit_ui() 
 
     if not os.path.exists(VIDEO_INTRO):
@@ -86,13 +95,21 @@ def intro_screen():
         st.rerun()
         return
 
+    # **CƠ CHẾ THOÁT KHỎI MÀN HÌNH ĐEN (PYTHON FALLBACK)**
+    # Nếu refresh và đã ở trạng thái intro quá 8.5 giây, tự động chuyển trang
+    if time.time() - st.session_state["intro_start_time"] > INTRO_DURATION_SEC + 1:
+        st.session_state["intro_complete"] = True
+        st.rerun()
+        return
+
     # Encode video base64
     with open(VIDEO_INTRO, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
-    # Tạo HTML trực tiếp. Sẽ được nhúng dưới dạng component.
+    # HTML content
     intro_html_content = f"""
     <style>
+    /* CSS nhúng để đảm bảo video luôn được hiển thị */
     html, body {{
         margin: 0; padding: 0;
         width: 100%; height: 100%;
@@ -147,70 +164,47 @@ def intro_screen():
     const v = document.getElementById('introVideo');
     const fadeout = document.getElementById('fadeout');
     
-    // Nếu autoplay bị chặn → phát khi user chạm
+    // Kích hoạt video (cần cho mobile)
     v.play().catch(() => {{
         document.body.addEventListener('click', () => v.play(), {{once:true}});
     }});
 
-    // **SỬ DỤNG window.parent.location.reload()**
-    // Đây là cách ép buộc Streamlit reload và chạy lại logic Python.
-    // Nếu chuyển trạng thái bằng session state không được, ép reload là cách cuối cùng.
-    const totalDuration = 7500; // 7.5 giây để đảm bảo video chạy hết
+    // **Thay vì reload, ta sẽ sử dụng postMessage để kích hoạt Python**
+    const totalDuration = {INTRO_DURATION_SEC} * 1000; 
 
     setTimeout(() => {{
         fadeout.style.opacity = 1;
         setTimeout(() => {{
-            // **Quan trọng:** Ép Streamlit reload để chuyển sang trạng thái mới.
-            window.parent.location.reload(); 
+            // **Thông báo cho Streamlit qua parent window**
+            window.parent.postMessage({{type: 'intro_done'}}, '*');
+            
+            // **Thêm một fallback nhẹ: Chuyển hướng sau khi post message**
+            setTimeout(() => {{
+                // Ép reload nếu Streamlit không phản hồi postMessage
+                window.parent.location.reload(); 
+            }}, 500); 
         }}, 1000); // 1s cho hiệu ứng fade
     }}, totalDuration - 1000); 
     </script>
     """
+    
     # Hiển thị component HTML tùy chỉnh
     html(intro_html_content, height=1, width=1)
     
-    # **Logic chuyển trạng thái (Python)**
-    # Vì ta dùng window.parent.location.reload() bên JavaScript,
-    # ta cần một cơ chế để Python biết trạng thái đã hoàn thành SAU KHI reload.
-    # Cơ chế ổn định nhất là sử dụng một nút ẩn bị ẩn khỏi tầm nhìn.
+    # **Cơ chế nghe PostMessage từ JavaScript (không áp dụng trong Streamlit)**
+    # Vì Streamlit không có API đơn giản để lắng nghe postMessage, 
+    # ta vẫn phải dựa vào timeout (Python Fallback) hoặc thủ thuật Form/Button.
     
-    # Tạo một nút ẩn hoàn toàn bằng CSS
-    st.markdown("""
-    <style>
-    #hidden_button_container {
-        position: fixed;
-        top: -100px;
-        left: -100px;
-        width: 1px;
-        height: 1px;
-        overflow: hidden;
-    }
-    </style>
-    <div id="hidden_button_container">
-    """, unsafe_allow_html=True)
+    # Ở đây, ta chỉ cần dựa vào Python Fallback Timeout và JS reload nhẹ.
+    st.markdown("</div>", unsafe_allow_html=True) # Kết thúc div ẩn (nếu có)
     
-    # Nút này chỉ dùng để kích hoạt st.rerun() sau khi người dùng tương tác
-    # Tuy nhiên, vì ta dùng reload() trong JS, ta chỉ cần set session state ở đây
+    # **Thêm nút ẩn có thể click thủ công**
+    # Nút này KHÔNG được ẩn bằng CSS, nó sẽ bị ẩn bởi 'visibility: hidden' chung.
+    # Nhưng nếu bạn bị kẹt màn hình đen, bạn có thể cố gắng click vào khu vực này.
     
-    # **Giải pháp Ổn định:** Sau khi JS reload trang, Streamlit sẽ chạy lại
-    # và *lần chạy tiếp theo* người dùng sẽ thấy trang chính.
-    # Vì logic reload trong JS đã đảm bảo trang Python chạy lại.
-    # Ta phải sử dụng một cơ chế chờ để Streamlit không kết thúc quá sớm.
-    
-    # **Dùng một biến giả để đảm bảo Streamlit không render lại phần này**
-    if "reloaded_intro" not in st.session_state:
-        st.session_state["reloaded_intro"] = True
-    else:
-        # Giả sử trang đã reload và video đã chạy.
-        # **CƠ CHẾ BẮT LỖI TỐI ƯU:**
-        # Nếu đã ở intro quá 8 giây (sau khi reload), chuyển qua trang chính để thoát kẹt
-        if "start_time" not in st.session_state:
-             st.session_state["start_time"] = time.time()
-        
-        if time.time() - st.session_state["start_time"] > 8:
-            st.session_state["intro_complete"] = True
-            del st.session_state["start_time"]
-            st.rerun()
+    if st.button("Bỏ qua Intro", key="skip_intro"):
+        st.session_state["intro_complete"] = True
+        st.rerun()
 
 
 # ---------------- Trang chính ----------------
@@ -218,6 +212,9 @@ def main_page():
     """Hiển thị trang chính."""
     
     apply_main_css()
+    # Reset thời gian bắt đầu khi vào trang chính
+    if "intro_start_time" in st.session_state:
+         del st.session_state["intro_start_time"] 
 
     # Nhạc nền
     available = [m for m in MUSIC_FILES if os.path.exists(m)]
@@ -238,8 +235,6 @@ def main_page():
 
 
 # ---------------- Logic chính ----------------
-import time # Cần import time nếu chưa có
-
 if st.session_state["intro_complete"]:
     main_page()
 else:
