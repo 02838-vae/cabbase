@@ -7,7 +7,7 @@ from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
-# ================== CẤU HÌNH & TRẠNG THÁI ==================
+# ================== CẤU HÌNH & TRẠNG THÁI (Giữ Nguyên) ==================
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
 VIDEO_PC = "media/airplane.mp4"
@@ -19,116 +19,128 @@ MUSIC_FILES = ["background.mp3", "background2.mp3", "background3.mp3", "backgrou
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 if "is_mobile" not in st.session_state:
-    st.session_state.is_mobile = None
+    st.session_state.is_mobile = None 
 if "start_time" not in st.session_state:
     st.session_state.start_time = None
 
-# ================== XÁC ĐỊNH THIẾT BỊ ==================
+# --- XÁC ĐỊNH THIẾT BỊ DÙNG USER AGENT ---
 if st.session_state.is_mobile is None:
+    # --- FIX AUTOPLAY REFRESH: Reset trạng thái khi F5 hoặc load lại ---
     st.session_state.intro_done = False
+    
     ua_string = st_javascript("""window.navigator.userAgent;""")
-
+    
     if ua_string:
         user_agent = parse(ua_string)
         st.session_state.is_mobile = not user_agent.is_pc
         st.rerun()
     else:
-        # Ẩn toàn bộ nội dung trong lúc chờ
-        st.markdown("""
-        <style>
-        body, .stApp { visibility: hidden !important; background-color: black !important; }
-        </style>
-        """, unsafe_allow_html=True)
+        st.info("Đang xác định thiết bị và tải...")
         st.stop()
 
-# ================== ẨN UI STREAMLIT ==================
+# ================== ẨN HEADER STREAMLIT & BẬT FULL SCREEN CSS TỐI ƯU ==================
 def hide_streamlit_ui():
     st.markdown("""
     <style>
+    /* 1. Ẩn các thành phần Streamlit mặc định */
     [data-testid="stToolbar"], header, footer, iframe[title*="keyboard"], [tabindex="0"][aria-live] {
         display: none !important;
         visibility: hidden !important;
     }
+    
+    /* 2. GHI ĐÈ CONTAINER CHÍNH */
     .stApp, .stApp > header, .main, .block-container, [data-testid="stVerticalBlock"] {
-        padding: 0 !important; margin: 0 !important;
-        max-width: 100vw !important; width: 100vw !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100vw !important; 
+        width: 100vw !important;
         min-height: 100vh !important;
-        overflow: hidden !important;
     }
+    
+    .stApp > div {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    /* 3. Đảm bảo iframe của components.html full screen */
     [data-testid*="stHtmlComponents"] {
-        position: fixed !important;
-        top: 0; left: 0;
-        width: 100vw !important; height: 100vh !important;
-        z-index: 9999;
+        /* Dùng fixed để nó không bị ảnh hưởng bởi các margin/padding khác */
+        position: fixed !important; 
+        top: 0;
+        left: 0;
+        width: 100vw !important;
+        height: 100vh !important; /* Dùng 100vh để chống lại wrapper */
+        z-index: 9999; 
+    }
+    
+    /* 4. Quy tắc bổ sung */
+    .st-emotion-cache-1jicfl2, .st-emotion-cache-z5in9b, .st-emotion-cache-1cypn32 { 
+        padding: 0 !important;
+        margin: 0 !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
 
-# ================== MÀN HÌNH INTRO ==================
+# -------------------------------------------------------------
+## 🎬 MÀN HÌNH INTRO CUỐI CÙNG (Dùng Base64 & components.html)
+# -------------------------------------------------------------
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
+    
     video_path = VIDEO_MOBILE if is_mobile else VIDEO_PC
-
+    
     if not os.path.exists(video_path):
         st.error(f"⚠️ Không tìm thấy video: {video_path}")
         st.session_state.intro_done = True
         st.rerun()
         return
 
+    # MÃ HÓA VIDEO THÀNH BASE64
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
+    # 1. Tạo chuỗi iFrame HTML
     intro_html = f"""
+    <!DOCTYPE html>
     <html lang="vi">
     <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        html, body {{
-            margin: 0; padding: 0;
-            width: 100vw; height: 100vh;
-            overflow: hidden;
-            background-color: black;
-            font-family: 'Playfair Display', serif;
+        /* FIX HEIGHT: SỬ DỤNG 100VH CHO IFRAME CON (Dùng 100vh thay vì 100% để căn chỉnh tuyệt đối) */
+        html, body {{ 
+            margin: 0 !important; padding: 0 !important; 
+            height: 100vh; width: 100%; 
+            overflow: hidden; background-color: black; 
+            font-family: 'Arial', sans-serif, 'Playfair Display'; 
         }}
-        video {{
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            object-fit: cover; object-position: center;
-            z-index: 1;
+        video {{ 
+            width: 100%; height: 100%; 
+            object-fit: cover; object-position: center; 
         }}
         #intro-text {{
-            position: fixed;
-            bottom: 18%; left: 50%;
-            transform: translateX(-50%);
-            font-size: clamp(18px, 2.5vw, 40px);
-            color: white; text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
-            z-index: 2;
+            position: fixed; bottom: 18%; left: 50%; transform: translateX(-50%);
+            font-size: clamp(18px, 2.5vw, 40px); color: white; z-index: 10;
+            text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
             animation: fadeInOut 6s ease-in-out forwards;
         }}
         @keyframes fadeInOut {{
-            0% {{ opacity: 0; transform: translate(-50%, 20px); }}
-            20% {{ opacity: 1; transform: translate(-50%, 0); }}
-            80% {{ opacity: 1; transform: translate(-50%, 0); }}
-            100% {{ opacity: 0; transform: translate(-50%, -10px); }}
+            0% {{ opacity: 0; transform: translate(-50%, 20px); }} 20% {{ opacity: 1; transform: translate(-50%, 0); }}
+            80% {{ opacity: 1; transform: translate(-50%, 0); }} 100% {{ opacity: 0; transform: translate(-50%, -10px); }}
         }}
         #fade {{
-            position: fixed; top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            background: black; opacity: 0;
-            z-index: 3;
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+            background: black; opacity: 0; z-index: 10;
             transition: opacity 1.2s ease-in-out;
         }}
     </style>
     </head>
     <body>
         <video id="introVid" autoplay muted playsinline>
-            <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
+            <source src="data:video/mp4;base64,{video_b64}" type="video/mp4"> 
         </video>
         <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
         <div id="fade"></div>
-
         <script>
             const vid = document.getElementById("introVid");
             const fade = document.getElementById("fade");
@@ -136,38 +148,47 @@ def intro_screen(is_mobile=False):
             const finishIntro = () => {{
                 fade.style.opacity = 1;
                 setTimeout(() => {{
+                    // Gửi tín hiệu hoàn thành intro
                     window.parent.postMessage({{"type": "intro_done"}}, "*");
-                }}, 1000);
+                }}, 1200);
             }};
 
             vid.onended = finishIntro;
-            vid.play().catch(err => {{
-                console.log("Autoplay blocked, fallback timer.");
-                setTimeout(finishIntro, 9000);
+            
+            // Xử lý chặn Autoplay
+            vid.play().catch(error => {{
+                console.log("Autoplay blocked, falling back to timer.");
+                setTimeout(finishIntro, 9000); 
             }});
         </script>
     </body>
     </html>
     """
+    
+    # 2. Nhúng vào Streamlit (KHÔNG ĐẶT CHIỀU CAO CỤ THỂ, để CSS xử lý)
+    components.html(intro_html, scrolling=False) 
 
-    components.html(intro_html, height=0, scrolling=False)
-
+    # --- Cơ chế Chuyển Trang dựa trên thời gian ---
     if st.session_state.start_time is None:
         st.session_state.start_time = time.time()
-    if time.time() - st.session_state.start_time < 9.5:
-        time.sleep(1)
+    
+    if time.time() - st.session_state.start_time < 9.5: 
+        time.sleep(1) 
         st.rerun()
     else:
+        # Nếu timer hết, chuyển trang và reset timer
         st.session_state.intro_done = True
-        st.session_state.start_time = None
+        st.session_state.start_time = None 
         st.rerun()
 
 
-# ================== TRANG CHÍNH ==================
+# -------------------------------------------------------------
+## 🖼️ TRANG CHÍNH (Giữ Nguyên)
+# -------------------------------------------------------------
 def main_page(is_mobile=False):
-    hide_streamlit_ui()
+    hide_streamlit_ui() 
     bg = BG_MOBILE if is_mobile else BG_PC
-
+    
     try:
         with open(bg, "rb") as f:
             bg_b64 = base64.b64encode(f.read()).decode()
@@ -187,11 +208,8 @@ def main_page(is_mobile=False):
     }}
     @keyframes fadeInBg {{ from {{ opacity: 0; }} to {{ opacity: 1; }} }}
     h1 {{
-        text-align: center;
-        margin-top: 60px;
-        color: #2E1C14;
-        text-shadow: 2px 2px 6px #FFF8DC;
-        font-family: 'Playfair Display', serif;
+        text-align: center; margin-top: 60px; color: #2E1C14;
+        text-shadow: 2px 2px 6px #FFF8DC; font-family: 'Playfair Display', serif;
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -201,17 +219,19 @@ def main_page(is_mobile=False):
         chosen = random.choice(available_music)
         with st.sidebar:
             st.subheader("🎵 Nhạc nền")
-            st.audio(chosen, start_time=0)
+            st.audio(chosen, start_time=0) 
             st.caption(f"Đang phát: **{os.path.basename(chosen)}**")
 
     st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
 
 
-# ================== CHẠY APP ==================
+# -------------------------------------------------------------
+## ⚙️ LUỒNG CHÍNH
+# -------------------------------------------------------------
 hide_streamlit_ui()
 
 if st.session_state.is_mobile is None:
-    pass
+    pass 
 elif not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
 else:
