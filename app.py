@@ -2,16 +2,16 @@ import streamlit as st
 import random
 import time
 import os
+import base64
 
-# --- Đường dẫn file ---
+# --- Cấu hình ---
+st.set_page_config(layout="wide", page_title="Tổ Bảo Dưỡng Số 1")
+
 PC_BACKGROUND = "cabbase.jpg"
 MOBILE_BACKGROUND = "mobile.jpg"
 VIDEO_INTRO = "airplane.mp4"
 
-# --- Cấu hình trang ---
-st.set_page_config(layout="wide", page_title="Tổ Bảo Dưỡng Số 1")
-
-# --- Session State ---
+# --- Session ---
 if "intro_complete" not in st.session_state:
     st.session_state["intro_complete"] = False
 
@@ -19,12 +19,9 @@ if "intro_complete" not in st.session_state:
 def apply_css():
     css = f"""
     <style>
-    /* Ẩn header khi đang Intro */
     .stApp > header {{
         display: {'none' if not st.session_state.intro_complete else 'block'} !important;
     }}
-
-    /* Nền PC / Mobile */
     .stApp {{
         background-size: cover !important;
         background-position: center !important;
@@ -39,13 +36,9 @@ def apply_css():
             background-image: url("{MOBILE_BACKGROUND}") !important;
         }}
     }}
-
-    /* Phông chữ */
     h1, p, label, div, span {{
         font-family: 'Times New Roman', serif !important;
     }}
-
-    /* Chữ Intro */
     #intro-text {{
         position: fixed;
         top: 50%;
@@ -60,16 +53,13 @@ def apply_css():
         z-index: 9999;
         pointer-events: none;
     }}
-
     @keyframes fade_in_out {{
         0% {{ opacity: 0; }}
         15% {{ opacity: 1; }}
         85% {{ opacity: 1; }}
         100% {{ opacity: 0; }}
     }}
-
-    /* Lớp phủ đen fade-out */
-    .intro-screen {{
+    .intro-overlay {{
         position: fixed;
         top: 0;
         left: 0;
@@ -79,12 +69,10 @@ def apply_css():
         z-index: 9998;
         transition: opacity 1s ease-out;
     }}
-    .intro-screen.fade-out {{
+    .intro-overlay.fade-out {{
         opacity: 0;
         pointer-events: none;
     }}
-
-    /* Sidebar */
     [data-testid="stSidebarContent"] {{
         background-color: rgba(255, 255, 240, 0.9);
         border-right: 2px solid #A1887F;
@@ -105,25 +93,33 @@ def intro_screen():
         st.rerun()
         return
 
-    # Chữ xuất hiện giữa video
+    # Tạo video autoplay (HTML5)
+    with open(VIDEO_INTRO, "rb") as f:
+        video_bytes = f.read()
+    video_b64 = base64.b64encode(video_bytes).decode()
+
+    video_html = f"""
+    <video autoplay muted playsinline style="position:fixed; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:997;">
+        <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
+    </video>
+    """
+    st.markdown(video_html, unsafe_allow_html=True)
+
+    # Chữ overlay
     st.markdown('<div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>', unsafe_allow_html=True)
 
-    # Hiển thị video
-    video_bytes = open(VIDEO_INTRO, "rb").read()
-    st.video(video_bytes)
-
-    # Lớp phủ fade đen + script
+    # Hiệu ứng fade
     st.markdown("""
-        <div class="intro-screen"></div>
+        <div class="intro-overlay"></div>
         <script>
-            setTimeout(() => {{
-                const overlay = document.querySelector('.intro-screen');
+            setTimeout(() => {
+                const overlay = document.querySelector('.intro-overlay');
                 if (overlay) overlay.classList.add('fade-out');
-            }}, 5500);
+            }, 5500);
         </script>
     """, unsafe_allow_html=True)
 
-    # Sau 6.5s → qua main page
+    # Sau 6.5s chuyển trang
     time.sleep(6.5)
     st.session_state["intro_complete"] = True
     st.rerun()
@@ -132,7 +128,7 @@ def intro_screen():
 def main_page():
     apply_css()
 
-    # Sidebar nhạc
+    # Sidebar nhạc nền
     music_files = ["background.mp3", "background1.mp3", "background2.mp3", "background3.mp3", "background4.mp3", "background5.mp3"]
     available = [m for m in music_files if os.path.exists(m)]
     if available:
@@ -150,7 +146,6 @@ def main_page():
         TỔ BẢO DƯỠNG SỐ 1
         </h1>
     """, unsafe_allow_html=True)
-
     st.markdown("<div style='height:60vh'></div>", unsafe_allow_html=True)
 
 # --- Luồng chính ---
