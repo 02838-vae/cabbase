@@ -84,24 +84,24 @@ def intro_screen(is_mobile=False):
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
-    # ⚙️ Điều chỉnh riêng cho mobile & PC
+    # Căn chỉnh theo thiết bị
     if is_mobile:
-        object_position = "center 10%"   # đẩy máy bay lên cao hơn
-        text_bottom = "38%"              # chữ nằm cao hơn
-        video_translate = "-10%"         # nâng toàn video
-        font_size = "clamp(20px, 5vw, 36px)"
+        object_position = "center 12%"   # nâng máy bay lên cao
+        text_bottom = "40%"
+        video_translate = "-10%"
+        font_size = "clamp(22px, 5vw, 38px)"
     else:
         object_position = "center center"
         text_bottom = "22%"
         video_translate = "0"
-        font_size = "clamp(22px, 2.5vw, 42px)"
+        font_size = "clamp(26px, 3vw, 48px)"
 
     intro_html = f"""
     <html lang="vi">
     <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@700&display=swap');
+            @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap');
 
             html, body {{
                 margin: 0; padding: 0;
@@ -110,14 +110,6 @@ def intro_screen(is_mobile=False):
                 overflow: hidden;
                 background: black;
                 touch-action: none;
-            }}
-
-            #container {{
-                position: fixed;
-                top: 0; left: 0;
-                width: 100vw;
-                height: 100vh;
-                overflow: hidden;
             }}
 
             video {{
@@ -136,30 +128,31 @@ def intro_screen(is_mobile=False):
                 left: 50%;
                 bottom: {text_bottom};
                 transform: translateX(-50%);
-                font-family: 'Poppins', sans-serif;
+                font-family: 'Cinzel', serif;
                 font-size: {font_size};
                 font-weight: 700;
-                text-align: center;
+                letter-spacing: 2px;
+                text-transform: uppercase;
                 white-space: nowrap;
                 z-index: 2;
-                background: linear-gradient(90deg, #f9d423, #ff4e50, #f9d423);
+                background: linear-gradient(90deg, #e0c17b 0%, #ffffff 25%, #e0c17b 50%, #ffffff 75%, #e0c17b 100%);
+                background-size: 200% auto;
                 -webkit-background-clip: text;
                 -webkit-text-fill-color: transparent;
-                text-shadow: 0 0 12px rgba(255, 255, 255, 0.3),
-                             0 0 24px rgba(255, 255, 255, 0.2);
-                animation: fadeInOut 6s ease-in-out forwards, shimmer 3s infinite;
+                text-shadow: 0 0 12px rgba(255, 215, 128, 0.6), 0 0 24px rgba(255, 255, 255, 0.3);
+                animation: fadeInOut 7s ease-in-out forwards, lightSweep 4s linear infinite;
             }}
 
             @keyframes fadeInOut {{
-                0% {{ opacity: 0; transform: translate(-50%, 20px); }}
+                0% {{ opacity: 0; transform: translate(-50%, 25px); }}
                 20% {{ opacity: 1; transform: translate(-50%, 0); }}
                 80% {{ opacity: 1; transform: translate(-50%, 0); }}
-                100% {{ opacity: 0; transform: translate(-50%, -10px); }}
+                100% {{ opacity: 0; transform: translate(-50%, -15px); }}
             }}
 
-            @keyframes shimmer {{
-                0% {{ background-position: -200% center; }}
-                100% {{ background-position: 200% center; }}
+            @keyframes lightSweep {{
+                0% {{ background-position: 200% center; }}
+                100% {{ background-position: -200% center; }}
             }}
 
             #fade {{
@@ -170,24 +163,22 @@ def intro_screen(is_mobile=False):
                 background: black;
                 opacity: 0;
                 z-index: 3;
-                transition: opacity 1.2s ease-in-out;
+                transition: opacity 1.5s ease-in-out;
             }}
         </style>
     </head>
     <body>
-        <div id="container">
-            <video id="introVid" autoplay muted playsinline>
-                <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
-            </video>
-            <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-            <div id="fade"></div>
-        </div>
+        <video id="introVid" autoplay muted playsinline>
+            <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
+        </video>
+        <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+        <div id="fade"></div>
 
         <script>
             const vid = document.getElementById("introVid");
             const fade = document.getElementById("fade");
 
-            // Fix viewport height for mobile
+            // Fix viewport height cho mobile
             function fixVH() {{
                 const vh = window.innerHeight * 0.01;
                 document.documentElement.style.setProperty('--vh', `${{vh}}px`);
@@ -200,12 +191,12 @@ def intro_screen(is_mobile=False):
                 fade.style.opacity = 1;
                 setTimeout(() => {{
                     window.parent.postMessage({{"type": "intro_done"}}, "*");
-                }}, 1000);
+                }}, 1200);
             }}
 
             vid.onended = finishIntro;
             vid.play().catch(() => {{
-                console.log("⚠️ Autoplay bị chặn, fallback sau 9s");
+                console.log("Autoplay bị chặn, fallback 9s");
                 setTimeout(finishIntro, 9000);
             }});
         </script>
@@ -224,6 +215,7 @@ def intro_screen(is_mobile=False):
         st.session_state.intro_done = True
         st.session_state.start_time = None
         st.rerun()
+
 
 # ================== TRANG CHÍNH ==================
 def main_page(is_mobile=False):
