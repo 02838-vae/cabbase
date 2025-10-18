@@ -2,12 +2,12 @@ import streamlit as st
 import os
 import random
 import time
-import base64 # Vẫn cần cho ảnh nền
+import base64 
 from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
-# ================== CẤU HÌNH ==================
+# ================== CẤU HÌNH & TRẠNG THÁI (Giữ Nguyên) ==================
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
 # GIẢ ĐỊNH: VIDEO ĐƯỢC ĐẶT TRONG THƯ MỤC media/
@@ -17,7 +17,6 @@ BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 MUSIC_FILES = ["background.mp3", "background2.mp3", "background3.mp3", "background4.mp3", "background5.mp3"]
 
-# ================== TRẠNG THÁI (Giữ Nguyên) ==================
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 if "is_mobile" not in st.session_state:
@@ -35,30 +34,33 @@ if st.session_state.is_mobile is None:
         st.info("Đang xác định thiết bị và tải...")
         st.stop()
 
-# ================== ẨN HEADER STREAMLIT & BẬT FULL SCREEN CSS TỐI ƯU (Giữ Nguyên) ==================
+# ================== ẨN HEADER STREAMLIT & BẬT FULL SCREEN CSS TỐI ƯU ==================
 def hide_streamlit_ui():
     st.markdown("""
     <style>
-    /* CSS ghi đè mạnh nhất vẫn được giữ lại */
+    /* 1. Ẩn các thành phần Streamlit mặc định */
     [data-testid="stToolbar"], header, footer, iframe[title*="keyboard"], [tabindex="0"][aria-live] {
         display: none !important;
         visibility: hidden !important;
     }
     
-    .stApp, .stApp > header, .main, .block-container {
+    /* 2. GHI ĐÈ CSS CỦA STREAMLIT TỐI ƯU (Bao gồm cả container chính và block-container) */
+    .stApp, .stApp > header, .main, .block-container, 
+    [data-testid="stVerticalBlock"] {
         padding: 0 !important;
         margin: 0 !important;
+        /* QUAN TRỌNG: Đảm bảo chiều rộng là 100vw trên mọi container cha */
         max-width: 100vw !important; 
         width: 100vw !important;
         min-height: 100vh !important;
     }
     
-    .stApp > div, .st-emotion-cache-1jicfl2, .st-emotion-cache-z5in9b { 
+    .stApp > div {
         padding: 0 !important;
         margin: 0 !important;
     }
     
-    /* QUY TẮC MỚI: Đảm bảo iframe và video được nhúng hiển thị full screen */
+    /* 3. TĂNG ĐỘ ƯU TIÊN CHO THẺ VIDEO WRAPPER */
     .stVideo {
         position: fixed !important;
         top: 0 !important;
@@ -67,10 +69,18 @@ def hide_streamlit_ui():
         height: 100vh !important;
         z-index: 9999;
     }
+    
+    /* 4. Đảm bảo thẻ <video> bên trong full-screen */
     .stVideo > video {
         width: 100% !important;
         height: 100% !important;
         object-fit: cover !important;
+    }
+
+    /* 5. Quy tắc bổ sung để khắc phục lỗi padding/margin trên mobile */
+    .st-emotion-cache-1jicfl2, .st-emotion-cache-z5in9b, .st-emotion-cache-1cypn32 { 
+        padding: 0 !important;
+        margin: 0 !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -89,15 +99,12 @@ def intro_screen(is_mobile=False):
         return
 
     # SỬ DỤNG st.video THAY VÌ components.html/Base64
-    # Hy vọng Streamlit sẽ tạo thẻ video dễ kiểm soát hơn
-    col1, col2, col3 = st.columns([0.01, 0.98, 0.01])
-    with col2:
-        st.video(video_path, format="video/mp4", start_time=0) 
+    # Không cần dùng columns [0.01, 0.98, 0.01] nữa vì CSS đã làm việc đó
+    st.video(video_path, format="video/mp4", start_time=0) 
 
-    # --- Dòng chữ trên video (Tạm thời không hiển thị trực tiếp lên video) ---
+    # --- Dòng chữ trên video ---
     st.markdown(f"""
     <style>
-    /* CSS cho text */
     #intro-text-final {{
         position: fixed; 
         bottom: 20vh; 
@@ -117,7 +124,6 @@ def intro_screen(is_mobile=False):
     if "start_time" not in st.session_state:
         st.session_state.start_time = time.time()
     
-    # Kích hoạt chuyển trang sau 9.5 giây (thay cho sự kiện video.onended)
     if time.time() - st.session_state.start_time < 9.5: 
         time.sleep(1) 
         st.rerun()
@@ -129,7 +135,6 @@ def intro_screen(is_mobile=False):
 
 # ================== TRANG CHÍNH (Giữ Nguyên) ==================
 def main_page(is_mobile=False):
-    # Phần này tương tự như trước, nhưng không bị ảnh hưởng bởi lỗi video
     hide_streamlit_ui() 
     bg = BG_MOBILE if is_mobile else BG_PC
     
@@ -169,7 +174,7 @@ def main_page(is_mobile=False):
     st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
 
 
-# ================== LUỒNG CHÍNH ==================
+# ================== LUỒNG CHÍNH (Giữ Nguyên) ==================
 hide_streamlit_ui()
 
 if st.session_state.is_mobile is None:
