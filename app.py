@@ -7,7 +7,7 @@ from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
-# ================== CẤU HÌNH & TRẠNG THÁI (Giữ Nguyên) ==================
+# ================== CẤU HÌNH ==================
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
 VIDEO_PC = "airplane.mp4"
@@ -16,12 +16,13 @@ BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 MUSIC_FILES = ["background.mp3", "background2.mp3", "background3.mp3", "background4.mp3", "background5.mp3"]
 
+# ================== TRẠNG THÁI ==================
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 if "is_mobile" not in st.session_state:
     st.session_state.is_mobile = None 
 
-# --- XÁC ĐỊNH THIẾT BỊ DÙNG USER AGENT (Giữ Nguyên) ---
+# --- XÁC ĐỊNH THIẾT BỊ DÙNG USER AGENT ---
 if st.session_state.is_mobile is None:
     ua_string = st_javascript("""window.navigator.userAgent;""")
     
@@ -33,7 +34,7 @@ if st.session_state.is_mobile is None:
         st.info("Đang xác định thiết bị và tải...")
         st.stop()
 
-# ================== ẨN HEADER STREAMLIT & BẬT FULL SCREEN CSS TỐI ƯU (Giữ Nguyên) ==================
+# ================== ẨN HEADER STREAMLIT & BẬT FULL SCREEN CSS TỐI ƯU ==================
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -43,7 +44,7 @@ def hide_streamlit_ui():
         visibility: hidden !important;
     }
     
-    /* 2. GHI ĐÈ CSS CỦA STREAMLIT (Sử dụng selector mạnh) */
+    /* 2. GHI ĐÈ CSS CỦA STREAMLIT TỐI ĐA (Dùng selector mẹ-con) */
     .stApp, .stApp > header, .main, .block-container {
         padding: 0 !important;
         margin: 0 !important;
@@ -52,6 +53,12 @@ def hide_streamlit_ui():
         min-height: 100vh !important;
     }
     
+    /* QUY TẮC MẠNH NHẤT: Buộc các div con cấp cao nhất phải full-screen */
+    .stApp > div {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
     /* 3. Đảm bảo iframe của components.html full screen */
     [data-testid*="stHtmlComponents"] {
         position: absolute !important; 
@@ -84,7 +91,7 @@ def intro_screen(is_mobile=False):
         st.rerun()
         return
 
-    # **QUAN TRỌNG: MÃ HÓA VIDEO THÀNH BASE64 TRƯỚC KHI TẠO IFRAME**
+    # MÃ HÓA VIDEO THÀNH BASE64
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
@@ -95,15 +102,20 @@ def intro_screen(is_mobile=False):
     <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        html, body {{ margin: 0 !important; padding: 0 !important; height: 100vh; width: 100vw; overflow: hidden; background-color: black; }}
+        /* SỬ DỤNG FONT-FAMILY HỖ TRỢ TIẾNG VIỆT */
+        html, body {{ 
+            margin: 0 !important; padding: 0 !important; height: 100vh; width: 100vw; overflow: hidden; background-color: black;
+            font-family: 'Arial', sans-serif, 'Playfair Display'; 
+        }}
         video {{ 
             width: 100vw; height: 100vh; 
             object-fit: cover; object-position: center; 
         }}
         #intro-text {{
             position: fixed; bottom: 18%; left: 50%; transform: translateX(-50%);
-            font-size: clamp(1em, 4vw, 2em); color: white; z-index: 10;
-            font-family: 'Playfair Display', serif; text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
+            /* Dùng đơn vị viewport cho font để chống lỗi font nhỏ/vỡ */
+            font-size: 4vw; color: white; z-index: 10;
+            text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
             animation: fadeInOut 6s ease-in-out forwards;
         }}
         @keyframes fadeInOut {{
@@ -135,17 +147,17 @@ def intro_screen(is_mobile=False):
     </html>
     """
     
-    # 2. Mã hóa iFrame thành Base64 để nhúng vào src của iframe (Data URI)
+    # 2. MÃ HÓA IFRAME VÀ THÊM CHARSET=UTF-8
     iframe_b64 = base64.b64encode(iframe_src.encode('utf-8')).decode('utf-8')
     
-    # 3. Tạo iframe wrapper
+    # THAY ĐỔI QUAN TRỌNG: Thêm charset=utf-8 vào Data URI để sửa lỗi dấu tiếng Việt
     final_html = f"""
-    <iframe src="data:text/html;base64,{iframe_b64}" 
+    <iframe src="data:text/html;charset=utf-8;base64,{iframe_b64}" 
             style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; border: none; z-index: 9999;">
     </iframe>
     """
     
-    # 4. Nhúng vào Streamlit
+    # 3. Nhúng vào Streamlit
     components.html(final_html, scrolling=False) 
 
     # --- Cơ chế Chuyển Trang dựa trên thời gian ---
