@@ -5,7 +5,7 @@ import time
 import os
 import base64
 
-# --- Cấu hình cơ bản ---
+# --- Cấu hình ---
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide", initial_sidebar_state="collapsed")
 
 VIDEO_INTRO = "airplane.mp4"
@@ -16,15 +16,15 @@ if "intro_complete" not in st.session_state:
     st.session_state["intro_complete"] = False
 
 
-# --- Hàm hỗ trợ ---
-def get_base64_image(path):
+# --- Hàm phụ ---
+def get_base64_file(path):
     if not os.path.exists(path):
         return ""
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
 
 
-# --- Màn hình intro (HTML thuần, ẩn toàn bộ Streamlit) ---
+# --- Màn hình intro (HTML thuần, không hiển thị phần Streamlit nào) ---
 def intro_screen():
     if not os.path.exists(VIDEO_INTRO):
         st.error("Không tìm thấy video airplane.mp4")
@@ -33,9 +33,7 @@ def intro_screen():
         st.rerun()
         return
 
-    with open(VIDEO_INTRO, "rb") as f:
-        video_bytes = f.read()
-    video_b64 = base64.b64encode(video_bytes).decode()
+    video_b64 = get_base64_file(VIDEO_INTRO)
 
     intro_html = f"""
     <!DOCTYPE html>
@@ -51,21 +49,27 @@ def intro_screen():
             }}
             video {{
                 position: fixed;
-                top: 0; left: 0;
-                width: 100vw; height: 100vh;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                min-width: 100%;
+                min-height: 100%;
                 object-fit: cover;
+                object-position: center;
             }}
             #intro-text {{
                 position: fixed;
-                bottom: 12%;
+                bottom: 10%;
                 left: 50%;
                 transform: translateX(-50%);
-                font-size: clamp(1em, 4vw, 1.6em);
+                font-size: clamp(1em, 4vw, 1.4em);
                 color: white;
                 font-family: 'Times New Roman', serif;
                 text-shadow: 2px 2px 8px black;
                 animation: fadeInOut 6s forwards;
                 white-space: nowrap;
+                z-index: 1000;
             }}
             @keyframes fadeInOut {{
                 0% {{ opacity: 0; }}
@@ -101,8 +105,8 @@ def intro_screen():
     </html>
     """
 
-    # Render HTML toàn màn hình, ẩn toàn bộ Streamlit
-    components.html(intro_html, height=800, width=None)
+    # Render fullscreen, không hiển thị header Streamlit
+    components.html(intro_html, height=800, width=None, scrolling=False)
     time.sleep(7)
     st.session_state["intro_complete"] = True
     st.rerun()
@@ -112,9 +116,8 @@ def intro_screen():
 def apply_main_css(pc_img, mobile_img):
     st.markdown(f"""
     <style>
-    [data-testid="stDecoration"], header, footer, 
-    [data-testid="stToolbar"], svg, [title*="keyboard"],
-    [tabindex="0"][aria-live] {{
+    [data-testid="stDecoration"], header, footer, [data-testid="stToolbar"], svg,
+    [title*="keyboard"], [tabindex="0"][aria-live], iframe {{
         display: none !important;
     }}
     html, body, [data-testid="stAppViewContainer"] {{
@@ -139,24 +142,26 @@ def apply_main_css(pc_img, mobile_img):
 
 # --- Trang chính ---
 def main_page():
-    pc_img = get_base64_image(PC_BACKGROUND)
-    mobile_img = get_base64_image(MOBILE_BACKGROUND)
+    pc_img = get_base64_file(PC_BACKGROUND)
+    mobile_img = get_base64_file(MOBILE_BACKGROUND)
     apply_main_css(pc_img, mobile_img)
 
-    # Sidebar nhạc nền
+    # --- Phát nhạc nền ---
     music_files = [
         "background.mp3", "background1.mp3", "background2.mp3",
         "background3.mp3", "background4.mp3", "background5.mp3"
     ]
     available = [m for m in music_files if os.path.exists(m)]
     if available:
-        with st.sidebar:
-            st.subheader("🎵 Nhạc nền")
-            track = random.choice(available)
-            st.audio(track, format="audio/mp3")
-            st.caption(f"Đang phát: {track}")
+        track = random.choice(available)
+        audio_b64 = get_base64_file(track)
+        st.markdown(f"""
+        <audio autoplay loop controls style="position:fixed; top:15px; left:15px; z-index:1000; opacity:0.8;">
+            <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
+        </audio>
+        """, unsafe_allow_html=True)
 
-    # Tiêu đề chính
+    # --- Tiêu đề chính ---
     st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
 
 
