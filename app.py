@@ -92,24 +92,24 @@ def intro_screen(is_mobile=False):
             html, body {{
                 margin: 0; padding: 0;
                 width: 100vw;
-                height: 100dvh; /* ✅ dynamic viewport height */
+                height: 100%;
                 overflow: hidden;
                 background-color: black;
                 font-family: 'Playfair Display', serif;
+                touch-action: none;
             }}
             video {{
-                position: fixed;
+                position: absolute;
                 top: 0; left: 0;
                 width: 100vw;
-                height: 100dvh; /* ✅ full dynamic height */
+                height: 100%;
                 object-fit: cover;
                 object-position: center;
                 z-index: 1;
             }}
             #intro-text {{
-                position: fixed;
+                position: absolute;
                 left: 50%;
-                bottom: 18%;
                 transform: translateX(-50%);
                 font-size: clamp(18px, 2.5vw, 40px);
                 color: white;
@@ -126,10 +126,10 @@ def intro_screen(is_mobile=False):
                 100% {{ opacity: 0; transform: translate(-50%, -10px); }}
             }}
             #fade {{
-                position: fixed;
+                position: absolute;
                 top: 0; left: 0;
-                width: 100vw;
-                height: 100dvh;
+                width: 100%;
+                height: 100%;
                 background: black;
                 opacity: 0;
                 z-index: 3;
@@ -149,19 +149,24 @@ def intro_screen(is_mobile=False):
             const fade = document.getElementById("fade");
             const text = document.getElementById("intro-text");
 
-            // ✅ Fallback cho browser không hỗ trợ 100dvh
-            function adjustHeight() {{
-                const realHeight = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-                document.body.style.height = realHeight + "px";
-                document.documentElement.style.height = realHeight + "px";
-                vid.style.height = realHeight + "px";
-                fade.style.height = realHeight + "px";
-                text.style.bottom = (realHeight * 0.18) + "px";
+            // ✅ Hàm này sẽ ép iframe & nội dung chiếm đúng viewport thật của Android Chrome
+            function resizeToViewport() {{
+                const vh = window.innerHeight || document.documentElement.clientHeight;
+                document.body.style.height = vh + "px";
+                vid.style.height = vh + "px";
+                fade.style.height = vh + "px";
+                text.style.bottom = (vh * 0.18) + "px";
             }}
 
-            adjustHeight();
-            window.addEventListener("resize", adjustHeight);
-            window.addEventListener("orientationchange", adjustHeight);
+            resizeToViewport();
+            window.addEventListener('resize', resizeToViewport);
+            window.addEventListener('orientationchange', resizeToViewport);
+
+            // ✅ Bắt sự kiện hiển thị/thanh URL thay đổi
+            if ('visualViewport' in window) {{
+                window.visualViewport.addEventListener('resize', resizeToViewport);
+                window.visualViewport.addEventListener('scroll', resizeToViewport);
+            }}
 
             function finishIntro() {{
                 fade.style.opacity = 1;
@@ -172,7 +177,7 @@ def intro_screen(is_mobile=False):
 
             vid.onended = finishIntro;
             vid.play().catch(() => {{
-                console.log("Autoplay blocked → fallback");
+                console.log("Autoplay bị chặn → fallback");
                 setTimeout(finishIntro, 9000);
             }});
         </script>
@@ -180,10 +185,9 @@ def intro_screen(is_mobile=False):
     </html>
     """
 
-    # height lớn để đảm bảo iframe chiếm đủ khung Streamlit
-    components.html(intro_html, height=1200, scrolling=False)
+    components.html(intro_html, height=1300, scrolling=False)
 
-    # Timer tự động chuyển sang trang chính
+    # Logic giữ nguyên
     if st.session_state.start_time is None:
         st.session_state.start_time = time.time()
     if time.time() - st.session_state.start_time < 9.5:
@@ -193,6 +197,7 @@ def intro_screen(is_mobile=False):
         st.session_state.intro_done = True
         st.session_state.start_time = None
         st.rerun()
+
 
 # ================== TRANG CHÍNH ==================
 def main_page(is_mobile=False):
