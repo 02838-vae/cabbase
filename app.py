@@ -16,13 +16,30 @@ VIDEO_INTRO = "airplane.mp4"
 if "intro_complete" not in st.session_state:
     st.session_state["intro_complete"] = False
 
-# --- CSS ---
+# --- CSS chung ---
 def apply_css():
     css = f"""
     <style>
-    /* Ẩn header và thanh menu khi intro */
+    /* Ẩn header khi intro */
     .stApp > header {{
         display: {'none' if not st.session_state.intro_complete else 'block'} !important;
+    }}
+
+    /* Ẩn hoàn toàn các phần tử phụ của Streamlit */
+    div[data-testid="stDecoration"],
+    div[data-testid="stStatusWidget"],
+    div[tabindex="0"][aria-live="polite"],
+    div[tabindex="0"][role="region"],
+    div[title*="keyboard_double_arrow"],
+    button[kind="header"],
+    svg[aria-label*="keyboard"],
+    [data-testid="stToolbar"],
+    [data-testid="stMainBlockContainer"] > div:first-child {{
+        display: none !important;
+        visibility: hidden !important;
+        height: 0 !important;
+        width: 0 !important;
+        overflow: hidden !important;
     }}
 
     /* Nền PC/Mobile */
@@ -42,20 +59,9 @@ def apply_css():
         }}
     }}
 
-    /* Phông chữ chung */
+    /* Phông chữ */
     h1, p, label, div, span {{
         font-family: 'Times New Roman', serif !important;
-    }}
-
-    /* Ẩn các phần tử lạ Streamlit tự sinh */
-    div[tabindex="0"][aria-live="polite"],
-    div[data-testid="stDecoration"],
-    div[data-testid="stStatusWidget"],
-    div[role="complementary"],
-    section[data-testid="stSidebar"] > div:first-child {{
-        display: none !important;
-        visibility: hidden !important;
-        height: 0 !important;
     }}
 
     /* Sidebar */
@@ -81,40 +87,43 @@ def intro_screen():
         video_bytes = f.read()
     video_b64 = base64.b64encode(video_bytes).decode()
 
-    # HTML Intro video + chữ nhỏ dưới máy bay
+    # HTML video intro (fit mọi màn hình, text nhỏ, dưới máy bay)
     intro_html = f"""
     <html>
     <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
         <style>
             html, body {{
                 margin: 0;
                 padding: 0;
                 height: 100%;
+                width: 100%;
                 overflow: hidden;
                 background: black;
             }}
             video {{
                 position: fixed;
-                top: 0;
-                left: 0;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
                 width: 100vw;
                 height: 100vh;
                 object-fit: cover;
+                object-position: center;
             }}
             #intro-text {{
                 position: fixed;
-                bottom: 10%;
+                bottom: 12%;
                 left: 50%;
                 transform: translateX(-50%);
-                font-size: clamp(1.2em, 3vw, 2em);
+                font-size: clamp(1em, 4vw, 1.8em);
                 color: white;
                 font-family: 'Times New Roman', serif;
                 text-shadow: 2px 2px 5px black;
                 animation: fade_in_out 6s forwards;
                 white-space: nowrap;
                 text-align: center;
-                letter-spacing: 2px;
+                letter-spacing: 1.5px;
             }}
             @keyframes fade_in_out {{
                 0% {{ opacity: 0; transform: translate(-50%, 20%); }}
@@ -161,7 +170,7 @@ def intro_screen():
 def main_page():
     apply_css()
 
-    # Sidebar: nhạc nền ngẫu nhiên
+    # Sidebar nhạc nền
     music_files = [
         "background.mp3",
         "background1.mp3",
@@ -190,7 +199,7 @@ def main_page():
 
     st.markdown("<div style='height:60vh'></div>", unsafe_allow_html=True)
 
-# --- Điều hướng ---
+# --- Logic chính ---
 if st.session_state["intro_complete"]:
     main_page()
 else:
