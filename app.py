@@ -3,48 +3,59 @@ import os
 import random
 import base64
 import time
+import streamlit.components.v1 as components
 
-# ================== CẤU HÌNH ==================
+# ========== CẤU HÌNH ==========
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
-# File
 VIDEO_PC = "airplane.mp4"
 VIDEO_MOBILE = "mobile.mp4"
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
-MUSIC_FILES = ["background.mp3", "background2.mp3", "background3.mp3", "background4.mp3", "background5.mp3"]
+MUSIC_FILES = [
+    "background.mp3", "background2.mp3",
+    "background3.mp3", "background4.mp3", "background5.mp3"
+]
 
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
 if "is_mobile" not in st.session_state:
-    st.session_state.is_mobile = None  # sẽ xác định bằng JS
+    st.session_state.is_mobile = None
 
 
-# ================== ẨN GIAO DIỆN STREAMLIT ==================
+# ========== ẨN GIAO DIỆN STREAMLIT ==========
 def hide_streamlit_ui():
     st.markdown("""
     <style>
-    [data-testid="stToolbar"], header, footer, iframe, [title*="keyboard"], [tabindex="0"][aria-live] {
+    [data-testid="stToolbar"],
+    header, footer, iframe,
+    [title*="keyboard"],
+    [tabindex="0"][aria-live],
+    [data-testid="stDecoration"] {
         display: none !important;
+        visibility: hidden !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
 
-# ================== PHÁT HIỆN MOBILE ==================
-def detect_mobile():
-    """Dùng JS gửi thông tin thiết bị về Python"""
-    detect_script = """
+# ========== MÀN HÌNH PHÁT HIỆN THIẾT BỊ ==========
+def detect_device():
+    hide_streamlit_ui()
+    components.html("""
     <script>
-    const isMobile = /Mobi|Android|iPhone/i.test(navigator.userAgent);
-    window.parent.postMessage({isMobile}, "*");
+    const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
+    window.parent.postMessage({type: 'device_detected', isMobile: isMobile}, "*");
     </script>
-    """
-    st.markdown(detect_script, unsafe_allow_html=True)
+    <style>
+    html, body {background-color:black; margin:0; padding:0; height:100%; overflow:hidden;}
+    </style>
+    """, height=0)
+    # placeholder để JS gửi kết quả về, không hiển thị gì
 
 
-# ================== MÀN HÌNH INTRO ==================
+# ========== MÀN HÌNH INTRO ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
 
@@ -55,7 +66,6 @@ def intro_screen(is_mobile=False):
         st.rerun()
         return
 
-    # Đọc video và mã hóa base64
     with open(video_file, "rb") as f:
         video_bytes = f.read()
     video_b64 = base64.b64encode(video_bytes).decode()
@@ -70,8 +80,8 @@ def intro_screen(is_mobile=False):
         overflow: hidden;
         background-color: black;
         height: 100%;
+        width: 100%;
     }}
-
     video {{
         position: fixed;
         top: 0;
@@ -81,7 +91,6 @@ def intro_screen(is_mobile=False):
         object-fit: cover;
         z-index: 0;
     }}
-
     #intro-text {{
         position: fixed;
         bottom: 22%;
@@ -95,14 +104,12 @@ def intro_screen(is_mobile=False):
         animation: fadeInOut 6s ease-in-out forwards;
         z-index: 2;
     }}
-
     @keyframes fadeInOut {{
         0% {{ opacity: 0; transform: translate(-50%, 20px); }}
         20% {{ opacity: 1; transform: translate(-50%, 0); }}
         80% {{ opacity: 1; transform: translate(-50%, 0); }}
         100% {{ opacity: 0; transform: translate(-50%, -10px); }}
     }}
-
     #fadeout {{
         position: fixed;
         top: 0;
@@ -112,7 +119,7 @@ def intro_screen(is_mobile=False):
         background: black;
         opacity: 0;
         z-index: 3;
-        transition: opacity 1.2s ease-in-out;
+        transition: opacity 1.5s ease-in-out;
     }}
     </style>
 
@@ -128,20 +135,19 @@ def intro_screen(is_mobile=False):
     const fade = document.getElementById('fadeout');
     vid.onended = () => {{
         fade.style.opacity = 1;
+        setTimeout(() => {{
+            window.parent.postMessage({{type: 'intro_done'}}, "*");
+        }}, 1200);
     }};
     </script>
     """
-    st.markdown(intro_html, unsafe_allow_html=True)
-
-    # Tự chuyển qua trang chính sau 9s
-    time.sleep(9)
-    st.session_state.intro_done = True
-    st.rerun()
+    components.html(intro_html, height=800, scrolling=False)
 
 
-# ================== TRANG CHÍNH ==================
+# ========== TRANG CHÍNH ==========
 def main_page(is_mobile=False):
     hide_streamlit_ui()
+
     bg = BG_MOBILE if is_mobile else BG_PC
 
     st.markdown(f"""
@@ -152,16 +158,16 @@ def main_page(is_mobile=False):
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
-        animation: fadeIn 1.5s ease-in;
+        animation: fadeIn 1.2s ease-in-out;
+    }}
+    @keyframes fadeIn {{
+        from {{ opacity: 0; }}
+        to {{ opacity: 1; }}
     }}
     h1 {{
         font-family: 'Playfair Display', serif;
         color: #3E2723;
         text-shadow: 2px 2px 6px #FFF8DC;
-    }}
-    @keyframes fadeIn {{
-        from {{ opacity: 0; }}
-        to {{ opacity: 1; }}
     }}
     </style>
     """, unsafe_allow_html=True)
@@ -181,22 +187,22 @@ def main_page(is_mobile=False):
     """, unsafe_allow_html=True)
 
 
-# ================== LUỒNG CHÍNH ==================
+# ========== LUỒNG CHÍNH ==========
+hide_streamlit_ui()
+
+# Lắng nghe tín hiệu từ JavaScript
+msg = st.experimental_get_query_params().get("msg", [None])[0]
+
 if st.session_state.is_mobile is None:
-    # Dùng JS để phát hiện thiết bị
-    hide_streamlit_ui()
-    st.markdown("""
-    <script>
-    const isMobile = /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent);
-    window.parent.postMessage({isMobile}, "*");
-    </script>
-    """, unsafe_allow_html=True)
-    st.write("🔍 Đang phát hiện thiết bị... hãy reload nếu chậm.")
-    # giả định PC nếu JS chưa kịp trả về
+    detect_device()
+    # Đặt mặc định tạm thời là False để không hiển thị text “Đang phát hiện...”
     st.session_state.is_mobile = False
     st.rerun()
 else:
     if not st.session_state.intro_done:
         intro_screen(st.session_state.is_mobile)
+        time.sleep(9)
+        st.session_state.intro_done = True
+        st.rerun()
     else:
         main_page(st.session_state.is_mobile)
