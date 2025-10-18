@@ -87,24 +87,20 @@ def intro_screen(is_mobile=False):
     intro_html = f"""
     <html lang="vi">
     <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
         <style>
             html, body {{
                 margin: 0; padding: 0;
-                width: 100vw; height: 100vh;
+                width: 100vw; height: 100%;
                 overflow: hidden;
                 background-color: black;
                 font-family: 'Playfair Display', serif;
             }}
-            body {{
-                display: flex;
-                align-items: center;
-                justify-content: center;
-            }}
             video {{
                 position: fixed;
                 top: 0; left: 0;
-                width: 100vw; height: 100vh;
+                width: 100%;
+                height: 100%;
                 object-fit: cover;
                 object-position: center;
                 z-index: 1;
@@ -131,7 +127,8 @@ def intro_screen(is_mobile=False):
             #fade {{
                 position: fixed;
                 top: 0; left: 0;
-                width: 100vw; height: 100vh;
+                width: 100%;
+                height: 100%;
                 background: black;
                 opacity: 0;
                 z-index: 3;
@@ -149,6 +146,21 @@ def intro_screen(is_mobile=False):
         <script>
             const vid = document.getElementById("introVid");
             const fade = document.getElementById("fade");
+            const text = document.getElementById("intro-text");
+
+            // ✅ Đặt chiều cao thực tế theo viewport (fix cho mobile)
+            function setRealHeight() {{
+                let vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+                document.body.style.height = vh + "px";
+                document.documentElement.style.height = vh + "px";
+                vid.style.height = vh + "px";
+                fade.style.height = vh + "px";
+                text.style.bottom = (vh * 0.18) + "px";
+            }}
+
+            setRealHeight();
+            window.addEventListener('resize', setRealHeight);
+            window.addEventListener('orientationchange', setRealHeight);
 
             function finishIntro() {{
                 fade.style.opacity = 1;
@@ -156,12 +168,6 @@ def intro_screen(is_mobile=False):
                     window.parent.postMessage({{"type": "intro_done"}}, "*");
                 }}, 1000);
             }}
-
-            // ép full height khi load (fix PC bị thừa trắng)
-            window.addEventListener('load', () => {{
-                document.documentElement.style.height = '100vh';
-                document.body.style.height = '100vh';
-            }});
 
             vid.onended = finishIntro;
             vid.play().catch(() => {{
@@ -184,6 +190,7 @@ def intro_screen(is_mobile=False):
         st.session_state.intro_done = True
         st.session_state.start_time = None
         st.rerun()
+
 
 
 # ================== TRANG CHÍNH ==================
