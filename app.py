@@ -20,14 +20,18 @@ if "intro_complete" not in st.session_state:
 def apply_css():
     css = f"""
     <style>
+    /* Ẩn header khi intro */
     .stApp > header {{
         display: {'none' if not st.session_state.intro_complete else 'block'} !important;
     }}
+
+    /* Nền PC/Mobile */
     .stApp {{
         background-size: cover !important;
         background-position: center !important;
         background-attachment: fixed !important;
         transition: background-image 1s ease-in-out;
+        overflow: hidden !important;
     }}
     .stApp {{
         background-image: url("{PC_BACKGROUND}");
@@ -37,9 +41,19 @@ def apply_css():
             background-image: url("{MOBILE_BACKGROUND}") !important;
         }}
     }}
+
+    /* Phông chữ */
     h1, p, label, div, span {{
         font-family: 'Times New Roman', serif !important;
     }}
+
+    /* Ẩn focus trap “keyboard_...” */
+    div[data-testid="stDecoration"], div[tabindex="0"][aria-live="polite"] {{
+        display: none !important;
+        visibility: hidden !important;
+    }}
+
+    /* Sidebar */
     [data-testid="stSidebarContent"] {{
         background-color: rgba(255, 255, 240, 0.9);
         border-right: 2px solid #A1887F;
@@ -58,27 +72,29 @@ def intro_screen():
         st.rerun()
         return
 
-    # Chuyển video thành base64
     with open(VIDEO_INTRO, "rb") as f:
         video_bytes = f.read()
     video_b64 = base64.b64encode(video_bytes).decode()
 
-    # HTML intro hoàn chỉnh
+    # HTML intro — dùng object-fit:cover và viewport chuẩn mobile
     intro_html = f"""
     <html>
     <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-            body {{
+            html, body {{
                 margin: 0;
+                padding: 0;
+                height: 100%;
                 overflow: hidden;
-                background-color: black;
+                background: black;
             }}
             video {{
                 position: fixed;
                 top: 0;
                 left: 0;
-                width: 100%;
-                height: 100%;
+                width: 100vw;
+                height: 100vh;
                 object-fit: cover;
             }}
             #intro-text {{
@@ -91,6 +107,8 @@ def intro_screen():
                 font-family: 'Times New Roman', serif;
                 text-shadow: 2px 2px 6px black;
                 animation: fade_in_out 6s forwards;
+                white-space: nowrap;
+                text-align: center;
             }}
             @keyframes fade_in_out {{
                 0% {{ opacity: 0; }}
@@ -128,12 +146,9 @@ def intro_screen():
     </html>
     """
 
-    # Render iframe độc lập (sẽ autoplay được)
     components.html(intro_html, height=720, width=None)
 
-    # Bắt tín hiệu JS → Python
-    # Streamlit chưa có event bridge, ta dùng session_state để mô phỏng
-    # nên chỉ cần delay đủ thời gian video
+    # Đợi kết thúc rồi chuyển
     time.sleep(7)
     st.session_state["intro_complete"] = True
     st.rerun()
@@ -142,8 +157,15 @@ def intro_screen():
 def main_page():
     apply_css()
 
-    # Sidebar nhạc
-    music_files = ["background.mp3", "background1.mp3", "background2.mp3", "background3.mp3", "background4.mp3", "background5.mp3"]
+    # Sidebar nhạc nền
+    music_files = [
+        "background.mp3",
+        "background1.mp3",
+        "background2.mp3",
+        "background3.mp3",
+        "background4.mp3",
+        "background5.mp3"
+    ]
     available = [m for m in music_files if os.path.exists(m)]
     if available:
         track = random.choice(available)
@@ -152,17 +174,19 @@ def main_page():
             st.audio(track, format="audio/mp3")
             st.caption(f"Đang phát: {track}")
 
-    # Tiêu đề
+    # Tiêu đề chính
     st.markdown("""
         <h1 style='text-align:center;
                    font-size:3.5em;
-                   text-shadow:2px 2px 6px #FFF8DC;'>
+                   text-shadow:2px 2px 6px #FFF8DC;
+                   margin-top: 30px;'>
         TỔ BẢO DƯỠNG SỐ 1
         </h1>
     """, unsafe_allow_html=True)
+
     st.markdown("<div style='height:60vh'></div>", unsafe_allow_html=True)
 
-# --- Chạy ---
+# --- Luồng chính ---
 if st.session_state["intro_complete"]:
     main_page()
 else:
