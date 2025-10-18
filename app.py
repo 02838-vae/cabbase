@@ -7,7 +7,7 @@ from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
-# ================== CẤU HÌNH ==================
+# ================== CẤU HÌNH & TRẠNG THÁI (Giữ Nguyên) ==================
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
 VIDEO_PC = "airplane.mp4"
@@ -16,13 +16,12 @@ BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 MUSIC_FILES = ["background.mp3", "background2.mp3", "background3.mp3", "background4.mp3", "background5.mp3"]
 
-# ================== TRẠNG THÁI ==================
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 if "is_mobile" not in st.session_state:
     st.session_state.is_mobile = None 
 
-# --- XÁC ĐỊNH THIẾT BỊ DÙNG USER AGENT ---
+# --- XÁC ĐỊNH THIẾT BỊ DÙNG USER AGENT (Giữ Nguyên) ---
 if st.session_state.is_mobile is None:
     ua_string = st_javascript("""window.navigator.userAgent;""")
     
@@ -34,7 +33,7 @@ if st.session_state.is_mobile is None:
         st.info("Đang xác định thiết bị và tải...")
         st.stop()
 
-# ================== ẨN HEADER STREAMLIT & BẬT FULL SCREEN CSS TỐI ƯU ==================
+# ================== ẨN HEADER STREAMLIT & BẬT FULL SCREEN CSS TỐI ƯU (Giữ Nguyên) ==================
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -45,20 +44,25 @@ def hide_streamlit_ui():
     }
     
     /* 2. GHI ĐÈ CSS CỦA STREAMLIT (Sử dụng selector mạnh) */
-    .stApp, .stApp > header, .main {
+    .stApp, .stApp > header, .main, .block-container {
         padding: 0 !important;
         margin: 0 !important;
         max-width: 100vw !important; 
         width: 100vw !important;
         min-height: 100vh !important;
     }
-    .block-container {
-        padding: 0 !important;
-        margin: 0 !important;
-        max-width: 100vw !important;
+    
+    /* 3. Đảm bảo iframe của components.html full screen */
+    [data-testid*="stHtmlComponents"] {
+        position: absolute !important; 
+        top: 0;
+        left: 0;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 9999; 
     }
     
-    /* 3. Quy tắc bổ sung để khắc phục lỗi padding/margin trên mobile */
+    /* 4. Quy tắc bổ sung để khắc phục lỗi padding/margin trên mobile */
     .st-emotion-cache-1jicfl2, .st-emotion-cache-z5in9b, .st-emotion-cache-1cypn32 { 
         padding: 0 !important;
         margin: 0 !important;
@@ -68,7 +72,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ================== MÀN HÌNH INTRO CUỐI CÙNG (iFrame Full Screen) ==================
+# ================== MÀN HÌNH INTRO CUỐI CÙNG (Base64 Video bên trong iFrame) ==================
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     
@@ -79,8 +83,12 @@ def intro_screen(is_mobile=False):
         st.session_state.intro_done = True
         st.rerun()
         return
-    
-    # 1. Tạo chuỗi iFrame HTML cho video intro (Sử dụng Base64 Data URI)
+
+    # **QUAN TRỌNG: MÃ HÓA VIDEO THÀNH BASE64 TRƯỚC KHI TẠO IFRAME**
+    with open(video_path, "rb") as f:
+        video_b64 = base64.b64encode(f.read()).decode()
+
+    # 1. Tạo chuỗi iFrame HTML
     iframe_src = f"""
     <!DOCTYPE html>
     <html lang="vi">
@@ -105,7 +113,9 @@ def intro_screen(is_mobile=False):
     </style>
     </head>
     <body>
-        <video id="introVid" autoplay muted playsinline src="{video_path}"></video>
+        <video id="introVid" autoplay muted playsinline>
+            <source src="data:video/mp4;base64,{video_b64}" type="video/mp4"> 
+        </video>
         <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
         <div id="fade"></div>
         <script>
@@ -116,6 +126,7 @@ def intro_screen(is_mobile=False):
 
             vid.onended = finishIntro;
             
+            // Xử lý chặn Autoplay
             vid.play().catch(error => {{
                 setTimeout(finishIntro, 9000); 
             }});
@@ -124,19 +135,17 @@ def intro_screen(is_mobile=False):
     </html>
     """
     
-    # Mã hóa iFrame thành Base64 để nhúng vào src của iframe
+    # 2. Mã hóa iFrame thành Base64 để nhúng vào src của iframe (Data URI)
     iframe_b64 = base64.b64encode(iframe_src.encode('utf-8')).decode('utf-8')
     
-    # 2. Tạo iframe wrapper (ĐÂY LÀ PHẦN LỚN NHẤT CỦA CÁC VẤN ĐỀ TRƯỚC)
-    # Chúng ta dùng một iframe thứ cấp được nhúng vào component Streamlit
+    # 3. Tạo iframe wrapper
     final_html = f"""
     <iframe src="data:text/html;base64,{iframe_b64}" 
             style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; border: none; z-index: 9999;">
     </iframe>
     """
     
-    # 3. Nhúng vào Streamlit
-    # Bỏ tham số height vì iframe đã được fixed
+    # 4. Nhúng vào Streamlit
     components.html(final_html, scrolling=False) 
 
     # --- Cơ chế Chuyển Trang dựa trên thời gian ---
@@ -152,7 +161,7 @@ def intro_screen(is_mobile=False):
         st.rerun()
 
 
-# ================== TRANG CHÍNH ==================
+# ================== TRANG CHÍNH (Giữ Nguyên) ==================
 def main_page(is_mobile=False):
     hide_streamlit_ui() 
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -193,7 +202,7 @@ def main_page(is_mobile=False):
     st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
 
 
-# ================== LUỒNG CHÍNH ==================
+# ================== LUỒNG CHÍNH (Giữ Nguyên) ==================
 hide_streamlit_ui()
 
 if st.session_state.is_mobile is None:
