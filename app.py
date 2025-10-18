@@ -45,42 +45,30 @@ def hide_streamlit_ui():
     }
     
     /* 2. GHI ĐÈ CSS CỦA STREAMLIT (Sử dụng selector mạnh) */
-    /* Đây là quy tắc tổng quát để loại bỏ padding/margin khỏi các container chính */
-    .stApp, .stApp > header, .main, .block-container {
+    .stApp, .stApp > header, .main {
         padding: 0 !important;
         margin: 0 !important;
-        /* Đảm bảo chiếm toàn bộ không gian */
         max-width: 100vw !important; 
         width: 100vw !important;
         min-height: 100vh !important;
     }
-    
-    /* 3. Đảm bảo iframe của components.html (video intro) full screen */
-    [data-testid*="stHtmlComponents"] {
-        /* Chuyển từ fixed sang absolute để tránh xung đột z-index/fixed */
-        position: absolute !important; 
-        top: 0;
-        left: 0;
-        width: 100vw !important;
-        height: 100vh !important;
-        z-index: 9999; 
+    .block-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100vw !important;
     }
     
-    /* 4. Quy tắc bổ sung để khắc phục lỗi padding/margin trên mobile (thường là .main) */
-    /* Sử dụng selector tổng quát cho các phiên bản Streamlit mới */
-    .st-emotion-cache-1jicfl2, /* Ví dụ từ bạn */
-    .st-emotion-cache-z5in9b, 
-    .st-emotion-cache-1cypn32 { 
+    /* 3. Quy tắc bổ sung để khắc phục lỗi padding/margin trên mobile */
+    .st-emotion-cache-1jicfl2, .st-emotion-cache-z5in9b, .st-emotion-cache-1cypn32 { 
         padding: 0 !important;
         margin: 0 !important;
     }
-
     
     </style>
     """, unsafe_allow_html=True)
 
 
-# ================== MÀN HÌNH INTRO (FULL SCREEN & AUTOPLAY) ==================
+# ================== MÀN HÌNH INTRO CUỐI CÙNG (iFrame Full Screen) ==================
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     
@@ -91,25 +79,16 @@ def intro_screen(is_mobile=False):
         st.session_state.intro_done = True
         st.rerun()
         return
-
-    with open(video_path, "rb") as f:
-        video_b64 = base64.b64encode(f.read()).decode()
-
-    intro_html = f"""
+    
+    # 1. Tạo chuỗi iFrame HTML cho video intro (Sử dụng Base64 Data URI)
+    iframe_src = f"""
     <!DOCTYPE html>
     <html lang="vi">
     <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* QUAN TRỌNG: CSS bên trong components.html */
-        html, body {{ 
-            margin: 0 !important; padding: 0 !important; 
-            height: 100vh; width: 100vw; 
-            overflow: hidden; background-color: black; 
-        }}
+        html, body {{ margin: 0 !important; padding: 0 !important; height: 100vh; width: 100vw; overflow: hidden; background-color: black; }}
         video {{ 
-            position: absolute; /* Đảm bảo video nằm trong iframe */
-            top: 0; left: 0;
             width: 100vw; height: 100vh; 
             object-fit: cover; object-position: center; 
         }}
@@ -123,35 +102,21 @@ def intro_screen(is_mobile=False):
             0% {{ opacity: 0; transform: translate(-50%, 20px); }} 20% {{ opacity: 1; transform: translate(-50%, 0); }}
             80% {{ opacity: 1; transform: translate(-50%, 0); }} 100% {{ opacity: 0; transform: translate(-50%, -10px); }}
         }}
-        #fade {{
-            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-            background: black; opacity: 0; z-index: 10;
-            transition: opacity 1s ease-in-out;
-        }}
     </style>
     </head>
     <body>
-        <video id="introVid" autoplay muted playsinline>
-            <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
-        </video>
+        <video id="introVid" autoplay muted playsinline src="{video_path}"></video>
         <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
         <div id="fade"></div>
         <script>
             const vid = document.getElementById("introVid");
-            const fade = document.getElementById("fade");
-            
             const finishIntro = () => {{
-                fade.style.opacity = 1;
-                setTimeout(() => {{
-                    window.parent.postMessage({{"type": "intro_done"}}, "*");
-                }}, 1200);
+                window.parent.postMessage({{"type": "intro_done"}}, "*");
             }};
 
             vid.onended = finishIntro;
             
-            // Xử lý chặn Autoplay: Nếu bị chặn, chờ 9 giây rồi chuyển trang
             vid.play().catch(error => {{
-                console.log("Autoplay blocked or failed, waiting 9 seconds.");
                 setTimeout(finishIntro, 9000); 
             }});
         </script>
@@ -159,8 +124,20 @@ def intro_screen(is_mobile=False):
     </html>
     """
     
-    # Bỏ tham số height để CSS fixed quyết định
-    components.html(intro_html, scrolling=False) 
+    # Mã hóa iFrame thành Base64 để nhúng vào src của iframe
+    iframe_b64 = base64.b64encode(iframe_src.encode('utf-8')).decode('utf-8')
+    
+    # 2. Tạo iframe wrapper (ĐÂY LÀ PHẦN LỚN NHẤT CỦA CÁC VẤN ĐỀ TRƯỚC)
+    # Chúng ta dùng một iframe thứ cấp được nhúng vào component Streamlit
+    final_html = f"""
+    <iframe src="data:text/html;base64,{iframe_b64}" 
+            style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; border: none; z-index: 9999;">
+    </iframe>
+    """
+    
+    # 3. Nhúng vào Streamlit
+    # Bỏ tham số height vì iframe đã được fixed
+    components.html(final_html, scrolling=False) 
 
     # --- Cơ chế Chuyển Trang dựa trên thời gian ---
     if "start_time" not in st.session_state:
