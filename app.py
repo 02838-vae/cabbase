@@ -25,7 +25,7 @@ if "start_time" not in st.session_state:
 
 # --- XÁC ĐỊNH THIẾT BỊ DÙNG USER AGENT ---
 if st.session_state.is_mobile is None:
-    # --- FIX AUTOPLAY REFRESH: Reset trạng thái khi F5 ---
+    # --- FIX AUTOPLAY REFRESH: Reset trạng thái khi F5 hoặc load lại ---
     st.session_state.intro_done = False
     
     ua_string = st_javascript("""window.navigator.userAgent;""")
@@ -43,32 +43,47 @@ def hide_streamlit_ui():
     st.markdown("""
     <style>
     /* 1. Ẩn các thành phần Streamlit mặc định */
-    [data-testid="stToolbar"], header, footer, iframe[title*="keyboard"], [tabindex="0"][aria-live] {
+    [data-testid="stToolbar"], header, iframe[title*="keyboard"], [tabindex="0"][aria-live] {
         display: none !important;
         visibility: hidden !important;
     }
     
-    /* 2. GHI ĐÈ CSS CỦA STREAMLIT TỐI ƯU */
+    /* 2. GHI ĐÈ FOOTER VÀ CONTAINER CHÍNH */
+    footer {
+        height: 0 !important; /* Xóa chiều cao footer */
+        visibility: hidden !important; /* Đảm bảo ẩn hoàn toàn */
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
     .stApp, .stApp > header, .main, .block-container, [data-testid="stVerticalBlock"] {
         padding: 0 !important;
         margin: 0 !important;
-        /* Giữ 100vw/100vh để chống lại các wrapper khác */
         max-width: 100vw !important; 
         width: 100vw !important;
         min-height: 100vh !important;
     }
     
+    .stApp > div {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
     /* 3. Đảm bảo iframe của components.html full screen */
     [data-testid*="stHtmlComponents"] {
-        position: fixed !important; /* Dùng fixed cho vị trí tuyệt đối so với viewport */
+        position: fixed !important; 
         top: 0;
         left: 0;
         width: 100vw !important;
-        height: 100vh !important;
+        height: 100vh !important; /* Buộc chiều cao là 100% viewport */
         z-index: 9999; 
     }
     
-    /* Thêm các quy tắc tối ưu cho video nếu cần (tạm thời không dùng st.video) */
+    /* Các quy tắc bổ sung */
+    .st-emotion-cache-1jicfl2, .st-emotion-cache-z5in9b, .st-emotion-cache-1cypn32 { 
+        padding: 0 !important;
+        margin: 0 !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
@@ -96,15 +111,15 @@ def intro_screen(is_mobile=False):
     <head>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <style>
-        /* QUAN TRỌNG: SỬ DỤNG 100% CỦA IFRAME */
+        /* FIX HEIGHT: SỬ DỤNG 100VH CHO IFRAME CON */
         html, body {{ 
             margin: 0 !important; padding: 0 !important; 
-            height: 100%; width: 100%; /* Dùng 100% cho iFrame con */
+            height: 100vh; width: 100%; 
             overflow: hidden; background-color: black; 
             font-family: 'Arial', sans-serif, 'Playfair Display'; 
         }}
         video {{ 
-            width: 100%; height: 100%; /* SỬ DỤNG 100% CỦA BODY IFRAME */
+            width: 100%; height: 100%; 
             object-fit: cover; object-position: center; 
         }}
         #intro-text {{
@@ -155,13 +170,13 @@ def intro_screen(is_mobile=False):
     """
     
     # 2. Nhúng vào Streamlit
-    components.html(intro_html, height=800, scrolling=False) 
+    # Bỏ height=800 để CSS full-screen xử lý.
+    components.html(intro_html, scrolling=False) 
 
     # --- Cơ chế Chuyển Trang dựa trên thời gian ---
     if st.session_state.start_time is None:
         st.session_state.start_time = time.time()
     
-    # Rerun cho đến khi hết 9.5 giây
     if time.time() - st.session_state.start_time < 9.5: 
         time.sleep(1) 
         st.rerun()
