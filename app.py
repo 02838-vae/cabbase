@@ -84,13 +84,16 @@ def intro_screen(is_mobile=False):
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
-    # 💡 Nếu là mobile, ta kéo khung video lên cao 10-15%
+    # ✅ Tinh chỉnh lại góc nhìn cho mobile
     if is_mobile:
-        object_position_css = "center 30%;"  # dịch khung nhìn lên trên (hiện rõ máy bay)
-        text_bottom_css = "22%;"  # đẩy dòng chữ lên một chút
+        # Đưa khung nhìn lên cao hơn nữa (hiển thị toàn bộ máy bay)
+        object_position_css = "center 15%;"  # từ 30% → 15% (kéo lên cao)
+        text_bottom_css = "32%;"  # nâng dòng chữ lên cao hơn để thấy rõ
+        translate_y = "-10%"  # dịch video lên thêm 10%
     else:
         object_position_css = "center center;"
         text_bottom_css = "18%;"
+        translate_y = "0"
 
     intro_html = f"""
     <!DOCTYPE html>
@@ -117,8 +120,8 @@ def intro_screen(is_mobile=False):
                 width: 100vw;
                 height: 100%;
                 object-fit: cover;
-                object-position: {object_position_css};  /* 🔥 Kéo khung nhìn lên cao trên mobile */
-                transform: translateY(-5%);  /* tinh chỉnh mượt hơn cho mobile */
+                object-position: {object_position_css};
+                transform: translateY({translate_y});
                 z-index: 1;
             }}
             #intro-text {{
@@ -126,9 +129,9 @@ def intro_screen(is_mobile=False):
                 left: 50%;
                 bottom: {text_bottom_css};
                 transform: translateX(-50%);
-                font-size: clamp(18px, 2.5vw, 40px);
+                font-size: clamp(20px, 3vw, 44px);
                 color: white;
-                text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
+                text-shadow: 2px 2px 10px rgba(0,0,0,0.9);
                 z-index: 2;
                 animation: fadeInOut 6s ease-in-out forwards;
                 text-align: center;
@@ -164,7 +167,6 @@ def intro_screen(is_mobile=False):
             const fade = document.getElementById("fade");
             const root = document.documentElement;
 
-            // ✅ Fix viewport thực trên Android Chrome
             function setViewportHeight() {{
                 let vh = window.innerHeight * 0.01;
                 root.style.setProperty('--dynamic-vh', `${{vh * 100}}px`);
@@ -205,6 +207,7 @@ def intro_screen(is_mobile=False):
         st.session_state.intro_done = True
         st.session_state.start_time = None
         st.rerun()
+
 
 
 
