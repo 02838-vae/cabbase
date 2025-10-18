@@ -3,11 +3,10 @@ import os
 import base64
 import random
 import time
-# Import thư viện mới
+import streamlit.components.v1 as components
+# Import thư viện User Agent và Javascript
 from streamlit_javascript import st_javascript
 from user_agents import parse
-import streamlit.components.v1 as components
-import html
 
 # ================== CẤU HÌNH ==================
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
@@ -22,39 +21,60 @@ MUSIC_FILES = ["background.mp3", "background2.mp3", "background3.mp3", "backgrou
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 if "is_mobile" not in st.session_state:
-    st.session_state.is_mobile = None # Khởi tạo là None, chờ xác định
+    st.session_state.is_mobile = None 
 
 # --- XÁC ĐỊNH THIẾT BỊ DÙNG USER AGENT ---
 if st.session_state.is_mobile is None:
-    # 1. Lấy chuỗi User Agent từ trình duyệt
+    # Lấy chuỗi User Agent từ trình duyệt
     ua_string = st_javascript("""window.navigator.userAgent;""")
     
     if ua_string:
-        # 2. Phân tích chuỗi User Agent
+        # Phân tích chuỗi User Agent
         user_agent = parse(ua_string)
-        
-        # 3. Cập nhật trạng thái
+        # Gán trạng thái: True nếu không phải PC (tức là mobile, tablet, v.v.)
         st.session_state.is_mobile = not user_agent.is_pc
-        st.session_state.intro_loading_status = None # Reset trạng thái load
         st.rerun()
     else:
-        # Hiển thị thông báo khi đang chờ JS phản hồi (chỉ ở lần chạy đầu tiên)
-        st.info("Đang xác định thiết bị...")
-        st.stop() # Dừng luồng cho đến khi JS trả lời
+        # Dừng luồng khi đang chờ JS phản hồi (chỉ ở lần chạy đầu tiên)
+        st.info("Đang xác định thiết bị và tải...")
+        st.stop()
 
-# ================== ẨN HEADER STREAMLIT ==================
+# ================== ẨN HEADER STREAMLIT & BẬT FULL SCREEN CSS ==================
 def hide_streamlit_ui():
     st.markdown("""
     <style>
+    /* 1. Ẩn các thành phần Streamlit mặc định */
     [data-testid="stToolbar"], header, footer, iframe[title*="keyboard"], [tabindex="0"][aria-live] {
         display: none !important;
         visibility: hidden !important;
     }
+    
+    /* 2. FORCE FULL-SCREEN cho Streamlit App và Container */
+    .stApp {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    .main .block-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100vw;
+    }
+    
+    /* 3. Đảm bảo iframe của components.html (video intro) full screen */
+    [data-testid*="stHtmlComponents"] {
+        position: fixed !important; 
+        top: 0;
+        left: 0;
+        width: 100vw;
+        height: 100vh;
+        z-index: 9999; 
+    }
+    
     </style>
     """, unsafe_allow_html=True)
 
 
-# ================== MÀN HÌNH INTRO (Đã tối ưu full screen và Autoplay) ==================
+# ================== MÀN HÌNH INTRO (FULL SCREEN & AUTOPLAY) ==================
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     
@@ -66,11 +86,10 @@ def intro_screen(is_mobile=False):
         st.rerun()
         return
 
-    # Mã hóa video thành base64 (chỉ video được chọn)
+    # Mã hóa video thành base64
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
-    # THAY ĐỔI QUAN TRỌNG: Thiết lập chiều cao và rộng 100vh/100vw triệt để
     intro_html = f"""
     <!DOCTYPE html>
     <html lang="vi">
@@ -113,7 +132,6 @@ def intro_screen(is_mobile=False):
             const vid = document.getElementById("introVid");
             const fade = document.getElementById("fade");
             
-            // Hàm chuyển trang sau khi hoàn tất
             const finishIntro = () => {{
                 fade.style.opacity = 1;
                 setTimeout(() => {{
@@ -123,7 +141,7 @@ def intro_screen(is_mobile=False):
 
             vid.onended = finishIntro;
             
-            // Xử lý chặn Autoplay hoặc lỗi
+            // Xử lý chặn Autoplay: Nếu bị chặn, chờ 9 giây rồi chuyển trang
             vid.play().catch(error => {{
                 console.log("Autoplay blocked or failed, waiting 9 seconds.");
                 setTimeout(finishIntro, 9000); 
@@ -133,10 +151,9 @@ def intro_screen(is_mobile=False):
     </html>
     """
     
-    # Sử dụng height lớn để bao trùm và tránh lỗi chia đôi
     components.html(intro_html, height=1000, scrolling=False) 
 
-    # --- Cơ chế Chuyển Trang dựa trên thời gian (fallback) ---
+    # --- Cơ chế Chuyển Trang dựa trên thời gian ---
     if "start_time" not in st.session_state:
         st.session_state.start_time = time.time()
     
@@ -153,10 +170,9 @@ def intro_screen(is_mobile=False):
 
 # ================== TRANG CHÍNH ==================
 def main_page(is_mobile=False):
-    hide_streamlit_ui()
+    hide_streamlit_ui() 
     bg = BG_MOBILE if is_mobile else BG_PC
     
-    # Đọc và mã hóa ảnh nền thành Base64
     try:
         with open(bg, "rb") as f:
             bg_b64 = base64.b64encode(f.read()).decode()
@@ -182,7 +198,6 @@ def main_page(is_mobile=False):
     </style>
     """, unsafe_allow_html=True)
 
-    # Nhạc nền
     available_music = [m for m in MUSIC_FILES if os.path.exists(m)]
     if available_music:
         chosen = random.choice(available_music)
@@ -200,8 +215,6 @@ hide_streamlit_ui()
 # Sau khi is_mobile đã được xác định (không còn None)
 if st.session_state.is_mobile is not None:
     if not st.session_state.intro_done:
-        # is_mobile đã có giá trị (True/False)
         intro_screen(st.session_state.is_mobile)
     else:
-        # Intro đã xong
         main_page(st.session_state.is_mobile)
