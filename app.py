@@ -7,14 +7,17 @@ from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
-# ================== CẤU HÌNH ==================
+# ================== CẤU HÌNH & TRẠNG THÁI ==================
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
 VIDEO_PC = "media/airplane.mp4"
 VIDEO_MOBILE = "media/mobile.mp4"
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
-MUSIC_FILES = ["background.mp3", "background2.mp3", "background3.mp3", "background4.mp3", "background5.mp3"]
+MUSIC_FILES = [
+    "background.mp3", "background2.mp3", "background3.mp3",
+    "background4.mp3", "background5.mp3"
+]
 
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
@@ -26,36 +29,36 @@ if "start_time" not in st.session_state:
 
 # ================== XÁC ĐỊNH THIẾT BỊ ==================
 if st.session_state.is_mobile is None:
-    ua_string = st_javascript("window.navigator.userAgent;")
+    st.session_state.intro_done = False
+    ua_string = st_javascript("""window.navigator.userAgent;""")
+
     if ua_string:
-        st.session_state.is_mobile = not parse(ua_string).is_pc
+        user_agent = parse(ua_string)
+        st.session_state.is_mobile = not user_agent.is_pc
         st.rerun()
     else:
-        # Ẩn hoàn toàn trong khi chờ
-        st.markdown("""
-        <style>
-        body, .stApp { visibility: hidden !important; background-color: black !important; }
-        </style>
-        """, unsafe_allow_html=True)
+        st.info("Đang xác định thiết bị và tải...")
         st.stop()
 
 
-# ================== ẨN UI STREAMLIT ==================
+# ================== ẨN GIAO DIỆN STREAMLIT ==================
 def hide_streamlit_ui():
     st.markdown("""
     <style>
-    [data-testid="stToolbar"], header, footer, iframe[title*="keyboard"], [tabindex="0"][aria-live] {
+    [data-testid="stToolbar"], header, footer,
+    iframe[title*="keyboard"], [tabindex="0"][aria-live] {
         display: none !important;
         visibility: hidden !important;
     }
-    .stApp, .stApp > header, .main, .block-container, [data-testid="stVerticalBlock"] {
+
+    .stApp, .main, .block-container, [data-testid="stVerticalBlock"] {
         padding: 0 !important;
         margin: 0 !important;
         max-width: 100vw !important;
         width: 100vw !important;
         min-height: 100vh !important;
-        overflow: hidden !important;
     }
+
     [data-testid*="stHtmlComponents"] {
         position: fixed !important;
         top: 0; left: 0;
@@ -73,6 +76,7 @@ def intro_screen(is_mobile=False):
 
     video_path = VIDEO_MOBILE if is_mobile else VIDEO_PC
     if not os.path.exists(video_path):
+        st.error(f"⚠️ Không tìm thấy video: {video_path}")
         st.session_state.intro_done = True
         st.rerun()
         return
@@ -92,6 +96,11 @@ def intro_screen(is_mobile=False):
                 background-color: black;
                 font-family: 'Playfair Display', serif;
             }}
+            body {{
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }}
             video {{
                 position: fixed;
                 top: 0; left: 0;
@@ -110,6 +119,8 @@ def intro_screen(is_mobile=False):
                 text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
                 z-index: 2;
                 animation: fadeInOut 6s ease-in-out forwards;
+                text-align: center;
+                white-space: nowrap;
             }}
             @keyframes fadeInOut {{
                 0% {{ opacity: 0; transform: translate(-50%, 20px); }}
@@ -146,6 +157,12 @@ def intro_screen(is_mobile=False):
                 }}, 1000);
             }}
 
+            // ép full height khi load (fix PC bị thừa trắng)
+            window.addEventListener('load', () => {{
+                document.documentElement.style.height = '100vh';
+                document.body.style.height = '100vh';
+            }});
+
             vid.onended = finishIntro;
             vid.play().catch(() => {{
                 console.log("Autoplay blocked → fallback");
@@ -156,8 +173,7 @@ def intro_screen(is_mobile=False):
     </html>
     """
 
-    # ⚠️ Quan trọng: để height=800, không 0 (để video render)
-    components.html(intro_html, height=800, scrolling=False)
+    components.html(intro_html, height=1000, scrolling=False)
 
     if st.session_state.start_time is None:
         st.session_state.start_time = time.time()
@@ -174,6 +190,7 @@ def intro_screen(is_mobile=False):
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
+
     try:
         with open(bg, "rb") as f:
             bg_b64 = base64.b64encode(f.read()).decode()
@@ -193,9 +210,7 @@ def main_page(is_mobile=False):
     }}
     @keyframes fadeInBg {{ from {{ opacity: 0; }} to {{ opacity: 1; }} }}
     h1 {{
-        text-align: center;
-        margin-top: 60px;
-        color: #2E1C14;
+        text-align: center; margin-top: 60px; color: #2E1C14;
         text-shadow: 2px 2px 6px #FFF8DC;
         font-family: 'Playfair Display', serif;
     }}
@@ -213,7 +228,7 @@ def main_page(is_mobile=False):
     st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
 
 
-# ================== LUỒNG CHẠY ==================
+# ================== LUỒNG CHÍNH ==================
 hide_streamlit_ui()
 
 if st.session_state.is_mobile is None:
