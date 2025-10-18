@@ -1,4 +1,5 @@
 import streamlit as st
+import streamlit.components.v1 as components
 import random
 import time
 import os
@@ -39,40 +40,6 @@ def apply_css():
     h1, p, label, div, span {{
         font-family: 'Times New Roman', serif !important;
     }}
-    #intro-text {{
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        font-size: 3em;
-        color: white;
-        text-align: center;
-        white-space: nowrap;
-        text-shadow: 2px 2px 6px black;
-        animation: fade_in_out 6s forwards;
-        z-index: 9999;
-        pointer-events: none;
-    }}
-    @keyframes fade_in_out {{
-        0% {{ opacity: 0; }}
-        15% {{ opacity: 1; }}
-        85% {{ opacity: 1; }}
-        100% {{ opacity: 0; }}
-    }}
-    .intro-overlay {{
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: black;
-        z-index: 9998;
-        transition: opacity 1s ease-out;
-    }}
-    .intro-overlay.fade-out {{
-        opacity: 0;
-        pointer-events: none;
-    }}
     [data-testid="stSidebarContent"] {{
         background-color: rgba(255, 255, 240, 0.9);
         border-right: 2px solid #A1887F;
@@ -84,8 +51,6 @@ def apply_css():
 
 # --- Intro ---
 def intro_screen():
-    apply_css()
-
     if not os.path.exists(VIDEO_INTRO):
         st.error(f"Không tìm thấy file {VIDEO_INTRO}")
         time.sleep(2)
@@ -93,42 +58,91 @@ def intro_screen():
         st.rerun()
         return
 
-    # Tạo video autoplay (HTML5)
+    # Chuyển video thành base64
     with open(VIDEO_INTRO, "rb") as f:
         video_bytes = f.read()
     video_b64 = base64.b64encode(video_bytes).decode()
 
-    video_html = f"""
-    <video autoplay muted playsinline style="position:fixed; top:0; left:0; width:100%; height:100%; object-fit:cover; z-index:997;">
-        <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
-    </video>
-    """
-    st.markdown(video_html, unsafe_allow_html=True)
-
-    # Chữ overlay
-    st.markdown('<div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>', unsafe_allow_html=True)
-
-    # Hiệu ứng fade
-    st.markdown("""
-        <div class="intro-overlay"></div>
+    # HTML intro hoàn chỉnh
+    intro_html = f"""
+    <html>
+    <head>
+        <style>
+            body {{
+                margin: 0;
+                overflow: hidden;
+                background-color: black;
+            }}
+            video {{
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+            }}
+            #intro-text {{
+                position: fixed;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                font-size: 3em;
+                color: white;
+                font-family: 'Times New Roman', serif;
+                text-shadow: 2px 2px 6px black;
+                animation: fade_in_out 6s forwards;
+            }}
+            @keyframes fade_in_out {{
+                0% {{ opacity: 0; }}
+                15% {{ opacity: 1; }}
+                85% {{ opacity: 1; }}
+                100% {{ opacity: 0; }}
+            }}
+            .fade-black {{
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background-color: black;
+                opacity: 0;
+                transition: opacity 1s ease-out;
+            }}
+        </style>
+    </head>
+    <body>
+        <video autoplay muted playsinline>
+            <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
+        </video>
+        <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+        <div class="fade-black" id="fade"></div>
         <script>
-            setTimeout(() => {
-                const overlay = document.querySelector('.intro-overlay');
-                if (overlay) overlay.classList.add('fade-out');
-            }, 5500);
+            setTimeout(() => {{
+                document.getElementById('fade').style.opacity = 1;
+                setTimeout(() => {{
+                    window.parent.postMessage({{type: 'intro_done'}}, '*');
+                }}, 1000);
+            }}, 6000);
         </script>
-    """, unsafe_allow_html=True)
+    </body>
+    </html>
+    """
 
-    # Sau 6.5s chuyển trang
-    time.sleep(6.5)
+    # Render iframe độc lập (sẽ autoplay được)
+    components.html(intro_html, height=720, width=None)
+
+    # Bắt tín hiệu JS → Python
+    # Streamlit chưa có event bridge, ta dùng session_state để mô phỏng
+    # nên chỉ cần delay đủ thời gian video
+    time.sleep(7)
     st.session_state["intro_complete"] = True
     st.rerun()
 
-# --- Main Page ---
+# --- Trang chính ---
 def main_page():
     apply_css()
 
-    # Sidebar nhạc nền
+    # Sidebar nhạc
     music_files = ["background.mp3", "background1.mp3", "background2.mp3", "background3.mp3", "background4.mp3", "background5.mp3"]
     available = [m for m in music_files if os.path.exists(m)]
     if available:
@@ -148,7 +162,7 @@ def main_page():
     """, unsafe_allow_html=True)
     st.markdown("<div style='height:60vh'></div>", unsafe_allow_html=True)
 
-# --- Luồng chính ---
+# --- Chạy ---
 if st.session_state["intro_complete"]:
     main_page()
 else:
