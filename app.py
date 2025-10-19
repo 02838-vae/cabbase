@@ -6,7 +6,7 @@ from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
-# ========== CẤU HÌNH ==========
+# ===== CẤU HÌNH =====
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
 VIDEO_PC = "media/airplane.mp4"
@@ -23,7 +23,7 @@ if "intro_done" not in st.session_state:
 if "is_mobile" not in st.session_state:
     st.session_state.is_mobile = None
 
-# ========== PHÁT HIỆN THIẾT BỊ ==========
+# ===== PHÁT HIỆN THIẾT BỊ =====
 if st.session_state.is_mobile is None:
     ua_string = st_javascript("window.navigator.userAgent;")
     if ua_string:
@@ -34,14 +34,13 @@ if st.session_state.is_mobile is None:
         st.info("Đang phát hiện thiết bị...")
         st.stop()
 
-# ========== ẨN GIAO DIỆN STREAMLIT ==========
+# ===== ẨN GIAO DIỆN STREAMLIT =====
 def hide_streamlit_ui():
     st.markdown("""
     <style>
     [data-testid="stToolbar"], header, footer,
     iframe[title*="keyboard"], [tabindex="0"][aria-live] {
         display: none !important;
-        visibility: hidden !important;
     }
     .stApp, .main, .block-container {
         padding: 0 !important;
@@ -59,7 +58,7 @@ def hide_streamlit_ui():
     </style>
     """, unsafe_allow_html=True)
 
-# ========== MÀN HÌNH INTRO ==========
+# ===== MÀN HÌNH INTRO =====
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
 
@@ -84,7 +83,6 @@ def intro_screen(is_mobile=False):
         font_size = "clamp(26px, 3vw, 46px)"
         text_width = "70vw"
 
-    # Escape tất cả các dấu { } trong JS
     intro_html = f"""
     <html lang="vi">
     <head>
@@ -165,17 +163,8 @@ def intro_screen(is_mobile=False):
         vid.addEventListener('ended', () => {{
             setTimeout(() => {{
                 window.parent.postMessage({{"type": "intro_done"}}, "*");
-            }}, 800);
+            }}, 500);
         }});
-
-        // fallback nếu autoplay bị chặn
-        setTimeout(() => {{
-            if (vid.paused) {{
-                vid.play().catch(() => {{
-                    window.parent.postMessage({{"type": "intro_done"}}, "*");
-                }});
-            }}
-        }}, 2000);
         </script>
     </body>
     </html>
@@ -183,16 +172,12 @@ def intro_screen(is_mobile=False):
 
     components.html(intro_html, height=950, scrolling=False)
 
-# ========== TRANG CHÍNH ==========
+# ===== TRANG CHÍNH =====
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
-    try:
-        with open(bg, "rb") as f:
-            bg_b64 = base64.b64encode(f.read()).decode()
-    except FileNotFoundError:
-        st.error(f"Không tìm thấy ảnh nền: {bg}")
-        bg_b64 = ""
+    with open(bg, "rb") as f:
+        bg_b64 = base64.b64encode(f.read()).decode()
 
     st.markdown(f"""
     <style>
@@ -201,7 +186,6 @@ def main_page(is_mobile=False):
         background-image: url("data:image/jpeg;base64,{bg_b64}");
         background-size: cover;
         background-position: center;
-        background-attachment: fixed;
         animation: fadeInMain 1.2s ease-in-out forwards;
     }}
     @keyframes fadeInMain {{
@@ -227,12 +211,26 @@ def main_page(is_mobile=False):
 
     st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
 
-# ========== MAIN FLOW ==========
+# ===== MAIN FLOW =====
 hide_streamlit_ui()
 
 if st.session_state.is_mobile is None:
     pass
 elif not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
+
+    # JS listener: nghe message từ video khi kết thúc
+    msg = st_javascript("""
+        new Promise((resolve) => {
+            window.addEventListener("message", (event) => {
+                if (event.data && event.data.type === "intro_done") {
+                    resolve(true);
+                }
+            });
+        });
+    """)
+    if msg:
+        st.session_state.intro_done = True
+        st.rerun()
 else:
     main_page(st.session_state.is_mobile)
