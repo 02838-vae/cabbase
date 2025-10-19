@@ -2,11 +2,12 @@ import streamlit as st
 import os
 import base64
 import random
+import time
 from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
-# ========== CONFIG ==========
+# ================== CONFIG ==================
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
 VIDEO_PC = "media/airplane.mp4"
@@ -18,24 +19,26 @@ MUSIC_FILES = [
     "background4.mp3", "background5.mp3"
 ]
 
-# ========== SESSION ==========
+# ================== SESSION ==================
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 if "is_mobile" not in st.session_state:
     st.session_state.is_mobile = None
 
-# ========== DETECT DEVICE ==========
+
+# ================== DETECT DEVICE ==================
 if st.session_state.is_mobile is None:
     ua_string = st_javascript("window.navigator.userAgent;")
     if ua_string:
-        ua = parse(ua_string)
-        st.session_state.is_mobile = not ua.is_pc
+        user_agent = parse(ua_string)
+        st.session_state.is_mobile = not user_agent.is_pc
         st.rerun()
     else:
         st.info("Đang phát hiện thiết bị...")
         st.stop()
 
-# ========== HIDE STREAMLIT UI ==========
+
+# ================== HIDE STREAMLIT UI ==================
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -60,7 +63,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== INTRO SCREEN ==========
+# ================== INTRO SCREEN ==================
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
 
@@ -74,10 +77,9 @@ def intro_screen(is_mobile=False):
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
-    # điều chỉnh vị trí video + text
     if is_mobile:
         object_position = "center 15%"
-        text_bottom = "5%"
+        text_bottom = "8%"
         font_size = "clamp(16px, 4.5vw, 24px)"
         text_width = "90vw"
     else:
@@ -151,26 +153,20 @@ def intro_screen(is_mobile=False):
         <script>
         const vid = document.getElementById("introVid");
         const fade = document.getElementById("fade");
-        let sent = false;
 
-        vid.addEventListener('canplaythrough', () => {{
-            vid.play().catch(()=>{{}});
-        }});
+        vid.addEventListener("canplaythrough", ()=>{{vid.play().catch(()=>{{}});}});
 
-        // fade khi gần hết
-        vid.addEventListener('timeupdate', () => {{
-            if (vid.duration - vid.currentTime <= 1.5 && !sent) {{
-                fade.style.opacity = '1';
+        // Fade dần khi còn 1.5s
+        vid.addEventListener("timeupdate", ()=>{{
+            if (vid.duration - vid.currentTime <= 1.5) {{
+                fade.style.opacity = "1";
             }}
         }});
 
-        // khi kết thúc
-        vid.addEventListener('ended', () => {{
-            sent = true;
-            fade.style.opacity = '1';
-            setTimeout(() => {{
-                window.top.postMessage({{"type": "intro_done"}}, "*");
-            }}, 800);
+        // Callback khi kết thúc
+        vid.addEventListener("ended", ()=>{{
+            fade.style.opacity = "1";
+            setTimeout(()=>{{ window.parent.postMessage("intro_done", "*"); }}, 800);
         }});
         </script>
     </body>
@@ -179,8 +175,20 @@ def intro_screen(is_mobile=False):
 
     components.html(intro_html, height=950, scrolling=False)
 
+    # Lắng nghe JS bên ngoài iframe
+    done = st_javascript("""
+        new Promise((resolve) => {
+            window.addEventListener("message", (e) => {
+                if (e.data === "intro_done") resolve(true);
+            });
+        });
+    """)
+    if done:
+        st.session_state.intro_done = True
+        st.rerun()
 
-# ========== MAIN PAGE ==========
+
+# ================== MAIN PAGE ==================
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -195,7 +203,7 @@ def main_page(is_mobile=False):
         background-image: url("data:image/jpeg;base64,{bg_b64}");
         background-size: cover;
         background-position: center;
-        animation: fadeInMain 1.2s ease-in-out forwards;
+        animation: fadeInMain 1.5s ease-in-out forwards;
     }}
     @keyframes fadeInMain {{
         from {{ opacity: 0; }} to {{ opacity: 1; }}
@@ -221,26 +229,12 @@ def main_page(is_mobile=False):
     st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
 
 
-# ========== MAIN FLOW ==========
+# ================== FLOW ==================
 hide_streamlit_ui()
 
 if st.session_state.is_mobile is None:
     pass
 elif not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
-
-    # JS listener bên ngoài sandbox → nhận postMessage
-    msg = st_javascript("""
-        new Promise((resolve) => {
-            window.addEventListener("message", (e) => {
-                if (e.data && e.data.type === "intro_done") {
-                    resolve(true);
-                }
-            });
-        });
-    """)
-    if msg:
-        st.session_state.intro_done = True
-        st.rerun()
 else:
     main_page(st.session_state.is_mobile)
