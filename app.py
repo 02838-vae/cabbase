@@ -6,7 +6,7 @@ from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
-# ===== CẤU HÌNH =====
+# ========== CONFIG ==========
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
 VIDEO_PC = "media/airplane.mp4"
@@ -18,12 +18,13 @@ MUSIC_FILES = [
     "background4.mp3", "background5.mp3"
 ]
 
+# ========== SESSION ==========
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 if "is_mobile" not in st.session_state:
     st.session_state.is_mobile = None
 
-# ===== PHÁT HIỆN THIẾT BỊ =====
+# ========== DETECT DEVICE ==========
 if st.session_state.is_mobile is None:
     ua_string = st_javascript("window.navigator.userAgent;")
     if ua_string:
@@ -34,7 +35,7 @@ if st.session_state.is_mobile is None:
         st.info("Đang phát hiện thiết bị...")
         st.stop()
 
-# ===== ẨN GIAO DIỆN STREAMLIT =====
+# ========== HIDE STREAMLIT UI ==========
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -58,13 +59,14 @@ def hide_streamlit_ui():
     </style>
     """, unsafe_allow_html=True)
 
-# ===== MÀN HÌNH INTRO =====
+
+# ========== INTRO SCREEN ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
 
     video_path = VIDEO_MOBILE if is_mobile else VIDEO_PC
     if not os.path.exists(video_path):
-        st.error(f"Không tìm thấy video: {video_path}")
+        st.error(f"⚠️ Không tìm thấy video: {video_path}")
         st.session_state.intro_done = True
         st.rerun()
         return
@@ -72,15 +74,16 @@ def intro_screen(is_mobile=False):
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
+    # điều chỉnh vị trí video + text
     if is_mobile:
-        object_position = "center 10%"
-        text_bottom = "8%"
-        font_size = "clamp(16px, 4.5vw, 26px)"
+        object_position = "center 15%"
+        text_bottom = "5%"
+        font_size = "clamp(16px, 4.5vw, 24px)"
         text_width = "90vw"
     else:
         object_position = "center center"
         text_bottom = "20%"
-        font_size = "clamp(26px, 3vw, 46px)"
+        font_size = "clamp(28px, 3vw, 48px)"
         text_width = "70vw"
 
     intro_html = f"""
@@ -95,17 +98,18 @@ def intro_screen(is_mobile=False):
             overflow: hidden; background: black;
         }}
         video {{
-            position: absolute; top: 0; left: 0;
+            position: absolute;
+            top: 0; left: 0;
             width: 100vw; height: 100vh;
             object-fit: cover;
             object-position: {object_position};
             z-index: 1;
-            opacity: 1;
             transition: opacity 1.5s ease-in-out;
         }}
         #intro-text {{
             position: absolute;
-            left: 50%; bottom: {text_bottom};
+            left: 50%;
+            bottom: {text_bottom};
             transform: translateX(-50%);
             font-family: 'Cinzel', serif;
             font-size: {font_size};
@@ -113,14 +117,13 @@ def intro_screen(is_mobile=False):
             text-align: center;
             color: #fff8dc;
             font-weight: 700;
-            text-shadow: 0 0 6px rgba(255,255,255,0.3),
-                         0 0 20px rgba(255,240,180,0.6),
-                         0 0 40px rgba(255,220,130,0.4);
+            text-shadow: 0 0 6px rgba(255,255,255,0.4),
+                         0 0 20px rgba(255,240,180,0.8),
+                         0 0 40px rgba(255,220,130,0.6);
             z-index: 10;
             opacity: 0;
             animation: textFade 7s ease-in-out forwards;
             white-space: normal;
-            overflow-wrap: break-word;
         }}
         @keyframes textFade {{
             0% {{ opacity: 0; transform: translate(-50%, 40px); }}
@@ -134,8 +137,8 @@ def intro_screen(is_mobile=False):
             width: 100%; height: 100%;
             background: black;
             opacity: 0;
-            transition: opacity 1.5s ease-in-out;
             z-index: 20;
+            transition: opacity 1.5s ease-in-out;
         }}
         </style>
     </head>
@@ -148,22 +151,26 @@ def intro_screen(is_mobile=False):
         <script>
         const vid = document.getElementById("introVid");
         const fade = document.getElementById("fade");
+        let sent = false;
 
         vid.addEventListener('canplaythrough', () => {{
-            vid.play().catch(() => {{}});
+            vid.play().catch(()=>{{}});
         }});
 
+        // fade khi gần hết
         vid.addEventListener('timeupdate', () => {{
-            if (vid.duration - vid.currentTime <= 1.5) {{
-                vid.style.opacity = '0';
+            if (vid.duration - vid.currentTime <= 1.5 && !sent) {{
                 fade.style.opacity = '1';
             }}
         }});
 
+        // khi kết thúc
         vid.addEventListener('ended', () => {{
+            sent = true;
+            fade.style.opacity = '1';
             setTimeout(() => {{
-                window.parent.postMessage({{"type": "intro_done"}}, "*");
-            }}, 500);
+                window.top.postMessage({{"type": "intro_done"}}, "*");
+            }}, 800);
         }});
         </script>
     </body>
@@ -172,10 +179,12 @@ def intro_screen(is_mobile=False):
 
     components.html(intro_html, height=950, scrolling=False)
 
-# ===== TRANG CHÍNH =====
+
+# ========== MAIN PAGE ==========
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
+
     with open(bg, "rb") as f:
         bg_b64 = base64.b64encode(f.read()).decode()
 
@@ -211,7 +220,8 @@ def main_page(is_mobile=False):
 
     st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
 
-# ===== MAIN FLOW =====
+
+# ========== MAIN FLOW ==========
 hide_streamlit_ui()
 
 if st.session_state.is_mobile is None:
@@ -219,11 +229,11 @@ if st.session_state.is_mobile is None:
 elif not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
 
-    # JS listener: nghe message từ video khi kết thúc
+    # JS listener bên ngoài sandbox → nhận postMessage
     msg = st_javascript("""
         new Promise((resolve) => {
-            window.addEventListener("message", (event) => {
-                if (event.data && event.data.type === "intro_done") {
+            window.addEventListener("message", (e) => {
+                if (e.data && e.data.type === "intro_done") {
                     resolve(true);
                 }
             });
