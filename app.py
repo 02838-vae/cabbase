@@ -27,7 +27,6 @@ if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 if "is_mobile" not in st.session_state:
     st.session_state.is_mobile = None
-# Thêm biến lưu thời gian bắt đầu cho cơ chế dự phòng
 if "start_time" not in st.session_state: 
     st.session_state.start_time = None
 
@@ -98,21 +97,27 @@ def intro_screen(is_mobile=False):
     # Đảm bảo text biến mất trước khi video kết thúc (ví dụ: 8.5s)
     animation_duration = f"{VIDEO_DURATION_SECONDS - 0.5}s"
     
-    # --- JAVASCRIPT LOGIC Đã Tối Ưu Hóa ---
+    # --- JAVASCRIPT LOGIC Đã Fix Lỗi Đứng Hình ---
     js_handler = f"""
     new Promise(resolve => {{
         const vid = document.getElementById("introVid");
         const fade = document.getElementById("fade");
+        
+        // Thời gian fade out của màn hình đen (từ CSS: 0.8s = 800ms)
+        const FADE_DURATION = 800; 
 
         // Hàm chuyển cảnh: fade màn hình và giải quyết Promise
         function finishIntro() {{
-            // Bước 1: Fade màn hình đen
+            // Bước 1: Bắt đầu fade màn hình đen (Opacity = 1)
             fade.style.opacity = "1";
             
-            // Bước 2: Chờ fade-out (800ms) xong thì giải quyết Promise (chuyển cảnh)
+            // Bước 2: Chờ fade-out xong (800ms)
             setTimeout(() => {{ 
+                // *** FIX LỖI ĐỨNG HÌNH: Ẩn video ngay lập tức trước khi chuyển cảnh ***
+                vid.style.display = "none"; 
+                // Giải quyết Promise để Streamlit chuyển trang
                 resolve('done');
-            }}, 800);
+            }}, FADE_DURATION);
         }}
 
         // Cố gắng tự động phát
@@ -131,7 +136,7 @@ def intro_screen(is_mobile=False):
         }});
 
         // Cơ chế dự phòng bằng thời gian trong JS (nếu event 'ended' bị lỗi)
-        setTimeout(finishIntro, {VIDEO_DURATION_SECONDS * 1000 + 1000}); // Video + 1s để xử lý chuyển cảnh
+        setTimeout(finishIntro, {VIDEO_DURATION_SECONDS * 1000 + 1000}); 
     }});
     """
 
@@ -171,7 +176,6 @@ def intro_screen(is_mobile=False):
                          0 0 40px rgba(255,220,130,0.6);
             z-index: 10;
             opacity: 0;
-            /* Đảm bảo text biến mất trước khi kết thúc video */
             animation: textFade {animation_duration} ease-in-out forwards;
             white-space: normal;
         }}
@@ -188,7 +192,7 @@ def intro_screen(is_mobile=False):
             background: black;
             opacity: 0;
             z-index: 20;
-            transition: opacity 0.8s ease-in-out; /* Giảm thời gian fade cho nhanh hơn */
+            transition: opacity 0.8s ease-in-out; 
         }}
         </style>
     </head>
@@ -204,12 +208,10 @@ def intro_screen(is_mobile=False):
 
     components.html(intro_html, height=950, scrolling=False)
     
-    # *********** CƠ CHẾ CHUYỂN CẢNH MỚI ***********
-    # st_javascript sẽ block (chờ) cho đến khi Promise trong JS được giải quyết ('done')
+    # *********** CƠ CHẾ CHUYỂN CẢNH ***********
     intro_finished_status = st_javascript(js_handler) 
 
     if intro_finished_status == 'done':
-        # Khi JS báo xong, set state và reruns
         st.session_state.intro_done = True
         st.rerun()
 
@@ -217,7 +219,6 @@ def intro_screen(is_mobile=False):
     if st.session_state.start_time is None:
         st.session_state.start_time = time.time()
     
-    # Nếu thời gian đã trôi qua quá lâu (ví dụ: 1s lâu hơn thời lượng video) mà vẫn chưa chuyển cảnh, buộc chuyển
     if time.time() - st.session_state.start_time > (VIDEO_DURATION_SECONDS + 1.0):
         st.session_state.intro_done = True
         st.session_state.start_time = None
