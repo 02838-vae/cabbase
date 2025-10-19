@@ -19,6 +19,9 @@ MUSIC_FILES = [
     "background4.mp3", "background5.mp3"
 ]
 
+# Giả định video intro dài 9 giây
+VIDEO_DURATION_SECONDS = 9
+
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 if "is_mobile" not in st.session_state:
@@ -28,21 +31,29 @@ if "start_time" not in st.session_state:
 
 
 # ================== XÁC ĐỊNH THIẾT BỊ ==================
+# Chỉ chạy một lần, khi chưa xác định được thiết bị
 if st.session_state.is_mobile is None:
+    # Đặt lại intro_done để đảm bảo quá trình xác định thiết bị không bị bỏ qua
     st.session_state.intro_done = False
+    
+    # Lấy User Agent từ trình duyệt
     ua_string = st_javascript("""window.navigator.userAgent;""")
 
     if ua_string:
+        # Phân tích chuỗi User Agent
         user_agent = parse(ua_string)
         st.session_state.is_mobile = not user_agent.is_pc
         st.rerun()
     else:
         st.info("Đang xác định thiết bị và tải...")
+        # Đợi một chút để JavaScript kịp chạy
+        time.sleep(0.5) 
         st.stop()
 
 
 # ================== ẨN GIAO DIỆN STREAMLIT ==================
 def hide_streamlit_ui():
+    """Ẩn các thành phần giao diện mặc định của Streamlit."""
     st.markdown("""
     <style>
     [data-testid="stToolbar"], header, footer,
@@ -59,6 +70,7 @@ def hide_streamlit_ui():
         min-height: 100vh !important;
     }
 
+    /* Đảm bảo HTML components chiếm toàn bộ màn hình cho intro */
     [data-testid*="stHtmlComponents"] {
         position: fixed !important;
         top: 0; left: 0;
@@ -81,13 +93,20 @@ def intro_screen(is_mobile=False):
         st.rerun()
         return
 
-    with open(video_path, "rb") as f:
-        video_b64 = base64.b64encode(f.read()).decode()
+    # Mã hóa video sang Base64 để nhúng vào HTML
+    try:
+        with open(video_path, "rb") as f:
+            video_b64 = base64.b64encode(f.read()).decode()
+    except Exception as e:
+        st.error(f"Lỗi khi đọc file video: {e}")
+        st.session_state.intro_done = True
+        st.rerun()
+        return
 
-    # --- Cấu hình cho từng thiết bị ---
+    # --- Cấu hình CSS tùy theo thiết bị ---
     if is_mobile:
         object_position = "center 15%"
-        text_bottom = "12%"               # thấp hơn nữa, chắc chắn trong khung
+        text_bottom = "12%"               
         font_size = "clamp(16px, 4.5vw, 26px)"
         text_width = "92vw"
     else:
@@ -95,6 +114,10 @@ def intro_screen(is_mobile=False):
         text_bottom = "20%"
         font_size = "clamp(26px, 3vw, 46px)"
         text_width = "70vw"
+
+    # Điều chỉnh thời gian animation để text biến mất trước khi video kết thúc (9s)
+    # 8.5s đảm bảo text mờ và biến mất hoàn toàn
+    animation_duration = f"{VIDEO_DURATION_SECONDS - 0.5}s" # 8.5s
 
     intro_html = f"""
     <html lang="vi">
@@ -136,7 +159,8 @@ def intro_screen(is_mobile=False):
                 text-shadow: 0 0 6px rgba(255, 255, 255, 0.3), 0 0 18px rgba(255, 240, 180, 0.5);
                 z-index: 10;
                 opacity: 0;
-                animation: fadeAppear 7s ease-in-out forwards;
+                /* Sử dụng thời gian đã điều chỉnh để text biến mất sớm hơn */
+                animation: fadeAppear {animation_duration} ease-in-out forwards; 
                 white-space: normal;
                 overflow-wrap: break-word;
             }}
@@ -158,7 +182,7 @@ def intro_screen(is_mobile=False):
                     text-shadow: 0 0 16px rgba(255, 255, 220, 0.8);
                 }}
                 100% {{
-                    opacity: 0;
+                    opacity: 0; /* Đảm bảo text biến mất */
                     transform: translate(-50%, -30px);
                     text-shadow: 0 0 2px rgba(255,255,255,0.1);
                 }}
@@ -188,27 +212,33 @@ def intro_screen(is_mobile=False):
             const fade = document.getElementById("fade");
 
             function finishIntro() {{
-                fade.style.opacity = 1;
+                fade.style.opacity = 1; // Bắt đầu chuyển sang màn hình đen
                 setTimeout(() => {{
-                    window.parent.postMessage({{"type": "intro_done"}}, "*");
-                }}, 1200);
+                    // Thông báo cho Streamlit để chuyển trang
+                    window.parent.postMessage({{"type": "intro_done"}}, "*"); 
+                }}, 1200); // Chờ 1.2s để màn hình đen hoàn toàn
             }}
 
             vid.onended = finishIntro;
             vid.play().catch(() => {{
-                console.log("Autoplay bị chặn, fallback 9s");
-                setTimeout(finishIntro, 9000);
+                console.log("Autoplay bị chặn, fallback {VIDEO_DURATION_SECONDS}s");
+                // Cơ chế dự phòng dựa trên thời gian (ví dụ 9000ms)
+                setTimeout(finishIntro, {VIDEO_DURATION_SECONDS * 1000}); 
             }});
         </script>
     </body>
     </html>
     """
 
+    # Nhúng HTML component
     components.html(intro_html, height=950, scrolling=False)
 
+    # Cơ chế dự phòng Python (nếu JS thất bại)
     if st.session_state.start_time is None:
         st.session_state.start_time = time.time()
-    if time.time() - st.session_state.start_time < 9.5:
+    
+    # Chờ lâu hơn thời lượng video một chút (ví dụ 9.5s)
+    if time.time() - st.session_state.start_time < (VIDEO_DURATION_SECONDS + 0.5): 
         time.sleep(1)
         st.rerun()
     else:
@@ -250,7 +280,8 @@ def main_page(is_mobile=False):
     available_music = [m for m in MUSIC_FILES if os.path.exists(m)]
     if available_music:
         chosen = random.choice(available_music)
-        with st.sidebar:
+        # Sử dụng st.container() để tránh lỗi khi st.sidebar bị ẩn
+        with st.container():
             st.subheader("🎵 Nhạc nền")
             st.audio(chosen, start_time=0)
             st.caption(f"Đang phát: **{os.path.basename(chosen)}**")
@@ -259,11 +290,15 @@ def main_page(is_mobile=False):
 
 
 # ================== LUỒNG CHÍNH ==================
-hide_streamlit_ui()
+# Luôn ẩn giao diện mặc định ngay từ đầu
+hide_streamlit_ui() 
 
 if st.session_state.is_mobile is None:
-    pass
+    # Đợi xác định thiết bị
+    pass 
 elif not st.session_state.intro_done:
+    # Chạy màn hình intro
     intro_screen(st.session_state.is_mobile)
 else:
+    # Chạy trang chính
     main_page(st.session_state.is_mobile)
