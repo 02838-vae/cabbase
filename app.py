@@ -40,6 +40,7 @@ if st.session_state.is_mobile is None:
 
 # ================== HIDE STREAMLIT UI ==================
 def hide_streamlit_ui():
+    """Ẩn các thành phần mặc định của Streamlit và thiết lập kích thước toàn màn hình."""
     st.markdown("""
     <style>
     [data-testid="stToolbar"], header, footer,
@@ -87,6 +88,44 @@ def intro_screen(is_mobile=False):
         text_bottom = "20%"
         font_size = "clamp(28px, 3vw, 48px)"
         text_width = "70vw"
+        
+    # --- JAVASCRIPT LOGIC (Đã tách ra) ---
+    # Hàm này sẽ được nhúng qua st_javascript sau khi components.html chạy
+    js_handler = """
+    function setupVideoListener() {
+        const vid = document.getElementById("introVid");
+        const fade = document.getElementById("fade");
+
+        // Hàm chuyển cảnh: fade màn hình và thông báo cho Streamlit
+        function finishIntro() {
+            // Bước 1: Fade màn hình đen
+            fade.style.opacity = "1";
+            
+            // Bước 2: Chờ fade-out (800ms) xong thì gửi tín hiệu thay đổi Session State
+            setTimeout(() => { 
+                // Sử dụng cú pháp Streamlit để thay đổi state
+                window.parent.postMessage({type: "streamlit:setSessionState", key: "intro_done", value: true}, "*");
+            }, 800);
+        }
+
+        // Cố gắng tự động phát (tăng độ tin cậy)
+        vid.addEventListener("canplaythrough", () => {
+             // Sử dụng play() với catch để xử lý nếu autoplay bị chặn
+             vid.play().catch(() => {});
+        });
+
+        // Event chính: Callback khi video kết thúc
+        vid.addEventListener("ended", finishIntro);
+        
+        // Cơ chế fadeout sớm: Khi còn 1.5s thì bắt đầu fade màn hình (tùy chọn)
+        vid.addEventListener("timeupdate", () => {
+             if (vid.duration > 0 && vid.duration - vid.currentTime <= 1.5) {
+                 fade.style.opacity = "1";
+             }
+        });
+    }
+    setupVideoListener();
+    """
 
     intro_html = f"""
     <html lang="vi">
@@ -150,41 +189,17 @@ def intro_screen(is_mobile=False):
         </video>
         <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
         <div id="fade"></div>
-        <script>
-        const vid = document.getElementById("introVid");
-        const fade = document.getElementById("fade");
-
-        vid.addEventListener("canplaythrough", ()=>{{vid.play().catch(()=>{{}});}});
-
-        // Fade dần khi còn 1.5s
-        vid.addEventListener("timeupdate", ()=>{{
-            if (vid.duration - vid.currentTime <= 1.5) {{
-                fade.style.opacity = "1";
-            }}
-        }});
-
-        // Callback khi kết thúc
-        vid.addEventListener("ended", ()=>{{
-            fade.style.opacity = "1";
-            setTimeout(()=>{{ window.parent.postMessage("intro_done", "*"); }}, 800);
-        }});
-        </script>
-    </body>
+        </body>
     </html>
     """
 
     components.html(intro_html, height=950, scrolling=False)
+    
+    # Kích hoạt JavaScript listener. Listener này sẽ tự động set st.session_state.intro_done = True
+    st_javascript(js_handler) 
 
-    # Lắng nghe JS bên ngoài iframe
-    done = st_javascript("""
-        new Promise((resolve) => {
-            window.addEventListener("message", (e) => {
-                if (e.data === "intro_done") resolve(true);
-            });
-        });
-    """)
-    if done:
-        st.session_state.intro_done = True
+    # Nếu trạng thái đã được JS thay đổi, rerun để chuyển trang
+    if st.session_state.intro_done:
         st.rerun()
 
 
@@ -193,8 +208,12 @@ def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
 
-    with open(bg, "rb") as f:
-        bg_b64 = base64.b64encode(f.read()).decode()
+    try:
+        with open(bg, "rb") as f:
+            bg_b64 = base64.b64encode(f.read()).decode()
+    except FileNotFoundError:
+        st.error(f"⚠️ Không tìm thấy ảnh nền: {bg}")
+        bg_b64 = ""
 
     st.markdown(f"""
     <style>
@@ -203,6 +222,7 @@ def main_page(is_mobile=False):
         background-image: url("data:image/jpeg;base64,{bg_b64}");
         background-size: cover;
         background-position: center;
+        background-attachment: fixed;
         animation: fadeInMain 1.5s ease-in-out forwards;
     }}
     @keyframes fadeInMain {{
@@ -223,7 +243,7 @@ def main_page(is_mobile=False):
         chosen = random.choice(available_music)
         with st.sidebar:
             st.subheader("🎵 Nhạc nền")
-            st.audio(chosen)
+            st.audio(chosen, loop=True)
             st.caption(f"Đang phát: **{os.path.basename(chosen)}**")
 
     st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
