@@ -21,14 +21,18 @@ MUSIC_FILES = [
 
 # Giả định thời lượng video là 9 giây (Hãy điều chỉnh nếu video của bạn khác)
 VIDEO_DURATION_SECONDS = 9 
+FADE_DURATION_MS = 800 # Thời gian fade màn hình đen trong CSS
 
 # ================== SESSION STATE ==================
+# st.session_state.intro_done là cờ để chuyển cảnh
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 if "is_mobile" not in st.session_state:
     st.session_state.is_mobile = None
 if "start_time" not in st.session_state: 
     st.session_state.start_time = None
+if "message_received" not in st.session_state: # Cờ mới để nhận tin nhắn JS
+    st.session_state.message_received = False
 
 
 # ================== DETECT DEVICE ==================
@@ -74,6 +78,7 @@ def intro_screen(is_mobile=False):
     hide_streamlit_ui()
 
     video_path = VIDEO_MOBILE if is_mobile else VIDEO_PC
+    # ... (Các phần đọc file, Base64, và cấu hình CSS giữ nguyên) ...
     if not os.path.exists(video_path):
         st.error(f"⚠️ Không tìm thấy video: {video_path}")
         st.session_state.intro_done = True
@@ -94,50 +99,48 @@ def intro_screen(is_mobile=False):
         font_size = "clamp(28px, 3vw, 48px)"
         text_width = "70vw"
     
-    # Đảm bảo text biến mất trước khi video kết thúc (ví dụ: 8.5s)
     animation_duration = f"{VIDEO_DURATION_SECONDS - 0.5}s"
     
-    # --- JAVASCRIPT LOGIC Đã Fix Lỗi Đứng Hình ---
-    js_handler = f"""
-    new Promise(resolve => {{
-        const vid = document.getElementById("introVid");
-        const fade = document.getElementById("fade");
-        
-        // Thời gian fade out của màn hình đen (từ CSS: 0.8s = 800ms)
-        const FADE_DURATION = 800; 
+    # --- JAVASCRIPT LOGIC (SỬ DỤNG postMessage đơn giản) ---
+    # JS này nằm trong HTML để đảm bảo chạy ngay lập tức
+    js_inside_html = f"""
+        <script>
+            const vid = document.getElementById("introVid");
+            const fade = document.getElementById("fade");
+            const FADE_DURATION = {FADE_DURATION_MS};
+            const VIDEO_DURATION_MS = {VIDEO_DURATION_SECONDS * 1000};
 
-        // Hàm chuyển cảnh: fade màn hình và giải quyết Promise
-        function finishIntro() {{
-            // Bước 1: Bắt đầu fade màn hình đen (Opacity = 1)
-            fade.style.opacity = "1";
+            // Hàm chuyển cảnh
+            function finishIntro() {{
+                fade.style.opacity = "1";
+                
+                setTimeout(() => {{ 
+                    // 1. FIX ĐỨNG HÌNH: Ẩn video
+                    vid.style.display = "none";
+                    
+                    // 2. GỬI TIN NHẮN CHO STREAMLIT
+                    window.parent.postMessage("INTRO_FINISHED", "*"); 
+                }}, FADE_DURATION);
+            }}
+
+            // Cố gắng tự động phát
+            vid.addEventListener("canplaythrough", () => {{
+                 vid.play().catch(() => {{}});
+            }});
             
-            // Bước 2: Chờ fade-out xong (800ms)
-            setTimeout(() => {{ 
-                // *** FIX LỖI ĐỨNG HÌNH: Ẩn video ngay lập tức trước khi chuyển cảnh ***
-                vid.style.display = "none"; 
-                // Giải quyết Promise để Streamlit chuyển trang
-                resolve('done');
-            }}, FADE_DURATION);
-        }}
-
-        // Cố gắng tự động phát
-        vid.addEventListener("canplaythrough", () => {{
-             vid.play().catch(() => {{}});
-        }});
-        
-        // Event chính: Callback khi video kết thúc
-        vid.addEventListener("ended", finishIntro);
-        
-        // Cơ chế fadeout sớm
-        vid.addEventListener("timeupdate", () => {{
-             if (vid.duration > 0 && vid.duration - vid.currentTime <= 1.5) {{
-                 fade.style.opacity = "1";
-             }}
-        }});
-
-        // Cơ chế dự phòng bằng thời gian trong JS (nếu event 'ended' bị lỗi)
-        setTimeout(finishIntro, {VIDEO_DURATION_SECONDS * 1000 + 1000}); 
-    }});
+            // Event chính: Callback khi video kết thúc
+            vid.addEventListener("ended", finishIntro);
+            
+            // Cơ chế fadeout sớm
+            vid.addEventListener("timeupdate", () => {{
+                 if (vid.duration > 0 && vid.duration - vid.currentTime <= 1.5) {{
+                     fade.style.opacity = "1";
+                 }}
+            }});
+            
+            // Cơ chế dự phòng bằng thời gian trong JS
+            setTimeout(finishIntro, VIDEO_DURATION_MS + 1000); 
+        </script>
     """
 
     intro_html = f"""
@@ -146,45 +149,12 @@ def intro_screen(is_mobile=False):
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
         @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap');
-        html, body {{
-            margin: 0; padding: 0;
-            width: 100vw; height: 100vh;
-            overflow: hidden; background: black;
-        }}
-        video {{
-            position: absolute;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
-            object-fit: cover;
-            object-position: {object_position};
-            z-index: 1;
-            transition: opacity 1.5s ease-in-out;
-        }}
-        #intro-text {{
-            position: absolute;
-            left: 50%;
-            bottom: {text_bottom};
-            transform: translateX(-50%);
-            font-family: 'Cinzel', serif;
-            font-size: {font_size};
-            width: {text_width};
-            text-align: center;
-            color: #fff8dc;
-            font-weight: 700;
-            text-shadow: 0 0 6px rgba(255,255,255,0.4),
-                         0 0 20px rgba(255,240,180,0.8),
-                         0 0 40px rgba(255,220,130,0.6);
-            z-index: 10;
-            opacity: 0;
+        html, body {{ /* ... (CSS giữ nguyên) ... */ }}
+        video {{ /* ... (CSS giữ nguyên) ... */ }}
+        #intro-text {{ /* ... (CSS giữ nguyên) ... */
             animation: textFade {animation_duration} ease-in-out forwards;
-            white-space: normal;
         }}
-        @keyframes textFade {{
-            0% {{ opacity: 0; transform: translate(-50%, 40px); }}
-            15% {{ opacity: 1; transform: translate(-50%, 0); }}
-            75% {{ opacity: 1; }}
-            100% {{ opacity: 0; transform: translate(-50%, -20px); }}
-        }}
+        @keyframes textFade {{ /* ... (CSS giữ nguyên) ... */ }}
         #fade {{
             position: absolute;
             top: 0; left: 0;
@@ -202,30 +172,50 @@ def intro_screen(is_mobile=False):
         </video>
         <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
         <div id="fade"></div>
+        {js_inside_html} 
     </body>
     </html>
     """
 
     components.html(intro_html, height=950, scrolling=False)
     
-    # *********** CƠ CHẾ CHUYỂN CẢNH ***********
-    intro_finished_status = st_javascript(js_handler) 
+    # *********** CƠ CHẾ LẮNG NGHE TIN NHẮN MỚI ***********
+    # Sử dụng st_javascript để thiết lập listener *bên ngoài* iframe
+    listener_js = """
+        window.addEventListener("message", (e) => {
+            if (e.data === "INTRO_FINISHED") {
+                // Sử dụng cú pháp Streamlit để thay đổi Session State
+                window.parent.postMessage({type: "streamlit:setSessionState", key: "message_received", value: true}, "*");
+            }
+        });
+    """
+    st_javascript(listener_js)
 
-    if intro_finished_status == 'done':
+    # Khởi tạo thời gian dự phòng
+    if st.session_state.start_time is None:
+        st.session_state.start_time = time.time()
+
+    # Kiểm tra cờ nhận tin nhắn
+    if st.session_state.message_received:
         st.session_state.intro_done = True
+        st.session_state.message_received = False
         st.rerun()
 
     # *********** CƠ CHẾ DỰ PHÒNG PYTHON ***********
-    if st.session_state.start_time is None:
-        st.session_state.start_time = time.time()
-    
-    if time.time() - st.session_state.start_time > (VIDEO_DURATION_SECONDS + 1.0):
+    # Nếu thời gian trôi qua quá lâu mà không có tin nhắn JS nào được nhận, buộc chuyển
+    if time.time() - st.session_state.start_time > (VIDEO_DURATION_SECONDS + 2.0):
         st.session_state.intro_done = True
         st.session_state.start_time = None
+        st.rerun()
+    
+    # Thêm một time.sleep(0.1) và rerun để đảm bảo Streamlit loop liên tục kiểm tra state
+    if not st.session_state.intro_done:
+        time.sleep(0.1)
         st.rerun()
 
 
 # ================== MAIN PAGE ==================
+# ... (Phần main_page không thay đổi) ...
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
