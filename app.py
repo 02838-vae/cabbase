@@ -54,8 +54,8 @@ def intro_screen(is_mobile=False):
 
     # Vị trí video & chữ
     if is_mobile:
-        object_position_css = "center 25%;"  # đẩy máy bay lên cao hơn
-        text_bottom_css = "12%"  # chữ nằm thấp hơn máy bay chút
+        object_position_css = "center 25%;"  # đẩy máy bay lên cao
+        text_bottom_css = "10%"  # chữ thấp hơn máy bay
     else:
         object_position_css = "center;"
         text_bottom_css = "15%;"
@@ -88,16 +88,17 @@ def intro_screen(is_mobile=False):
             transform: translateX(-50%);
             font-family: 'Cinzel Decorative', serif;
             font-weight: 700;
-            font-size: clamp(18px, 4vw, 40px);
+            font-size: clamp(16px, 4vw, 40px);
             color: #fff;
-            text-shadow: 0 0 10px rgba(255,255,255,0.8), 0 0 20px rgba(255,215,0,0.6);
+            text-shadow: 0 0 15px rgba(255,255,255,0.9), 0 0 30px rgba(255,215,0,0.6);
             opacity: 0;
             animation: fadeText 6s ease-in-out forwards;
             z-index: 2;
             white-space: nowrap;
+            text-align: center;
         }}
         @keyframes fadeText {{
-            0% {{opacity: 0; transform: translate(-50%, 20px);}}
+            0% {{opacity: 0; transform: translate(-50%, 30px);}}
             20% {{opacity: 1; transform: translate(-50%, 0);}}
             80% {{opacity: 1; transform: translate(-50%, 0);}}
             100% {{opacity: 0; transform: translate(-50%, -10px);}}
@@ -115,7 +116,7 @@ def intro_screen(is_mobile=False):
     </style>
     </head>
     <body>
-        <video id="introVid" autoplay muted playsinline>
+        <video id="introVid" muted playsinline>
             <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
         </video>
         <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
@@ -125,29 +126,39 @@ def intro_screen(is_mobile=False):
             const vid = document.getElementById("introVid");
             const fade = document.getElementById("fade");
 
-            // Khi video gần hết (trước khi kết thúc 1s)
+            function finishIntro() {{
+                fade.style.opacity = 1;
+                window.localStorage.setItem("intro_done_flag", "1");
+            }}
+
+            // Chờ video tải xong rồi phát
+            function playVideo() {{
+                if (vid.readyState >= 3) {{
+                    vid.play().catch(()=>{{
+                        console.log("Autoplay bị chặn → fallback sau 9s");
+                        setTimeout(finishIntro, 9000);
+                    }});
+                }} else {{
+                    setTimeout(playVideo, 500);
+                }}
+            }}
+            playVideo();
+
+            // Chỉ fade khi gần hết
             vid.addEventListener("timeupdate", () => {{
                 if (vid.duration && vid.currentTime >= vid.duration - 1.0) {{
-                    fade.style.opacity = 1;
-                    window.localStorage.setItem("intro_done_flag", "1");
+                    finishIntro();
                 }}
             }});
 
-            // Nếu video không auto play
-            vid.play().catch(() => {{
-                console.log("Autoplay bị chặn → fallback 9s");
-                setTimeout(() => {{
-                    fade.style.opacity = 1;
-                    window.localStorage.setItem("intro_done_flag", "1");
-                }}, 9000);
-            }});
+            // Nếu video kết thúc nhưng chưa fade
+            vid.onended = finishIntro;
         </script>
     </body>
     </html>
     """
     components.html(intro_html, height=1000, scrolling=False)
 
-    # Streamlit polling
     flag = st_javascript("window.localStorage.getItem('intro_done_flag');")
     if flag == "1":
         st.session_state.intro_done = True
