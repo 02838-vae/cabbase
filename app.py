@@ -84,6 +84,7 @@ def intro_screen(is_mobile=False):
         font_size = "clamp(26px, 3vw, 46px)"
         text_width = "70vw"
 
+    # Escape tất cả các dấu { } trong JS
     intro_html = f"""
     <html lang="vi">
     <head>
@@ -151,7 +152,7 @@ def intro_screen(is_mobile=False):
         const fade = document.getElementById("fade");
 
         vid.addEventListener('canplaythrough', () => {{
-            vid.play().catch(()=>{});
+            vid.play().catch(() => {{}});
         }});
 
         vid.addEventListener('timeupdate', () => {{
@@ -179,6 +180,7 @@ def intro_screen(is_mobile=False):
     </body>
     </html>
     """
+
     components.html(intro_html, height=950, scrolling=False)
 
 # ========== TRANG CHÍNH ==========
