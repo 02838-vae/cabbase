@@ -61,7 +61,6 @@ def intro_screen(is_mobile=False):
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
-    # Tuỳ chỉnh giao diện video
     object_pos = "center 25%" if is_mobile else "center"
     text_bottom = "10%" if is_mobile else "15%"
 
@@ -126,26 +125,24 @@ def intro_screen(is_mobile=False):
             const vid = document.getElementById("introVid");
             const fade = document.getElementById("fade");
 
-            // Auto play
             vid.play().catch(() => {{
-                console.warn("Autoplay bị chặn, thử lại...");
                 vid.muted = true;
                 vid.play();
             }});
 
             // Khi video gần hết -> fade out
             vid.addEventListener("timeupdate", () => {{
-                if (vid.duration && vid.currentTime >= vid.duration - 1.2) {{
+                if (vid.duration && vid.currentTime >= vid.duration - 1.5) {{
                     fade.style.opacity = 1;
                 }}
             }});
 
-            // Khi kết thúc -> gửi tín hiệu sang Streamlit
+            // Khi kết thúc -> ghi flag sang localStorage
             vid.addEventListener("ended", () => {{
                 fade.style.opacity = 1;
                 setTimeout(() => {{
-                    window.parent.postMessage({{"type": "intro_done"}}, "*");
-                }}, 1300);
+                    localStorage.setItem("intro_done_flag", "1");
+                }}, 1200);
             }});
         </script>
     </body>
@@ -154,16 +151,23 @@ def intro_screen(is_mobile=False):
 
     components.html(html_code, height=1000, scrolling=False)
 
-    # Nhận tín hiệu JS → Python
-    msg = st_javascript("""
-        new Promise((resolve) => {
-            window.addEventListener("message", (event) => {
-                if (event.data && event.data.type === "intro_done") resolve("done");
+    # Kiểm tra localStorage từ JS mỗi 0.5s
+    intro_done = st_javascript("""
+        async function checkFlag() {
+            return new Promise(resolve => {
+                const timer = setInterval(() => {
+                    if (localStorage.getItem("intro_done_flag") === "1") {
+                        clearInterval(timer);
+                        localStorage.removeItem("intro_done_flag");
+                        resolve("done");
+                    }
+                }, 500);
             });
-        });
+        }
+        checkFlag();
     """)
 
-    if msg == "done":
+    if intro_done == "done":
         st.session_state.intro_done = True
         st.rerun()
 
