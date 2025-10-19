@@ -1,19 +1,20 @@
 import streamlit as st
 import os, base64, random, time
-from streamlit_javascript import st_javascript
 from user_agents import parse
+from streamlit_javascript import st_javascript
 import streamlit.components.v1 as components
 
-# ========== Cấu hình ==========
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
-VIDEO_PC = "media/airplane.mp4"
-VIDEO_MOBILE = "media/mobile.mp4"
+# ===== File paths =====
+MEDIA_DIR = "media"
+VIDEO_PC = os.path.join(MEDIA_DIR, "airplane.mp4")
+VIDEO_MOBILE = os.path.join(MEDIA_DIR, "mobile.mp4")
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
-MUSIC_FILES = ["background.mp3", "background2.mp3", "background3.mp3", "background4.mp3", "background5.mp3"]
+MUSIC_FILES = [f"background{i}.mp3" for i in range(1, 6)]
 
-# ========== Session state ==========
+# ===== State =====
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 if "is_mobile" not in st.session_state:
@@ -22,7 +23,7 @@ if "start_time" not in st.session_state:
     st.session_state.start_time = None
 
 
-# ========== Xác định thiết bị ==========
+# ===== Detect device =====
 if st.session_state.is_mobile is None:
     ua = st_javascript("window.navigator.userAgent;")
     if ua:
@@ -33,7 +34,7 @@ if st.session_state.is_mobile is None:
         st.stop()
 
 
-# ========== Ẩn giao diện Streamlit ==========
+# ===== Hide Streamlit UI =====
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -52,18 +53,24 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== Màn hình Intro ==========
+# ===== Intro video =====
 def intro_screen(is_mobile: bool):
     hide_streamlit_ui()
-
     video_path = VIDEO_MOBILE if is_mobile else VIDEO_PC
+
+    # Check path existence
     if not os.path.exists(video_path):
+        st.warning(f"Không tìm thấy video: {video_path}")
         st.session_state.intro_done = True
         st.rerun()
         return
 
-    video_url = f"/{video_path}"
-    text_top = "6%" if is_mobile else "5%"
+    # Convert path for browser access
+    abs_path = os.path.abspath(video_path)
+    file_url = f"file://{abs_path}"
+
+    # Adjustments
+    text_top = "5%" if is_mobile else "8%"
     object_pos = "center 10%" if is_mobile else "center"
 
     intro_html = f"""
@@ -86,10 +93,10 @@ def intro_screen(is_mobile: bool):
                 position:fixed; top:{text_top}; left:50%;
                 transform:translateX(-50%);
                 font-family:'Cinzel Decorative', serif;
-                font-size:clamp(20px,4vw,40px);
+                font-size:clamp(18px, 5vw, 36px);
                 color:white; text-shadow:0 0 18px rgba(255,255,255,0.9),0 0 35px rgba(255,215,0,0.6);
-                white-space:nowrap;
-                opacity:0; z-index:2;
+                opacity:0; white-space:nowrap;
+                z-index:2;
                 animation: fadeText 6s ease-in-out forwards;
             }}
             @keyframes fadeText {{
@@ -101,8 +108,7 @@ def intro_screen(is_mobile: bool):
             #fade {{
                 position:fixed; top:0; left:0;
                 width:100vw; height:100vh;
-                background:black;
-                opacity:0;
+                background:black; opacity:0;
                 transition:opacity 1.2s ease-in-out;
                 z-index:3;
             }}
@@ -110,7 +116,7 @@ def intro_screen(is_mobile: bool):
     </head>
     <body>
         <video id="introVid" autoplay muted playsinline preload="auto">
-            <source src="{video_url}" type="video/mp4">
+            <source src="{file_url}" type="video/mp4">
         </video>
         <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
         <div id="fade"></div>
@@ -135,7 +141,7 @@ def intro_screen(is_mobile: bool):
         }});
 
         vid.play().catch(() => {{
-            console.warn("Autoplay blocked, fallback timer");
+            console.warn("Autoplay blocked");
             setTimeout(finishIntro, 10000);
         }});
         </script>
@@ -145,10 +151,9 @@ def intro_screen(is_mobile: bool):
 
     components.html(intro_html, height=1000, scrolling=False)
 
-    # Giữ trang cho đến khi video kết thúc hoặc hết thời gian
     if st.session_state.start_time is None:
         st.session_state.start_time = time.time()
-    if time.time() - st.session_state.start_time < 30:
+    if time.time() - st.session_state.start_time < 35:
         time.sleep(1)
         st.rerun()
     else:
@@ -157,7 +162,7 @@ def intro_screen(is_mobile: bool):
         st.rerun()
 
 
-# ========== Trang chính ==========
+# ===== Main page =====
 def main_page(is_mobile: bool):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -196,7 +201,7 @@ def main_page(is_mobile: bool):
     st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
 
 
-# ========== Luồng chính ==========
+# ===== Flow =====
 hide_streamlit_ui()
 if not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
