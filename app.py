@@ -20,9 +20,9 @@ if "is_mobile" not in st.session_state:
 
 # ================== XÁC ĐỊNH THIẾT BỊ ==================
 if st.session_state.is_mobile is None:
-    ua_string = st_javascript("window.navigator.userAgent;")
-    if ua_string:
-        st.session_state.is_mobile = not parse(ua_string).is_pc
+    ua = st_javascript("window.navigator.userAgent;")
+    if ua:
+        st.session_state.is_mobile = not parse(ua).is_pc
         st.rerun()
     else:
         st.info("Đang xác định thiết bị...")
@@ -37,9 +37,12 @@ def hide_streamlit_ui():
         visibility: hidden !important;
     }
     .stApp, .main, .block-container {
-        padding: 0 !important; margin: 0 !important;
-        width: 100vw !important; height: 100vh !important;
-        max-width: 100vw !important; min-height: 100vh !important;
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        max-width: 100vw !important;
+        min-height: 100vh !important;
     }
     [data-testid*="stHtmlComponents"] {
         position: fixed !important;
@@ -58,63 +61,59 @@ def intro_screen(is_mobile=False):
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
-    # Tùy chỉnh theo thiết bị
-    if is_mobile:
-        object_position = "center 25%"
-        text_bottom = "10%"
-    else:
-        object_position = "center"
-        text_bottom = "15%"
+    # Tuỳ chỉnh giao diện video
+    object_pos = "center 25%" if is_mobile else "center"
+    text_bottom = "10%" if is_mobile else "15%"
 
     html_code = f"""
     <html>
     <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
-    <style>
-        html, body {{
-            margin: 0; padding: 0;
-            width: 100%; height: 100%;
-            background: black; overflow: hidden;
-        }}
-        video {{
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            object-fit: cover;
-            object-position: {object_position};
-            z-index: 1;
-        }}
-        #intro-text {{
-            position: absolute;
-            bottom: {text_bottom};
-            left: 50%;
-            transform: translateX(-50%);
-            font-family: 'Cinzel Decorative', serif;
-            font-size: clamp(18px, 4vw, 40px);
-            color: white;
-            text-shadow: 0 0 20px rgba(255,255,255,0.9), 0 0 40px rgba(255,215,0,0.7);
-            opacity: 0;
-            animation: fadeText 6s ease-in-out forwards;
-            z-index: 2;
-            white-space: nowrap;
-        }}
-        @keyframes fadeText {{
-            0% {{opacity: 0; transform: translate(-50%, 20px);}}
-            20% {{opacity: 1; transform: translate(-50%, 0);}}
-            80% {{opacity: 1; transform: translate(-50%, 0);}}
-            100% {{opacity: 0; transform: translate(-50%, -10px);}}
-        }}
-        #fade {{
-            position: fixed;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: black;
-            opacity: 0;
-            z-index: 3;
-            transition: opacity 1.5s ease-in-out;
-        }}
-    </style>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
+        <style>
+            html, body {{
+                margin: 0; padding: 0;
+                width: 100%; height: 100%;
+                background: black; overflow: hidden;
+            }}
+            video {{
+                position: fixed;
+                top: 0; left: 0;
+                width: 100%; height: 100%;
+                object-fit: cover;
+                object-position: {object_pos};
+                z-index: 1;
+            }}
+            #intro-text {{
+                position: absolute;
+                bottom: {text_bottom};
+                left: 50%;
+                transform: translateX(-50%);
+                font-family: 'Cinzel Decorative', serif;
+                font-size: clamp(18px, 4vw, 40px);
+                color: white;
+                text-shadow: 0 0 20px rgba(255,255,255,0.9), 0 0 40px rgba(255,215,0,0.7);
+                opacity: 0;
+                white-space: nowrap;
+                z-index: 2;
+                animation: fadeText 6s ease-in-out forwards;
+            }}
+            @keyframes fadeText {{
+                0% {{opacity: 0; transform: translate(-50%, 20px);}}
+                20% {{opacity: 1; transform: translate(-50%, 0);}}
+                80% {{opacity: 1; transform: translate(-50%, 0);}}
+                100% {{opacity: 0; transform: translate(-50%, -10px);}}
+            }}
+            #fade {{
+                position: fixed;
+                top: 0; left: 0;
+                width: 100%; height: 100%;
+                background: black;
+                opacity: 0;
+                z-index: 3;
+                transition: opacity 1.5s ease-in-out;
+            }}
+        </style>
     </head>
     <body>
         <video id="introVid" autoplay muted playsinline>
@@ -124,25 +123,29 @@ def intro_screen(is_mobile=False):
         <div id="fade"></div>
 
         <script>
-            const vid = document.getElementById('introVid');
-            const fade = document.getElementById('fade');
+            const vid = document.getElementById("introVid");
+            const fade = document.getElementById("fade");
 
-            // Đảm bảo video play
-            vid.play().catch(()=>{{console.log("Autoplay bị chặn");}});
+            // Auto play
+            vid.play().catch(() => {{
+                console.warn("Autoplay bị chặn, thử lại...");
+                vid.muted = true;
+                vid.play();
+            }});
 
-            // Khi video gần hết: kích hoạt hiệu ứng mờ dần
-            vid.addEventListener('timeupdate', () => {{
-                if (vid.duration && vid.currentTime >= vid.duration - 1.0) {{
+            // Khi video gần hết -> fade out
+            vid.addEventListener("timeupdate", () => {{
+                if (vid.duration && vid.currentTime >= vid.duration - 1.2) {{
                     fade.style.opacity = 1;
                 }}
             }});
 
-            // Khi fade hoàn tất (sau video), gửi tín hiệu cho Streamlit
-            vid.addEventListener('ended', () => {{
+            // Khi kết thúc -> gửi tín hiệu sang Streamlit
+            vid.addEventListener("ended", () => {{
                 fade.style.opacity = 1;
                 setTimeout(() => {{
-                    window.parent.postMessage({{"type":"intro_done"}}, "*");
-                }}, 1200);
+                    window.parent.postMessage({{"type": "intro_done"}}, "*");
+                }}, 1300);
             }});
         </script>
     </body>
@@ -151,7 +154,7 @@ def intro_screen(is_mobile=False):
 
     components.html(html_code, height=1000, scrolling=False)
 
-    # Nhận tín hiệu từ iframe JS → Python
+    # Nhận tín hiệu JS → Python
     msg = st_javascript("""
         new Promise((resolve) => {
             window.addEventListener("message", (event) => {
@@ -159,6 +162,7 @@ def intro_screen(is_mobile=False):
             });
         });
     """)
+
     if msg == "done":
         st.session_state.intro_done = True
         st.rerun()
@@ -166,8 +170,8 @@ def intro_screen(is_mobile=False):
 # ================== TRANG CHÍNH ==================
 def main_page(is_mobile=False):
     hide_streamlit_ui()
-    bg = BG_MOBILE if is_mobile else BG_PC
-    with open(bg, "rb") as f:
+    bg_file = BG_MOBILE if is_mobile else BG_PC
+    with open(bg_file, "rb") as f:
         bg_b64 = base64.b64encode(f.read()).decode()
 
     st.markdown(f"""
@@ -191,15 +195,14 @@ def main_page(is_mobile=False):
 
     music = [m for m in MUSIC_FILES if os.path.exists(m)]
     if music:
-        import random
         chosen = random.choice(music)
         with st.sidebar:
-            st.audio(chosen, start_time=0)
+            st.audio(chosen)
             st.caption(f"🎵 Đang phát: {os.path.basename(chosen)}")
 
     st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
 
-# ================== LUỒNG CHÍNH ==================
+# ================== MAIN ==================
 hide_streamlit_ui()
 if not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
