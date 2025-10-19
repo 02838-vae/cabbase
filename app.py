@@ -2,12 +2,11 @@ import streamlit as st
 import os
 import base64
 import random
-import time
 from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
-# ================== CẤU HÌNH & TRẠNG THÁI ==================
+# ========== CẤU HÌNH ==========
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
 VIDEO_PC = "media/airplane.mp4"
@@ -23,23 +22,19 @@ if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 if "is_mobile" not in st.session_state:
     st.session_state.is_mobile = None
-if "start_time" not in st.session_state:
-    st.session_state.start_time = None
 
-
-# ================== XÁC ĐỊNH THIẾT BỊ ==================
+# ========== PHÁT HIỆN THIẾT BỊ ==========
 if st.session_state.is_mobile is None:
-    ua_string = st_javascript("""window.navigator.userAgent;""")
-
+    ua_string = st_javascript("window.navigator.userAgent;")
     if ua_string:
-        user_agent = parse(ua_string)
-        st.session_state.is_mobile = not user_agent.is_pc
+        ua = parse(ua_string)
+        st.session_state.is_mobile = not ua.is_pc
         st.rerun()
     else:
+        st.info("Đang phát hiện thiết bị...")
         st.stop()
 
-
-# ================== ẨN GIAO DIỆN STREAMLIT ==================
+# ========== ẨN GIAO DIỆN STREAMLIT ==========
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -48,33 +43,29 @@ def hide_streamlit_ui():
         display: none !important;
         visibility: hidden !important;
     }
-
-    .stApp, .main, .block-container, [data-testid="stVerticalBlock"] {
+    .stApp, .main, .block-container {
         padding: 0 !important;
         margin: 0 !important;
-        max-width: 100vw !important;
         width: 100vw !important;
-        min-height: 100vh !important;
+        height: 100vh !important;
+        overflow: hidden !important;
     }
-
     [data-testid*="stHtmlComponents"] {
         position: fixed !important;
         top: 0; left: 0;
-        width: 100vw !important;
-        height: 100vh !important;
+        width: 100vw; height: 100vh;
         z-index: 9999;
     }
     </style>
     """, unsafe_allow_html=True)
 
-
-# ================== MÀN HÌNH INTRO ==================
+# ========== MÀN HÌNH INTRO ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
 
     video_path = VIDEO_MOBILE if is_mobile else VIDEO_PC
     if not os.path.exists(video_path):
-        st.error(f"⚠️ Không tìm thấy video: {video_path}")
+        st.error(f"Không tìm thấy video: {video_path}")
         st.session_state.intro_done = True
         st.rerun()
         return
@@ -82,12 +73,11 @@ def intro_screen(is_mobile=False):
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
-    # --- Cấu hình cho từng thiết bị ---
     if is_mobile:
-        object_position = "center 15%"
-        text_bottom = "12%"
+        object_position = "center 10%"
+        text_bottom = "8%"
         font_size = "clamp(16px, 4.5vw, 26px)"
-        text_width = "92vw"
+        text_width = "90vw"
     else:
         object_position = "center center"
         text_bottom = "20%"
@@ -97,133 +87,109 @@ def intro_screen(is_mobile=False):
     intro_html = f"""
     <html lang="vi">
     <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
-            @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap');
-
-            html, body {{
-                margin: 0; padding: 0;
-                width: 100vw;
-                height: 100vh;
-                overflow: hidden;
-                background: black;
-            }}
-
-            video {{
-                position: absolute;
-                top: 0; left: 0;
-                width: 100vw;
-                height: 100vh;
-                object-fit: cover;
-                object-position: {object_position};
-                z-index: 1;
-            }}
-
-            #intro-text {{
-                position: absolute;
-                left: 50%;
-                bottom: {text_bottom};
-                transform: translateX(-50%);
-                font-family: 'Cinzel', serif;
-                font-size: {font_size};
-                width: {text_width};
-                text-align: center;
-                color: #fff8dc;
-                font-weight: 700;
-                letter-spacing: 2px;
-                text-shadow: 0 0 6px rgba(255, 255, 255, 0.3), 0 0 18px rgba(255, 240, 180, 0.5);
-                z-index: 10;
-                opacity: 0;
-                animation: fadeAppear 7s ease-in-out forwards;
-                white-space: normal;
-                overflow-wrap: break-word;
-            }}
-
-            @keyframes fadeAppear {{
-                0% {{
-                    opacity: 0;
-                    transform: translate(-50%, 40px);
-                    text-shadow: none;
-                }}
-                25% {{
-                    opacity: 1;
-                    text-shadow: 0 0 10px rgba(255, 240, 180, 0.8), 0 0 20px rgba(255,255,255,0.4);
-                    transform: translate(-50%, 0);
-                }}
-                70% {{
-                    opacity: 1;
-                    text-shadow: 0 0 16px rgba(255, 255, 220, 0.8);
-                }}
-                100% {{
-                    opacity: 0;
-                    transform: translate(-50%, -30px);
-                    text-shadow: 0 0 2px rgba(255,255,255,0.1);
-                }}
-            }}
-
-            #fade {{
-                position: absolute;
-                top: 0; left: 0;
-                width: 100%;
-                height: 100%;
-                background: black;
-                opacity: 0;
-                z-index: 9;
-                transition: opacity 1.2s ease-in-out;
-            }}
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@700&display=swap');
+        html, body {{
+            margin: 0; padding: 0;
+            width: 100vw; height: 100vh;
+            overflow: hidden; background: black;
+        }}
+        video {{
+            position: absolute; top: 0; left: 0;
+            width: 100vw; height: 100vh;
+            object-fit: cover;
+            object-position: {object_position};
+            z-index: 1;
+            opacity: 1;
+            transition: opacity 1.5s ease-in-out;
+        }}
+        #intro-text {{
+            position: absolute;
+            left: 50%; bottom: {text_bottom};
+            transform: translateX(-50%);
+            font-family: 'Cinzel', serif;
+            font-size: {font_size};
+            width: {text_width};
+            text-align: center;
+            color: #fff8dc;
+            font-weight: 700;
+            text-shadow: 0 0 6px rgba(255,255,255,0.3),
+                         0 0 20px rgba(255,240,180,0.6),
+                         0 0 40px rgba(255,220,130,0.4);
+            z-index: 10;
+            opacity: 0;
+            animation: textFade 7s ease-in-out forwards;
+            white-space: normal;
+            overflow-wrap: break-word;
+        }}
+        @keyframes textFade {{
+            0% {{ opacity: 0; transform: translate(-50%, 40px); }}
+            15% {{ opacity: 1; transform: translate(-50%, 0); }}
+            75% {{ opacity: 1; }}
+            100% {{ opacity: 0; transform: translate(-50%, -20px); }}
+        }}
+        #fade {{
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: black;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+            z-index: 20;
+        }}
         </style>
     </head>
     <body>
-        <video id="introVid" autoplay muted playsinline>
+        <video id="introVid" autoplay muted playsinline preload="auto">
             <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
         </video>
         <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
         <div id="fade"></div>
-
         <script>
-            const vid = document.getElementById("introVid");
-            const fade = document.getElementById("fade");
+        const vid = document.getElementById("introVid");
+        const fade = document.getElementById("fade");
 
-            function finishIntro() {{
-                fade.style.opacity = 1;
-                setTimeout(() => {{
-                    window.parent.postMessage({{"type": "intro_done"}}, "*");
-                }}, 1200);
+        vid.addEventListener('canplaythrough', () => {{
+            vid.play().catch(()=>{});
+        }});
+
+        vid.addEventListener('timeupdate', () => {{
+            if (vid.duration - vid.currentTime <= 1.5) {{
+                vid.style.opacity = '0';
+                fade.style.opacity = '1';
             }}
+        }});
 
-            vid.onended = finishIntro;
-            vid.play().catch(() => {{
-                console.log("Autoplay bị chặn, fallback 9s");
-                setTimeout(finishIntro, 9000);
-            }});
+        vid.addEventListener('ended', () => {{
+            setTimeout(() => {{
+                window.parent.postMessage({{"type": "intro_done"}}, "*");
+            }}, 800);
+        }});
+
+        // fallback nếu autoplay bị chặn
+        setTimeout(() => {{
+            if (vid.paused) {{
+                vid.play().catch(() => {{
+                    window.parent.postMessage({{"type": "intro_done"}}, "*");
+                }});
+            }}
+        }}, 2000);
         </script>
     </body>
     </html>
     """
-
     components.html(intro_html, height=950, scrolling=False)
 
-    if st.session_state.start_time is None:
-        st.session_state.start_time = time.time()
-    if time.time() - st.session_state.start_time < 9.5:
-        time.sleep(1)
-        st.rerun()
-    else:
-        st.session_state.intro_done = True
-        st.session_state.start_time = None
-        st.rerun()
-
-
-# ================== TRANG CHÍNH ==================
+# ========== TRANG CHÍNH ==========
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
-
     try:
         with open(bg, "rb") as f:
             bg_b64 = base64.b64encode(f.read()).decode()
     except FileNotFoundError:
-        st.error(f"⚠️ Không tìm thấy ảnh nền: {bg}")
+        st.error(f"Không tìm thấy ảnh nền: {bg}")
         bg_b64 = ""
 
     st.markdown(f"""
@@ -234,11 +200,15 @@ def main_page(is_mobile=False):
         background-size: cover;
         background-position: center;
         background-attachment: fixed;
-        animation: fadeInBg 1s ease-in-out forwards;
+        animation: fadeInMain 1.2s ease-in-out forwards;
     }}
-    @keyframes fadeInBg {{ from {{ opacity: 0; }} to {{ opacity: 1; }} }}
+    @keyframes fadeInMain {{
+        from {{ opacity: 0; }} to {{ opacity: 1; }}
+    }}
     h1 {{
-        text-align: center; margin-top: 60px; color: #2E1C14;
+        text-align: center;
+        margin-top: 60px;
+        color: #2E1C14;
         text-shadow: 2px 2px 6px #FFF8DC;
         font-family: 'Playfair Display', serif;
     }}
@@ -250,13 +220,12 @@ def main_page(is_mobile=False):
         chosen = random.choice(available_music)
         with st.sidebar:
             st.subheader("🎵 Nhạc nền")
-            st.audio(chosen, start_time=0)
+            st.audio(chosen)
             st.caption(f"Đang phát: **{os.path.basename(chosen)}**")
 
     st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
 
-
-# ================== LUỒNG CHÍNH ==================
+# ========== MAIN FLOW ==========
 hide_streamlit_ui()
 
 if st.session_state.is_mobile is None:
