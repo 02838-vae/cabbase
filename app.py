@@ -7,7 +7,7 @@ from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
-# ================== CONFIG ==================
+# ================== CONFIG & HẰNG SỐ ==================
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
 VIDEO_PC = "media/airplane.mp4"
@@ -19,11 +19,17 @@ MUSIC_FILES = [
     "background4.mp3", "background5.mp3"
 ]
 
-# ================== SESSION ==================
+# Giả định thời lượng video là 9 giây (Hãy điều chỉnh nếu video của bạn khác)
+VIDEO_DURATION_SECONDS = 9 
+
+# ================== SESSION STATE ==================
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 if "is_mobile" not in st.session_state:
     st.session_state.is_mobile = None
+# Thêm biến lưu thời gian bắt đầu cho cơ chế dự phòng
+if "start_time" not in st.session_state: 
+    st.session_state.start_time = None
 
 
 # ================== DETECT DEVICE ==================
@@ -88,43 +94,45 @@ def intro_screen(is_mobile=False):
         text_bottom = "20%"
         font_size = "clamp(28px, 3vw, 48px)"
         text_width = "70vw"
-        
-    # --- JAVASCRIPT LOGIC (Đã tách ra) ---
-    # Hàm này sẽ được nhúng qua st_javascript sau khi components.html chạy
-    js_handler = """
-    function setupVideoListener() {
+    
+    # Đảm bảo text biến mất trước khi video kết thúc (ví dụ: 8.5s)
+    animation_duration = f"{VIDEO_DURATION_SECONDS - 0.5}s"
+    
+    # --- JAVASCRIPT LOGIC Đã Tối Ưu Hóa ---
+    js_handler = f"""
+    new Promise(resolve => {{
         const vid = document.getElementById("introVid");
         const fade = document.getElementById("fade");
 
-        // Hàm chuyển cảnh: fade màn hình và thông báo cho Streamlit
-        function finishIntro() {
+        // Hàm chuyển cảnh: fade màn hình và giải quyết Promise
+        function finishIntro() {{
             // Bước 1: Fade màn hình đen
             fade.style.opacity = "1";
             
-            // Bước 2: Chờ fade-out (800ms) xong thì gửi tín hiệu thay đổi Session State
-            setTimeout(() => { 
-                // Sử dụng cú pháp Streamlit để thay đổi state
-                window.parent.postMessage({type: "streamlit:setSessionState", key: "intro_done", value: true}, "*");
-            }, 800);
-        }
+            // Bước 2: Chờ fade-out (800ms) xong thì giải quyết Promise (chuyển cảnh)
+            setTimeout(() => {{ 
+                resolve('done');
+            }}, 800);
+        }}
 
-        // Cố gắng tự động phát (tăng độ tin cậy)
-        vid.addEventListener("canplaythrough", () => {
-             // Sử dụng play() với catch để xử lý nếu autoplay bị chặn
-             vid.play().catch(() => {});
-        });
-
+        // Cố gắng tự động phát
+        vid.addEventListener("canplaythrough", () => {{
+             vid.play().catch(() => {{}});
+        }});
+        
         // Event chính: Callback khi video kết thúc
         vid.addEventListener("ended", finishIntro);
         
-        // Cơ chế fadeout sớm: Khi còn 1.5s thì bắt đầu fade màn hình (tùy chọn)
-        vid.addEventListener("timeupdate", () => {
-             if (vid.duration > 0 && vid.duration - vid.currentTime <= 1.5) {
+        // Cơ chế fadeout sớm
+        vid.addEventListener("timeupdate", () => {{
+             if (vid.duration > 0 && vid.duration - vid.currentTime <= 1.5) {{
                  fade.style.opacity = "1";
-             }
-        });
-    }
-    setupVideoListener();
+             }}
+        }});
+
+        // Cơ chế dự phòng bằng thời gian trong JS (nếu event 'ended' bị lỗi)
+        setTimeout(finishIntro, {VIDEO_DURATION_SECONDS * 1000 + 1000}); // Video + 1s để xử lý chuyển cảnh
+    }});
     """
 
     intro_html = f"""
@@ -163,7 +171,8 @@ def intro_screen(is_mobile=False):
                          0 0 40px rgba(255,220,130,0.6);
             z-index: 10;
             opacity: 0;
-            animation: textFade 7s ease-in-out forwards;
+            /* Đảm bảo text biến mất trước khi kết thúc video */
+            animation: textFade {animation_duration} ease-in-out forwards;
             white-space: normal;
         }}
         @keyframes textFade {{
@@ -179,7 +188,7 @@ def intro_screen(is_mobile=False):
             background: black;
             opacity: 0;
             z-index: 20;
-            transition: opacity 1.5s ease-in-out;
+            transition: opacity 0.8s ease-in-out; /* Giảm thời gian fade cho nhanh hơn */
         }}
         </style>
     </head>
@@ -189,17 +198,29 @@ def intro_screen(is_mobile=False):
         </video>
         <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
         <div id="fade"></div>
-        </body>
+    </body>
     </html>
     """
 
     components.html(intro_html, height=950, scrolling=False)
     
-    # Kích hoạt JavaScript listener. Listener này sẽ tự động set st.session_state.intro_done = True
-    st_javascript(js_handler) 
+    # *********** CƠ CHẾ CHUYỂN CẢNH MỚI ***********
+    # st_javascript sẽ block (chờ) cho đến khi Promise trong JS được giải quyết ('done')
+    intro_finished_status = st_javascript(js_handler) 
 
-    # Nếu trạng thái đã được JS thay đổi, rerun để chuyển trang
-    if st.session_state.intro_done:
+    if intro_finished_status == 'done':
+        # Khi JS báo xong, set state và reruns
+        st.session_state.intro_done = True
+        st.rerun()
+
+    # *********** CƠ CHẾ DỰ PHÒNG PYTHON ***********
+    if st.session_state.start_time is None:
+        st.session_state.start_time = time.time()
+    
+    # Nếu thời gian đã trôi qua quá lâu (ví dụ: 1s lâu hơn thời lượng video) mà vẫn chưa chuyển cảnh, buộc chuyển
+    if time.time() - st.session_state.start_time > (VIDEO_DURATION_SECONDS + 1.0):
+        st.session_state.intro_done = True
+        st.session_state.start_time = None
         st.rerun()
 
 
