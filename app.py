@@ -12,6 +12,7 @@ VIDEO_PC = "airplane.mp4"
 VIDEO_MOBILE = "mobile.mp4"
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
+SFX = "plane_fly.mp3"
 
 # =================== ẨN UI STREAMLIT ===================
 def hide_streamlit_ui():
@@ -46,6 +47,8 @@ def intro_screen(is_mobile=False):
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
     with open(video_file, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
+    with open(SFX, "rb") as a:
+        audio_b64 = base64.b64encode(a.read()).decode()
 
     intro_html = f"""
     <html>
@@ -65,6 +68,9 @@ def intro_screen(is_mobile=False):
             height: 100%;
             object-fit: cover;
         }}
+        audio {{
+            display: none;
+        }}
         #intro-text {{
             position: absolute;
             top: 50%;
@@ -75,6 +81,7 @@ def intro_screen(is_mobile=False):
             font-size: clamp(24px, 6vw, 60px);
             font-weight: bold;
             font-family: 'Playfair Display', serif;
+            text-shadow: 0 0 15px rgba(255,255,255,0.5);
             animation: fadeInOut 6s ease-in-out forwards;
         }}
         @keyframes fadeInOut {{
@@ -97,11 +104,15 @@ def intro_screen(is_mobile=False):
         <video id="introVid" autoplay playsinline muted>
             <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
         </video>
+        <audio id="flySfx">
+            <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
+        </audio>
         <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
         <div id="fade"></div>
 
         <script>
         const vid = document.getElementById('introVid');
+        const audio = document.getElementById('flySfx');
         const fade = document.getElementById('fade');
         let ended = false;
 
@@ -113,6 +124,11 @@ def intro_screen(is_mobile=False):
                 window.parent.postMessage({{type: "intro_done"}}, "*");
             }}, 800);
         }}
+
+        vid.addEventListener('play', () => {{
+            audio.volume = 0.7;
+            audio.play().catch(()=>{{}});
+        }});
 
         vid.addEventListener('ended', finishIntro);
         setTimeout(finishIntro, 9000);
@@ -126,16 +142,28 @@ def intro_screen(is_mobile=False):
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
-    with open(bg, "rb") as f:
-        bg_b64 = base64.b64encode(f.read()).decode()
+    try:
+        with open(bg, "rb") as f:
+            bg_b64 = base64.b64encode(f.read()).decode()
+    except FileNotFoundError:
+        st.error(f"⚠️ Không tìm thấy ảnh nền: {bg}")
+        return
 
+    # ✅ Chèn background đúng cách
     st.markdown(f"""
     <style>
-    html, body {{
-        height: 100vh;
-        background: url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed;
-        background-size: cover;
-        margin: 0;
+    html, body, .stApp {{
+        height: 100vh !important;
+        background: url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
+        background-size: cover !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        animation: fadeInBg 1s ease-in-out forwards;
+    }}
+    @keyframes fadeInBg {{
+        from {{ opacity: 0; }}
+        to {{ opacity: 1; }}
     }}
     .welcome {{
         height: 100vh;
@@ -153,6 +181,7 @@ def main_page(is_mobile=False):
         to {{ opacity: 1; }}
     }}
     </style>
+
     <div class="welcome">✈️ CHÀO MỪNG ĐẾN VỚI CABBASE ✈️</div>
     """, unsafe_allow_html=True)
 
