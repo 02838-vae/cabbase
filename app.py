@@ -13,7 +13,7 @@ VIDEO_PC = "media/airplane.mp4"
 VIDEO_MOBILE = "media/mobile.mp4"
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
-MUSIC_FILES = ["background.mp3", "background2.mp3", "background3.mp3", "background4.mp3", "background5.mp3"]
+MUSIC_FILES = ["background.mp3", "background2.mp3", "background3.mp3"]
 PLANE_AUDIO = "plane_fly.mp3"
 VIDEO_DURATION = 5  # giây
 
@@ -62,11 +62,10 @@ def intro_screen(is_mobile=False):
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
     # Base64 audio máy bay
+    audio_b64 = ""
     if os.path.exists(PLANE_AUDIO):
         with open(PLANE_AUDIO, "rb") as f:
             audio_b64 = base64.b64encode(f.read()).decode()
-    else:
-        audio_b64 = ""
 
     object_position = "center top;" if is_mobile else "center;"
     text_bottom = "35%" if is_mobile else "18%"
@@ -89,7 +88,7 @@ def intro_screen(is_mobile=False):
     </style>
     </head>
     <body>
-        <video id="introVid" autoplay muted playsinline>
+        <video id="introVid" playsinline>
             <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
         </video>
         <audio id="planeAudio" playsinline>
@@ -104,24 +103,27 @@ def intro_screen(is_mobile=False):
         const fade=document.getElementById("fade");
         const text=document.getElementById("intro-text");
 
-        // fade chữ từ từ
-        setTimeout(()=>{{text.style.opacity=1;}},500);
-        setTimeout(()=>{{text.style.opacity=0;}},4000);
+        // Chạy khi video sẵn sàng
+        vid.oncanplay = ()=>{
+            vid.play().catch(()=>{{console.log("Autoplay blocked")}})
+            try{{audio.play();}}catch(e){{console.log("Audio blocked")}}
+            text.style.opacity=1;
+        }
 
-        // Phát audio khi video play
-        vid.onplay = ()=>{{ try{{audio.play();}}catch(e){{console.log("Audio blocked")}} }};
+        // fade chữ
+        setTimeout(()=>{{text.style.opacity=0;}}, 4000);
 
-        // Thông báo kết thúc video bằng timer
-        setTimeout(()=>{{
+        // fade out và thông báo xong video
+        setTimeout(()=>{
             fade.style.opacity=1;
-        }}, 4000); // fade out bắt đầu 4s
+        },4000);
         </script>
     </body>
     </html>
     """
     components.html(intro_html, height=1300, scrolling=False)
 
-    # --- CƠ CHẾ CHUYỂN CẢNH BẰNG SESSION_STATE ---
+    # --- CƠ CHẾ CHUYỂN CẢNH ---
     if st.session_state.start_time is None:
         st.session_state.start_time = time.time()
     elapsed = time.time() - st.session_state.start_time
@@ -137,12 +139,10 @@ def intro_screen(is_mobile=False):
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
-
-    try:
+    bg_b64=""
+    if os.path.exists(bg):
         with open(bg,"rb") as f:
             bg_b64 = base64.b64encode(f.read()).decode()
-    except:
-        bg_b64=""
 
     st.markdown(f"""
     <style>
@@ -170,7 +170,6 @@ def main_page(is_mobile=False):
 
 # ================== LUỒNG CHÍNH ==================
 hide_streamlit_ui()
-
 if st.session_state.is_mobile is None:
     pass
 elif not st.session_state.intro_done:
