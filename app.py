@@ -67,9 +67,23 @@ def intro_screen(is_mobile=False):
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
-    # Căn chữ + hiệu ứng
-    text_position = "10%" if is_mobile else "15%"
-    font_size = "clamp(20px, 5vw, 45px)"
+    # Position & responsive font
+    if is_mobile:
+        text_css = """
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(18px, 6vw, 36px);
+            width: 90vw;
+            text-align: center;
+            line-height: 1.2em;
+        """
+    else:
+        text_css = """
+            top: 15%; left: 50%;
+            transform: translateX(-50%);
+            font-size: clamp(24px, 4vw, 48px);
+        """
+
     object_pos = "center 10%" if is_mobile else "center"
 
     intro_html = f"""
@@ -89,22 +103,23 @@ def intro_screen(is_mobile=False):
                 z-index:1;
             }}
             #intro-text {{
-                position:fixed; top:{text_position}; left:50%;
-                transform:translateX(-50%);
+                position:fixed;
+                {text_css}
                 color:white;
                 font-family:'Cinzel Decorative', serif;
-                font-size:{font_size};
-                text-shadow:0 0 30px rgba(255,255,255,0.9), 0 0 45px rgba(255,215,0,0.8);
+                text-shadow:
+                    0 0 30px rgba(255,255,255,0.9),
+                    0 0 45px rgba(255,215,0,0.8),
+                    0 0 80px rgba(255,255,255,0.7);
                 opacity:0;
                 z-index:3;
-                white-space:nowrap;
                 animation:fadeText 5s ease-in-out forwards;
             }}
             @keyframes fadeText {{
-                0% {{opacity:0; transform:translate(-50%,20px);}}
-                15% {{opacity:1; transform:translate(-50%,0);}}
+                0% {{opacity:0; transform:translate(-50%, 20px);}}
+                15% {{opacity:1; transform:translate(-50%, 0);}}
                 85% {{opacity:1;}}
-                100% {{opacity:0; transform:translate(-50%,-10px);}}
+                100% {{opacity:0; transform:translate(-50%, -10px);}}
             }}
             #fade {{
                 position:fixed; top:0; left:0;
@@ -125,14 +140,10 @@ def intro_screen(is_mobile=False):
         <script>
             const vid = document.getElementById("introVid");
             const fade = document.getElementById("fade");
-
             vid.addEventListener('ended', function() {{
                 fade.style.opacity = 1;
             }});
-
-            vid.play().catch(function() {{
-                console.log("Autoplay bị chặn, fallback.");
-            }});
+            vid.play().catch(()=>{{console.log("Autoplay bị chặn")}})
         </script>
     </body>
     </html>
