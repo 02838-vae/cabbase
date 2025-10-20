@@ -67,12 +67,12 @@ def intro_screen(is_mobile=False):
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
-    # Responsive font and position
+    # Responsive font + centered text
     if is_mobile:
         text_css = """
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            font-size: clamp(18px, 6vw, 38px);
+            font-size: clamp(18px, 6vw, 36px);
             width: 90vw;
             text-align: center;
             line-height: 1.2em;
@@ -107,20 +107,41 @@ def intro_screen(is_mobile=False):
                 {text_css}
                 color:#fff;
                 font-family:'Cinzel Decorative', serif;
-                text-shadow:
-                    0 0 25px rgba(255,255,255,0.9),
-                    0 0 45px rgba(255,215,0,0.8),
-                    0 0 80px rgba(255,255,255,0.6);
                 letter-spacing: 2px;
+                text-shadow:
+                    0 0 30px rgba(255,255,255,0.9),
+                    0 0 60px rgba(255,215,0,0.8),
+                    0 0 100px rgba(255,255,200,0.7);
                 opacity:0;
                 z-index:3;
                 animation: floatFade 7s ease-in-out forwards;
+                background: linear-gradient(90deg, #f8f8f8, #ffd700, #ffffff);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                position:relative;
+                overflow:hidden;
+            }}
+            /* Ánh sáng quét ngang */
+            #intro-text::after {{
+                content: "";
+                position: absolute;
+                top: 0;
+                left: -50%;
+                width: 50%;
+                height: 100%;
+                background: linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0) 100%);
+                transform: skewX(-20deg);
+                animation: lightSweep 5s ease-in-out 1.5s forwards;
+            }}
+            @keyframes lightSweep {{
+                0% {{ left: -60%; }}
+                50% {{ left: 120%; }}
+                100% {{ left: 120%; }}
             }}
             @keyframes floatFade {{
                 0% {{
                     opacity:0;
-                    transform:translate(-50%, 30px) scale(0.95);
-                    text-shadow:0 0 5px rgba(255,255,255,0.3);
+                    transform:translate(-50%, 40px) scale(0.9);
                 }}
                 20% {{
                     opacity:1;
@@ -128,14 +149,10 @@ def intro_screen(is_mobile=False):
                 }}
                 60% {{
                     opacity:1;
-                    text-shadow:
-                        0 0 30px rgba(255,255,255,0.9),
-                        0 0 50px rgba(255,215,0,0.9);
                 }}
                 100% {{
                     opacity:0;
                     transform:translate(-50%, -20px) scale(1.1);
-                    text-shadow:0 0 10px rgba(255,255,255,0.3);
                 }}
             }}
             #fade {{
@@ -168,7 +185,7 @@ def intro_screen(is_mobile=False):
 
     components.html(intro_html, height=900, scrolling=False)
 
-    # Polling: 9s total = 5s video + 4s fade
+    # Total 9s timeline
     if st.session_state.intro_start is None:
         st.session_state.intro_start = time.time()
     elapsed = time.time() - st.session_state.intro_start
