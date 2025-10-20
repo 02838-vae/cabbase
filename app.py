@@ -5,23 +5,15 @@ from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
-# ====================== CẤU HÌNH ======================
+# =================== CẤU HÌNH ===================
 st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 
 VIDEO_PC = "airplane.mp4"
 VIDEO_MOBILE = "mobile.mp4"
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
-PLANE_AUDIO = "plane_fly.mp3"
 
-# ====================== TRẠNG THÁI ======================
-if "intro_done" not in st.session_state:
-    st.session_state.intro_done = False
-if "is_mobile" not in st.session_state:
-    st.session_state.is_mobile = None
-
-
-# ====================== ẨN GIAO DIỆN STREAMLIT ======================
+# =================== ẨN UI STREAMLIT ===================
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -37,9 +29,8 @@ def hide_streamlit_ui():
     </style>
     """, unsafe_allow_html=True)
 
-
-# ====================== XÁC ĐỊNH THIẾT BỊ ======================
-if st.session_state.is_mobile is None:
+# =================== XÁC ĐỊNH THIẾT BỊ ===================
+if "is_mobile" not in st.session_state:
     ua_string = st_javascript("window.navigator.userAgent;")
     if ua_string:
         ua = parse(ua_string)
@@ -49,17 +40,12 @@ if st.session_state.is_mobile is None:
         st.info("Đang xác định thiết bị...")
         st.stop()
 
-
-# ====================== MÀN HÌNH INTRO ======================
+# =================== MÀN HÌNH INTRO ===================
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
-
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
     with open(video_file, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
-
-    with open(PLANE_AUDIO, "rb") as f:
-        audio_b64 = base64.b64encode(f.read()).decode()
 
     intro_html = f"""
     <html>
@@ -85,23 +71,16 @@ def intro_screen(is_mobile=False):
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
-            font-family: 'Playfair Display', serif;
+            color: white;
+            font-size: clamp(24px, 6vw, 60px);
             font-weight: bold;
-            font-size: clamp(22px, 6vw, 60px);
-            background: linear-gradient(90deg, #fff, #ffcf40, #fca311, #fff);
-            background-size: 300%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            animation: shine 5s linear infinite, fadeInOut 6s ease-in-out forwards;
-        }}
-        @keyframes shine {{
-            0% {{ background-position: 300%; }}
-            100% {{ background-position: -300%; }}
+            font-family: 'Playfair Display', serif;
+            animation: fadeInOut 6s ease-in-out forwards;
         }}
         @keyframes fadeInOut {{
             0% {{ opacity: 0; }}
-            15% {{ opacity: 1; }}
-            85% {{ opacity: 1; }}
+            20% {{ opacity: 1; }}
+            80% {{ opacity: 1; }}
             100% {{ opacity: 0; }}
         }}
         #fade {{
@@ -110,7 +89,7 @@ def intro_screen(is_mobile=False):
             width: 100%; height: 100%;
             background: black;
             opacity: 0;
-            transition: opacity 1.2s ease-in-out;
+            transition: opacity 1s ease-in-out;
         }}
         </style>
     </head>
@@ -118,29 +97,13 @@ def intro_screen(is_mobile=False):
         <video id="introVid" autoplay playsinline muted>
             <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
         </video>
-        <audio id="planeSound">
-            <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
-        </audio>
         <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
         <div id="fade"></div>
 
         <script>
         const vid = document.getElementById('introVid');
         const fade = document.getElementById('fade');
-        const audio = document.getElementById('planeSound');
-
         let ended = false;
-
-        function startPlayback() {{
-            vid.muted = false;
-            vid.play().then(() => {{
-                audio.volume = 0.8;
-                audio.play().catch(e => console.log("Audio blocked", e));
-            }}).catch(err => {{
-                console.log("Autoplay blocked:", err);
-                setTimeout(finishIntro, 6000);
-            }});
-        }}
 
         function finishIntro() {{
             if (ended) return;
@@ -148,37 +111,23 @@ def intro_screen(is_mobile=False):
             fade.style.opacity = 1;
             setTimeout(() => {{
                 window.parent.postMessage({{type: "intro_done"}}, "*");
-            }}, 1000);
+            }}, 800);
         }}
 
-        vid.addEventListener('play', () => {{
-            setTimeout(() => {{
-                fade.style.opacity = 1;
-                finishIntro();
-            }}, 9000);
-        }});
-
         vid.addEventListener('ended', finishIntro);
-
-        window.onload = startPlayback;
+        setTimeout(finishIntro, 9000);
         </script>
     </body>
     </html>
     """
-
     components.html(intro_html, height=800, scrolling=False)
 
-
-# ====================== TRANG CHÍNH ======================
+# =================== TRANG CHÍNH ===================
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
-
-    try:
-        with open(bg, "rb") as f:
-            bg_b64 = base64.b64encode(f.read()).decode()
-    except FileNotFoundError:
-        bg_b64 = ""
+    with open(bg, "rb") as f:
+        bg_b64 = base64.b64encode(f.read()).decode()
 
     st.markdown(f"""
     <style>
@@ -207,9 +156,11 @@ def main_page(is_mobile=False):
     <div class="welcome">✈️ CHÀO MỪNG ĐẾN VỚI CABBASE ✈️</div>
     """, unsafe_allow_html=True)
 
-
-# ====================== LUỒNG CHÍNH ======================
+# =================== LUỒNG CHÍNH ===================
 hide_streamlit_ui()
+
+if "intro_done" not in st.session_state:
+    st.session_state.intro_done = False
 
 if not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
