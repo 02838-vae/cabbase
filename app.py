@@ -1,10 +1,10 @@
 import streamlit as st
-import os, base64, random
+import os, base64, random, time
 from user_agents import parse
 from streamlit_javascript import st_javascript
 import streamlit.components.v1 as components
 
-# ================== CẤU HÌNH ==================
+# ================== CONFIG ==================
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
 VIDEO_PC = "media/airplane.mp4"
@@ -16,13 +16,15 @@ MUSIC_FILES = [
     "background4.mp3", "background5.mp3"
 ]
 
-# ================== TRẠNG THÁI ==================
+# ================== STATE ==================
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 if "is_mobile" not in st.session_state:
     st.session_state.is_mobile = None
+if "intro_start" not in st.session_state:
+    st.session_state.intro_start = None
 
-# ================== XÁC ĐỊNH THIẾT BỊ ==================
+# ================== DETECT DEVICE ==================
 if st.session_state.is_mobile is None:
     ua = st_javascript("window.navigator.userAgent;")
     if ua:
@@ -31,7 +33,7 @@ if st.session_state.is_mobile is None:
     else:
         st.stop()
 
-# ================== ẨN UI STREAMLIT ==================
+# ================== HIDE UI ==================
 def hide_ui():
     st.markdown("""
     <style>
@@ -52,9 +54,10 @@ def hide_ui():
     </style>
     """, unsafe_allow_html=True)
 
-# ================== MÀN HÌNH INTRO ==================
+# ================== INTRO ==================
 def intro_screen(is_mobile=False):
     hide_ui()
+
     video_path = VIDEO_MOBILE if is_mobile else VIDEO_PC
     if not os.path.exists(video_path):
         st.session_state.intro_done = True
@@ -64,7 +67,8 @@ def intro_screen(is_mobile=False):
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
-    text_position = "8%" if is_mobile else "10%"
+    # Căn chữ + hiệu ứng
+    text_position = "10%" if is_mobile else "15%"
     font_size = "clamp(20px, 5vw, 45px)"
     object_pos = "center 10%" if is_mobile else "center"
 
@@ -75,8 +79,7 @@ def intro_screen(is_mobile=False):
         <link href="https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@700&display=swap" rel="stylesheet">
         <style>
             html, body {{
-                margin:0; padding:0;
-                width:100vw; height:100vh;
+                margin:0; padding:0; width:100vw; height:100vh;
                 overflow:hidden; background:black;
             }}
             video {{
@@ -92,8 +95,9 @@ def intro_screen(is_mobile=False):
                 font-family:'Cinzel Decorative', serif;
                 font-size:{font_size};
                 text-shadow:0 0 30px rgba(255,255,255,0.9), 0 0 45px rgba(255,215,0,0.8);
-                opacity:0; white-space:nowrap;
+                opacity:0;
                 z-index:3;
+                white-space:nowrap;
                 animation:fadeText 5s ease-in-out forwards;
             }}
             @keyframes fadeText {{
@@ -121,24 +125,12 @@ def intro_screen(is_mobile=False):
         <script>
             const vid = document.getElementById("introVid");
             const fade = document.getElementById("fade");
-            let done = false;
-
-            function goNext() {{
-                if (done) return;
-                done = true;
+            vid.addEventListener('ended', ()=>{
                 fade.style.opacity = 1;
-                setTimeout(() => {{
-                    window.parent.postMessage({{type:"INTRO_DONE"}}, "*");
-                }}, 4000);
-            }}
-
-            vid.addEventListener('ended', goNext);
-            vid.play().catch(() => {{
-                console.log("Autoplay bị chặn, fallback sau 9s");
-                setTimeout(goNext, 9000);
+            });
+            vid.play().catch(()=>{{
+                console.log("Autoplay bị chặn, fallback");
             }});
-            // fallback nếu browser không gửi 'ended'
-            setTimeout(goNext, 9000);
         </script>
     </body>
     </html>
@@ -146,21 +138,19 @@ def intro_screen(is_mobile=False):
 
     components.html(intro_html, height=900, scrolling=False)
 
-    # Nhận tín hiệu từ JS qua postMessage
-    done = st_javascript("""
-    await new Promise(resolve => {
-        window.addEventListener("message", e => {
-            if (e.data && e.data.type === "INTRO_DONE") resolve(true);
-        });
-    });
-    """)
-    if done:
-        st.session_state.intro_done = True
+    # Polling mechanism (video: 5s + fade 4s)
+    if st.session_state.intro_start is None:
+        st.session_state.intro_start = time.time()
+    elapsed = time.time() - st.session_state.intro_start
+    if elapsed < 9:
+        time.sleep(0.5)
         st.rerun()
     else:
-        st.stop()
+        st.session_state.intro_done = True
+        st.session_state.intro_start = None
+        st.rerun()
 
-# ================== TRANG CHÍNH ==================
+# ================== MAIN PAGE ==================
 def main_page(is_mobile=False):
     hide_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -194,7 +184,7 @@ def main_page(is_mobile=False):
 
     st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
 
-# ================== LUỒNG CHÍNH ==================
+# ================== FLOW ==================
 hide_ui()
 if not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
