@@ -67,21 +67,21 @@ def intro_screen(is_mobile=False):
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
-    # Position & responsive font
+    # Responsive font and position
     if is_mobile:
         text_css = """
             top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            font-size: clamp(18px, 6vw, 36px);
+            font-size: clamp(18px, 6vw, 38px);
             width: 90vw;
             text-align: center;
             line-height: 1.2em;
         """
     else:
         text_css = """
-            top: 15%; left: 50%;
-            transform: translateX(-50%);
-            font-size: clamp(24px, 4vw, 48px);
+            top: 45%; left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: clamp(28px, 4vw, 56px);
         """
 
     object_pos = "center 10%" if is_mobile else "center"
@@ -105,21 +105,38 @@ def intro_screen(is_mobile=False):
             #intro-text {{
                 position:fixed;
                 {text_css}
-                color:white;
+                color:#fff;
                 font-family:'Cinzel Decorative', serif;
                 text-shadow:
-                    0 0 30px rgba(255,255,255,0.9),
+                    0 0 25px rgba(255,255,255,0.9),
                     0 0 45px rgba(255,215,0,0.8),
-                    0 0 80px rgba(255,255,255,0.7);
+                    0 0 80px rgba(255,255,255,0.6);
+                letter-spacing: 2px;
                 opacity:0;
                 z-index:3;
-                animation:fadeText 5s ease-in-out forwards;
+                animation: floatFade 7s ease-in-out forwards;
             }}
-            @keyframes fadeText {{
-                0% {{opacity:0; transform:translate(-50%, 20px);}}
-                15% {{opacity:1; transform:translate(-50%, 0);}}
-                85% {{opacity:1;}}
-                100% {{opacity:0; transform:translate(-50%, -10px);}}
+            @keyframes floatFade {{
+                0% {{
+                    opacity:0;
+                    transform:translate(-50%, 30px) scale(0.95);
+                    text-shadow:0 0 5px rgba(255,255,255,0.3);
+                }}
+                20% {{
+                    opacity:1;
+                    transform:translate(-50%, 0) scale(1.05);
+                }}
+                60% {{
+                    opacity:1;
+                    text-shadow:
+                        0 0 30px rgba(255,255,255,0.9),
+                        0 0 50px rgba(255,215,0,0.9);
+                }}
+                100% {{
+                    opacity:0;
+                    transform:translate(-50%, -20px) scale(1.1);
+                    text-shadow:0 0 10px rgba(255,255,255,0.3);
+                }}
             }}
             #fade {{
                 position:fixed; top:0; left:0;
@@ -151,7 +168,7 @@ def intro_screen(is_mobile=False):
 
     components.html(intro_html, height=900, scrolling=False)
 
-    # Polling: 9s = 5s video + 4s fade
+    # Polling: 9s total = 5s video + 4s fade
     if st.session_state.intro_start is None:
         st.session_state.intro_start = time.time()
     elapsed = time.time() - st.session_state.intro_start
