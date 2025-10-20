@@ -7,48 +7,50 @@ import streamlit.components.v1 as components
 
 st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 
-# ========== CẤU HÌNH ==========
+# ====== ĐƯỜNG DẪN FILE ======
 VIDEO_PC = "airplane.mp4"
 VIDEO_MOBILE = "mobile.mp4"
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 PLANE_AUDIO = "plane_fly.mp3"
 
-# ========== TRẠNG THÁI ==========
+# ====== TRẠNG THÁI ======
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 if "is_mobile" not in st.session_state:
     st.session_state.is_mobile = None
 
-# ========== ẨN GIAO DIỆN STREAMLIT ==========
+# ====== ẨN GIAO DIỆN STREAMLIT ======
 def hide_streamlit_ui():
     st.markdown("""
     <style>
-    [data-testid="stToolbar"], header, footer, iframe[title*="keyboard"] { display: none !important; }
-    .stApp, .main, .block-container { padding: 0 !important; margin: 0 !important; }
+    [data-testid="stToolbar"], header, footer, iframe[title*="keyboard"] {display:none!important;}
+    .stApp, .block-container, .main {padding:0!important;margin:0!important;}
     </style>
     """, unsafe_allow_html=True)
 
-# ========== XÁC ĐỊNH THIẾT BỊ ==========
+# ====== XÁC ĐỊNH THIẾT BỊ ======
 if st.session_state.is_mobile is None:
     ua_string = st_javascript("window.navigator.userAgent;")
     if ua_string:
-        user_agent = parse(ua_string)
-        st.session_state.is_mobile = not user_agent.is_pc
+        ua = parse(ua_string)
+        st.session_state.is_mobile = not ua.is_pc
         st.rerun()
     else:
         st.info("Đang xác định thiết bị...")
         st.stop()
 
-# ========== MÀN HÌNH INTRO ==========
+# ====== MÀN HÌNH INTRO ======
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
 
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
     bg_audio = PLANE_AUDIO
 
+    # encode video
     with open(video_file, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
+    # encode audio
     with open(bg_audio, "rb") as f:
         audio_b64 = base64.b64encode(f.read()).decode()
 
@@ -62,45 +64,38 @@ def intro_screen(is_mobile=False):
             padding: 0;
             overflow: hidden;
             height: 100%;
-            width: 100%;
             background: black;
         }}
         video {{
             position: absolute;
-            top: 0; left: 0;
             width: 100%;
             height: 100%;
             object-fit: cover;
-            z-index: 1;
         }}
         #intro-text {{
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 90%;
+            width: 95%;
             text-align: center;
-            font-size: clamp(22px, 5vw, 52px);
-            color: white;
+            font-size: clamp(20px, 6vw, 60px);
             font-family: 'Playfair Display', serif;
             font-weight: bold;
-            background: linear-gradient(90deg, #fff, #f6d365, #fda085, #fff);
-            background-size: 400%;
+            background: linear-gradient(90deg, #fff, #ffd166, #fca311, #fff);
+            background-size: 300%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             animation: shine 5s linear infinite, fadeInOut 6s ease-in-out forwards;
-            white-space: normal;
-            line-height: 1.3;
-            z-index: 2;
         }}
         @keyframes shine {{
-            0% {{ background-position: 400%; }}
-            100% {{ background-position: -400%; }}
+            0% {{ background-position: 300%; }}
+            100% {{ background-position: -300%; }}
         }}
         @keyframes fadeInOut {{
             0% {{ opacity: 0; }}
-            20% {{ opacity: 1; }}
-            80% {{ opacity: 1; }}
+            15% {{ opacity: 1; }}
+            85% {{ opacity: 1; }}
             100% {{ opacity: 0; }}
         }}
         #fade {{
@@ -109,17 +104,16 @@ def intro_screen(is_mobile=False):
             width: 100%; height: 100%;
             background: black;
             opacity: 0;
-            z-index: 3;
             transition: opacity 1s ease-in-out;
         }}
         </style>
     </head>
     <body>
-        <video id="introVid" autoplay playsinline muted>
+        <video id="vid" autoplay playsinline muted>
             <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
         </video>
 
-        <audio id="planeAudio">
+        <audio id="audio" preload="auto">
             <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
         </audio>
 
@@ -127,35 +121,28 @@ def intro_screen(is_mobile=False):
         <div id="fade"></div>
 
         <script>
-        const vid = document.getElementById("introVid");
-        const fade = document.getElementById("fade");
-        const audio = document.getElementById("planeAudio");
+        const vid = document.getElementById('vid');
+        const fade = document.getElementById('fade');
+        const audio = document.getElementById('audio');
 
-        // Unmute video (nếu cần)
         vid.muted = false;
 
-        // Khi video bắt đầu phát
         vid.addEventListener('play', () => {{
-            try {{
-                audio.currentTime = 0;
-                audio.volume = 0.8;
-                audio.play().catch(() => console.log("Autoplay blocked"));
-            }} catch(e) {{ console.log(e); }}
+            audio.currentTime = 0;
+            audio.volume = 0.9;
+            audio.play().catch(e => console.log("Audio blocked:", e));
         }});
 
-        // Khi video kết thúc
         vid.addEventListener('ended', () => {{
             fade.style.opacity = 1;
             setTimeout(() => {{
-                window.parent.postMessage({{type: "intro_done"}}, "*");
-            }}, 1000);
+                window.parent.postMessage({{type: 'intro_done'}}, '*');
+            }}, 800);
         }});
 
-        // Nếu autoplay bị chặn (fallback)
         vid.play().catch(() => {{
-            setTimeout(() => {{
-                window.parent.postMessage({{type: "intro_done"}}, "*");
-            }}, 6000);
+            console.log('Autoplay blocked');
+            window.parent.postMessage({{type: 'intro_done'}}, '*');
         }});
         </script>
     </body>
@@ -164,7 +151,7 @@ def intro_screen(is_mobile=False):
 
     components.html(html_code, height=800, scrolling=False)
 
-# ========== TRANG CHÍNH ==========
+# ====== TRANG CHÍNH ======
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg_file = BG_MOBILE if is_mobile else BG_PC
@@ -174,10 +161,8 @@ def main_page(is_mobile=False):
     st.markdown(f"""
     <style>
     html, body {{
-        margin: 0;
-        padding: 0;
         height: 100vh;
-        width: 100vw;
+        margin: 0;
         background: url("data:image/jpg;base64,{bg_b64}") no-repeat center center fixed;
         background-size: cover;
     }}
@@ -186,17 +171,16 @@ def main_page(is_mobile=False):
         display: flex;
         justify-content: center;
         align-items: center;
-        color: white;
         font-size: clamp(28px, 5vw, 60px);
-        text-shadow: 0 0 20px rgba(0,0,0,0.8);
+        color: white;
         font-family: 'Playfair Display', serif;
-        text-align: center;
+        text-shadow: 0 0 20px rgba(0,0,0,0.8);
     }}
     </style>
     <div class="welcome">✈️ CHÀO MỪNG ĐẾN VỚI CABBASE ✈️</div>
     """, unsafe_allow_html=True)
 
-# ========== LUỒNG CHÍNH ==========
+# ====== LOGIC CHÍNH ======
 hide_streamlit_ui()
 
 if not st.session_state.intro_done:
@@ -210,7 +194,7 @@ if not st.session_state.intro_done:
     });
     </script>
     """, unsafe_allow_html=True)
-    time.sleep(7)
+    time.sleep(6)
     st.session_state.intro_done = True
     st.rerun()
 else:
