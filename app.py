@@ -67,7 +67,7 @@ def intro_screen(is_mobile=False):
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
-    # Responsive font + centered text
+    # Responsive text positioning
     if is_mobile:
         text_css = """
             top: 50%; left: 50%;
@@ -113,30 +113,21 @@ def intro_screen(is_mobile=False):
                 -webkit-background-clip: text;
                 -webkit-text-fill-color: transparent;
                 text-shadow: none;
-                animation: shimmer 4s ease-in-out infinite, fadeInOut 7s ease-in-out forwards;
+                animation: shimmer 3.5s ease-in-out 1, fadeInOut 7s ease-in-out forwards;
                 z-index:3;
             }}
             @keyframes shimmer {{
-                0% {{ background-position: 0% 50%; }}
-                50% {{ background-position: 100% 50%; }}
-                100% {{ background-position: 0% 50%; }}
+                0% {{ background-position: 0% 50%; opacity:0; }}
+                10% {{ opacity:1; }}
+                40% {{ background-position: 100% 50%; }}
+                90% {{ opacity:1; }}
+                100% {{ background-position: 100% 50%; opacity:0; }}
             }}
             @keyframes fadeInOut {{
-                0% {{
-                    opacity:0;
-                    transform:translate(-50%, 40px) scale(0.9);
-                }}
-                20% {{
-                    opacity:1;
-                    transform:translate(-50%, 0) scale(1.05);
-                }}
-                70% {{
-                    opacity:1;
-                }}
-                100% {{
-                    opacity:0;
-                    transform:translate(-50%, -20px) scale(1.1);
-                }}
+                0% {{ opacity:0; transform:translate(-50%, 40px) scale(0.9); }}
+                20% {{ opacity:1; transform:translate(-50%, 0) scale(1.05); }}
+                70% {{ opacity:1; }}
+                100% {{ opacity:0; transform:translate(-50%, -20px) scale(1.1); }}
             }}
             #fade {{
                 position:fixed; top:0; left:0;
@@ -157,6 +148,7 @@ def intro_screen(is_mobile=False):
         <script>
             const vid = document.getElementById("introVid");
             const fade = document.getElementById("fade");
+
             vid.addEventListener('ended', function() {{
                 fade.style.opacity = 1;
             }});
@@ -168,7 +160,7 @@ def intro_screen(is_mobile=False):
 
     components.html(intro_html, height=900, scrolling=False)
 
-    # Total 9s timeline
+    # Tổng thời gian hiển thị 9 giây
     if st.session_state.intro_start is None:
         st.session_state.intro_start = time.time()
     elapsed = time.time() - st.session_state.intro_start
