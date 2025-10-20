@@ -4,7 +4,7 @@ from user_agents import parse
 from streamlit_javascript import st_javascript
 import streamlit.components.v1 as components
 
-# ================== CONFIG ==================
+# ================ CONFIG =================
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
 VIDEO_PC = "media/airplane.mp4"
@@ -16,7 +16,7 @@ MUSIC_FILES = [
     "background4.mp3", "background5.mp3"
 ]
 
-# ================== STATE ==================
+# ================ STATE =================
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 if "is_mobile" not in st.session_state:
@@ -24,7 +24,7 @@ if "is_mobile" not in st.session_state:
 if "intro_start" not in st.session_state:
     st.session_state.intro_start = None
 
-# ================== DETECT DEVICE ==================
+# ================ DEVICE DETECTION =================
 if st.session_state.is_mobile is None:
     ua = st_javascript("window.navigator.userAgent;")
     if ua:
@@ -33,7 +33,7 @@ if st.session_state.is_mobile is None:
     else:
         st.stop()
 
-# ================== HIDE UI ==================
+# ================ HIDE UI =================
 def hide_ui():
     st.markdown("""
     <style>
@@ -54,7 +54,7 @@ def hide_ui():
     </style>
     """, unsafe_allow_html=True)
 
-# ================== INTRO SCREEN ==================
+# ================ INTRO SCREEN =================
 def intro_screen(is_mobile=False):
     hide_ui()
 
@@ -105,40 +105,23 @@ def intro_screen(is_mobile=False):
             #intro-text {{
                 position:fixed;
                 {text_css}
-                color:#fff;
                 font-family:'Cinzel Decorative', serif;
                 letter-spacing: 2px;
-                text-shadow:
-                    0 0 30px rgba(255,255,255,0.9),
-                    0 0 60px rgba(255,215,0,0.8),
-                    0 0 100px rgba(255,255,200,0.7);
-                opacity:0;
-                z-index:3;
-                animation: floatFade 7s ease-in-out forwards;
-                background: linear-gradient(90deg, #f8f8f8, #ffd700, #ffffff);
+                font-weight: 700;
+                background: linear-gradient(90deg, #fefefe, #ffd700, #fff9e6, #fefefe);
+                background-size: 400%;
                 -webkit-background-clip: text;
                 -webkit-text-fill-color: transparent;
-                position:relative;
-                overflow:hidden;
+                text-shadow: none;
+                animation: shimmer 4s ease-in-out infinite, fadeInOut 7s ease-in-out forwards;
+                z-index:3;
             }}
-            /* Ánh sáng quét ngang */
-            #intro-text::after {{
-                content: "";
-                position: absolute;
-                top: 0;
-                left: -50%;
-                width: 50%;
-                height: 100%;
-                background: linear-gradient(120deg, rgba(255,255,255,0) 0%, rgba(255,255,255,0.8) 50%, rgba(255,255,255,0) 100%);
-                transform: skewX(-20deg);
-                animation: lightSweep 5s ease-in-out 1.5s forwards;
+            @keyframes shimmer {{
+                0% {{ background-position: 0% 50%; }}
+                50% {{ background-position: 100% 50%; }}
+                100% {{ background-position: 0% 50%; }}
             }}
-            @keyframes lightSweep {{
-                0% {{ left: -60%; }}
-                50% {{ left: 120%; }}
-                100% {{ left: 120%; }}
-            }}
-            @keyframes floatFade {{
+            @keyframes fadeInOut {{
                 0% {{
                     opacity:0;
                     transform:translate(-50%, 40px) scale(0.9);
@@ -147,7 +130,7 @@ def intro_screen(is_mobile=False):
                     opacity:1;
                     transform:translate(-50%, 0) scale(1.05);
                 }}
-                60% {{
+                70% {{
                     opacity:1;
                 }}
                 100% {{
@@ -197,7 +180,7 @@ def intro_screen(is_mobile=False):
         st.session_state.intro_start = None
         st.rerun()
 
-# ================== MAIN PAGE ==================
+# ================ MAIN PAGE =================
 def main_page(is_mobile=False):
     hide_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -231,7 +214,7 @@ def main_page(is_mobile=False):
 
     st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
 
-# ================== FLOW ==================
+# ================ FLOW =================
 hide_ui()
 if not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
