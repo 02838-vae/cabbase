@@ -101,7 +101,7 @@ def intro_screen(is_mobile=False):
         </style>
     </head>
     <body>
-        <video id="introVid" autoplay playsinline muted>
+        <video id="introVid" autoplay playsinline>
             <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
         </video>
         <audio id="flySfx">
@@ -125,9 +125,19 @@ def intro_screen(is_mobile=False):
             }}, 800);
         }}
 
+        // Khi video phát, cố phát âm thanh
         vid.addEventListener('play', () => {{
-            audio.volume = 0.7;
-            audio.play().catch(()=>{{}});
+            audio.volume = 0.8;
+            audio.play().catch(() => {{
+                console.log("Autoplay bị chặn, chờ người dùng tương tác");
+            }});
+        }});
+
+        // Nếu người dùng chạm vào màn hình, phát lại âm thanh
+        document.addEventListener('click', () => {{
+            if (audio.paused) {{
+                audio.play().catch(()=>{{}});
+            }}
         }});
 
         vid.addEventListener('ended', finishIntro);
@@ -149,7 +159,6 @@ def main_page(is_mobile=False):
         st.error(f"⚠️ Không tìm thấy ảnh nền: {bg}")
         return
 
-    # ✅ Chèn background đúng cách
     st.markdown(f"""
     <style>
     html, body, .stApp {{
@@ -182,7 +191,7 @@ def main_page(is_mobile=False):
     }}
     </style>
 
-    <div class="welcome">✈️ CHÀO MỪNG ĐẾN VỚI CABBASE ✈️</div>
+    <div class="welcome">✈️ TỔ BẢO DƯỠNG SỐ 1 ✈️</div>
     """, unsafe_allow_html=True)
 
 # =================== LUỒNG CHÍNH ===================
