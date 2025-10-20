@@ -1,130 +1,210 @@
 import streamlit as st
+import os
 import base64
+import random
 import time
+from streamlit_javascript import st_javascript
+from user_agents import parse
+import streamlit.components.v1 as components
 
-st.set_page_config(page_title="Cabbase", page_icon="✈️", layout="wide")
+# ================== CẤU HÌNH ==================
+st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
-# CSS để ẩn toàn bộ phần UI Streamlit
-st.markdown("""
-<style>
-#MainMenu, header, footer {visibility: hidden;}
-.block-container {padding: 0 !important; margin: 0 !important;}
-</style>
-""", unsafe_allow_html=True)
+VIDEO_PC = "media/airplane.mp4"
+VIDEO_MOBILE = "media/mobile.mp4"
+BG_PC = "cabbase.jpg"
+BG_MOBILE = "mobile.jpg"
+AUDIO_FLY = "plane_fly.mp3"
+MUSIC_FILES = [
+    "background.mp3", "background2.mp3", "background3.mp3",
+    "background4.mp3", "background5.mp3"
+]
 
-# Phát hiện thiết bị
-user_agent = st.query_params.get("user_agent", [""])[0] or st.session_state.get("user_agent", "")
-if not user_agent:
-    import re
-    user_agent = st.runtime.scriptrunner.get_script_run_ctx().request.headers.get("User-Agent", "")
-st.session_state["user_agent"] = user_agent
-is_mobile = "mobile" in user_agent.lower()
+# ================== TRẠNG THÁI ==================
+if "intro_done" not in st.session_state:
+    st.session_state.intro_done = False
+if "is_mobile" not in st.session_state:
+    st.session_state.is_mobile = None
+if "start_time" not in st.session_state:
+    st.session_state.start_time = None
 
-# Chọn file video và background
-video_file = "mobile.mp4" if is_mobile else "airplane.mp4"
-bg_image = "mobile.jpg" if is_mobile else "cabbase.jpg"
+# ================== NHẬN DIỆN THIẾT BỊ ==================
+if st.session_state.is_mobile is None:
+    ua_string = st_javascript("window.navigator.userAgent;")
+    if ua_string:
+        user_agent = parse(ua_string)
+        st.session_state.is_mobile = not user_agent.is_pc
+        st.rerun()
+    else:
+        st.info("Đang xác định thiết bị...")
+        st.stop()
 
-# Chuyển trang chính sau intro
-if "page" not in st.session_state:
-    st.session_state.page = "intro"
+# ================== ẨN STREAMLIT UI ==================
+def hide_streamlit_ui():
+    st.markdown("""
+    <style>
+    [data-testid="stToolbar"], header, footer,
+    iframe[title*="keyboard"], [tabindex="0"][aria-live] {
+        display: none !important;
+        visibility: hidden !important;
+    }
+    .stApp, .main, .block-container, [data-testid="stVerticalBlock"] {
+        padding: 0 !important;
+        margin: 0 !important;
+        max-width: 100vw !important;
+        width: 100vw !important;
+        min-height: 100vh !important;
+    }
+    [data-testid*="stHtmlComponents"] {
+        position: fixed !important;
+        top: 0; left: 0;
+        width: 100vw !important;
+        height: 100vh !important;
+        z-index: 9999;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-if st.session_state.page == "intro":
-    with open(video_file, "rb") as v:
-        vid_data = v.read()
-    video_base64 = base64.b64encode(vid_data).decode()
+# ================== MÀN HÌNH INTRO ==================
+def intro_screen(is_mobile=False):
+    hide_streamlit_ui()
+    video_path = VIDEO_MOBILE if is_mobile else VIDEO_PC
+    if not os.path.exists(video_path):
+        st.error(f"⚠️ Không tìm thấy video: {video_path}")
+        st.session_state.intro_done = True
+        st.rerun()
+        return
 
-    # Đọc file âm thanh máy bay
-    with open("plane_fly.mp3", "rb") as a:
-        audio_data = a.read()
-    audio_base64 = base64.b64encode(audio_data).decode()
+    # Base64 video
+    with open(video_path, "rb") as f:
+        video_b64 = base64.b64encode(f.read()).decode()
 
-    st.markdown(f"""
-    <div style="
-        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-        overflow: hidden; z-index: 1;
-    ">
-        <video id="introVideo" autoplay playsinline muted style="
-            width: 100vw; height: 100vh; object-fit: cover;
-        ">
-            <source src="data:video/mp4;base64,{video_base64}" type="video/mp4">
+    # Vị trí chữ và máy bay
+    if is_mobile:
+        object_position_css = "center 40%"  # nâng máy bay lên để chữ xuất hiện
+        text_bottom_css = "20%"
+    else:
+        object_position_css = "center"
+        text_bottom_css = "18%"
+
+    # HTML intro
+    intro_html = f"""
+    <!DOCTYPE html>
+    <html lang="vi">
+    <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+        <style>
+            html, body {{
+                margin:0; padding:0;
+                width:100vw; height:100vh;
+                overflow:hidden; background-color:black;
+                font-family: 'Playfair Display', serif;
+            }}
+            video {{
+                position:absolute; top:0; left:0;
+                width:100vw; height:100%;
+                object-fit:cover;
+                object-position: {object_position_css};
+                z-index:1;
+            }}
+            #intro-text {{
+                position:absolute; left:50%; bottom:{text_bottom_css};
+                transform:translateX(-50%);
+                font-size: clamp(18px, 4vw, 40px);
+                color: white; z-index:2;
+                text-align:center; white-space:nowrap;
+                animation: fadeInOut 5s ease-in-out forwards;
+                background: none;
+            }}
+            @keyframes fadeInOut {{
+                0% {{opacity:0;}} 20% {{opacity:1;}}
+                80% {{opacity:1;}} 100% {{opacity:0;}}
+            }}
+            #fade {{
+                position:absolute; top:0; left:0;
+                width:100%; height:100%;
+                background:black; opacity:0; z-index:3;
+                transition: opacity 1s ease-in-out;
+            }}
+        </style>
+    </head>
+    <body>
+        <video id="introVid" autoplay muted playsinline>
+            <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
         </video>
-        <audio id="planeSound">
-            <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
-        </audio>
-        <div class="fade-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-    </div>
+        <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+        <div id="fade"></div>
+        <script>
+            const vid = document.getElementById("introVid");
+            const fade = document.getElementById("fade");
+            function finishIntro(){{
+                fade.style.opacity=1;
+                setTimeout(()=>{{ window.parent.postMessage({{type:"intro_done"}}, "*"); }}, 1000);
+            }}
+            vid.onended = finishIntro;
+            vid.play().catch(()=>{{ setTimeout(finishIntro, 5000); }});
+        </script>
+    </body>
+    </html>
+    """
+    components.html(intro_html, height=1300, scrolling=False)
 
-    <script>
-    const vid = document.getElementById("introVideo");
-    const audio = document.getElementById("planeSound");
-    vid.volume = 1.0;
-    audio.volume = 0.5;
+    # Timer đảm bảo tổng 9s
+    if st.session_state.start_time is None:
+        st.session_state.start_time = time.time()
+    if time.time() - st.session_state.start_time < 9:
+        time.sleep(1)
+        st.rerun()
+    else:
+        st.session_state.intro_done = True
+        st.session_state.start_time = None
+        st.rerun()
 
-    // Phát đồng thời video và âm thanh
-    vid.onplay = () => {{
-        audio.play();
-    }};
+# ================== TRANG CHÍNH ==================
+def main_page(is_mobile=False):
+    hide_streamlit_ui()
+    bg = BG_MOBILE if is_mobile else BG_PC
 
-    // Hiệu ứng chữ mờ dần và ánh sáng quét chậm suốt 5s
-    const text = document.querySelector('.fade-text');
-    text.animate([
-        {{ opacity: 0, filter: 'brightness(1)' }},
-        {{ opacity: 1, filter: 'brightness(2)' }},
-        {{ opacity: 1, filter: 'brightness(1.5)' }},
-        {{ opacity: 0, filter: 'brightness(1)' }}
-    ], {{
-        duration: 5000,
-        easing: 'ease-in-out',
-        iterations: 1
-    }});
+    try:
+        with open(bg, "rb") as f:
+            bg_b64 = base64.b64encode(f.read()).decode()
+    except FileNotFoundError:
+        st.error(f"⚠️ Không tìm thấy ảnh nền: {bg}")
+        bg_b64 = ""
 
-    // Sau 9s chuyển trang
-    setTimeout(() => {{
-        window.parent.postMessage({{type: 'SWITCH_PAGE'}}, '*');
-    }}, 9000);
-    </script>
-
-    <style>
-    .fade-text {{
-        position: absolute;
-        top: 50%;
-        width: 100%;
-        text-align: center;
-        font-family: 'Cinzel', serif;
-        font-weight: 700;
-        font-size: 4vw;
-        color: white;
-        text-shadow: 0 0 25px rgba(255,255,255,0.7);
-        animation: glow 5s linear forwards;
-    }}
-
-    @keyframes glow {{
-        0% {{ filter: brightness(0.6); }}
-        50% {{ filter: brightness(2); }}
-        100% {{ filter: brightness(1); opacity: 0; }}
-    }}
-    </style>
-    """, unsafe_allow_html=True)
-
-    # Khi nhận tín hiệu từ JS, đổi sang trang chính
-    st.session_state.page = "main"
-
-elif st.session_state.page == "main":
     st.markdown(f"""
     <style>
-    body {{
-        background: url("{bg_image}") no-repeat center center fixed;
-        background-size: cover;
+    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&display=swap');
+    .stApp {{
+        background-image: url("data:image/jpeg;base64,{bg_b64}");
+        background-size: cover; background-position:center; background-attachment:fixed;
+        animation: fadeInBg 1s ease-in-out forwards;
     }}
-    audio {{
-        position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
-        width: 90%;
+    @keyframes fadeInBg {{ from {{opacity:0;}} to {{opacity:1;}} }}
+    h1 {{
+        text-align:center; margin-top:60px; color:#2E1C14;
+        text-shadow:2px 2px 6px #FFF8DC;
+        font-family:'Playfair Display', serif;
     }}
     </style>
     """, unsafe_allow_html=True)
 
-    st.markdown("<h1 style='text-align:center; color:white;'>🌍 Trang chính Cabbase</h1>", unsafe_allow_html=True)
-    st.audio("background.mp3")
+    # Thanh nhạc
+    available_music = [m for m in MUSIC_FILES if os.path.exists(m)]
+    if available_music:
+        chosen = random.choice(available_music)
+        with st.sidebar:
+            st.subheader("🎵 Nhạc nền")
+            st.audio(chosen, start_time=0)
+            st.caption(f"Đang phát: **{os.path.basename(chosen)}**")
+
+    st.markdown("<h1>TỔ BẢO DƯỠNG SỐ 1</h1>", unsafe_allow_html=True)
+
+# ================== LUỒNG CHÍNH ==================
+hide_streamlit_ui()
+if st.session_state.is_mobile is None:
+    pass
+elif not st.session_state.intro_done:
+    intro_screen(st.session_state.is_mobile)
+else:
+    main_page(st.session_state.is_mobile)
