@@ -3,6 +3,7 @@ import os
 import base64
 import random
 import time
+from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
@@ -28,14 +29,14 @@ if "start_time" not in st.session_state:
 # ================== XÁC ĐỊNH THIẾT BỊ ==================
 if st.session_state.is_mobile is None:
     st.session_state.intro_done = False
-    # Lấy User-Agent từ query_params
-    ua_string = st.query_params.get("ua", [""])[0]
-    if not ua_string:
+    ua_string = st_javascript("window.navigator.userAgent;")
+    if ua_string:
+        user_agent = parse(ua_string)
+        st.session_state.is_mobile = not user_agent.is_pc
+        st.rerun()
+    else:
         st.info("Đang xác định thiết bị và tải...")
         st.stop()
-    user_agent = parse(ua_string)
-    st.session_state.is_mobile = not user_agent.is_pc
-    st.rerun()
 
 # ================== ẨN GIAO DIỆN STREAMLIT ==================
 def hide_streamlit_ui():
@@ -46,7 +47,6 @@ def hide_streamlit_ui():
         display: none !important;
         visibility: hidden !important;
     }
-
     .stApp, .main, .block-container, [data-testid="stVerticalBlock"] {
         padding: 0 !important;
         margin: 0 !important;
@@ -54,7 +54,6 @@ def hide_streamlit_ui():
         width: 100vw !important;
         min-height: 100vh !important;
     }
-
     [data-testid*="stHtmlComponents"] {
         position: fixed !important;
         top: 0; left: 0;
@@ -68,6 +67,7 @@ def hide_streamlit_ui():
 # ================== MÀN HÌNH INTRO ==================
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
+
     video_path = VIDEO_MOBILE if is_mobile else VIDEO_PC
     if not os.path.exists(video_path):
         st.error(f"⚠️ Không tìm thấy video: {video_path}")
@@ -78,9 +78,13 @@ def intro_screen(is_mobile=False):
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
-    # Vị trí video và chữ
-    object_position_css = "center top;" if is_mobile else "center;"
-    text_bottom_css = "20%;" if is_mobile else "18%;"
+    # Căn video và chữ theo thiết bị
+    if is_mobile:
+        object_position_css = "center 30%;"  # Kéo máy bay lên cao hơn
+        text_bottom_css = "15%;"             # Dòng chữ dưới máy bay
+    else:
+        object_position_css = "center;"
+        text_bottom_css = "18%;"
 
     intro_html = f"""
     <!DOCTYPE html>
@@ -99,35 +103,34 @@ def intro_screen(is_mobile=False):
             video {{
                 position: absolute;
                 top: 0; left: 0;
-                width: 100vw;
-                height: 100vh;
+                width: 100vw; height: 100%;
                 object-fit: cover;
                 object-position: {object_position_css};
                 z-index: 1;
             }}
             #intro-text {{
                 position: absolute;
-                left: 50%;
-                bottom: {text_bottom_css};
+                left: 50%; bottom: {text_bottom_css};
                 transform: translateX(-50%);
-                font-size: clamp(18px, 4vw, 40px);
+                font-size: clamp(18px, 5vw, 40px);
                 color: white;
+                text-shadow: 2px 2px 6px rgba(0,0,0,0.8);
                 z-index: 2;
+                animation: fadeInOut 5s ease-in-out forwards;
                 text-align: center;
                 white-space: nowrap;
-                animation: fadeInOut 5s ease-in-out forwards;
             }}
             @keyframes fadeInOut {{
                 0% {{ opacity: 0; transform: translate(-50%, 20px); }}
-                10% {{ opacity: 1; transform: translate(-50%, 0); }}
-                90% {{ opacity: 1; transform: translate(-50%, 0); }}
+                20% {{ opacity: 1; transform: translate(-50%, 0); }}
+                80% {{ opacity: 1; transform: translate(-50%, 0); }}
                 100% {{ opacity: 0; transform: translate(-50%, -10px); }}
             }}
             #fade {{
                 position: absolute; top: 0; left: 0;
                 width: 100%; height: 100%;
-                background: black; opacity: 0; z-index: 3;
-                transition: opacity 1s ease-in-out;
+                background: black; opacity: 0;
+                z-index: 3; transition: opacity 1s ease-in-out;
             }}
         </style>
     </head>
@@ -137,25 +140,30 @@ def intro_screen(is_mobile=False):
         </video>
         <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
         <div id="fade"></div>
+
         <script>
             const vid = document.getElementById("introVid");
             const fade = document.getElementById("fade");
 
             function finishIntro(){{
                 fade.style.opacity = 1;
-                setTimeout(()=>{{ window.parent.postMessage({{"type":"intro_done"}}, "*"); }}, 1000);
+                setTimeout(()=>{{ window.parent.postMessage({{type:"intro_done"}}, "*"); }}, 1000);
             }}
 
             vid.onended = finishIntro;
-            vid.play().catch(()=>{{ setTimeout(finishIntro, 5000); }});
+
+            // Fallback timer 9s
+            vid.play().catch(()=>{{ setTimeout(finishIntro, 9000); }});
         </script>
     </body>
     </html>
     """
+
     components.html(intro_html, height=1300, scrolling=False)
 
     if st.session_state.start_time is None:
         st.session_state.start_time = time.time()
+
     if time.time() - st.session_state.start_time < 9.5:
         time.sleep(1)
         st.rerun()
@@ -207,6 +215,7 @@ def main_page(is_mobile=False):
 
 # ================== LUỒNG CHÍNH ==================
 hide_streamlit_ui()
+
 if st.session_state.is_mobile is None:
     pass
 elif not st.session_state.intro_done:
