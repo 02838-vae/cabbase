@@ -128,7 +128,7 @@ def intro_screen(is_mobile=False):
                 done = true;
                 fade.style.opacity = 1;
                 setTimeout(() => {{
-                    window.location.href = window.location.href + "?done=1";
+                    window.parent.postMessage({{type:"INTRO_DONE"}}, "*");
                 }}, 4000);
             }}
 
@@ -137,8 +137,7 @@ def intro_screen(is_mobile=False):
                 console.log("Autoplay bị chặn, fallback sau 9s");
                 setTimeout(goNext, 9000);
             }});
-
-            // fallback nếu không có onended
+            // fallback nếu browser không gửi 'ended'
             setTimeout(goNext, 9000);
         </script>
     </body>
@@ -146,7 +145,15 @@ def intro_screen(is_mobile=False):
     """
 
     components.html(intro_html, height=900, scrolling=False)
-    done = st_javascript("window.location.search.includes('done=1');")
+
+    # Nhận tín hiệu từ JS qua postMessage
+    done = st_javascript("""
+    await new Promise(resolve => {
+        window.addEventListener("message", e => {
+            if (e.data && e.data.type === "INTRO_DONE") resolve(true);
+        });
+    });
+    """)
     if done:
         st.session_state.intro_done = True
         st.rerun()
