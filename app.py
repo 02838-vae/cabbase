@@ -1,5 +1,6 @@
 import streamlit as st
 import os
+import base64
 import random
 import time
 import streamlit.components.v1 as components
@@ -9,16 +10,22 @@ from streamlit_javascript import st_javascript
 # ================== CẤU HÌNH ==================
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
-VIDEO_PC = "media/airplane.mp4"
-VIDEO_MOBILE = "media/mobile.mp4"
-BG_PC = "cabbase.jpg"
-BG_MOBILE = "mobile.jpg"
-PLANE_AUDIO = "media/plane_fly.mp3"
+# --- Đường dẫn tuyệt đối ---
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+VIDEO_PC = os.path.join(BASE_DIR, "media", "airplane.mp4")
+VIDEO_MOBILE = os.path.join(BASE_DIR, "media", "mobile.mp4")
+BG_PC = os.path.join(BASE_DIR, "cabbase.jpg")
+BG_MOBILE = os.path.join(BASE_DIR, "mobile.jpg")
+PLANE_AUDIO = os.path.join(BASE_DIR, "plane_fly.mp3")
 MUSIC_FILES = [
-    "background.mp3", "background2.mp3", "background3.mp3",
-    "background4.mp3", "background5.mp3"
+    os.path.join(BASE_DIR, "background.mp3"),
+    os.path.join(BASE_DIR, "background2.mp3"),
+    os.path.join(BASE_DIR, "background3.mp3"),
+    os.path.join(BASE_DIR, "background4.mp3"),
+    os.path.join(BASE_DIR, "background5.mp3"),
 ]
 
+# ================== TRẠNG THÁI ==================
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 if "is_mobile" not in st.session_state:
@@ -26,7 +33,7 @@ if "is_mobile" not in st.session_state:
 if "start_time" not in st.session_state:
     st.session_state.start_time = None
 
-# ================== XÁC ĐỊNH THIẾT BỊ ==================
+# ================== XÁC ĐỊNH MOBILE/PC ==================
 if st.session_state.is_mobile is None:
     st.session_state.intro_done = False
     ua_string = st_javascript("window.navigator.userAgent;")
@@ -35,10 +42,10 @@ if st.session_state.is_mobile is None:
         st.session_state.is_mobile = not user_agent.is_pc
         st.rerun()
     else:
-        st.info("Đang xác định thiết bị và tải...")
+        st.info("Đang xác định thiết bị...")
         st.stop()
 
-# ================== ẨN UI STREAMLIT ==================
+# ================== HIDE STREAMLIT UI ==================
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -48,114 +55,95 @@ def hide_streamlit_ui():
         visibility: hidden !important;
     }
     .stApp, .main, .block-container, [data-testid="stVerticalBlock"] {
-        padding: 0 !important;
-        margin: 0 !important;
-        max-width: 100vw !important;
-        width: 100vw !important;
-        min-height: 100vh !important;
+        padding: 0 !important; margin: 0 !important;
+        width: 100vw !important; min-height: 100vh !important;
     }
     [data-testid*="stHtmlComponents"] {
-        position: fixed !important;
-        top: 0; left: 0;
-        width: 100vw !important;
-        height: 100vh !important;
-        z-index: 9999;
+        position: fixed !important; top:0; left:0;
+        width:100vw !important; height:100vh !important; z-index:9999;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# ================== MÀN HÌNH INTRO ==================
+# ================== VIDEO INTRO ==================
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
+    video_path = VIDEO_MOBILE if is_mobile else VIDEO_PC
 
-    video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
-    audio_file = PLANE_AUDIO
-
-    if not os.path.exists(video_file) or not os.path.exists(audio_file):
-        st.error("Không tìm thấy file video hoặc audio intro!")
+    if not os.path.exists(video_path):
+        st.error(f"⚠️ Không tìm thấy video: {video_path}")
         st.session_state.intro_done = True
         st.rerun()
         return
 
-    # Vị trí chữ và object-position video
-    if is_mobile:
-        obj_pos = "center top"
-        text_bottom = "25%"
-    else:
-        obj_pos = "center"
-        text_bottom = "45%"
+    with open(video_path, "rb") as f:
+        video_b64 = base64.b64encode(f.read()).decode()
+
+    # Nhúng audio plane
+    plane_audio_b64 = ""
+    if os.path.exists(PLANE_AUDIO):
+        with open(PLANE_AUDIO, "rb") as f:
+            plane_audio_b64 = base64.b64encode(f.read()).decode()
+
+    # Vị trí chữ
+    text_bottom = "40%" if is_mobile else "18%"
 
     intro_html = f"""
     <!DOCTYPE html>
     <html lang="vi">
     <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <style>
-    html, body {{
-        margin:0; padding:0; width:100vw; height:100vh; overflow:hidden; background:black;
-        font-family: 'Playfair Display', serif;
-    }}
-    video {{
-        position:absolute; top:0; left:0;
-        width:100vw; height:100vh;
-        object-fit:cover; object-position:{obj_pos};
-        z-index:1;
-    }}
-    #intro-text {{
-        position:absolute;
-        left:50%; bottom:{text_bottom};
-        transform:translateX(-50%);
-        font-size:clamp(20px, 5vw, 50px);
-        color:white;
-        z-index:2;
-        text-align:center;
-        animation:fadeInOut 5s ease-in-out forwards;
-    }}
-    @keyframes fadeInOut {{
-        0% {{opacity:0;}}
-        20% {{opacity:1;}}
-        80% {{opacity:1;}}
-        100% {{opacity:0;}}
-    }}
-    #fade {{
-        position:absolute; top:0; left:0;
-        width:100%; height:100%;
-        background:black; opacity:0; z-index:3;
-        transition: opacity 1.2s ease-in-out;
-    }}
-    </style>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <style>
+            html, body {{ margin:0; padding:0; width:100%; height:100%; overflow:hidden; background:black; }}
+            video {{
+                position:absolute; top:0; left:0; width:100%; height:100%;
+                object-fit: cover; object-position: center;
+            }}
+            #intro-text {{
+                position:absolute; left:50%; bottom:{text_bottom};
+                transform:translateX(-50%);
+                font-family: 'Playfair Display', serif;
+                font-size: clamp(18px,4vw,48px);
+                color:white; text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
+                animation: fadeInOut 5s ease-in-out forwards;
+                text-align:center;
+                white-space: nowrap;
+            }}
+            @keyframes fadeInOut {{
+                0% {{ opacity:0; }}
+                20% {{ opacity:1; }}
+                80% {{ opacity:1; }}
+                100% {{ opacity:0; }}
+            }}
+            #fade {{ position:absolute; top:0; left:0; width:100%; height:100%; background:black; opacity:0; z-index:10; transition: opacity 1s ease-in-out; }}
+        </style>
     </head>
     <body>
-        <video id="introVid" autoplay playsinline>
-            <source src="{video_file}" type="video/mp4">
+        <video id="introVid" autoplay muted playsinline>
+            <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
         </video>
         <audio id="planeAudio" autoplay>
-            <source src="{audio_file}" type="audio/mp3">
+            <source src="data:audio/mp3;base64,{plane_audio_b64}" type="audio/mp3">
         </audio>
         <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
         <div id="fade"></div>
         <script>
             const vid = document.getElementById("introVid");
             const fade = document.getElementById("fade");
-
-            function finishIntro(){{
-                fade.style.opacity=1;
-                setTimeout(()=> {{
-                    window.parent.postMessage({{type:"intro_done"}}, "*");
-                }}, 1200);
+            function finishIntro() {{
+                fade.style.opacity = 1;
+                setTimeout(() => {{
+                    window.parent.postMessage({{"type":"intro_done"}}, "*");
+                }}, 1000);
             }}
-
             vid.onended = finishIntro;
-
-            vid.play().catch(()=> {{
-                setTimeout(finishIntro, 5000);
-            }});
+            vid.play().catch(()=>{{ setTimeout(finishIntro,5000); }});
         </script>
     </body>
     </html>
     """
 
-    components.html(intro_html, height=1000, scrolling=False)
+    components.html(intro_html, height=1300, scrolling=False)
 
     if st.session_state.start_time is None:
         st.session_state.start_time = time.time()
@@ -170,13 +158,12 @@ def intro_screen(is_mobile=False):
 # ================== TRANG CHÍNH ==================
 def main_page(is_mobile=False):
     hide_streamlit_ui()
-    bg_file = BG_MOBILE if is_mobile else BG_PC
-
+    bg = BG_MOBILE if is_mobile else BG_PC
     try:
-        with open(bg_file, "rb") as f:
+        with open(bg, "rb") as f:
             bg_b64 = base64.b64encode(f.read()).decode()
     except FileNotFoundError:
-        st.error(f"Không tìm thấy ảnh nền: {bg_file}")
+        st.error(f"⚠️ Không tìm thấy ảnh nền: {bg}")
         bg_b64 = ""
 
     st.markdown(f"""
@@ -193,7 +180,7 @@ def main_page(is_mobile=False):
     h1 {{
         text-align:center; margin-top:60px; color:#2E1C14;
         text-shadow:2px 2px 6px #FFF8DC;
-        font-family: 'Playfair Display', serif;
+        font-family:'Playfair Display', serif;
     }}
     </style>
     """, unsafe_allow_html=True)
