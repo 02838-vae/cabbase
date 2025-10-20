@@ -7,18 +7,15 @@ from user_agents import parse
 import streamlit.components.v1 as components
 from streamlit_javascript import st_javascript
 
-# ================== CẤU HÌNH & TRẠNG THÁI ==================
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1", layout="wide")
 
 VIDEO_PC = "media/airplane.mp4"
 VIDEO_MOBILE = "media/mobile.mp4"
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
-MUSIC_FILES = [
-    "background.mp3", "background2.mp3", "background3.mp3",
-    "background4.mp3", "background5.mp3"
-]
+MUSIC_FILES = ["background.mp3", "background2.mp3", "background3.mp3", "background4.mp3", "background5.mp3"]
 PLANE_AUDIO = "plane_fly.mp3"
+VIDEO_DURATION = 5  # giây
 
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
@@ -71,7 +68,6 @@ def intro_screen(is_mobile=False):
     else:
         audio_b64 = ""
 
-    # CSS vị trí video & chữ
     object_position = "center top;" if is_mobile else "center;"
     text_bottom = "35%" if is_mobile else "18%"
 
@@ -85,8 +81,9 @@ def intro_screen(is_mobile=False):
         video {{position:absolute; top:0; left:0; width:100%; height:100%; object-fit:cover; object-position:{object_position}; z-index:1;}}
         #intro-text {{
             position:absolute; left:50%; bottom:{text_bottom}; transform:translateX(-50%);
-            font-size:clamp(18px, 6vw, 40px); color:white; z-index:2;
-            text-shadow:2px 2px 6px rgba(0,0,0,0.8); text-align:center;
+            font-size:clamp(18px,6vw,40px); color:white; z-index:2;
+            text-shadow:2px 2px 6px rgba(0,0,0,0.8); text-align:center; opacity:0;
+            transition:opacity 1.5s ease-in-out;
         }}
         #fade {{position:absolute; top:0; left:0; width:100%; height:100%; background:black; opacity:0; z-index:3; transition:opacity 1.2s ease-in-out;}}
     </style>
@@ -108,30 +105,33 @@ def intro_screen(is_mobile=False):
         const text=document.getElementById("intro-text");
 
         // fade chữ từ từ
-        text.style.opacity=0;
-        text.style.transition="opacity 2s ease-in-out";
         setTimeout(()=>{{text.style.opacity=1;}},500);
         setTimeout(()=>{{text.style.opacity=0;}},4000);
 
         // Phát audio khi video play
         vid.onplay = ()=>{{ try{{audio.play();}}catch(e){{console.log("Audio blocked")}} }};
 
-        function finishIntro(){{
+        // Thông báo kết thúc video bằng timer
+        setTimeout(()=>{{
             fade.style.opacity=1;
-            setTimeout(()=>{{window.parent.postMessage({{"type":"intro_done"}}, "*");}},1200);
-        }}
-
-        // Chuyển cảnh khi video kết thúc
-        vid.onended=finishIntro;
-
-        // fallback timer
-        setTimeout(finishIntro,5000);
+        }}, 4000); // fade out bắt đầu 4s
         </script>
     </body>
     </html>
     """
-
     components.html(intro_html, height=1300, scrolling=False)
+
+    # --- CƠ CHẾ CHUYỂN CẢNH BẰNG SESSION_STATE ---
+    if st.session_state.start_time is None:
+        st.session_state.start_time = time.time()
+    elapsed = time.time() - st.session_state.start_time
+    if elapsed < VIDEO_DURATION:
+        time.sleep(0.5)
+        st.rerun()
+    else:
+        st.session_state.intro_done = True
+        st.session_state.start_time = None
+        st.rerun()
 
 # ================== TRANG CHÍNH ==================
 def main_page(is_mobile=False):
