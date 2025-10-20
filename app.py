@@ -14,6 +14,7 @@ VIDEO_PC = "media/airplane.mp4"
 VIDEO_MOBILE = "media/mobile.mp4"
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
+PLANE_AUDIO = "media/plane_fly.mp3"
 MUSIC_FILES = [
     "background.mp3", "background2.mp3", "background3.mp3",
     "background4.mp3", "background5.mp3"
@@ -75,13 +76,20 @@ def intro_screen(is_mobile=False):
         st.rerun()
         return
 
+    if not os.path.exists(PLANE_AUDIO):
+        st.error(f"⚠️ Không tìm thấy âm thanh máy bay: {PLANE_AUDIO}")
+        plane_b64 = ""
+    else:
+        with open(PLANE_AUDIO, "rb") as f:
+            plane_b64 = base64.b64encode(f.read()).decode()
+
     with open(video_path, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
     # Căn video và chữ theo thiết bị
     if is_mobile:
-        object_position_css = "center 30%;"  # Kéo máy bay lên cao hơn
-        text_bottom_css = "15%;"             # Dòng chữ dưới máy bay
+        object_position_css = "center 25%;"  # Kéo máy bay lên cao hơn
+        text_bottom_css = "20%;"             # Dòng chữ nằm trên video, vừa bề ngang
     else:
         object_position_css = "center;"
         text_bottom_css = "18%;"
@@ -135,14 +143,18 @@ def intro_screen(is_mobile=False):
         </style>
     </head>
     <body>
-        <video id="introVid" autoplay muted playsinline>
+        <video id="introVid" autoplay playsinline>
             <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
         </video>
+        <audio id="planeAudio" autoplay>
+            <source src="data:audio/mp3;base64,{plane_b64}" type="audio/mp3">
+        </audio>
         <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
         <div id="fade"></div>
 
         <script>
             const vid = document.getElementById("introVid");
+            const audio = document.getElementById("planeAudio");
             const fade = document.getElementById("fade");
 
             function finishIntro(){{
@@ -152,8 +164,8 @@ def intro_screen(is_mobile=False):
 
             vid.onended = finishIntro;
 
-            // Fallback timer 9s
             vid.play().catch(()=>{{ setTimeout(finishIntro, 9000); }});
+            audio.play().catch(()=>{{ console.log("Audio autoplay blocked"); }});
         </script>
     </body>
     </html>
