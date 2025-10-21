@@ -70,8 +70,6 @@ def intro_screen(is_mobile=False):
             object-fit: cover;
         }}
         audio {{ display: none; }}
-
-        /* ----- TEXT HIỆU ỨNG ----- */
         #intro-text {{
             position: absolute;
             top: 50%;
@@ -83,7 +81,7 @@ def intro_screen(is_mobile=False):
             font-size: clamp(22px, 6vw, 60px);
             font-weight: bold;
             font-family: 'Playfair Display', serif;
-            background: linear-gradient(120deg, #d9c997 20%, #fff9d6 40%, #d9c997 60%);
+            background: linear-gradient(120deg, #e8d19e 20%, #fff9d6 40%, #e8d19e 60%);
             background-size: 200%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -157,7 +155,7 @@ def intro_screen(is_mobile=False):
     """
     components.html(intro_html, height=800, scrolling=False)
 
-# ====== TRANG CHÍNH VINTAGE SÁNG ======
+# ====== TRANG CHÍNH VINTAGE SÁNG + ÁNH SÁNG ĐỘNG ======
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -171,24 +169,24 @@ def main_page(is_mobile=False):
         background: url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
         background-size: cover !important;
         overflow: hidden !important;
-        position: relative;
         margin: 0 !important;
         padding: 0 !important;
+        position: relative;
+        filter: brightness(1.15) contrast(1.05) saturate(1.1);
         animation: fadeInBg 1.2s ease-in-out forwards;
-        filter: sepia(25%) contrast(1.05) brightness(1.05) saturate(1.05);
     }}
-    /* Lớp phủ vintage sáng */
+    /* Lớp ánh sáng động */
     .stApp::before {{
         content: "";
         position: absolute;
         top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: radial-gradient(circle at center, rgba(255,245,220,0.35) 0%, rgba(40,30,10,0.3) 100%);
-        backdrop-filter: blur(1.2px);
+        width: 200%; height: 200%;
+        background: radial-gradient(circle at 30% 30%, rgba(255,240,200,0.35), transparent 60%);
+        animation: moveLight 12s ease-in-out infinite alternate;
         mix-blend-mode: soft-light;
-        z-index: 0;
+        z-index: 1;
     }}
-    /* Lớp noise film */
+    /* Noise film */
     .stApp::after {{
         content: "";
         position: absolute;
@@ -196,39 +194,44 @@ def main_page(is_mobile=False):
         width: 100%; height: 100%;
         background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
         opacity: 0.12;
-        z-index: 1;
+        z-index: 2;
+    }}
+    @keyframes moveLight {{
+        0% {{ transform: translate(-10%, -10%) scale(1); }}
+        100% {{ transform: translate(10%, 10%) scale(1.05); }}
     }}
     @keyframes fadeInBg {{
         from {{ opacity: 0; }}
         to {{ opacity: 1; }}
     }}
     .welcome {{
-        height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
+        position: absolute;
+        top: 10%;
+        width: 100%;
         text-align: center;
         font-size: clamp(28px, 5vw, 60px);
-        color: #f6eddc;
+        color: #fff5d7;
         font-family: 'Playfair Display', serif;
-        text-shadow: 0 0 20px rgba(0,0,0,0.9), 0 0 35px rgba(255,230,180,0.4);
-        animation: fadeIn 2s ease-in-out;
-        width: 100%;
-        padding: 0 5vw;
-        box-sizing: border-box;
-        word-wrap: break-word;
-        white-space: normal;
-        z-index: 2;
-        position: relative;
+        text-shadow: 0 0 25px rgba(0,0,0,0.7), 0 0 40px rgba(255,255,180,0.4);
+        background: linear-gradient(120deg, #f5e3a1 20%, #fff7d6 40%, #f5e3a1 60%);
+        background-size: 200%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: textLight 6s linear infinite, fadeIn 2s ease-in-out forwards;
         letter-spacing: 2px;
+        z-index: 3;
+    }}
+    @keyframes textLight {{
+        0% {{ background-position: 200% 0%; }}
+        100% {{ background-position: -200% 0%; }}
     }}
     @keyframes fadeIn {{
-        from {{ opacity: 0; transform: scale(0.95); }}
+        from {{ opacity: 0; transform: scale(0.97); }}
         to {{ opacity: 1; transform: scale(1); }}
     }}
     </style>
 
-    <div class="welcome">✈️ TỔ BẢO DƯỠNG SỐ 1 ✈️</div>
+    <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
     """, unsafe_allow_html=True)
 
 # ====== LUỒNG CHÍNH ======
