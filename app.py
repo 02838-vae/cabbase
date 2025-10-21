@@ -18,9 +18,11 @@ SFX = "plane_fly.mp3"
 def hide_streamlit_ui():
     st.markdown("""
     <style>
+    /* Ẩn các thành phần mặc định của Streamlit */
     [data-testid="stToolbar"], header, footer, iframe[title*="keyboard"], [tabindex="0"][aria-live] {
         display: none !important;
     }
+    /* Thiết lập cho toàn bộ app chiếm full màn hình */
     .stApp, .main, .block-container {
         padding: 0 !important;
         margin: 0 !important;
@@ -28,10 +30,17 @@ def hide_streamlit_ui():
         height: 100vh !important;
         overflow: hidden !important;
     }
+    /* THAY ĐỔI 1: Bắt buộc iframe phải chiếm toàn bộ màn hình */
+    iframe {
+        width: 100vw !important;
+        height: 100vh !important;
+        border: none !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
 # ========== XÁC ĐỊNH THIẾT BỊ ==========
+# (Không có thay đổi ở phần này)
 if "is_mobile" not in st.session_state:
     ua_string = st_javascript("window.navigator.userAgent;")
     if ua_string:
@@ -46,120 +55,126 @@ if "is_mobile" not in st.session_state:
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
-    with open(video_file, "rb") as f:
-        video_b64 = base64.b64encode(f.read()).decode()
-    with open(SFX, "rb") as a:
-        audio_b64 = base64.b64encode(a.read()).decode()
+    try:
+        with open(video_file, "rb") as f:
+            video_b64 = base64.b64encode(f.read()).decode()
+        with open(SFX, "rb") as a:
+            audio_b64 = base64.b64encode(a.read()).decode()
+    except FileNotFoundError as e:
+        st.error(f"Lỗi: Không tìm thấy tệp {e.filename}. Vui lòng đảm bảo các tệp video và âm thanh nằm trong cùng thư mục.")
+        st.stop()
+
 
     intro_html = f"""
     <html>
-<head>
-    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-    <style>
-    html, body {{
-        margin: 0; padding: 0;
-        overflow: hidden;
-        background: black;
-        width: 100vw;
-        height: 100vh;
-    }}
-    video {{
-        position: absolute;
-        top: 0; left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;  /* đảm bảo full màn hình, không còn viền trắng */
-    }}
-    audio {{ display: none; }}
-
-    #intro-text {{
-        position: absolute;
-        top: 12%;  /* <-- đẩy chữ lên gần trên cùng */
-        left: 50%;
-        transform: translateX(-50%);
-        width: 90vw;
-        text-align: center;
-        color: #f8f4e3;
-        font-size: clamp(22px, 6vw, 60px);
-        font-weight: bold;
-        font-family: 'Playfair Display', serif;
-        background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
-        background-size: 200%;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        text-shadow: 0 0 15px rgba(255,255,230,0.4);
-        animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards;
-        line-height: 1.2;
-        word-wrap: break-word;
-    }}
-
-    @keyframes lightSweep {{
-        0% {{ background-position: 200% 0%; }}
-        100% {{ background-position: -200% 0%; }}
-    }}
-    @keyframes fadeInOut {{
-        0% {{ opacity: 0; }}
-        20% {{ opacity: 1; }}
-        80% {{ opacity: 1; }}
-        100% {{ opacity: 0; }}
-    }}
-
-    #fade {{
-        position: absolute;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: black;
-        opacity: 0;
-        transition: opacity 1.5s ease-in-out;
-    }}
-    </style>
-</head>
-<body>
-    <video id='introVid' autoplay muted playsinline>
-        <source src='data:video/mp4;base64,{video_b64}' type='video/mp4'>
-    </video>
-    <audio id='flySfx'>
-        <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
-    </audio>
-    <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-    <div id='fade'></div>
-    <script>
-    const vid = document.getElementById('introVid');
-    const audio = document.getElementById('flySfx');
-    const fade = document.getElementById('fade');
-    let ended = false;
-    function finishIntro() {{
-        if (ended) return;
-        ended = true;
-        fade.style.opacity = 1;
-        setTimeout(() => {{
-            window.parent.postMessage({{type: 'intro_done'}}, '*');
-        }}, 1000);
-    }}
-    vid.addEventListener('canplay', () => {{
-        vid.play().catch(() => console.log('Autoplay bị chặn'));
-    }});
-    vid.addEventListener('play', () => {{
-        audio.volume = 1.0;
-        audio.currentTime = 0;
-        audio.play().catch(() => console.log('Autoplay âm thanh bị chặn'));
-    }});
-    document.addEventListener('click', () => {{
-        vid.muted = false;
-        vid.play();
-        audio.volume = 1.0;
-        audio.currentTime = 0;
-        audio.play().catch(()=>{{}});
-    }}, {{once:true}});
-    vid.addEventListener('ended', finishIntro);
-    setTimeout(finishIntro, 9000);
-    </script>
-</body>
-</html>
-"""
-    components.html(intro_html, height=800, scrolling=False)
+    <head>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+        <style>
+        html, body {{
+            margin: 0; padding: 0;
+            overflow: hidden;
+            background: black;
+            height: 100%;
+            width: 100%;
+        }}
+        video {{
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Giữ nguyên cover để video không bị méo */
+        }}
+        audio {{ display: none; }}
+        #intro-text {{
+            position: absolute;
+            /* THAY ĐỔI 2: Đưa chữ lên cao hơn */
+            top: 20%; /* Thay vì 50%, đưa chữ lên gần trên cùng */
+            left: 50%;
+            /* Giữ nguyên transform để căn giữa chữ theo chiều ngang và căn theo vị trí top mới */
+            transform: translate(-50%, -50%);
+            width: 90vw;
+            text-align: center;
+            color: #f8f4e3;
+            font-size: clamp(22px, 6vw, 60px);
+            font-weight: bold;
+            font-family: 'Playfair Display', serif;
+            background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
+            background-size: 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 15px rgba(255,255,230,0.4);
+            animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards;
+            line-height: 1.2;
+            word-wrap: break-word;
+        }}
+        @keyframes lightSweep {{
+            0% {{ background-position: 200% 0%; }}
+            100% {{ background-position: -200% 0%; }}
+        }}
+        @keyframes fadeInOut {{
+            0% {{ opacity: 0; }}
+            20% {{ opacity: 1; }}
+            80% {{ opacity: 1; }}
+            100% {{ opacity: 0; }}
+        }}
+        #fade {{
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: black;
+            opacity: 0;
+            transition: opacity 1.5s ease-in-out;
+        }}
+        </style>
+    </head>
+    <body>
+        <video id='introVid' autoplay muted playsinline>
+            <source src='data:video/mp4;base64,{video_b64}' type='video/mp4'>
+        </video>
+        <audio id='flySfx'>
+            <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
+        </audio>
+        <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+        <div id='fade'></div>
+        <script>
+        const vid = document.getElementById('introVid');
+        const audio = document.getElementById('flySfx');
+        const fade = document.getElementById('fade');
+        let ended = false;
+        function finishIntro() {{
+            if (ended) return;
+            ended = true;
+            fade.style.opacity = 1;
+            setTimeout(() => {{
+                window.parent.postMessage({{type: 'intro_done'}}, '*');
+            }}, 1000);
+        }}
+        vid.addEventListener('canplay', () => {{
+            vid.play().catch(() => console.log('Autoplay bị chặn'));
+        }});
+        vid.addEventListener('play', () => {{
+            audio.volume = 1.0;
+            audio.currentTime = 0;
+            audio.play().catch(() => console.log('Autoplay âm thanh bị chặn'));
+        }});
+        document.addEventListener('click', () => {{
+            vid.muted = false;
+            vid.play();
+            audio.volume = 1.0;
+            audio.currentTime = 0;
+            audio.play().catch(()=>{{}});
+        }}, {{once:true}});
+        vid.addEventListener('ended', finishIntro);
+        setTimeout(finishIntro, 9000);
+        </script>
+    </body>
+    </html>
+    """
+    # THAY ĐỔI 3: Bỏ tham số height cố định
+    components.html(intro_html, scrolling=False)
 
 # ========== TRANG CHÍNH ==========
+# (Không có thay đổi ở phần này)
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -225,22 +240,27 @@ def main_page(is_mobile=False):
     """, unsafe_allow_html=True)
 
 # ========== LUỒNG CHÍNH ==========
+# (Không có thay đổi ở phần này)
 hide_streamlit_ui()
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
+
 if not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
-    st.markdown("""
-    <script>
-    window.addEventListener("message", (event) => {
-        if (event.data.type === "intro_done") {
-            window.parent.location.reload();
-        }
-    });
-    </script>
-    """, unsafe_allow_html=True)
-    time.sleep(9)
-    st.session_state.intro_done = True
-    st.rerun()
+    
+    # Kỹ thuật để reload trang sau khi intro kết thúc
+    component_value = st_javascript("""
+        new Promise(resolve => {
+            window.addEventListener("message", (event) => {
+                if (event.data.type === "intro_done") {
+                    resolve("done");
+                }
+            });
+        })
+    """)
+    
+    if component_value == "done":
+        st.session_state.intro_done = True
+        st.rerun()
 else:
     main_page(st.session_state.is_mobile)
