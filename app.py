@@ -41,21 +41,6 @@ def check_files():
         st.stop()
     return True
 
-# ========== XÁC ĐỊNH THIẾT BỊ ==========
-# Hàm này sẽ được gọi trước để xác định thiết bị
-def get_device_type():
-    if "is_mobile" not in st.session_state:
-        ua_string = st_javascript("window.navigator.userAgent;")
-        if ua_string:
-            ua = parse(ua_string)
-            st.session_state.is_mobile = not ua.is_pc
-            st.rerun()
-        else:
-            # Fallback trong trường hợp JS không chạy kịp
-            st.session_state.is_mobile = False
-            return False # Báo hiệu JS chưa sẵn sàng
-    return True # Báo hiệu đã xác định xong
-
 # ========== MÀN HÌNH INTRO ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
@@ -191,8 +176,6 @@ def intro_screen(is_mobile=False):
     </body>
     </html>
     """
-    # FIX: Bỏ tham số `height` để component tự chiếm đủ không gian.
-    # Sử dụng `st.session_state` để nhận tín hiệu từ JS thay vì reload trang
     intro_finished = components.html(intro_html, height=None)
     if intro_finished:
         st.session_state.intro_done = True
@@ -212,18 +195,14 @@ def main_page(is_mobile=False):
         <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
     </head>
     <style>
-    /* FIX: Thay đổi gradient và filter để tạo màu hoài cổ, ấm áp nhưng không quá tối */
     .stApp {{
         background:
-            /* Lớp phủ màu hoài cổ (sepia) nhẹ nhàng */
             linear-gradient(to bottom, rgba(245, 235, 220, 0.15), rgba(180, 160, 135, 0.35)),
             url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
         background-size: cover !important;
         position: relative;
-        /* Bộ lọc tinh chỉnh màu sắc: thêm chút sepia, giảm bão hòa và tăng nhẹ độ sáng/tương phản */
         filter: sepia(0.3) brightness(1.05) contrast(1.05) saturate(0.95);
     }}
-    /* Thêm một lớp vân giấy mờ để tăng cảm giác cổ điển */
     .stApp::after {{
         content: "";
         position: absolute;
@@ -267,18 +246,33 @@ def main_page(is_mobile=False):
 
 # ========== LUỒNG CHÍNH ==========
 if __name__ == "__main__":
+    # 1. Kiểm tra sự tồn tại của tất cả các file cần thiết ngay từ đầu
     check_files()
     hide_streamlit_ui()
 
-    if "intro_done" not in st.session_state:
-        st.session_state.intro_done = False
+    # 2. Luồng khởi tạo để xác định thiết bị một lần duy nhất
+    if "initialized" not in st.session_state:
+        # Lấy thông tin user agent từ client bằng javascript
+        ua_string = st_javascript("window.navigator.userAgent;")
 
-    device_ready = get_device_type()
-
-    if device_ready:
-        if not st.session_state.intro_done:
-            intro_screen(st.session_state.is_mobile)
+        if ua_string:
+            # Khi JS đã trả về user agent, tiến hành phân tích
+            ua = parse(ua_string)
+            st.session_state.is_mobile = not ua.is_pc
+            st.session_state.intro_done = False
+            st.session_state.initialized = True
+            # Chạy lại script để vào luồng chính
+            st.rerun()
         else:
-            main_page(st.session_state.is_mobile)
+            # Lần đầu tiên chạy, JS chưa kịp trả về giá trị.
+            # Hiển thị thông báo và dừng thực thi script.
+            # Streamlit sẽ tự động chạy lại khi giá trị JS được trả về.
+            st.info("Đang khởi tạo, vui lòng chờ...")
+            st.stop()
+
+    # 3. Luồng chính của ứng dụng sau khi đã khởi tạo
+    if not st.session_state.get('intro_done', False):
+        intro_screen(st.session_state.is_mobile)
     else:
-        st.info("Đang tải, vui lòng chờ...")
+        main_page(st.session_state.is_mobile)
+
