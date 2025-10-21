@@ -100,13 +100,23 @@ def intro_screen(is_mobile=False):
             80% {{ opacity: 1; }}
             100% {{ opacity: 0; }}
         }}
-        #fade {{
+
+        /* Mosaic Dissolve Transition */
+        .tile {{
+            position: absolute;
+            background: black;
+            opacity: 0;
+            transition: opacity 1s ease-out;
+        }}
+        #mosaic {{
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: black;
-            opacity: 0;
-            transition: opacity 1.5s ease-in-out;
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            grid-template-rows: repeat(7, 1fr);
+            z-index: 10;
+            pointer-events: none;
         }}
         </style>
     </head>
@@ -118,20 +128,39 @@ def intro_screen(is_mobile=False):
             <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
         </audio>
         <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-        <div id='fade'></div>
+        <div id='mosaic'></div>
+
         <script>
         const vid = document.getElementById('introVid');
         const audio = document.getElementById('flySfx');
-        const fade = document.getElementById('fade');
+        const mosaic = document.getElementById('mosaic');
         let ended = false;
+
+        // Tạo các ô mosaic
+        const rows = 7, cols = 12;
+        for (let r = 0; r < rows * cols; r++) {{
+            const tile = document.createElement('div');
+            tile.className = 'tile';
+            mosaic.appendChild(tile);
+        }}
+        const tiles = mosaic.querySelectorAll('.tile');
+
+        function startMosaicTransition() {{
+            tiles.forEach((tile, i) => {{
+                const delay = Math.random() * 1000;
+                setTimeout(() => {{
+                    tile.style.opacity = 1;
+                }}, delay);
+            }});
+            setTimeout(finishIntro, 1500);
+        }}
+
         function finishIntro() {{
             if (ended) return;
             ended = true;
-            fade.style.opacity = 1;
-            setTimeout(() => {{
-                window.parent.postMessage({{type: 'intro_done'}}, '*');
-            }}, 1000);
+            window.parent.postMessage({{type: 'intro_done'}}, '*');
         }}
+
         vid.addEventListener('canplay', () => {{
             vid.play().catch(() => console.log('Autoplay bị chặn'));
         }});
@@ -147,13 +176,21 @@ def intro_screen(is_mobile=False):
             audio.currentTime = 0;
             audio.play().catch(()=>{{}});
         }}, {{once:true}});
-        vid.addEventListener('ended', finishIntro);
-        setTimeout(finishIntro, 9000);
+        
+        // Khi video gần hết (1 giây cuối)
+        vid.addEventListener('timeupdate', () => {{
+            if (vid.duration - vid.currentTime <= 1.2 && !ended) {{
+                startMosaicTransition();
+            }}
+        }});
+
+        vid.addEventListener('ended', startMosaicTransition);
         </script>
     </body>
     </html>
     """
     components.html(intro_html, height=800, scrolling=False)
+
 
 # ========== TRANG CHÍNH ==========
 def main_page(is_mobile=False):
@@ -167,39 +204,18 @@ def main_page(is_mobile=False):
     html, body, .stApp {{
         height: 100vh !important;
         background:
-            linear-gradient(to bottom, rgba(255, 240, 210, 0.25) 0%, rgba(180, 140, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
+            linear-gradient(to bottom, rgba(255, 240, 210, 0.2) 0%, rgba(180, 140, 90, 0.3) 50%, rgba(90, 70, 50, 0.4) 100%),
             url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
         background-size: cover !important;
         overflow: hidden !important;
         margin: 0 !important;
         padding: 0 !important;
-        position: relative;
-        filter: brightness(1.08) contrast(1.1) saturate(1.1);
-        animation: fadeInBg 1.5s ease-in-out forwards, filmMotion 8s ease-in-out infinite alternate;
-    }}
-    .stApp::after {{
-        content: "";
-        position: absolute;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
-        opacity: 0.09;
-        mix-blend-mode: multiply;
-        animation: flicker 1.6s infinite alternate ease-in-out;
+        filter: brightness(1.05) contrast(1.05) saturate(1.05);
+        animation: fadeInBg 1.5s ease-in-out forwards;
     }}
     @keyframes fadeInBg {{
         from {{ opacity: 0; }}
         to {{ opacity: 1; }}
-    }}
-    @keyframes flicker {{
-        0% {{ opacity: 0.07; }}
-        50% {{ opacity: 0.12; }}
-        100% {{ opacity: 0.09; }}
-    }}
-    @keyframes filmMotion {{
-        0% {{ transform: translateY(0) scale(1); filter: brightness(1.08); }}
-        50% {{ transform: translateY(-1.5%) scale(1.01); filter: brightness(1.1); }}
-        100% {{ transform: translateY(0.5%) scale(0.995); filter: brightness(1.07); }}
     }}
     .welcome {{
         position: absolute;
@@ -230,6 +246,7 @@ def main_page(is_mobile=False):
 
     <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
     """, unsafe_allow_html=True)
+
 
 # ========== LUỒNG CHÍNH ==========
 hide_streamlit_ui()
