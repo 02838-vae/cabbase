@@ -5,7 +5,6 @@ from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
-# ====== CẤU HÌNH ======
 st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 
 VIDEO_PC = "airplane.mp4"
@@ -14,7 +13,6 @@ BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 SFX = "plane_fly.mp3"
 
-# ====== ẨN UI STREAMLIT ======
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -31,7 +29,6 @@ def hide_streamlit_ui():
     </style>
     """, unsafe_allow_html=True)
 
-# ====== XÁC ĐỊNH THIẾT BỊ ======
 if "is_mobile" not in st.session_state:
     ua_string = st_javascript("window.navigator.userAgent;")
     if ua_string:
@@ -42,7 +39,6 @@ if "is_mobile" not in st.session_state:
         st.info("Đang xác định thiết bị...")
         st.stop()
 
-# ====== MÀN HÌNH INTRO ======
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
@@ -81,12 +77,12 @@ def intro_screen(is_mobile=False):
             font-size: clamp(22px, 6vw, 60px);
             font-weight: bold;
             font-family: 'Playfair Display', serif;
-            background: linear-gradient(120deg, #e8d19e 20%, #fff9d6 40%, #e8d19e 60%);
+            background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
             background-size: 200%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 25px rgba(255,255,240,0.4);
-            animation: lightSweep 5s linear infinite, fadeInOut 6s ease-in-out forwards;
+            text-shadow: 0 0 15px rgba(255,255,230,0.4);
+            animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards;
             line-height: 1.2;
             word-wrap: break-word;
         }}
@@ -155,7 +151,6 @@ def intro_screen(is_mobile=False):
     """
     components.html(intro_html, height=800, scrolling=False)
 
-# ====== TRANG CHÍNH VINTAGE SÁNG + ÁNH SÁNG ĐỘNG ======
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -172,33 +167,33 @@ def main_page(is_mobile=False):
         margin: 0 !important;
         padding: 0 !important;
         position: relative;
-        filter: brightness(1.15) contrast(1.05) saturate(1.1);
+        filter: brightness(1.05) contrast(1.05) saturate(1.1);
         animation: fadeInBg 1.2s ease-in-out forwards;
     }}
-    /* Lớp ánh sáng động */
+    /* ánh sáng dịu */
     .stApp::before {{
         content: "";
         position: absolute;
         top: 0; left: 0;
-        width: 200%; height: 200%;
-        background: radial-gradient(circle at 30% 30%, rgba(255,240,200,0.35), transparent 60%);
-        animation: moveLight 12s ease-in-out infinite alternate;
+        width: 150%; height: 150%;
+        background: radial-gradient(circle at 40% 30%, rgba(255,230,180,0.18), transparent 60%);
+        animation: moveLight 18s ease-in-out infinite alternate;
         mix-blend-mode: soft-light;
         z-index: 1;
     }}
-    /* Noise film */
+    /* lớp film grain nhẹ */
     .stApp::after {{
         content: "";
         position: absolute;
         top: 0; left: 0;
         width: 100%; height: 100%;
         background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
-        opacity: 0.12;
+        opacity: 0.08;
         z-index: 2;
     }}
     @keyframes moveLight {{
-        0% {{ transform: translate(-10%, -10%) scale(1); }}
-        100% {{ transform: translate(10%, 10%) scale(1.05); }}
+        0% {{ transform: translate(-5%, -5%) scale(1); }}
+        100% {{ transform: translate(5%, 5%) scale(1.02); }}
     }}
     @keyframes fadeInBg {{
         from {{ opacity: 0; }}
@@ -212,12 +207,12 @@ def main_page(is_mobile=False):
         font-size: clamp(28px, 5vw, 60px);
         color: #fff5d7;
         font-family: 'Playfair Display', serif;
-        text-shadow: 0 0 25px rgba(0,0,0,0.7), 0 0 40px rgba(255,255,180,0.4);
-        background: linear-gradient(120deg, #f5e3a1 20%, #fff7d6 40%, #f5e3a1 60%);
+        text-shadow: 0 0 18px rgba(0,0,0,0.65), 0 0 30px rgba(255,255,180,0.25);
+        background: linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%);
         background-size: 200%;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        animation: textLight 6s linear infinite, fadeIn 2s ease-in-out forwards;
+        animation: textLight 8s linear infinite, fadeIn 2s ease-in-out forwards;
         letter-spacing: 2px;
         z-index: 3;
     }}
@@ -230,15 +225,12 @@ def main_page(is_mobile=False):
         to {{ opacity: 1; transform: scale(1); }}
     }}
     </style>
-
     <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
     """, unsafe_allow_html=True)
 
-# ====== LUỒNG CHÍNH ======
 hide_streamlit_ui()
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
-
 if not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
     st.markdown("""
