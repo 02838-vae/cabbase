@@ -5,7 +5,7 @@ from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
-# ========== CẤU HÌNH ==========
+# ===== CẤU HÌNH =====
 st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 
 VIDEO_PC = "airplane.mp4"
@@ -14,7 +14,7 @@ BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 SFX = "plane_fly.mp3"
 
-# ========== ẨN UI STREAMLIT ==========
+# ===== ẨN UI STREAMLIT =====
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -30,7 +30,7 @@ def hide_streamlit_ui():
     </style>
     """, unsafe_allow_html=True)
 
-# ========== XÁC ĐỊNH THIẾT BỊ ==========
+# ===== XÁC ĐỊNH THIẾT BỊ =====
 if "is_mobile" not in st.session_state:
     ua_string = st_javascript("window.navigator.userAgent;")
     if ua_string:
@@ -41,7 +41,7 @@ if "is_mobile" not in st.session_state:
         st.info("Đang xác định thiết bị...")
         st.stop()
 
-# ========== MÀN HÌNH INTRO ==========
+# ===== MÀN HÌNH INTRO =====
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
@@ -68,9 +68,7 @@ def intro_screen(is_mobile=False):
             height: 100%;
             object-fit: cover;
         }}
-        audio {{
-            display: none;
-        }}
+        audio {{ display: none; }}
         #intro-text {{
             position: absolute;
             top: 50%;
@@ -85,8 +83,6 @@ def intro_screen(is_mobile=False):
             font-weight: 700;
             font-family: 'Playfair Display', serif;
             line-height: 1.3;
-            word-wrap: break-word;
-            overflow-wrap: break-word;
             text-shadow: 0 0 25px rgba(0,0,0,0.6);
             background: linear-gradient(110deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,1) 50%, rgba(255,255,255,0.1) 100%);
             -webkit-background-clip: text;
@@ -101,12 +97,8 @@ def intro_screen(is_mobile=False):
             100% {{ opacity: 0; }}
         }}
         @keyframes lightSweep {{
-            0% {{
-                background-position: -200% center;
-            }}
-            100% {{
-                background-position: 200% center;
-            }}
+            0% {{ background-position: -200% center; }}
+            100% {{ background-position: 200% center; }}
         }}
         #fade {{
             position: absolute;
@@ -119,7 +111,7 @@ def intro_screen(is_mobile=False):
         </style>
     </head>
     <body>
-        <video id="introVid" autoplay muted playsinline>
+        <video id="introVid" autoplay playsinline muted>
             <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
         </video>
         <audio id="flySfx">
@@ -143,35 +135,26 @@ def intro_screen(is_mobile=False):
             }}, 1000);
         }}
 
-        vid.addEventListener('canplay', () => {{
-            vid.play().catch(() => {{ console.log("Autoplay bị chặn, chờ tương tác"); }});
-        }});
+        // Đảm bảo video tự chạy
+        vid.play().catch(err => console.log("Autoplay bị chặn:", err));
 
+        // Phát âm thanh sau khi video bắt đầu 0.5s
         vid.addEventListener('play', () => {{
-            audio.volume = 1.0;
-            audio.currentTime = 0;
-            audio.play().catch(() => {{
-                console.log("Autoplay âm thanh bị chặn, cần click");
-            }});
+            setTimeout(() => {{
+                audio.volume = 1.0;
+                audio.play().catch(()=>{{ console.log("Audio play blocked"); }});
+            }}, 500);
         }});
-
-        document.addEventListener('click', () => {{
-            vid.muted = false;
-            vid.play();
-            audio.volume = 1.0;
-            audio.currentTime = 0;
-            audio.play().catch(()=>{{}});
-        }}, {{once:true}});
 
         vid.addEventListener('ended', finishIntro);
-        setTimeout(finishIntro, 9000);
+        setTimeout(finishIntro, 9500);
         </script>
     </body>
     </html>
     """
     components.html(intro_html, height=800, scrolling=False)
 
-# ========== TRANG CHÍNH ==========
+# ===== TRANG CHÍNH =====
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -184,9 +167,6 @@ def main_page(is_mobile=False):
         height: 100vh !important;
         background: url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
         background-size: cover !important;
-        overflow: hidden !important;
-        margin: 0 !important;
-        padding: 0 !important;
         animation: fadeInBg 1.2s ease-in-out forwards;
     }}
     @keyframes fadeInBg {{
@@ -213,7 +193,7 @@ def main_page(is_mobile=False):
     <div class="welcome">✈️ TỔ BẢO DƯỠNG SỐ 1 ✈️</div>
     """, unsafe_allow_html=True)
 
-# ========== LUỒNG CHÍNH ==========
+# ===== LUỒNG CHÍNH =====
 hide_streamlit_ui()
 
 if "intro_done" not in st.session_state:
@@ -230,7 +210,7 @@ if not st.session_state.intro_done:
     });
     </script>
     """, unsafe_allow_html=True)
-    time.sleep(9)
+    time.sleep(9.5)
     st.session_state.intro_done = True
     st.rerun()
 else:
