@@ -50,6 +50,7 @@ def intro_screen(is_mobile=False):
     with open(SFX, "rb") as a:
         audio_b64 = base64.b64encode(a.read()).decode()
 
+    # Cải tiến hiệu ứng chữ
     intro_html = f"""
     <html>
     <head>
@@ -71,26 +72,51 @@ def intro_screen(is_mobile=False):
         audio {{
             display: none;
         }}
+
+        /* ✨ Hiệu ứng chữ cinematic ✨ */
         #intro-text {{
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
-            color: white;
-            font-size: clamp(24px, 6vw, 60px);
-            font-weight: bold;
-            font-family: 'Playfair Display', serif;
-            text-shadow: 0 0 20px rgba(255,255,255,0.7);
-            animation: fadeInOut 6s ease-in-out forwards;
-            width: 90%;
-            word-wrap: break-word;
+            font-family: 'Poppins', 'Orbitron', sans-serif;
+            font-size: clamp(28px, 7vw, 70px);
+            font-weight: 800;
+            letter-spacing: 3px;
+            text-transform: uppercase;
+            background: linear-gradient(
+                90deg,
+                rgba(255,255,255,0.1) 0%,
+                rgba(255,255,255,1) 25%,
+                rgba(255,255,255,0.1) 50%,
+                rgba(0,212,255,0.8) 75%,
+                rgba(255,255,255,0.1) 100%
+            );
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-size: 400%;
+            animation:
+                lightSweep 5s linear infinite,
+                fadeInOut 9s ease-in-out forwards,
+                glowPulse 2s ease-in-out infinite alternate;
+            text-shadow: 0 0 25px rgba(0, 200, 255, 0.5);
+            width: 95%;
+            white-space: nowrap;
         }}
         @keyframes fadeInOut {{
-            0% {{ opacity: 0; }}
-            20% {{ opacity: 1; }}
+            0% {{ opacity: 0; transform: translate(-50%, -60%) scale(0.9); }}
+            20% {{ opacity: 1; transform: translate(-50%, -50%) scale(1.0); }}
             80% {{ opacity: 1; }}
-            100% {{ opacity: 0; }}
+            100% {{ opacity: 0; transform: translate(-50%, -50%) scale(1.05); }}
+        }}
+        @keyframes lightSweep {{
+            0% {{ background-position: 400% 0; }}
+            100% {{ background-position: -400% 0; }}
+        }}
+        @keyframes glowPulse {{
+            from {{ text-shadow: 0 0 15px rgba(0,255,255,0.5), 0 0 30px rgba(0,255,255,0.3); }}
+            to {{ text-shadow: 0 0 30px rgba(0,255,255,1), 0 0 60px rgba(0,255,255,0.6); }}
         }}
         #fade {{
             position: absolute;
@@ -127,25 +153,22 @@ def intro_screen(is_mobile=False):
             }}, 1000);
         }}
 
-        // Khi video sẵn sàng phát
         vid.addEventListener('canplay', () => {{
-            vid.play().catch(() => {{ console.log("Autoplay bị chặn, chờ tương tác"); }});
+            vid.play().catch(() => {{ console.log("Autoplay bị chặn"); }});
         }});
 
-        // Khi video bắt đầu play, cố gắng đồng bộ âm thanh
         vid.addEventListener('play', () => {{
-            audio.volume = 0.8;
+            audio.volume = 0.9;
             audio.currentTime = 0;
             audio.play().catch(() => {{
-                console.log("Autoplay âm thanh bị chặn, cần click");
+                console.log("Autoplay âm thanh bị chặn");
             }});
         }});
 
-        // Khi người dùng click → kích hoạt audio & bỏ mute video
         document.addEventListener('click', () => {{
             vid.muted = false;
             vid.play();
-            audio.volume = 0.8;
+            audio.volume = 0.9;
             audio.currentTime = 0;
             audio.play().catch(()=>{{}});
         }}, {{once:true}});
@@ -172,8 +195,6 @@ def main_page(is_mobile=False):
         background: url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
         background-size: cover !important;
         overflow: hidden !important;
-        margin: 0 !important;
-        padding: 0 !important;
         animation: fadeInBg 1.2s ease-in-out forwards;
     }}
     @keyframes fadeInBg {{
