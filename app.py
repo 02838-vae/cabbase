@@ -51,7 +51,8 @@ def intro_screen(is_mobile=False):
     with open(SFX, "rb") as a:
         audio_b64 = base64.b64encode(a.read()).decode()
 
-    top_pos = "20%" if not is_mobile else "50%"  # chữ trên PC cao hơn
+    # chữ cao hơn trên PC
+    top_pos = "20%" if not is_mobile else "50%"
 
     intro_html = f"""
     <html>
@@ -63,18 +64,19 @@ def intro_screen(is_mobile=False):
             padding: 0;
             height: 100%;
             width: 100%;
-            background: black;
             overflow: hidden;
+            background: black;
         }}
         video {{
             position: fixed;
             top: 0;
             left: 0;
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             object-fit: cover;
             object-position: center center;
             background-color: black;
+            z-index: -1;
         }}
         audio {{ display: none; }}
         #intro-text {{
@@ -84,15 +86,15 @@ def intro_screen(is_mobile=False):
             transform: translate(-50%, -50%);
             width: 90vw;
             text-align: center;
-            color: #f8f4e3;
-            font-size: clamp(22px, 6vw, 60px);
-            font-weight: bold;
             font-family: 'Playfair Display', serif;
-            background: linear-gradient(120deg, #f5e9c8 20%, #fff9e8 40%, #f5e9c8 60%);
+            font-weight: bold;
+            font-size: clamp(22px, 6vw, 60px);
+            color: #f8f4e3;
+            background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
             background-size: 200%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 15px rgba(255,255,230,0.4);
+            text-shadow: 0 0 12px rgba(255,255,220,0.3);
             animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards;
         }}
         @keyframes lightSweep {{
@@ -131,6 +133,7 @@ def intro_screen(is_mobile=False):
         const audio = document.getElementById('flySfx');
         const fade = document.getElementById('fade');
         let ended = false;
+
         function finishIntro() {{
             if (ended) return;
             ended = true;
@@ -139,6 +142,7 @@ def intro_screen(is_mobile=False):
                 window.parent.postMessage({{type: 'intro_done'}}, '*');
             }}, 1000);
         }}
+
         vid.addEventListener('canplay', () => {{
             vid.play().catch(() => console.log('Autoplay bị chặn'));
         }});
@@ -160,7 +164,7 @@ def intro_screen(is_mobile=False):
     </body>
     </html>
     """
-    components.html(intro_html, height=800, scrolling=False)
+    components.html(intro_html, height=900, scrolling=False)
 
 # ========== TRANG CHÍNH ==========
 def main_page(is_mobile=False):
@@ -169,18 +173,18 @@ def main_page(is_mobile=False):
     with open(bg, "rb") as f:
         bg_b64 = base64.b64encode(f.read()).decode()
 
-    # === Vintage sáng, tươi hơn ===
+    # Vintage dịu nhẹ
     st.markdown(f"""
     <style>
     html, body, .stApp {{
         height: 100vh !important;
         background:
-            linear-gradient(to bottom, rgba(255, 240, 210, 0.4), rgba(240, 200, 150, 0.45)),
+            linear-gradient(to bottom, rgba(230, 210, 180, 0.25), rgba(160, 130, 90, 0.35), rgba(90, 70, 50, 0.45)),
             url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
         background-size: cover !important;
+        filter: brightness(0.98) contrast(1.05) saturate(0.95) sepia(0.1);
         position: relative;
         overflow: hidden !important;
-        filter: brightness(1.08) contrast(1.05) saturate(1.1);
     }}
     .stApp::after {{
         content: "";
@@ -188,8 +192,8 @@ def main_page(is_mobile=False):
         top: 0; left: 0;
         width: 100%; height: 100%;
         background-image: url("https://www.transparenttextures.com/patterns/paper-fibers.png");
-        opacity: 0.1;
-        mix-blend-mode: overlay;
+        opacity: 0.08;
+        mix-blend-mode: multiply;
         pointer-events: none;
     }}
     .welcome {{
@@ -199,12 +203,12 @@ def main_page(is_mobile=False):
         text-align: center;
         font-size: clamp(30px, 5vw, 65px);
         font-family: 'Playfair Display', serif;
-        text-shadow: 0 0 25px rgba(0,0,0,0.5);
-        background: linear-gradient(270deg, #ffe8a3, #ffca7f, #f9d58e, #fff5c7);
+        text-shadow: 0 0 20px rgba(0,0,0,0.55);
+        background: linear-gradient(270deg, #ffe9b0, #f5c67f, #f1dba3, #fff3c7);
         background-size: 600% 600%;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        animation: gradientShift 6s ease infinite, fadeIn 2s ease-in-out forwards;
+        animation: gradientShift 7s ease infinite, fadeIn 2s ease-in-out forwards;
         letter-spacing: 2.5px;
         z-index: 3;
     }}
