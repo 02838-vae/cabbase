@@ -50,7 +50,6 @@ def intro_screen(is_mobile=False):
     with open(SFX, "rb") as a:
         audio_b64 = base64.b64encode(a.read()).decode()
 
-    # Cải tiến hiệu ứng chữ
     intro_html = f"""
     <html>
     <head>
@@ -72,51 +71,39 @@ def intro_screen(is_mobile=False):
         audio {{
             display: none;
         }}
-
-        /* ✨ Hiệu ứng chữ cinematic ✨ */
         #intro-text {{
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             text-align: center;
-            font-family: 'Poppins', 'Orbitron', sans-serif;
-            font-size: clamp(28px, 7vw, 70px);
-            font-weight: 800;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            background: linear-gradient(
-                90deg,
-                rgba(255,255,255,0.1) 0%,
-                rgba(255,255,255,1) 25%,
-                rgba(255,255,255,0.1) 50%,
-                rgba(0,212,255,0.8) 75%,
-                rgba(255,255,255,0.1) 100%
-            );
+            color: white;
+            font-size: clamp(24px, 6vw, 60px);
+            font-weight: 700;
+            font-family: 'Playfair Display', serif;
+            text-shadow: 0 0 25px rgba(0,0,0,0.6);
+            width: 100vw;
+            padding: 0 5vw;
+            box-sizing: border-box;
+            line-height: 1.2;
+            background: linear-gradient(120deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0.1) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            background-size: 400%;
-            animation:
-                lightSweep 5s linear infinite,
-                fadeInOut 9s ease-in-out forwards,
-                glowPulse 2s ease-in-out infinite alternate;
-            text-shadow: 0 0 25px rgba(0, 200, 255, 0.5);
-            width: 95%;
-            white-space: nowrap;
+            animation: fadeInOut 6s ease-in-out forwards, lightSweep 5s linear infinite;
         }}
         @keyframes fadeInOut {{
-            0% {{ opacity: 0; transform: translate(-50%, -60%) scale(0.9); }}
-            20% {{ opacity: 1; transform: translate(-50%, -50%) scale(1.0); }}
+            0% {{ opacity: 0; }}
+            20% {{ opacity: 1; }}
             80% {{ opacity: 1; }}
-            100% {{ opacity: 0; transform: translate(-50%, -50%) scale(1.05); }}
+            100% {{ opacity: 0; }}
         }}
         @keyframes lightSweep {{
-            0% {{ background-position: 400% 0; }}
-            100% {{ background-position: -400% 0; }}
-        }}
-        @keyframes glowPulse {{
-            from {{ text-shadow: 0 0 15px rgba(0,255,255,0.5), 0 0 30px rgba(0,255,255,0.3); }}
-            to {{ text-shadow: 0 0 30px rgba(0,255,255,1), 0 0 60px rgba(0,255,255,0.6); }}
+            0% {{
+                background-position: -200% center;
+            }}
+            100% {{
+                background-position: 200% center;
+            }}
         }}
         #fade {{
             position: absolute;
@@ -154,21 +141,21 @@ def intro_screen(is_mobile=False):
         }}
 
         vid.addEventListener('canplay', () => {{
-            vid.play().catch(() => {{ console.log("Autoplay bị chặn"); }});
+            vid.play().catch(() => {{ console.log("Autoplay bị chặn, chờ tương tác"); }});
         }});
 
         vid.addEventListener('play', () => {{
-            audio.volume = 0.9;
+            audio.volume = 1.0;
             audio.currentTime = 0;
             audio.play().catch(() => {{
-                console.log("Autoplay âm thanh bị chặn");
+                console.log("Autoplay âm thanh bị chặn, cần click");
             }});
         }});
 
         document.addEventListener('click', () => {{
             vid.muted = false;
             vid.play();
-            audio.volume = 0.9;
+            audio.volume = 1.0;
             audio.currentTime = 0;
             audio.play().catch(()=>{{}});
         }}, {{once:true}});
@@ -195,6 +182,8 @@ def main_page(is_mobile=False):
         background: url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
         background-size: cover !important;
         overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
         animation: fadeInBg 1.2s ease-in-out forwards;
     }}
     @keyframes fadeInBg {{
