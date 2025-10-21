@@ -5,6 +5,7 @@ from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
+# ========== CẤU HÌNH ==========
 st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 
 VIDEO_PC = "airplane.mp4"
@@ -13,6 +14,7 @@ BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 SFX = "plane_fly.mp3"
 
+# ========== ẨN UI STREAMLIT ==========
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -29,6 +31,7 @@ def hide_streamlit_ui():
     </style>
     """, unsafe_allow_html=True)
 
+# ========== XÁC ĐỊNH THIẾT BỊ ==========
 if "is_mobile" not in st.session_state:
     ua_string = st_javascript("window.navigator.userAgent;")
     if ua_string:
@@ -39,6 +42,7 @@ if "is_mobile" not in st.session_state:
         st.info("Đang xác định thiết bị...")
         st.stop()
 
+# ========== MÀN HÌNH INTRO ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
@@ -151,6 +155,7 @@ def intro_screen(is_mobile=False):
     """
     components.html(intro_html, height=800, scrolling=False)
 
+# ========== TRANG CHÍNH ==========
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -161,39 +166,25 @@ def main_page(is_mobile=False):
     <style>
     html, body, .stApp {{
         height: 100vh !important;
-        background: url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
+        background: 
+            linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
+            url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
         background-size: cover !important;
         overflow: hidden !important;
         margin: 0 !important;
         padding: 0 !important;
         position: relative;
-        filter: brightness(1.05) contrast(1.05) saturate(1.1);
-        animation: fadeInBg 1.2s ease-in-out forwards;
+        filter: brightness(1.05) contrast(1.1) saturate(1.05);
+        animation: fadeInBg 1.5s ease-in-out forwards;
     }}
-    /* ánh sáng dịu */
-    .stApp::before {{
-        content: "";
-        position: absolute;
-        top: 0; left: 0;
-        width: 150%; height: 150%;
-        background: radial-gradient(circle at 40% 30%, rgba(255,230,180,0.18), transparent 60%);
-        animation: moveLight 18s ease-in-out infinite alternate;
-        mix-blend-mode: soft-light;
-        z-index: 1;
-    }}
-    /* lớp film grain nhẹ */
     .stApp::after {{
         content: "";
         position: absolute;
         top: 0; left: 0;
         width: 100%; height: 100%;
         background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
-        opacity: 0.08;
-        z-index: 2;
-    }}
-    @keyframes moveLight {{
-        0% {{ transform: translate(-5%, -5%) scale(1); }}
-        100% {{ transform: translate(5%, 5%) scale(1.02); }}
+        opacity: 0.09;
+        mix-blend-mode: multiply;
     }}
     @keyframes fadeInBg {{
         from {{ opacity: 0; }}
@@ -201,10 +192,10 @@ def main_page(is_mobile=False):
     }}
     .welcome {{
         position: absolute;
-        top: 10%;
+        top: 8%;
         width: 100%;
         text-align: center;
-        font-size: clamp(28px, 5vw, 60px);
+        font-size: clamp(30px, 5vw, 65px);
         color: #fff5d7;
         font-family: 'Playfair Display', serif;
         text-shadow: 0 0 18px rgba(0,0,0,0.65), 0 0 30px rgba(255,255,180,0.25);
@@ -212,7 +203,7 @@ def main_page(is_mobile=False):
         background-size: 200%;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        animation: textLight 8s linear infinite, fadeIn 2s ease-in-out forwards;
+        animation: textLight 10s linear infinite, fadeIn 2s ease-in-out forwards;
         letter-spacing: 2px;
         z-index: 3;
     }}
@@ -225,9 +216,11 @@ def main_page(is_mobile=False):
         to {{ opacity: 1; transform: scale(1); }}
     }}
     </style>
+
     <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
     """, unsafe_allow_html=True)
 
+# ========== LUỒNG CHÍNH ==========
 hide_streamlit_ui()
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
