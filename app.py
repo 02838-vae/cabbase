@@ -70,7 +70,7 @@ def intro_screen(is_mobile=False):
             left: 0;
             width: 100vw;
             height: 100vh;
-            object-fit: cover;
+            object-fit: contain;
             background: black;
         }}
         audio {{ display: none; }}
