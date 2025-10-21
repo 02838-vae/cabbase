@@ -135,8 +135,6 @@ def intro_screen(is_mobile=False):
         <script>
         const vid = document.getElementById('introVid');
         const audio = document.getElementById('flySfx');
-        const left = document.getElementById('left-shutter');
-        const right = document.getElementById('right-shutter');
         let ended = false;
 
         function finishIntro() {{
@@ -144,7 +142,7 @@ def intro_screen(is_mobile=False):
             ended = true;
             document.body.classList.add('shutter-close');
             setTimeout(() => {{
-                window.parent.postMessage({{type: 'intro_done'}}, '*');
+                window.parent.postMessage({{type: 'intro_done_internal'}}, '*');
             }}, 1000);
         }}
 
@@ -196,11 +194,6 @@ def main_page(is_mobile=False):
         padding: 0 !important;
         position: relative;
         filter: brightness(1.05) contrast(1.1) saturate(1.05);
-        animation: fadeInBg 1.5s ease-in-out forwards;
-    }}
-    @keyframes fadeInBg {{
-        from {{ opacity: 0; }}
-        to {{ opacity: 1; }}
     }}
     .welcome {{
         position: absolute;
@@ -226,7 +219,7 @@ def main_page(is_mobile=False):
         to {{ opacity: 1; transform: scale(1); }}
     }}
 
-    /* Shutter opening animation */
+    /* Shutter open animation */
     #left-shutter, #right-shutter {{
         position: fixed;
         top: 0;
@@ -259,17 +252,24 @@ hide_streamlit_ui()
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
+# Lắng nghe tín hiệu từ intro mà KHÔNG reload toàn trang
+st.markdown("""
+<script>
+window.addEventListener("message", (event) => {
+    if (event.data.type === "intro_done_internal") {
+        const iframe = window.frameElement;
+        if (iframe) {
+            iframe.contentWindow.postMessage({ type: "streamlit_rerun" }, "*");
+        }
+        window.parent.postMessage({ type: "streamlit_rerun" }, "*");
+    }
+});
+</script>
+""", unsafe_allow_html=True)
+
 if not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
-    st.markdown("""
-    <script>
-    window.addEventListener("message", (event) => {
-        if (event.data.type === "intro_done") {
-            window.parent.location.reload();
-        }
-    });
-    </script>
-    """, unsafe_allow_html=True)
+    # Giữ lại DOM, không reload
     time.sleep(9)
     st.session_state.intro_done = True
     st.rerun()
