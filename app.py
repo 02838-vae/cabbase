@@ -60,27 +60,17 @@ def intro_screen(is_mobile=False):
         <meta name='viewport' content='width=device-width, initial-scale=1.0'>
         <style>
         html, body {{
-            margin: 0 !important;
-            padding: 0 !important;
-            border: 0 !important;
-            overflow: hidden !important;
-            width: 100vw !important;
-            height: 100vh !important;
-            background: black !important;
-        }}
-        :root, iframe, div, section {{
-            margin: 0 !important;
-            padding: 0 !important;
-            border: 0 !important;
+            margin: 0; padding: 0; border: 0;
+            overflow: hidden;
+            width: 100vw; height: 100vh;
+            background: black;
         }}
         video {{
             position: fixed;
-            top: 0;
-            left: 0;
+            top: 0; left: 0;
             width: 100vw;
             height: 100vh;
             object-fit: cover;
-            background: black;
             z-index: 1;
         }}
         audio {{ display: none; }}
@@ -101,8 +91,6 @@ def intro_screen(is_mobile=False):
             -webkit-text-fill-color: transparent;
             text-shadow: 0 0 15px rgba(255,255,230,0.4);
             animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards;
-            line-height: 1.2;
-            word-wrap: break-word;
             z-index: 2;
         }}
         @keyframes lightSweep {{
@@ -115,15 +103,21 @@ def intro_screen(is_mobile=False):
             80% {{ opacity: 1; }}
             100% {{ opacity: 0; }}
         }}
-        #fade {{
+
+        /* --- SHUTTER EFFECT --- */
+        #left-shutter, #right-shutter {{
             position: fixed;
-            top: 0; left: 0;
-            width: 100vw; height: 100vh;
+            top: 0;
+            width: 50vw;
+            height: 100vh;
             background: black;
-            opacity: 0;
-            transition: opacity 1.5s ease-in-out;
             z-index: 3;
+            transition: all 1s ease-in-out;
         }}
+        #left-shutter {{ left: -50vw; }}
+        #right-shutter {{ right: -50vw; }}
+        .shutter-close #left-shutter {{ left: 0; }}
+        .shutter-close #right-shutter {{ right: 0; }}
         </style>
     </head>
     <body>
@@ -134,17 +128,21 @@ def intro_screen(is_mobile=False):
             <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
         </audio>
         <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-        <div id='fade'></div>
+
+        <div id='left-shutter'></div>
+        <div id='right-shutter'></div>
+
         <script>
         const vid = document.getElementById('introVid');
         const audio = document.getElementById('flySfx');
-        const fade = document.getElementById('fade');
+        const left = document.getElementById('left-shutter');
+        const right = document.getElementById('right-shutter');
         let ended = false;
 
         function finishIntro() {{
             if (ended) return;
             ended = true;
-            fade.style.opacity = 1;
+            document.body.classList.add('shutter-close');
             setTimeout(() => {{
                 window.parent.postMessage({{type: 'intro_done'}}, '*');
             }}, 1000);
@@ -175,7 +173,6 @@ def intro_screen(is_mobile=False):
     </html>
     """
 
-    # ✅ phải nằm TRONG hàm
     components.html(intro_html, height=1080, scrolling=False)
 
 
@@ -201,6 +198,10 @@ def main_page(is_mobile=False):
         filter: brightness(1.05) contrast(1.1) saturate(1.05);
         animation: fadeInBg 1.5s ease-in-out forwards;
     }}
+    @keyframes fadeInBg {{
+        from {{ opacity: 0; }}
+        to {{ opacity: 1; }}
+    }}
     .welcome {{
         position: absolute;
         top: 8%;
@@ -224,9 +225,32 @@ def main_page(is_mobile=False):
         from {{ opacity: 0; transform: scale(0.97); }}
         to {{ opacity: 1; transform: scale(1); }}
     }}
+
+    /* Shutter opening animation */
+    #left-shutter, #right-shutter {{
+        position: fixed;
+        top: 0;
+        width: 50vw;
+        height: 100vh;
+        background: black;
+        z-index: 10;
+        transition: all 1.2s ease-in-out;
+    }}
+    #left-shutter {{ left: 0; }}
+    #right-shutter {{ right: 0; }}
+    body.open-shutter #left-shutter {{ left: -50vw; }}
+    body.open-shutter #right-shutter {{ right: -50vw; }}
     </style>
 
+    <div id="left-shutter"></div>
+    <div id="right-shutter"></div>
     <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
+
+    <script>
+    setTimeout(() => {{
+        document.body.classList.add('open-shutter');
+    }}, 100);
+    </script>
     """, unsafe_allow_html=True)
 
 
