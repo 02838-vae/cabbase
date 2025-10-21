@@ -28,6 +28,7 @@ def hide_streamlit_ui():
         width: 100vw !important;
         height: 100vh !important;
         overflow: hidden !important;
+        background: black !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -141,9 +142,16 @@ def intro_screen(is_mobile=False):
             if (ended) return;
             ended = true;
             document.body.classList.add('shutter-close');
+
+            // 1. Đóng shutter 1s
+            // 2. Màn đen 0.6s
+            // 3. Gửi tín hiệu sang Streamlit để chuyển trang
+            setTimeout(() => {{
+                document.body.style.background = "black";
+            }}, 1000);
             setTimeout(() => {{
                 window.parent.postMessage({{type: 'intro_done_internal'}}, '*');
-            }}, 1000);
+            }}, 1600);
         }}
 
         vid.addEventListener('canplay', () => {{
@@ -219,7 +227,7 @@ def main_page(is_mobile=False):
         to {{ opacity: 1; transform: scale(1); }}
     }}
 
-    /* Shutter open animation */
+    /* Shutter mở */
     #left-shutter, #right-shutter {{
         position: fixed;
         top: 0;
@@ -252,7 +260,6 @@ hide_streamlit_ui()
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
-# Lắng nghe tín hiệu từ intro mà KHÔNG reload toàn trang
 st.markdown("""
 <script>
 window.addEventListener("message", (event) => {
@@ -269,8 +276,7 @@ window.addEventListener("message", (event) => {
 
 if not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
-    # Giữ lại DOM, không reload
-    time.sleep(9)
+    time.sleep(9.5)
     st.session_state.intro_done = True
     st.rerun()
 else:
