@@ -1,6 +1,5 @@
 import streamlit as st
 import base64
-import time
 from streamlit.components.v1 import html
 
 st.set_page_config(page_title="Tổ bảo dưỡng số 1", layout="wide", page_icon="✈️")
@@ -13,11 +12,23 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# Kiểm tra thiết bị người dùng
-ua = st.query_params.get("ua", [""])[0] if "ua" in st.query_params else st.request.headers.get("User-Agent", "")
-is_mobile = any(keyword in ua.lower() for keyword in ["iphone", "android", "mobile"])
+# ==== XÁC ĐỊNH THIẾT BỊ ====
+# Dựa vào width của màn hình (Streamlit cung cấp qua session state)
+# Không dùng query_params hay request headers để tránh lỗi
+is_mobile = st.session_state.get("is_mobile", None)
+if is_mobile is None:
+    html("""
+    <script>
+    const isMobile = /Mobi|Android/i.test(navigator.userAgent);
+    window.parent.postMessage({is_mobile: isMobile}, "*");
+    </script>
+    """, height=0)
+    st.stop()
 
-# Chọn file video và background theo thiết bị
+if not isinstance(is_mobile, bool):
+    is_mobile = False
+
+# ==== CHỌN VIDEO VÀ BACKGROUND ====
 if is_mobile:
     video_file = "mobile.mp4"
     background_file = "mobile.jpg"
@@ -25,13 +36,13 @@ else:
     video_file = "airplane.mp4"
     background_file = "cabbase.jpg"
 
-# Đọc file video và âm thanh
+# ==== NẠP VIDEO & ÂM THANH ====
 with open(video_file, "rb") as f:
     video_b64 = base64.b64encode(f.read()).decode()
 with open("plane_fly.mp3", "rb") as f:
     audio_b64 = base64.b64encode(f.read()).decode()
 
-# Giao diện intro
+# ==== HTML INTRO ====
 intro_html = f"""
 <!DOCTYPE html>
 <html>
@@ -55,7 +66,6 @@ video {{
   color: white;
   text-shadow: 0 0 30px rgba(255,255,255,0.7);
   white-space: nowrap;
-  animation: fadeInOut 9s ease-in-out forwards;
   background: linear-gradient(90deg, #fff, #0ff, #fff);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
@@ -94,10 +104,8 @@ video {{
     const audio = document.getElementById("planeAudio");
 
     vid.addEventListener("play", () => {{
-      setTimeout(() => {{
-        audio.volume = 1.0;
-        audio.play().catch(err => console.log("Autoplay blocked", err));
-      }}, 100); // bắt đầu âm thanh sau 0.1s
+      audio.volume = 1.0;
+      audio.play().catch(err => console.log("Autoplay blocked", err));
     }});
 
     setTimeout(() => {{
@@ -111,40 +119,39 @@ video {{
 </html>
 """
 
+# ==== QUẢN LÝ GIAO DIỆN ====
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
 if not st.session_state.intro_done:
     html(intro_html, height=800)
-    message = st.experimental_get_query_params()
     st.session_state.intro_done = True
 else:
-    # Hiển thị trang chính
+    # ==== TRANG CHÍNH ====
     with open(background_file, "rb") as f:
         bg_b64 = base64.b64encode(f.read()).decode()
 
-    st.markdown(
-        f"""
-        <style>
-        .main-bg {{
-            background-image: url("data:image/jpg;base64,{bg_b64}");
-            background-size: cover;
-            background-position: center;
-            height: 100vh;
-            width: 100%;
-        }}
-        h1 {{
-            color: white;
-            text-align: center;
-            padding-top: 40vh;
-            text-shadow: 0 0 20px rgba(255,255,255,0.8);
-        }}
-        </style>
-        <div class="main-bg">
-            <h1>Tổ bảo dưỡng số 1</h1>
-            <audio controls autoplay loop>
-                <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
-            </audio>
-        </div>
-        """, unsafe_allow_html=True
-    )
+    st.markdown(f"""
+    <style>
+    .main-bg {{
+        background-image: url("data:image/jpg;base64,{bg_b64}");
+        background-size: cover;
+        background-position: center;
+        height: 100vh;
+        width: 100%;
+    }}
+    h1 {{
+        color: white;
+        text-align: center;
+        padding-top: 40vh;
+        text-shadow: 0 0 20px rgba(255,255,255,0.8);
+        font-size: 3rem;
+    }}
+    </style>
+    <div class="main-bg">
+        <h1>Tổ bảo dưỡng số 1</h1>
+        <audio controls autoplay loop>
+            <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
+        </audio>
+    </div>
+    """, unsafe_allow_html=True)
