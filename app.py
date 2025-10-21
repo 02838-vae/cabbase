@@ -1,8 +1,7 @@
 import streamlit as st
 import base64
-import time
-from streamlit_javascript import st_javascript
 from user_agents import parse
+from streamlit_javascript import st_javascript
 import streamlit.components.v1 as components
 
 # ========== CẤU HÌNH ==========
@@ -46,175 +45,103 @@ if "is_mobile" not in st.session_state:
         st.stop()
 
 
-# ========== MÀN HÌNH INTRO (Đã Tối Ưu Hóa JS Timing) ==========
-def intro_screen(is_mobile=False):
-    hide_streamlit_ui()
+# ========== BUILD HTML (TRẢ VỀ CHUỖI) ==========
+def build_intro_html(is_mobile=False):
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
-    # Đảm bảo video tồn tại
-    try:
-        with open(video_file, "rb") as f:
-            video_b64 = base64.b64encode(f.read()).decode()
-    except FileNotFoundError:
-        st.error(f"Lỗi: Không tìm thấy tệp video: {video_file}")
-        st.stop()
-        
-    try:
-        with open(SFX, "rb") as a:
-            audio_b64 = base64.b64encode(a.read()).decode()
-    except FileNotFoundError:
-        st.error(f"Lỗi: Không tìm thấy tệp âm thanh: {SFX}")
-        st.stop()
+    with open(video_file, "rb") as f:
+        video_b64 = base64.b64encode(f.read()).decode()
+    with open(SFX, "rb") as a:
+        audio_b64 = base64.b64encode(a.read()).decode()
 
-    # Thời gian video: 5s. Tổng chuyển cảnh: 4s (đóng màn chập 1s, màn đen/chuyển trạng thái 3s)
-    
-    intro_html = f"""
+    html = f"""
     <html>
     <head>
-        <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-        <style>
-        /* ... (CSS giữ nguyên) ... */
-        html, body {{
-            margin: 0; padding: 0; border: 0;
-            overflow: hidden;
-            width: 100vw; height: 100vh;
-            background: black;
-        }}
-        video {{
-            position: fixed;
-            top: 0; left: 0;
-            width: 100vw;
-            height: 100vh;
-            object-fit: cover;
-            z-index: 1;
-        }}
-        audio {{ display: none; }}
-        #intro-text {{
-            position: absolute;
-            top: 12%;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 90vw;
-            text-align: center;
-            color: #f8f4e3;
-            font-size: clamp(22px, 6vw, 60px);
-            font-weight: bold;
-            font-family: 'Playfair Display', serif;
-            background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
-            background-size: 200%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 15px rgba(255,255,230,0.4);
-            animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards;
-            z-index: 2;
-        }}
-        @keyframes lightSweep {{
-            0% {{ background-position: 200% 0%; }}
-            100% {{ background-position: -200% 0%; }}
-        }}
-        @keyframes fadeInOut {{
-            0% {{ opacity: 0; }}
-            20% {{ opacity: 1; }}
-            80% {{ opacity: 1; }}
-            100% {{ opacity: 0; }}
-        }}
-
-        /* --- SHUTTER EFFECT --- */
-        #left-shutter, #right-shutter {{
-            position: fixed;
-            top: 0;
-            width: 50vw;
-            height: 100vh;
-            background: black;
-            z-index: 3;
-            transition: all 1s ease-in-out;
-        }}
-        #left-shutter {{ left: -50vw; }}
-        #right-shutter {{ right: -50vw; }}
-        .shutter-close #left-shutter {{ left: 0; }}
-        .shutter-close #right-shutter {{ right: 0; }}
-        </style>
+    <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+    <style>
+    html, body {{
+        margin: 0; padding: 0; overflow: hidden;
+        width: 100vw; height: 100vh; background: black;
+    }}
+    video {{
+        position: fixed;
+        top: 0; left: 0;
+        width: 100vw; height: 100vh;
+        object-fit: cover;
+        z-index: 1;
+    }}
+    #intro-text {{
+        position: absolute;
+        top: 12%;
+        left: 50%;
+        transform: translateX(-50%);
+        color: #f8f4e3;
+        font-size: clamp(22px, 6vw, 60px);
+        font-weight: bold;
+        font-family: 'Playfair Display', serif;
+        text-shadow: 0 0 15px rgba(255,255,230,0.4);
+        z-index: 2;
+    }}
+    #left, #right {{
+        position: fixed;
+        top: 0; width: 50vw; height: 100vh;
+        background: black;
+        z-index: 3;
+        transition: all 1s ease-in-out;
+    }}
+    #left {{ left: -50vw; }}
+    #right {{ right: -50vw; }}
+    .close #left {{ left: 0; }}
+    .close #right {{ right: 0; }}
+    </style>
     </head>
     <body>
-        <video id='introVid' autoplay muted playsinline>
-            <source src='data:video/mp4;base64,{video_b64}' type='video/mp4'>
+        <video id="vid" autoplay muted playsinline>
+            <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
         </video>
-        <audio id='flySfx'>
-            <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
+        <audio id="sfx">
+            <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
         </audio>
-        <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-
-        <div id='left-shutter'></div>
-        <div id='right-shutter'></div>
-
+        <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+        <div id="left"></div>
+        <div id="right"></div>
         <script>
-        const vid = document.getElementById('introVid');
-        const audio = document.getElementById('flySfx');
+        const vid = document.getElementById('vid');
+        const audio = document.getElementById('sfx');
         let ended = false;
 
         function finishIntro() {{
             if (ended) return;
             ended = true;
-            document.body.classList.add('shutter-close');
-
-            // 1. Đóng shutter (1s CSS transition)
-            
-            // 2. Màn đen hoàn toàn
+            // 1s để shutter đóng, + 300ms màn đen (tùy chỉnh)
+            document.body.classList.add('close');
             setTimeout(() => {{
-                document.body.style.background = "black";
-            }}, 1000); // Đợi 1s cho transition hoàn tất
-
-            // 3. Gửi tín hiệu sang Streamlit để chuyển trang
-            // Tổng thời gian chuyển cảnh là 4s. Tín hiệu được gửi sau 3.5s để đảm bảo màn đen.
-            setTimeout(() => {{
-                window.parent.postMessage({{type: 'intro_done_internal'}}, '*');
-            }}, 3500); 
+                // Gửi giá trị về Streamlit: components.html sẽ trả "done"
+                Streamlit.setComponentValue("done");
+            }}, 1300);
         }}
 
-        vid.addEventListener('canplay', () => {{
-            vid.play().catch(() => console.log('Autoplay bị chặn'));
-        }});
-
+        vid.addEventListener('canplay', () => vid.play().catch(()=>{{}}));
         vid.addEventListener('play', () => {{
-            audio.volume = 1.0;
-            audio.currentTime = 0;
-            audio.play().catch(() => console.log('Autoplay âm thanh bị chặn'));
-        }});
-
-        document.addEventListener('click', () => {{
-            vid.muted = false;
-            vid.play();
-            audio.volume = 1.0;
-            audio.currentTime = 0;
             audio.play().catch(()=>{{}});
-        }}, {{once:true}});
-
+        }});
         vid.addEventListener('ended', finishIntro);
-        
-        // Cơ chế dự phòng JS: Gọi finishIntro sau 5.5s (5s video + 0.5s trễ)
-        setTimeout(finishIntro, 5500); 
+        // Fallback timeout (in case ended not fired)
+        setTimeout(finishIntro, 9000);
         </script>
     </body>
     </html>
     """
-
-    components.html(intro_html, height=1080, scrolling=False)
+    return html
 
 
 # ========== TRANG CHÍNH ==========
 def main_page(is_mobile=False):
-    hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
-    try:
-        with open(bg, "rb") as f:
-            bg_b64 = base64.b64encode(f.read()).decode()
-    except FileNotFoundError:
-        st.error(f"Lỗi: Không tìm thấy tệp hình nền: {bg}")
-        st.stop()
-
+    with open(bg, "rb") as f:
+        bg_b64 = base64.b64encode(f.read()).decode()
 
     st.markdown(f"""
     <style>
-    /* ... (CSS giữ nguyên) ... */
     html, body, .stApp {{
         height: 100vh !important;
         background: 
@@ -225,7 +152,6 @@ def main_page(is_mobile=False):
         margin: 0 !important;
         padding: 0 !important;
         position: relative;
-        filter: brightness(1.05) contrast(1.1) saturate(1.05);
     }}
     .welcome {{
         position: absolute;
@@ -235,79 +161,50 @@ def main_page(is_mobile=False):
         font-size: clamp(30px, 5vw, 65px);
         color: #fff5d7;
         font-family: 'Playfair Display', serif;
-        text-shadow: 0 0 18px rgba(0,0,0,0.65), 0 0 30px rgba(255,255,180,0.25);
-        background: linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%);
-        background-size: 200%;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: textLight 10s linear infinite, fadeIn 2s ease-in-out forwards;
-    }}
-    @keyframes textLight {{
-        0% {{ background-position: 200% 0%; }}
-        100% {{ background-position: -200% 0%; }}
+        text-shadow: 0 0 18px rgba(0,0,0,0.65);
+        opacity: 0;
+        animation: fadeIn 1.2s ease-in-out 0.4s forwards;
     }}
     @keyframes fadeIn {{
-        from {{ opacity: 0; transform: scale(0.97); }}
-        to {{ opacity: 1; transform: scale(1); }}
+        to {{ opacity: 1; }}
     }}
-
-    /* Shutter mở */
-    #left-shutter, #right-shutter {{
+    #left, #right {{
         position: fixed;
-        top: 0;
-        width: 50vw;
-        height: 100vh;
+        top: 0; width: 50vw; height: 100vh;
         background: black;
         z-index: 10;
         transition: all 1.2s ease-in-out;
     }}
-    #left-shutter {{ left: 0; }}
-    #right-shutter {{ right: 0; }}
-    body.open-shutter #left-shutter {{ left: -50vw; }}
-    body.open-shutter #right-shutter {{ right: -50vw; }}
+    #left {{ left: 0; }}
+    #right {{ right: 0; }}
+    body.open #left {{ left: -50vw; }}
+    body.open #right {{ right: -50vw; }}
     </style>
 
-    <div id="left-shutter"></div>
-    <div id="right-shutter"></div>
+    <div id="left"></div>
+    <div id="right"></div>
     <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
 
     <script>
-    // Màn chập mở ra sau 0.1s khi trang chính được tải
-    setTimeout(() => {{
-        document.body.classList.add('open-shutter');
-    }}, 100);
+    // Mở shutter ngay khi trang chính render (sau một tick)
+    setTimeout(()=>{{document.body.classList.add('open');}},100);
     </script>
     """, unsafe_allow_html=True)
 
 
-# ========== LUỒNG CHÍNH (Đã Khắc Phục Lỗi Kẹt) ==========
+# ========== LUỒNG CHÍNH ==========
 hide_streamlit_ui()
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
-# Script listener để nhận tín hiệu từ JS và yêu cầu Streamlit Rerun
-st.markdown("""
-<script>
-window.addEventListener("message", (event) => {
-    if (event.data.type === "intro_done_internal") {
-        // Gửi tín hiệu để kích hoạt Streamlit Rerun
-        window.parent.postMessage({ type: "streamlit_rerun" }, "*");
-    }
-});
-</script>
-""", unsafe_allow_html=True)
-
 if not st.session_state.intro_done:
-    intro_screen(st.session_state.is_mobile)
-    
-    # ***KHẮC PHỤC LỖI KẸT (Cơ chế dự phòng timer)***
-    # Tổng thời gian: 5s Video + 3.5s JS (chờ gửi tín hiệu) = 8.5s
-    # time.sleep(8.6) đảm bảo Python luôn chuyển trạng thái sau khi JS đã hoàn thành, 
-    # khắc phục lỗi bị kẹt ở màn hình đen nếu tín hiệu JS bị mất.
-    time.sleep(8.6)
-    
-    st.session_state.intro_done = True
-    st.rerun()
-
+    # Build HTML string, then call components.html ONCE and capture return value.
+    html_string = build_intro_html(st.session_state.is_mobile)
+    result = components.html(html_string, height=1080, scrolling=False, key="intro_comp")
+    # components.html will return the value passed to Streamlit.setComponentValue(...)
+    if result == "done":
+        # set flag and rerun to show main_page where shutter will open
+        st.session_state.intro_done = True
+        st.experimental_rerun()
 else:
     main_page(st.session_state.is_mobile)
