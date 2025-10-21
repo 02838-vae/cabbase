@@ -82,7 +82,7 @@ def intro_screen(is_mobile=False):
             font-weight: bold;
             font-family: 'Playfair Display', serif;
             text-shadow: 0 0 20px rgba(255,255,255,0.8);
-            background: linear-gradient(90deg, #fff, #00c3ff, #fff);
+            background: linear-gradient(90deg, #fffbe0, #ffd36b, #fffbe0);
             background-size: 300%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -157,7 +157,7 @@ def intro_screen(is_mobile=False):
     """
     components.html(intro_html, height=800, scrolling=False)
 
-# ====== TRANG CHÍNH (nền cổ điển) ======
+# ====== TRANG CHÍNH (sáng & ánh vàng cổ điển) ======
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -175,17 +175,17 @@ def main_page(is_mobile=False):
         margin: 0 !important;
         padding: 0 !important;
         animation: fadeInBg 1.2s ease-in-out forwards;
-        filter: grayscale(70%) brightness(0.8);
+        filter: sepia(25%) brightness(1.15) contrast(1.05) saturate(1.1);
     }}
-    /* Hiệu ứng lớp phủ xám + nhiễu cổ */
+    /* Hiệu ứng lớp phủ vàng sáng cổ điển */
     .stApp::before {{
         content: "";
         position: absolute;
         top: 0; left: 0;
         width: 100%; height: 100%;
-        background: rgba(70,70,70,0.45);
+        background: rgba(255, 240, 200, 0.35);
         backdrop-filter: blur(2px);
-        mix-blend-mode: multiply;
+        mix-blend-mode: soft-light;
         z-index: 0;
     }}
     .stApp::after {{
@@ -194,7 +194,7 @@ def main_page(is_mobile=False):
         top: 0; left: 0;
         width: 100%; height: 100%;
         background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
-        opacity: 0.2;
+        opacity: 0.25;
         z-index: 1;
     }}
     @keyframes fadeInBg {{
@@ -208,9 +208,9 @@ def main_page(is_mobile=False):
         align-items: center;
         text-align: center;
         font-size: clamp(28px, 5vw, 60px);
-        color: #f5f5f5;
+        color: #fff7e0;
         font-family: 'Playfair Display', serif;
-        text-shadow: 0 0 25px rgba(0,0,0,0.9);
+        text-shadow: 0 0 25px rgba(0,0,0,0.8);
         animation: fadeIn 2s ease-in-out;
         width: 100%;
         padding: 0 5vw;
