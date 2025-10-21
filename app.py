@@ -166,16 +166,16 @@ def main_page(is_mobile=False):
     <style>
     html, body, .stApp {{
         height: 100vh !important;
-        background: 
-            linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
+        background:
+            linear-gradient(to bottom, rgba(255, 240, 210, 0.25) 0%, rgba(180, 140, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
             url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
         background-size: cover !important;
         overflow: hidden !important;
         margin: 0 !important;
         padding: 0 !important;
         position: relative;
-        filter: brightness(1.05) contrast(1.1) saturate(1.05);
-        animation: fadeInBg 1.5s ease-in-out forwards;
+        filter: brightness(1.08) contrast(1.1) saturate(1.1);
+        animation: fadeInBg 1.5s ease-in-out forwards, filmMotion 8s ease-in-out infinite alternate;
     }}
     .stApp::after {{
         content: "";
@@ -185,14 +185,25 @@ def main_page(is_mobile=False):
         background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
         opacity: 0.09;
         mix-blend-mode: multiply;
+        animation: flicker 1.6s infinite alternate ease-in-out;
     }}
     @keyframes fadeInBg {{
         from {{ opacity: 0; }}
         to {{ opacity: 1; }}
     }}
+    @keyframes flicker {{
+        0% {{ opacity: 0.07; }}
+        50% {{ opacity: 0.12; }}
+        100% {{ opacity: 0.09; }}
+    }}
+    @keyframes filmMotion {{
+        0% {{ transform: translateY(0) scale(1); filter: brightness(1.08); }}
+        50% {{ transform: translateY(-1.5%) scale(1.01); filter: brightness(1.1); }}
+        100% {{ transform: translateY(0.5%) scale(0.995); filter: brightness(1.07); }}
+    }}
     .welcome {{
         position: absolute;
-        top: 8%;
+        top: 7%;
         width: 100%;
         text-align: center;
         font-size: clamp(30px, 5vw, 65px);
