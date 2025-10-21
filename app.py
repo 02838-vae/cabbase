@@ -45,8 +45,8 @@ if "is_mobile" not in st.session_state:
         st.stop()
 
 
-# ========== COMPONENT INTRO ==========
-def intro_component(is_mobile=False):
+# ========== BUILD HTML (TRẢ VỀ CHUỖI) ==========
+def build_intro_html(is_mobile=False):
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
     with open(video_file, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
@@ -112,8 +112,10 @@ def intro_component(is_mobile=False):
         function finishIntro() {{
             if (ended) return;
             ended = true;
+            // 1s để shutter đóng, + 300ms màn đen (tùy chỉnh)
             document.body.classList.add('close');
             setTimeout(() => {{
+                // Gửi giá trị về Streamlit: components.html sẽ trả "done"
                 Streamlit.setComponentValue("done");
             }}, 1300);
         }}
@@ -123,13 +125,13 @@ def intro_component(is_mobile=False):
             audio.play().catch(()=>{{}});
         }});
         vid.addEventListener('ended', finishIntro);
+        // Fallback timeout (in case ended not fired)
         setTimeout(finishIntro, 9000);
         </script>
     </body>
     </html>
     """
-
-    components.html(html, height=1080, scrolling=False, key="intro")
+    return html
 
 
 # ========== TRANG CHÍNH ==========
@@ -161,7 +163,7 @@ def main_page(is_mobile=False):
         font-family: 'Playfair Display', serif;
         text-shadow: 0 0 18px rgba(0,0,0,0.65);
         opacity: 0;
-        animation: fadeIn 2s ease-in-out 1s forwards;
+        animation: fadeIn 1.2s ease-in-out 0.4s forwards;
     }}
     @keyframes fadeIn {{
         to {{ opacity: 1; }}
@@ -184,6 +186,7 @@ def main_page(is_mobile=False):
     <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
 
     <script>
+    // Mở shutter ngay khi trang chính render (sau một tick)
     setTimeout(()=>{{document.body.classList.add('open');}},100);
     </script>
     """, unsafe_allow_html=True)
@@ -195,12 +198,12 @@ if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
 if not st.session_state.intro_done:
-    done = st.components.v1.html(
-        intro_component(st.session_state.is_mobile),
-        height=1080,
-        scrolling=False
-    )
-    if done == "done":
+    # Build HTML string, then call components.html ONCE and capture return value.
+    html_string = build_intro_html(st.session_state.is_mobile)
+    result = components.html(html_string, height=1080, scrolling=False, key="intro_comp")
+    # components.html will return the value passed to Streamlit.setComponentValue(...)
+    if result == "done":
+        # set flag and rerun to show main_page where shutter will open
         st.session_state.intro_done = True
         st.experimental_rerun()
 else:
