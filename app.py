@@ -5,7 +5,6 @@ from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
-
 # ========== CẤU HÌNH ==========
 st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 
@@ -43,10 +42,13 @@ if "is_mobile" not in st.session_state:
         st.rerun()
     else:
         st.info("Đang xác định thiết bị...")
-        st.stop()
+        # st.stop() được thay thế bằng cách hiển thị thông báo chờ
+        # và cho phép Streamlit tiếp tục chạy.
+        # Nếu đang ở môi trường local, bạn có thể cần chạy lại thủ công.
+        pass
 
 
-# ========== MÀN HÌNH INTRO ==========
+# ========== MÀN HÌNH INTRO VỚI HIỆU ỨNG TAN VỠ ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
@@ -56,7 +58,7 @@ def intro_screen(is_mobile=False):
         with open(video_file, "rb") as f:
             video_b64 = base64.b64encode(f.read()).decode()
     except FileNotFoundError:
-        st.error(f"Không tìm thấy file video: {video_file}")
+        st.error(f"Không tìm thấy file video: {video_file}. Vui lòng kiểm tra lại đường dẫn.")
         st.stop()
 
     try:
@@ -80,21 +82,21 @@ def intro_screen(is_mobile=False):
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            z-index: 100; /* Đảm bảo nó nằm trên tất cả */
+            z-index: 100;
             display: grid;
-            grid-template-columns: repeat(20, 1fr); /* Tạo lưới 20x20 mảnh */
+            grid-template-columns: repeat(20, 1fr);
             grid-template-rows: repeat(20, 1fr);
             transition: opacity 0.5s ease;
             pointer-events: none;
         }}
         .shattered-piece {{
-            background: url("data:video/mp4;base64,{video_b64}") no-repeat center center / cover;
+            /* SỬ DỤNG HÌNH NỀN TỪ VIDEO/ẢNH ĐỂ CÓ MẢNH VỠ */
+            background-image: url("data:video/mp4;base64,{video_b64}");
+            background-repeat: no-repeat;
             opacity: 0;
             transform: scale(1) translate(0, 0);
         }}
-        .shattered-active .shattered-piece {{
-            /* Hiệu ứng tan vỡ sẽ được thêm bằng JS */
-        }}
+        
         video {{
             position: absolute;
             top: 0; left: 0;
@@ -109,7 +111,6 @@ def intro_screen(is_mobile=False):
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            /* ... các style khác của bạn ... */
             width: 90vw;
             text-align: center;
             color: #f8f4e3;
@@ -155,7 +156,8 @@ def intro_screen(is_mobile=False):
             <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
         </audio>
         <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-        <div id='shattered-container'></div> <div id='fade'></div>
+        <div id='shattered-container'></div>
+        <div id='fade'></div>
         <script>
         const container = document.getElementById('shattered-container');
         const video = document.getElementById('introVid');
@@ -170,26 +172,21 @@ def intro_screen(is_mobile=False):
             const piece = document.createElement('div');
             piece.className = 'shattered-piece';
             
-            // Tính toán vị trí nền để mỗi mảnh hiển thị đúng phần của video/ảnh nền
             const col = i % COLS;
             const row = Math.floor(i / COLS);
-            const x_percent = (col / (COLS - 1)) * 100;
-            const y_percent = (row / (ROWS - 1)) * 100;
             const x_pos = (col / COLS) * 100;
             const y_pos = (row / ROWS) * 100;
-
-            // Kích thước của mảnh là 1/COLS và 1/ROWS
             const size_x = 100 / COLS;
             const size_y = 100 / ROWS;
 
             piece.style.cssText = `
-                background-position: ${x_pos}% ${y_pos}%;
-                background-size: ${COLS * 100}% ${ROWS * 100}%;
-                width: ${size_x}%;
-                height: ${size_y}%;
+                background-position: ${{x_pos}}% ${{y_pos}}%; /* ĐÃ SỬA LỖI ESCAPE */
+                background-size: ${{COLS * 100}}% ${{ROWS * 100}}%;
+                width: ${{size_x}}%;
+                height: ${{size_y}}%;
                 position: absolute;
-                top: ${row * size_y}%;
-                left: ${col * size_x}%;
+                top: ${{row * size_y}}%; /* ĐÃ SỬA LỖI ESCAPE */
+                left: ${{col * size_x}}%; /* ĐÃ SỬA LỖI ESCAPE */
             `;
             container.appendChild(piece);
         }}
@@ -197,13 +194,14 @@ def intro_screen(is_mobile=False):
         const pieces = document.querySelectorAll('.shattered-piece');
         
         function activateShatter() {{
+            if (ended) return; // Tránh kích hoạt nhiều lần
+
             // Ẩn video/text
             video.style.opacity = 0;
             document.getElementById('intro-text').style.opacity = 0;
 
             // Kích hoạt hiển thị và hiệu ứng cho các mảnh vỡ
             container.style.opacity = 1;
-            container.classList.add('shattered-active');
 
             pieces.forEach((piece, index) => {{
                 // Random vị trí di chuyển và xoay
@@ -212,14 +210,14 @@ def intro_screen(is_mobile=False):
                 const randRot = (Math.random() - 0.5) * 720;
                 const delay = Math.random() * 0.3; // Độ trễ ngẫu nhiên
 
-                piece.style.transition = `transform 1s ease-out ${delay}s, opacity 1s ease-out ${delay}s`;
+                piece.style.transition = `transform 1s ease-out ${{delay}}s, opacity 1s ease-out ${{delay}}s`;
                 piece.style.opacity = 1;
 
                 // Áp dụng hiệu ứng "tan vỡ"
                 setTimeout(() => {{
-                    piece.style.transform = `translate(${randX}px, ${randY}px) rotate(${randRot}deg) scale(0.2)`;
+                    piece.style.transform = `translate(${{randX}}px, ${{randY}}px) rotate(${{randRot}}deg) scale(0.2)`;
                     piece.style.opacity = 0;
-                }}, 50); // Cho mảnh vỡ hiển thị trước khi tan biến
+                }}, 50); 
             }});
 
             // Sau khi hiệu ứng tan vỡ kết thúc (ví dụ: 1.5 giây)
@@ -233,8 +231,9 @@ def intro_screen(is_mobile=False):
             ended = true;
             fade.style.opacity = 1;
             setTimeout(() => {{
-                window.parent.postMessage({{type: 'intro_done'}}, '*');
-            }}, 1000); // Chuyển trang sau khi fade đen xong
+                // Gửi message và kích hoạt reload Streamlit thông qua query param
+                window.parent.location.href = window.parent.location.href.split('?')[0] + '?set_intro_done=true';
+            }}, 1000); 
         }}
 
         video.addEventListener('canplay', () => {{
@@ -252,8 +251,11 @@ def intro_screen(is_mobile=False):
             audio.currentTime = 0;
             audio.play().catch(()=>{{}});
         }}, {{once:true}});
-        video.addEventListener('ended', activateShatter); // Kích hoạt tan vỡ khi video kết thúc
-        setTimeout(activateShatter, 9000); // Kích hoạt tan vỡ sau 9 giây nếu video không kết thúc
+        
+        // Kích hoạt tan vỡ khi video kết thúc
+        video.addEventListener('ended', activateShatter); 
+        // Kích hoạt tan vỡ sau 9 giây nếu video không kết thúc (dự phòng)
+        setTimeout(activateShatter, 9000); 
         </script>
     </body>
     </html>
@@ -271,7 +273,7 @@ def main_page(is_mobile=False):
         with open(bg, "rb") as f:
             bg_b64 = base64.b64encode(f.read()).decode()
     except FileNotFoundError:
-        st.error(f"Không tìm thấy file hình nền: {bg}")
+        st.error(f"Không tìm thấy file hình nền: {bg}. Vui lòng kiểm tra lại đường dẫn.")
         st.stop()
 
 
@@ -328,44 +330,68 @@ def main_page(is_mobile=False):
         from {{ opacity: 0; transform: scale(0.97); }}
         to {{ opacity: 1; transform: scale(1); }}
     }}
+    
+    /* STYLE CHO NÚT XEM LẠI */
+    .stButton>button {{
+        background-color: rgba(255, 255, 255, 0.1);
+        color: #f3e6b4;
+        border: 2px solid #f3e6b4;
+        border-radius: 12px;
+        padding: 10px 20px;
+        font-size: 18px;
+        font-weight: bold;
+        transition: all 0.3s ease;
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+    }}
+    .stButton>button:hover {{
+        background-color: rgba(255, 255, 255, 0.3);
+        box-shadow: 0 0 25px rgba(255, 255, 255, 0.4);
+        transform: scale(1.05);
+    }}
     </style>
 
 
     <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
     """, unsafe_allow_html=True)
+    
+    # Đặt nút ở giữa màn hình (hoặc vị trí tùy chọn)
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        st.markdown(
+            """
+            <div style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10;">
+            """, 
+            unsafe_allow_html=True
+        )
+        if st.button("▶️ Xem Lại Intro"):
+            st.session_state.intro_done = False
+            st.rerun()
+        st.markdown(
+            "</div>", 
+            unsafe_allow_html=True
+        )
 
 
 # ========== LUỒNG CHÍNH ==========
-hide_streamlit_ui()
+
+if "is_mobile" not in st.session_state:
+    st.stop() # Chờ xác định thiết bị
 
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
 if not st.session_state.intro_done:
-    # HIỂN THỊ MÀN HÌNH INTRO VỚI HIỆU ỨNG TAN VỠ
     intro_screen(st.session_state.is_mobile)
-    st.markdown("""
-    <script>
-    window.addEventListener("message", (event) => {
-        if (event.data.type === "intro_done") {
-            // Đặt session state để kích hoạt chuyển sang trang chính sau khi reload
-            fetch(window.parent.location.href + '?set_intro_done=true').then(() => {
-                window.parent.location.reload();
-            });
-        }
-    });
-    </script>
-    """, unsafe_allow_html=True)
-
-    # Xử lý set session state sau khi JS gửi message (Đây là cách xử lý Streamlit)
-    if st.experimental_get_query_params().get("set_intro_done") == ['true']:
+    
+    # Xử lý query param để chuyển trạng thái từ JavaScript
+    query_params = st.experimental_get_query_params()
+    if 'set_intro_done' in query_params and query_params['set_intro_done'][0] == 'true':
         st.session_state.intro_done = True
-        # Sau khi đặt state, cần clear query params và rerun để tránh lặp lại
+        # Xóa query param để tránh lặp lại
         st.experimental_set_query_params()
         st.rerun()
-
-    # Giữ trang chờ (thay vì time.sleep, Streamlit sẽ chờ tương tác từ iframe)
-    st.stop()
+    
+    st.stop() # Dừng lại và chờ tín hiệu từ JavaScript
 
 else:
     main_page(st.session_state.is_mobile)
