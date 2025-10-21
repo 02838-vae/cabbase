@@ -51,6 +51,9 @@ def intro_screen(is_mobile=False):
     with open(SFX, "rb") as a:
         audio_b64 = base64.b64encode(a.read()).decode()
 
+    # === CHỈNH CHỮ LÊN CAO TRÊN PC ===
+    top_pos = "20%" if not is_mobile else "50%"
+
     intro_html = f"""
     <html>
     <head>
@@ -72,7 +75,7 @@ def intro_screen(is_mobile=False):
         audio {{ display: none; }}
         #intro-text {{
             position: absolute;
-            top: 50%;
+            top: {top_pos};
             left: 50%;
             transform: translate(-50%, -50%);
             width: 90vw;
@@ -88,7 +91,6 @@ def intro_screen(is_mobile=False):
             text-shadow: 0 0 15px rgba(255,255,230,0.4);
             animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards;
             line-height: 1.2;
-            word-wrap: break-word;
         }}
         @keyframes lightSweep {{
             0% {{ background-position: 200% 0%; }}
@@ -166,29 +168,23 @@ def main_page(is_mobile=False):
     <style>
     html, body, .stApp {{
         height: 100vh !important;
-        background: 
-            linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
+        background:
+            linear-gradient(to bottom, rgba(230, 210, 180, 0.3), rgba(190, 160, 120, 0.5)),
             url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
         background-size: cover !important;
-        overflow: hidden !important;
-        margin: 0 !important;
-        padding: 0 !important;
         position: relative;
-        filter: brightness(1.05) contrast(1.1) saturate(1.05);
-        animation: fadeInBg 1.5s ease-in-out forwards;
+        overflow: hidden !important;
+        filter: brightness(1.05) contrast(1.1) saturate(0.9) sepia(0.2);
     }}
     .stApp::after {{
         content: "";
         position: absolute;
         top: 0; left: 0;
         width: 100%; height: 100%;
-        background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
-        opacity: 0.09;
+        background-image: url("https://www.transparenttextures.com/patterns/aged-paper.png");
+        opacity: 0.15;
         mix-blend-mode: multiply;
-    }}
-    @keyframes fadeInBg {{
-        from {{ opacity: 0; }}
-        to {{ opacity: 1; }}
+        pointer-events: none;
     }}
     .welcome {{
         position: absolute;
@@ -196,20 +192,20 @@ def main_page(is_mobile=False):
         width: 100%;
         text-align: center;
         font-size: clamp(30px, 5vw, 65px);
-        color: #fff5d7;
         font-family: 'Playfair Display', serif;
-        text-shadow: 0 0 18px rgba(0,0,0,0.65), 0 0 30px rgba(255,255,180,0.25);
-        background: linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%);
-        background-size: 200%;
+        text-shadow: 0 0 25px rgba(0,0,0,0.6);
+        background: linear-gradient(270deg, #ffdf9e, #f5b97f, #eac386, #fff5c2);
+        background-size: 600% 600%;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        animation: textLight 10s linear infinite, fadeIn 2s ease-in-out forwards;
-        letter-spacing: 2px;
+        animation: gradientShift 6s ease infinite, fadeIn 2s ease-in-out forwards;
+        letter-spacing: 3px;
         z-index: 3;
     }}
-    @keyframes textLight {{
-        0% {{ background-position: 200% 0%; }}
-        100% {{ background-position: -200% 0%; }}
+    @keyframes gradientShift {{
+        0% {{ background-position: 0% 50%; }}
+        50% {{ background-position: 100% 50%; }}
+        100% {{ background-position: 0% 50%; }}
     }}
     @keyframes fadeIn {{
         from {{ opacity: 0; transform: scale(0.97); }}
