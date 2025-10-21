@@ -3,53 +3,42 @@ import base64
 import time
 import streamlit.components.v1 as components
 
-# ========== CẤU HÌNH CƠ BẢN ==========
 st.set_page_config(page_title="Tổ bảo dưỡng số 1", page_icon="✈️", layout="wide")
 
+# ======== FILES =========
 VIDEO_PC = "airplane.mp4"
 VIDEO_MOBILE = "mobile.mp4"
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 AUDIO = "plane_fly.mp3"
 
-# ========== HÀM HỖ TRỢ ==========
+# ======== UTILS =========
 def get_base64(path):
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
 
-def hide_streamlit_ui():
+def hide_ui():
     st.markdown("""
-        <style>
-        [data-testid="stToolbar"], header, footer, iframe[title*="keyboard"] {
-            display: none !important;
-        }
-        .stApp, .block-container {
-            padding: 0 !important;
-            margin: 0 !important;
-            width: 100vw !important;
-            height: 100vh !important;
-        }
-        </style>
+    <style>
+    [data-testid="stToolbar"], header, footer, iframe[title*="keyboard"] {
+        display: none !important;
+    }
+    .stApp, .block-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+    }
+    </style>
     """, unsafe_allow_html=True)
 
-# ========== XÁC ĐỊNH THIẾT BỊ ==========
-if "is_mobile" not in st.session_state:
-    components.html("""
-        <script>
-        const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
-        window.parent.postMessage({type: "device_check", isMobile}, "*");
-        </script>
-    """, height=0)
-    st.info("Đang xác định thiết bị...")
-    st.stop()
-
-# ========== MÀN HÌNH INTRO ==========
+# ======== INTRO =========
 def intro_screen(is_mobile):
     video_src = VIDEO_MOBILE if is_mobile else VIDEO_PC
     bg_b64 = get_base64(video_src)
     audio_b64 = get_base64(AUDIO)
 
-    intro_html = f"""
+    html = f"""
     <html>
     <head>
     <style>
@@ -65,12 +54,9 @@ def intro_screen(is_mobile):
         height: 100vh;
         object-fit: cover;
         position: absolute;
-        top: 0;
-        left: 0;
+        top: 0; left: 0;
     }}
-    audio {{
-        display: none;
-    }}
+    audio {{ display: none; }}
     h1 {{
         position: absolute;
         top: 45%;
@@ -79,11 +65,9 @@ def intro_screen(is_mobile):
         text-align: center;
         color: white;
         font-family: 'Playfair Display', serif;
-        font-weight: bold;
         font-size: clamp(22px, 6vw, 60px);
         text-shadow: 0 0 20px rgba(255,255,255,0.9);
         width: 90%;
-        white-space: normal;
         letter-spacing: 3px;
         animation: glow 6s linear infinite;
     }}
@@ -94,8 +78,7 @@ def intro_screen(is_mobile):
     }}
     #shatter {{
         position: absolute;
-        top: 0;
-        left: 0;
+        top: 0; left: 0;
         width: 100%;
         height: 100%;
         display: grid;
@@ -123,8 +106,7 @@ def intro_screen(is_mobile):
         const vid = document.getElementById("vid");
         const aud = document.getElementById("aud");
         const shatter = document.getElementById("shatter");
-        const ROWS = 7;
-        const COLS = 12;
+        const ROWS = 7, COLS = 12;
 
         for (let r = 0; r < ROWS; r++) {{
             for (let c = 0; c < COLS; c++) {{
@@ -142,7 +124,6 @@ def intro_screen(is_mobile):
             const ctx = canvas.getContext('2d');
             ctx.drawImage(vid, 0, 0, w, h);
             const img = canvas.toDataURL('image/png');
-
             const shards = Array.from(shatter.children);
             const cellW = w / COLS;
             const cellH = h / ROWS;
@@ -174,7 +155,7 @@ def intro_screen(is_mobile):
 
             setTimeout(() => {{
                 window.parent.postMessage({{type: "intro_done"}}, "*");
-            }}, 2000);
+            }}, 2200);
         }}
 
         vid.addEventListener("play", () => {{
@@ -186,16 +167,15 @@ def intro_screen(is_mobile):
     </body>
     </html>
     """
+    components.html(html, height=800, scrolling=False)
 
-    components.html(intro_html, height=800, scrolling=False)
-
-# ========== TRANG CHÍNH ==========
+# ======== MAIN =========
 def main_page(is_mobile):
     bg_b64 = get_base64(BG_MOBILE if is_mobile else BG_PC)
     st.markdown(f"""
     <style>
     [data-testid="stAppViewContainer"] {{
-        background: 
+        background:
             linear-gradient(to bottom, rgba(250,240,200,0.9), rgba(190,160,120,0.9)),
             url("data:image/jpg;base64,{bg_b64}");
         background-size: cover;
@@ -218,26 +198,39 @@ def main_page(is_mobile):
     <h1>TỔ BẢO DƯỠNG SỐ 1</h1>
     """, unsafe_allow_html=True)
 
-# ========== LUỒNG CHÍNH ==========
-hide_streamlit_ui()
+# ======== APP FLOW =========
+hide_ui()
+
+# Nhận thông điệp từ JavaScript
+components.html("""
+<script>
+const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+window.parent.postMessage({type: "device_check", isMobile}, "*");
+</script>
+""", height=0)
+
+# Nhận giá trị từ JS (Streamlit sẽ tự reload)
+msg = st.experimental_get_query_params()
+if "device" in msg:
+    st.session_state.is_mobile = (msg["device"][0] == "1")
+
+# Nếu chưa có device -> chèn script để set URL param
+if "is_mobile" not in st.session_state:
+    components.html("""
+    <script>
+    const isMobile = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+    const url = new URL(window.location.href);
+    url.searchParams.set('device', isMobile ? '1' : '0');
+    window.location.replace(url);
+    </script>
+    """, height=0)
+    st.stop()
 
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
 if not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
-    st.markdown("""
-    <script>
-    window.addEventListener("message", (e) => {
-        if (e.data.type === "device_check") {
-            window.parent.postMessage({type:"set_device", isMobile:e.data.isMobile}, "*");
-        }
-        if (e.data.type === "intro_done") {
-            window.parent.location.reload();
-        }
-    });
-    </script>
-    """, unsafe_allow_html=True)
     time.sleep(9)
     st.session_state.intro_done = True
     st.rerun()
