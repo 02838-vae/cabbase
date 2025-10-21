@@ -51,7 +51,7 @@ def intro_screen():
     }}
     h1 {{
         font-family: 'Courier New', monospace;
-        font-size: { '5vw' if is_mobile else '3vw' };
+        font-size: {'5vw' if is_mobile else '3vw'};
         color: white;
         text-align: center;
         text-shadow: 3px 3px 8px rgba(0,0,0,0.8);
@@ -83,7 +83,7 @@ def intro_screen():
     </audio>
 
     <div class="overlay">
-        <h1>✈️ Chào mừng đến với Tổ bảo dưỡng số 1 ✈️</h1>
+        <h1>Chào mừng đến với Tổ bảo dưỡng số 1</h1>
     </div>
 
     <div id="shatter"></div>
@@ -117,15 +117,15 @@ def intro_screen():
         const dataURL = canvas.toDataURL('image/png');
 
         const shards = Array.from(shatter.children);
-        const cellW = displayW / 12;
-        const cellH = displayH / 7;
+        const cellW = displayW / COLS;
+        const cellH = displayH / ROWS;
 
-        shatter.style.gridTemplateColumns = `repeat(12, 1fr)`;
-        shatter.style.gridTemplateRows = `repeat(7, 1fr)`;
+        shatter.style.gridTemplateColumns = `repeat(${COLS}, 1fr)`;
+        shatter.style.gridTemplateRows = `repeat(${ROWS}, 1fr)`;
 
         shards.forEach((tile, idx) => {{
-            const row = Math.floor(idx / 12);
-            const col = idx % 12;
+            const row = Math.floor(idx / COLS);
+            const col = idx % COLS;
             tile.style.backgroundImage = `url('${dataURL}')`;
             tile.style.backgroundSize = `${displayW}px ${displayH}px`;
             tile.style.backgroundPosition = `-${Math.round(col * cellW)}px -${Math.round(row * cellH)}px`;
@@ -134,7 +134,7 @@ def intro_screen():
             tile.style.opacity = '1';
         }});
 
-        // Vỡ mảnh
+        // Hiệu ứng vỡ mảnh
         shards.forEach(tile => {{
             const angle = (Math.random() - 0.5) * 2 * Math.PI;
             const dist = 200 + Math.random() * 200;
@@ -158,10 +158,9 @@ def intro_screen():
     }});
 
     vid.addEventListener("ended", captureAndShatter);
-    vid.play().catch(()=>{{console.log("Autoplay blocked")}})
+    vid.play().catch(()=>{{console.log("Autoplay blocked")}});
     </script>
     """
-
     st.markdown(intro_html, unsafe_allow_html=True)
 
 
@@ -170,8 +169,9 @@ def main_page():
     page_html = f"""
     <style>
     [data-testid="stAppViewContainer"] {{
-        background: linear-gradient(to bottom, rgba(240,230,200,0.95), rgba(190,160,120,0.95)),
-                    url("data:image/jpg;base64,{bg_b64}");
+        background: 
+            linear-gradient(to bottom, rgba(240,230,200,0.9), rgba(190,160,120,0.9)),
+            url("data:image/jpg;base64,{bg_b64}");
         background-size: cover;
         background-position: center;
         background-repeat: no-repeat;
@@ -181,8 +181,13 @@ def main_page():
         font-family: 'Georgia', serif;
         color: #2b1d0e;
         text-shadow: 1px 1px 3px rgba(255,255,255,0.8);
-        font-size: { '8vw' if is_mobile else '4vw' };
+        font-size: {'8vw' if is_mobile else '4vw'};
         margin-top: 4vh;
+        animation: fadeIn 2s ease-in-out forwards;
+    }}
+    @keyframes fadeIn {{
+        from {{opacity: 0; transform: translateY(-20px);}}
+        to {{opacity: 1; transform: translateY(0);}}
     }}
     </style>
     <h1>Tổ bảo dưỡng số 1</h1>
@@ -196,17 +201,14 @@ if "intro_done" not in st.session_state:
 
 if not st.session_state.intro_done:
     intro_screen()
-    st.markdown(
-        """
-        <script>
-        window.addEventListener("message", (e) => {
-            if (e.data && e.data.type === "intro_done") {
-                window.parent.location.reload();
-            }
-        });
-        </script>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown("""
+    <script>
+    window.addEventListener("message", (e) => {{
+        if (e.data && e.data.type === "intro_done") {{
+            window.parent.location.reload();
+        }}
+    }});
+    </script>
+    """, unsafe_allow_html=True)
 else:
     main_page()
