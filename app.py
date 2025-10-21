@@ -18,31 +18,20 @@ SFX = "plane_fly.mp3"
 def hide_streamlit_ui():
     st.markdown("""
     <style>
-    /* Ẩn các thành phần mặc định của Streamlit */
     [data-testid="stToolbar"], header, footer, iframe[title*="keyboard"], [tabindex="0"][aria-live] {
         display: none !important;
     }
-    /* Thiết lập cho toàn bộ app chiếm full màn hình */
     .stApp, .main, .block-container {
         padding: 0 !important;
         margin: 0 !important;
         width: 100vw !important;
         height: 100vh !important;
         overflow: hidden !important;
-        /* ĐIỀU CHỈNH QUAN TRỌNG: Đảm bảo nền của Streamlit là màu đen tuyệt đối */
-        background: black !important;
-    }
-    /* Bắt buộc iframe phải chiếm toàn bộ màn hình */
-    iframe {
-        width: 100vw !important;
-        height: 100vh !important;
-        border: none !important;
     }
     </style>
     """, unsafe_allow_html=True)
 
 # ========== XÁC ĐỊNH THIẾT BỊ ==========
-# (Không có thay đổi ở phần này)
 if "is_mobile" not in st.session_state:
     ua_string = st_javascript("window.navigator.userAgent;")
     if ua_string:
@@ -57,15 +46,10 @@ if "is_mobile" not in st.session_state:
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
-    try:
-        with open(video_file, "rb") as f:
-            video_b64 = base64.b64encode(f.read()).decode()
-        with open(SFX, "rb") as a:
-            audio_b64 = base64.b64encode(a.read()).decode()
-    except FileNotFoundError as e:
-        st.error(f"Lỗi: Không tìm thấy tệp {e.filename}. Vui lòng đảm bảo các tệp video và âm thanh nằm trong cùng thư mục.")
-        st.stop()
-
+    with open(video_file, "rb") as f:
+        video_b64 = base64.b64encode(f.read()).decode()
+    with open(SFX, "rb") as a:
+        audio_b64 = base64.b64encode(a.read()).decode()
 
     intro_html = f"""
     <html>
@@ -73,28 +57,28 @@ def intro_screen(is_mobile=False):
         <meta name='viewport' content='width=device-width, initial-scale=1.0'>
         <style>
         html, body {{
-            margin: 0; padding: 0;
+            margin: 0;
+            padding: 0;
             overflow: hidden;
             background: black;
-            height: 100%;
-            width: 100%;
+            width: 100vw;
+            height: 100vh;
         }}
         video {{
-            position: absolute;
-            top: 0; left: 0;
-            /* Đảm bảo lấp đầy hoàn toàn bằng cách tăng nhẹ kích thước */
-            width: 100.1%;
-            height: 100.1%;
-            object-fit: cover; /* Giữ nguyên cover để video không bị méo */
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            background: black;
         }}
         audio {{ display: none; }}
         #intro-text {{
             position: absolute;
-            /* ĐIỀU CHỈNH: Vị trí chữ đã được đưa lên rất cao (10%) */
-            top: 10%; 
+            top: 12%;
             left: 50%;
-            /* Giữ nguyên transform để căn giữa chữ theo chiều ngang và căn theo vị trí top mới */
-            transform: translate(-50%, -50%);
+            transform: translateX(-50%);
             width: 90vw;
             text-align: center;
             color: #f8f4e3;
@@ -109,6 +93,7 @@ def intro_screen(is_mobile=False):
             animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards;
             line-height: 1.2;
             word-wrap: break-word;
+            z-index: 2;
         }}
         @keyframes lightSweep {{
             0% {{ background-position: 200% 0%; }}
@@ -121,12 +106,13 @@ def intro_screen(is_mobile=False):
             100% {{ opacity: 0; }}
         }}
         #fade {{
-            position: absolute;
+            position: fixed;
             top: 0; left: 0;
-            width: 100%; height: 100%;
+            width: 100vw; height: 100vh;
             background: black;
             opacity: 0;
             transition: opacity 1.5s ease-in-out;
+            z-index: 3;
         }}
         </style>
     </head>
@@ -144,6 +130,7 @@ def intro_screen(is_mobile=False):
         const audio = document.getElementById('flySfx');
         const fade = document.getElementById('fade');
         let ended = false;
+
         function finishIntro() {{
             if (ended) return;
             ended = true;
@@ -152,14 +139,17 @@ def intro_screen(is_mobile=False):
                 window.parent.postMessage({{type: 'intro_done'}}, '*');
             }}, 1000);
         }}
+
         vid.addEventListener('canplay', () => {{
             vid.play().catch(() => console.log('Autoplay bị chặn'));
         }});
+
         vid.addEventListener('play', () => {{
             audio.volume = 1.0;
             audio.currentTime = 0;
             audio.play().catch(() => console.log('Autoplay âm thanh bị chặn'));
         }});
+
         document.addEventListener('click', () => {{
             vid.muted = false;
             vid.play();
@@ -167,17 +157,18 @@ def intro_screen(is_mobile=False):
             audio.currentTime = 0;
             audio.play().catch(()=>{{}});
         }}, {{once:true}});
+
         vid.addEventListener('ended', finishIntro);
         setTimeout(finishIntro, 9000);
         </script>
     </body>
     </html>
     """
-    # Bỏ tham số height cố định
-    components.html(intro_html, scrolling=False)
+
+    # Dùng height lớn để iframe thật sự hiển thị (fix trang trắng)
+    components.html(intro_html, height=1080, scrolling=False)
 
 # ========== TRANG CHÍNH ==========
-# (Không có thay đổi ở phần này)
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -199,19 +190,6 @@ def main_page(is_mobile=False):
         filter: brightness(1.05) contrast(1.1) saturate(1.05);
         animation: fadeInBg 1.5s ease-in-out forwards;
     }}
-    .stApp::after {{
-        content: "";
-        position: absolute;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
-        opacity: 0.09;
-        mix-blend-mode: multiply;
-    }}
-    @keyframes fadeInBg {{
-        from {{ opacity: 0; }}
-        to {{ opacity: 1; }}
-    }}
     .welcome {{
         position: absolute;
         top: 8%;
@@ -226,16 +204,6 @@ def main_page(is_mobile=False):
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         animation: textLight 10s linear infinite, fadeIn 2s ease-in-out forwards;
-        letter-spacing: 2px;
-        z-index: 3;
-    }}
-    @keyframes textLight {{
-        0% {{ background-position: 200% 0%; }}
-        100% {{ background-position: -200% 0%; }}
-    }}
-    @keyframes fadeIn {{
-        from {{ opacity: 0; transform: scale(0.97); }}
-        to {{ opacity: 1; transform: scale(1); }}
     }}
     </style>
 
@@ -243,27 +211,23 @@ def main_page(is_mobile=False):
     """, unsafe_allow_html=True)
 
 # ========== LUỒNG CHÍNH ==========
-# (Không có thay đổi ở phần này)
 hide_streamlit_ui()
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
 if not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
-    
-    # Kỹ thuật để reload trang sau khi intro kết thúc
-    component_value = st_javascript("""
-        new Promise(resolve => {
-            window.addEventListener("message", (event) => {
-                if (event.data.type === "intro_done") {
-                    resolve("done");
-                }
-            });
-        })
-    """)
-    
-    if component_value == "done":
-        st.session_state.intro_done = True
-        st.rerun()
+    st.markdown("""
+    <script>
+    window.addEventListener("message", (event) => {
+        if (event.data.type === "intro_done") {
+            window.parent.location.reload();
+        }
+    });
+    </script>
+    """, unsafe_allow_html=True)
+    time.sleep(9)
+    st.session_state.intro_done = True
+    st.rerun()
 else:
     main_page(st.session_state.is_mobile)
