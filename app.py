@@ -8,7 +8,6 @@ import streamlit.components.v1 as components
 # ========== CẤU HÌNH ==========
 st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 
-# Vui lòng đảm bảo các file này tồn tại trong cùng thư mục với file python
 VIDEO_PC = "airplane.mp4"
 VIDEO_MOBILE = "mobile.mp4"
 BG_PC = "cabbase.jpg"
@@ -32,14 +31,16 @@ def hide_streamlit_ui():
     </style>
     """, unsafe_allow_html=True)
 
-# ========== KIỂM TRA SỰ TỒN TẠI CỦA FILE ==========
-def check_files():
-    files_to_check = [VIDEO_PC, VIDEO_MOBILE, BG_PC, BG_MOBILE, SFX]
-    missing_files = [f for f in files_to_check if not __import__('os').path.exists(f)]
-    if missing_files:
-        st.error(f"Lỗi: Không tìm thấy các file sau, vui lòng đảm bảo chúng ở cùng thư mục: {', '.join(missing_files)}")
+# ========== XÁC ĐỊNH THIẾT BỊ ==========
+if "is_mobile" not in st.session_state:
+    ua_string = st_javascript("window.navigator.userAgent;")
+    if ua_string:
+        ua = parse(ua_string)
+        st.session_state.is_mobile = not ua.is_pc
+        st.rerun()
+    else:
+        st.info("Đang xác định thiết bị...")
         st.stop()
-    return True
 
 # ========== MÀN HÌNH INTRO ==========
 def intro_screen(is_mobile=False):
@@ -50,55 +51,44 @@ def intro_screen(is_mobile=False):
     with open(SFX, "rb") as a:
         audio_b64 = base64.b64encode(a.read()).decode()
 
-    top_pos = "50%" if is_mobile else "35%" # Điều chỉnh vị trí chữ trên PC
-
     intro_html = f"""
     <html>
     <head>
         <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
         <style>
         html, body {{
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            width: 100%;
-            background: black;
+            margin: 0; padding: 0;
             overflow: hidden;
-            font-family: 'Playfair Display', serif;
-        }}
-        #video-container {{
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
+            background: black;
             height: 100%;
         }}
         video {{
+            position: absolute;
+            top: 0; left: 0;
             width: 100%;
             height: 100%;
-            object-fit: cover; /* Đây là thuộc tính giúp video luôn full màn hình */
-            object-position: center center;
+            object-fit: cover;
         }}
         audio {{ display: none; }}
         #intro-text {{
             position: absolute;
-            top: {top_pos};
+            top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             width: 90vw;
             text-align: center;
             color: #f8f4e3;
-            font-size: clamp(24px, 6vw, 60px);
+            font-size: clamp(22px, 6vw, 60px);
             font-weight: bold;
-            background: linear-gradient(120deg, #f5e9c8 20%, #fff9e8 40%, #f5e9c8 60%);
+            font-family: 'Playfair Display', serif;
+            background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
             background-size: 200%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             text-shadow: 0 0 15px rgba(255,255,230,0.4);
             animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards;
+            line-height: 1.2;
+            word-wrap: break-word;
         }}
         @keyframes lightSweep {{
             0% {{ background-position: 200% 0%; }}
@@ -111,24 +101,19 @@ def intro_screen(is_mobile=False):
             100% {{ opacity: 0; }}
         }}
         #fade {{
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
             background: black;
             opacity: 0;
             transition: opacity 1.5s ease-in-out;
-            pointer-events: none; /* Cho phép click xuyên qua */
         }}
         </style>
     </head>
     <body>
-        <div id="video-container">
-            <video id='introVid' autoplay muted playsinline>
-                <source src='data:video/mp4;base64,{video_b64}' type='video/mp4'>
-            </video>
-        </div>
+        <video id='introVid' autoplay muted playsinline>
+            <source src='data:video/mp4;base64,{video_b64}' type='video/mp4'>
+        </video>
         <audio id='flySfx'>
             <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
         </audio>
@@ -144,42 +129,31 @@ def intro_screen(is_mobile=False):
             ended = true;
             fade.style.opacity = 1;
             setTimeout(() => {{
-                // Gửi thông điệp tới Streamlit để biết intro đã xong
-                window.parent.postMessage({{type: 'streamlit:setComponentValue', value: true}}, '*');
+                window.parent.postMessage({{type: 'intro_done'}}, '*');
             }}, 1000);
         }}
-
-        // Cố gắng phát video khi sẵn sàng
         vid.addEventListener('canplay', () => {{
-            vid.play().catch(() => console.log('Autoplay bị trình duyệt chặn. Cần người dùng tương tác.'));
+            vid.play().catch(() => console.log('Autoplay bị chặn'));
         }});
-
-        // Khi video bắt đầu chạy, phát âm thanh
         vid.addEventListener('play', () => {{
             audio.volume = 1.0;
             audio.currentTime = 0;
-            audio.play().catch(() => console.log('Autoplay âm thanh bị chặn.'));
+            audio.play().catch(() => console.log('Autoplay âm thanh bị chặn'));
         }});
-
-        // Bật âm thanh khi người dùng click lần đầu
-        document.body.addEventListener('click', () => {{
-            if(vid.muted) {{
-               vid.muted = false;
-            }}
-            vid.play(); // Đảm bảo video chạy khi click
-            audio.play();
+        document.addEventListener('click', () => {{
+            vid.muted = false;
+            vid.play();
+            audio.volume = 1.0;
+            audio.currentTime = 0;
+            audio.play().catch(()=>{{}});
         }}, {{once:true}});
-
         vid.addEventListener('ended', finishIntro);
-        setTimeout(finishIntro, 9000); // Timeout dự phòng
+        setTimeout(finishIntro, 9000);
         </script>
     </body>
     </html>
     """
-    intro_finished = components.html(intro_html, height=None)
-    if intro_finished:
-        st.session_state.intro_done = True
-        st.rerun()
+    components.html(intro_html, height=800, scrolling=False)
 
 # ========== TRANG CHÍNH ==========
 def main_page(is_mobile=False):
@@ -189,90 +163,80 @@ def main_page(is_mobile=False):
         bg_b64 = base64.b64encode(f.read()).decode()
 
     st.markdown(f"""
-    <head>
-        <link rel="preconnect" href="https://fonts.googleapis.com">
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-        <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
-    </head>
     <style>
-    .stApp {{
-        background:
-            linear-gradient(to bottom, rgba(245, 235, 220, 0.15), rgba(180, 160, 135, 0.35)),
+    html, body, .stApp {{
+        height: 100vh !important;
+        background: 
+            linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
             url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
         background-size: cover !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
         position: relative;
-        filter: sepia(0.3) brightness(1.05) contrast(1.05) saturate(0.95);
+        filter: brightness(1.05) contrast(1.1) saturate(1.05);
+        animation: fadeInBg 1.5s ease-in-out forwards;
     }}
     .stApp::after {{
         content: "";
         position: absolute;
         top: 0; left: 0;
         width: 100%; height: 100%;
-        background-image: url("https://www.transparenttextures.com/patterns/paper-fibers.png");
-        opacity: 0.15;
-        mix-blend-mode: overlay;
-        pointer-events: none;
+        background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
+        opacity: 0.09;
+        mix-blend-mode: multiply;
+    }}
+    @keyframes fadeInBg {{
+        from {{ opacity: 0; }}
+        to {{ opacity: 1; }}
     }}
     .welcome {{
         position: absolute;
-        top: 10%;
-        left: 50%;
-        transform: translateX(-50%);
+        top: 8%;
         width: 100%;
         text-align: center;
-        font-size: clamp(32px, 5.5vw, 65px);
+        font-size: clamp(30px, 5vw, 65px);
+        color: #fff5d7;
         font-family: 'Playfair Display', serif;
-        text-shadow: 0 2px 20px rgba(0,0,0,0.5);
-        background: linear-gradient(270deg, #ffe8a3, #ffca7f, #f9d58e, #fff5c7);
-        background-size: 600% 600%;
+        text-shadow: 0 0 18px rgba(0,0,0,0.65), 0 0 30px rgba(255,255,180,0.25);
+        background: linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%);
+        background-size: 200%;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        animation: gradientShift 8s ease infinite, fadeIn 2s ease-in-out forwards;
-        letter-spacing: 2.5px;
+        animation: textLight 10s linear infinite, fadeIn 2s ease-in-out forwards;
+        letter-spacing: 2px;
         z-index: 3;
     }}
-    @keyframes gradientShift {{
-        0% {{ background-position: 0% 50%; }}
-        50% {{ background-position: 100% 50%; }}
-        100% {{ background-position: 0% 50%; }}
+    @keyframes textLight {{
+        0% {{ background-position: 200% 0%; }}
+        100% {{ background-position: -200% 0%; }}
     }}
     @keyframes fadeIn {{
-        from {{ opacity: 0; transform: translateX(-50%) scale(0.97); }}
-        to {{ opacity: 1; transform: translateX(-50%) scale(1); }}
+        from {{ opacity: 0; transform: scale(0.97); }}
+        to {{ opacity: 1; transform: scale(1); }}
     }}
     </style>
+
     <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
     """, unsafe_allow_html=True)
 
 # ========== LUỒNG CHÍNH ==========
-if __name__ == "__main__":
-    # 1. Kiểm tra sự tồn tại của tất cả các file cần thiết ngay từ đầu
-    check_files()
-    hide_streamlit_ui()
-
-    # 2. Luồng khởi tạo để xác định thiết bị một lần duy nhất
-    if "initialized" not in st.session_state:
-        # Lấy thông tin user agent từ client bằng javascript
-        ua_string = st_javascript("window.navigator.userAgent;")
-
-        if ua_string:
-            # Khi JS đã trả về user agent, tiến hành phân tích
-            ua = parse(ua_string)
-            st.session_state.is_mobile = not ua.is_pc
-            st.session_state.intro_done = False
-            st.session_state.initialized = True
-            # Chạy lại script để vào luồng chính
-            st.rerun()
-        else:
-            # Lần đầu tiên chạy, JS chưa kịp trả về giá trị.
-            # Hiển thị thông báo và dừng thực thi script.
-            # Streamlit sẽ tự động chạy lại khi giá trị JS được trả về.
-            st.info("Đang khởi tạo, vui lòng chờ...")
-            st.stop()
-
-    # 3. Luồng chính của ứng dụng sau khi đã khởi tạo
-    if not st.session_state.get('intro_done', False):
-        intro_screen(st.session_state.is_mobile)
-    else:
-        main_page(st.session_state.is_mobile)
-
+hide_streamlit_ui()
+if "intro_done" not in st.session_state:
+    st.session_state.intro_done = False
+if not st.session_state.intro_done:
+    intro_screen(st.session_state.is_mobile)
+    st.markdown("""
+    <script>
+    window.addEventListener("message", (event) => {
+        if (event.data.type === "intro_done") {
+            window.parent.location.reload();
+        }
+    });
+    </script>
+    """, unsafe_allow_html=True)
+    time.sleep(9)
+    st.session_state.intro_done = True
+    st.rerun()
+else:
+    main_page(st.session_state.is_mobile)
