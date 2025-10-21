@@ -1,224 +1,141 @@
 import streamlit as st
 import base64
 import time
-from streamlit_javascript import st_javascript
-from user_agents import parse
-import streamlit.components.v1 as components
+from streamlit.components.v1 import html as components
 
-# ========== CẤU HÌNH ==========
-st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
+st.set_page_config(page_title="Tổ bảo dưỡng số 1", layout="wide")
 
-VIDEO_PC = "airplane.mp4"
-VIDEO_MOBILE = "mobile.mp4"
-BG_PC = "cabbase.jpg"
-BG_MOBILE = "mobile.jpg"
-SFX = "plane_fly.mp3"
+# === Xác định thiết bị ===
+ua = st.session_state.get("ua", "")
+if not ua:
+    ua = st.query_params.get("ua", [""])[0] if "ua" in st.query_params else ""
+    st.session_state.ua = ua
 
-# ========== ẨN UI STREAMLIT ==========
-def hide_streamlit_ui():
-    st.markdown("""
-    <style>
-    [data-testid="stToolbar"], header, footer, iframe[title*="keyboard"], [tabindex="0"][aria-live] {
-        display: none !important;
-    }
-    .stApp, .main, .block-container {
-        padding: 0 !important;
-        margin: 0 !important;
-        width: 100vw !important;
-        height: 100vh !important;
-    }
-    </style>
-    """, unsafe_allow_html=True)
+is_mobile = any(k in ua.lower() for k in ["iphone", "android", "mobile", "ipad"])
 
-# ========== XÁC ĐỊNH THIẾT BỊ ==========
-if "is_mobile" not in st.session_state:
-    ua_string = st_javascript("window.navigator.userAgent;")
-    if ua_string:
-        ua = parse(ua_string)
-        st.session_state.is_mobile = not ua.is_pc
-        st.rerun()
-    else:
-        st.info("Đang xác định thiết bị...")
-        st.stop()
+# === Chọn file video, background theo thiết bị ===
+video_file = "mobile.mp4" if is_mobile else "airplane.mp4"
+bg_image_file = "mobile.jpg" if is_mobile else "cabbase.jpg"
+audio_file = "plane_fly.mp3"
 
-# ========== MÀN HÌNH INTRO ==========
-def intro_screen(is_mobile=False):
-    hide_streamlit_ui()
-    video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
-    with open(video_file, "rb") as f:
-        video_b64 = base64.b64encode(f.read()).decode()
-    with open(SFX, "rb") as a:
-        audio_b64 = base64.b64encode(a.read()).decode()
+# === Chuyển file sang base64 ===
+def get_base64(file_path):
+    with open(file_path, "rb") as f:
+        return base64.b64encode(f.read()).decode()
 
-    intro_html = f"""
-    <html>
-    <head>
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+video_b64 = get_base64(video_file)
+bg_b64 = get_base64(bg_image_file)
+audio_b64 = get_base64(audio_file)
+
+# === Hiển thị video intro + âm thanh + chữ ===
+components(f"""
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+html, body {{
+  margin: 0; padding: 0;
+  width: 100%; height: 100%;
+  overflow: hidden; background: black;
+}}
+video {{
+  width: 100%; height: 100%;
+  object-fit: cover;
+}}
+#text-overlay {{
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 100%;
+  text-align: center;
+  font-family: 'Arial Black', sans-serif;
+  font-size: { "24px" if is_mobile else "48px" };
+  color: white;
+  text-shadow: 0 0 30px rgba(255,255,255,0.8);
+  overflow: hidden;
+  white-space: nowrap;
+  animation: shine 5s linear forwards;
+}}
+
+@keyframes shine {{
+  0% {{ color: rgba(255,255,255,0.1); }}
+  100% {{ color: rgba(255,255,255,1); }}
+}}
+
+.fade-out {{
+  animation: fadeOut 2s ease-in-out forwards;
+}}
+
+@keyframes fadeOut {{
+  from {{ opacity: 1; }}
+  to {{ opacity: 0; }}
+}}
+</style>
+</head>
+<body>
+  <video id="introVid" autoplay muted playsinline>
+    <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
+  </video>
+
+  <audio id="planeAudio" preload="auto">
+    <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
+  </audio>
+
+  <div id="text-overlay">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+
+  <script>
+    const vid = document.getElementById("introVid");
+    const audio = document.getElementById("planeAudio");
+    const text = document.getElementById("text-overlay");
+
+    vid.addEventListener("play", () => {{
+      audio.volume = 1.0;
+      audio.play().catch(err => console.log("Autoplay blocked", err));
+    }});
+
+    // Làm mờ dần video sau 5s, rồi chuyển trang sau 9s
+    setTimeout(() => {{
+      vid.classList.add("fade-out");
+      text.classList.add("fade-out");
+    }}, 5000);
+
+    setTimeout(() => {{
+      window.parent.postMessage({{ type: "showMainPage" }}, "*");
+    }}, 9000);
+  </script>
+</body>
+</html>
+""", height=1000, scrolling=False)
+
+# === Cơ chế chuyển cảnh ===
+msg = st.experimental_get_query_params().get("msg", [""])[0]
+if msg == "main":
+    st.markdown(
+        f"""
         <style>
-        html, body {{
-            margin: 0; padding: 0;
-            overflow: hidden;
-            background: black;
-            height: 100%;
-        }}
-        video {{
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-        }}
-        audio {{
-            display: none;
-        }}
-        #intro-text {{
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            color: white;
-            font-size: clamp(24px, 6vw, 60px);
-            font-weight: bold;
-            font-family: 'Playfair Display', serif;
-            text-shadow: 0 0 20px rgba(255,255,255,0.7);
-            animation: fadeInOut 6s ease-in-out forwards;
-            width: 90%;
-            word-wrap: break-word;
-        }}
-        @keyframes fadeInOut {{
-            0% {{ opacity: 0; }}
-            20% {{ opacity: 1; }}
-            80% {{ opacity: 1; }}
-            100% {{ opacity: 0; }}
-        }}
-        #fade {{
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: black;
-            opacity: 0;
-            transition: opacity 1.5s ease-in-out;
+        .main-bg {{
+          position: fixed;
+          top: 0; left: 0;
+          width: 100%; height: 100%;
+          background: url(data:image/jpg;base64,{bg_b64}) center/cover no-repeat;
+          z-index: -1;
         }}
         </style>
-    </head>
-    <body>
-        <video id="introVid" autoplay muted playsinline>
-            <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
-        </video>
-        <audio id="flySfx">
-            <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
-        </audio>
-        <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-        <div id="fade"></div>
-
-        <script>
-        const vid = document.getElementById('introVid');
-        const audio = document.getElementById('flySfx');
-        const fade = document.getElementById('fade');
-        let ended = false;
-
-        function finishIntro() {{
-            if (ended) return;
-            ended = true;
-            fade.style.opacity = 1;
-            setTimeout(() => {{
-                window.parent.postMessage({{type: "intro_done"}}, "*");
-            }}, 1000);
-        }}
-
-        // Khi video sẵn sàng phát
-        vid.addEventListener('canplay', () => {{
-            vid.play().catch(() => {{ console.log("Autoplay bị chặn, chờ tương tác"); }});
-        }});
-
-        // Khi video bắt đầu play, cố gắng đồng bộ âm thanh
-        vid.addEventListener('play', () => {{
-            audio.volume = 0.8;
-            audio.currentTime = 0;
-            audio.play().catch(() => {{
-                console.log("Autoplay âm thanh bị chặn, cần click");
-            }});
-        }});
-
-        // Khi người dùng click → kích hoạt audio & bỏ mute video
-        document.addEventListener('click', () => {{
-            vid.muted = false;
-            vid.play();
-            audio.volume = 0.8;
-            audio.currentTime = 0;
-            audio.play().catch(()=>{{}});
-        }}, {{once:true}});
-
-        vid.addEventListener('ended', finishIntro);
-        setTimeout(finishIntro, 9000);
-        </script>
-    </body>
-    </html>
-    """
-    components.html(intro_html, height=800, scrolling=False)
-
-# ========== TRANG CHÍNH ==========
-def main_page(is_mobile=False):
-    hide_streamlit_ui()
-    bg = BG_MOBILE if is_mobile else BG_PC
-    with open(bg, "rb") as f:
-        bg_b64 = base64.b64encode(f.read()).decode()
-
-    st.markdown(f"""
-    <style>
-    html, body, .stApp {{
-        height: 100vh !important;
-        background: url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
-        background-size: cover !important;
-        overflow: hidden !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        animation: fadeInBg 1.2s ease-in-out forwards;
-    }}
-    @keyframes fadeInBg {{
-        from {{ opacity: 0; }}
-        to {{ opacity: 1; }}
-    }}
-    .welcome {{
-        height: 100vh;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        font-size: clamp(28px, 5vw, 60px);
-        color: white;
-        font-family: 'Playfair Display', serif;
-        text-shadow: 0 0 20px rgba(0,0,0,0.7);
-        animation: fadeIn 1.5s ease-in-out;
-    }}
-    @keyframes fadeIn {{
-        from {{ opacity: 0; }}
-        to {{ opacity: 1; }}
-    }}
-    </style>
-
-    <div class="welcome">✈️ TỔ BẢO DƯỠNG SỐ 1 ✈️</div>
-    """, unsafe_allow_html=True)
-
-# ========== LUỒNG CHÍNH ==========
-hide_streamlit_ui()
-
-if "intro_done" not in st.session_state:
-    st.session_state.intro_done = False
-
-if not st.session_state.intro_done:
-    intro_screen(st.session_state.is_mobile)
-    st.markdown("""
+        <div class="main-bg"></div>
+        """,
+        unsafe_allow_html=True,
+    )
+    st.title("Tổ bảo dưỡng số 1")
+else:
+    # JavaScript listener để chuyển sang trang chính
+    components("""
     <script>
-    window.addEventListener("message", (event) => {
-        if (event.data.type === "intro_done") {
-            window.parent.location.reload();
+    window.addEventListener("message", (e) => {
+        if (e.data && e.data.type === "showMainPage") {
+            window.location.search = "?msg=main";
         }
     });
     </script>
-    """, unsafe_allow_html=True)
-    time.sleep(9)
-    st.session_state.intro_done = True
-    st.rerun()
-else:
-    main_page(st.session_state.is_mobile)
+    """)
