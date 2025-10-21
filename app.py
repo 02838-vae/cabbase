@@ -70,7 +70,6 @@ def intro_screen(is_mobile=False):
             object-fit: cover;
         }}
         audio {{ display: none; }}
-
         #intro-text {{
             position: absolute;
             top: 50%;
@@ -92,19 +91,16 @@ def intro_screen(is_mobile=False):
             line-height: 1.2;
             word-wrap: break-word;
         }}
-
         @keyframes shimmer {{
             0% {{ background-position: 0% 50%; }}
             100% {{ background-position: 100% 50%; }}
         }}
-
         @keyframes fadeInOut {{
             0% {{ opacity: 0; }}
             20% {{ opacity: 1; }}
             80% {{ opacity: 1; }}
             100% {{ opacity: 0; }}
         }}
-
         #fade {{
             position: absolute;
             top: 0; left: 0;
@@ -119,14 +115,11 @@ def intro_screen(is_mobile=False):
         <video id='introVid' autoplay muted playsinline>
             <source src='data:video/mp4;base64,{video_b64}' type='video/mp4'>
         </video>
-
         <audio id='flySfx'>
             <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
         </audio>
-
         <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
         <div id='fade'></div>
-
         <script>
         const vid = document.getElementById('introVid');
         const audio = document.getElementById('flySfx');
@@ -141,17 +134,14 @@ def intro_screen(is_mobile=False):
                 window.parent.postMessage({{type: 'intro_done'}}, '*');
             }}, 1000);
         }}
-
         vid.addEventListener('canplay', () => {{
             vid.play().catch(() => console.log('Autoplay bị chặn'));
         }});
-
         vid.addEventListener('play', () => {{
             audio.volume = 1.0;
             audio.currentTime = 0;
             audio.play().catch(() => console.log('Autoplay âm thanh bị chặn'));
         }});
-
         document.addEventListener('click', () => {{
             vid.muted = false;
             vid.play();
@@ -159,7 +149,6 @@ def intro_screen(is_mobile=False):
             audio.currentTime = 0;
             audio.play().catch(()=>{{}});
         }}, {{once:true}});
-
         vid.addEventListener('ended', finishIntro);
         setTimeout(finishIntro, 9000);
         </script>
@@ -168,7 +157,7 @@ def intro_screen(is_mobile=False):
     """
     components.html(intro_html, height=800, scrolling=False)
 
-# ====== TRANG CHÍNH ======
+# ====== TRANG CHÍNH (nền cổ điển) ======
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -182,9 +171,31 @@ def main_page(is_mobile=False):
         background: url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
         background-size: cover !important;
         overflow: hidden !important;
+        position: relative;
         margin: 0 !important;
         padding: 0 !important;
         animation: fadeInBg 1.2s ease-in-out forwards;
+        filter: grayscale(70%) brightness(0.8);
+    }}
+    /* Hiệu ứng lớp phủ xám + nhiễu cổ */
+    .stApp::before {{
+        content: "";
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: rgba(70,70,70,0.45);
+        backdrop-filter: blur(2px);
+        mix-blend-mode: multiply;
+        z-index: 0;
+    }}
+    .stApp::after {{
+        content: "";
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
+        opacity: 0.2;
+        z-index: 1;
     }}
     @keyframes fadeInBg {{
         from {{ opacity: 0; }}
@@ -197,19 +208,22 @@ def main_page(is_mobile=False):
         align-items: center;
         text-align: center;
         font-size: clamp(28px, 5vw, 60px);
-        color: white;
+        color: #f5f5f5;
         font-family: 'Playfair Display', serif;
-        text-shadow: 0 0 20px rgba(0,0,0,0.7);
-        animation: fadeIn 1.5s ease-in-out;
+        text-shadow: 0 0 25px rgba(0,0,0,0.9);
+        animation: fadeIn 2s ease-in-out;
         width: 100%;
         padding: 0 5vw;
         box-sizing: border-box;
         word-wrap: break-word;
         white-space: normal;
+        z-index: 2;
+        position: relative;
+        letter-spacing: 2px;
     }}
     @keyframes fadeIn {{
-        from {{ opacity: 0; }}
-        to {{ opacity: 1; }}
+        from {{ opacity: 0; transform: scale(0.95); }}
+        to {{ opacity: 1; transform: scale(1); }}
     }}
     </style>
 
@@ -218,7 +232,6 @@ def main_page(is_mobile=False):
 
 # ====== LUỒNG CHÍNH ======
 hide_streamlit_ui()
-
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
