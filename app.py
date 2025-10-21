@@ -51,8 +51,7 @@ def intro_screen(is_mobile=False):
     with open(SFX, "rb") as a:
         audio_b64 = base64.b64encode(a.read()).decode()
 
-    # === CHỈNH CHỮ LÊN CAO TRÊN PC ===
-    top_pos = "20%" if not is_mobile else "50%"
+    top_pos = "20%" if not is_mobile else "50%"  # chữ trên PC cao hơn
 
     intro_html = f"""
     <html>
@@ -60,17 +59,22 @@ def intro_screen(is_mobile=False):
         <meta name='viewport' content='width=device-width, initial-scale=1.0'>
         <style>
         html, body {{
-            margin: 0; padding: 0;
-            overflow: hidden;
-            background: black;
+            margin: 0;
+            padding: 0;
             height: 100%;
+            width: 100%;
+            background: black;
+            overflow: hidden;
         }}
         video {{
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%;
-            height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
             object-fit: cover;
+            object-position: center center;
+            background-color: black;
         }}
         audio {{ display: none; }}
         #intro-text {{
@@ -84,13 +88,12 @@ def intro_screen(is_mobile=False):
             font-size: clamp(22px, 6vw, 60px);
             font-weight: bold;
             font-family: 'Playfair Display', serif;
-            background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
+            background: linear-gradient(120deg, #f5e9c8 20%, #fff9e8 40%, #f5e9c8 60%);
             background-size: 200%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             text-shadow: 0 0 15px rgba(255,255,230,0.4);
             animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards;
-            line-height: 1.2;
         }}
         @keyframes lightSweep {{
             0% {{ background-position: 200% 0%; }}
@@ -104,8 +107,10 @@ def intro_screen(is_mobile=False):
         }}
         #fade {{
             position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background: black;
             opacity: 0;
             transition: opacity 1.5s ease-in-out;
@@ -164,26 +169,27 @@ def main_page(is_mobile=False):
     with open(bg, "rb") as f:
         bg_b64 = base64.b64encode(f.read()).decode()
 
+    # === Vintage sáng, tươi hơn ===
     st.markdown(f"""
     <style>
     html, body, .stApp {{
         height: 100vh !important;
         background:
-            linear-gradient(to bottom, rgba(230, 210, 180, 0.3), rgba(190, 160, 120, 0.5)),
+            linear-gradient(to bottom, rgba(255, 240, 210, 0.4), rgba(240, 200, 150, 0.45)),
             url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
         background-size: cover !important;
         position: relative;
         overflow: hidden !important;
-        filter: brightness(1.05) contrast(1.1) saturate(0.9) sepia(0.2);
+        filter: brightness(1.08) contrast(1.05) saturate(1.1);
     }}
     .stApp::after {{
         content: "";
         position: absolute;
         top: 0; left: 0;
         width: 100%; height: 100%;
-        background-image: url("https://www.transparenttextures.com/patterns/aged-paper.png");
-        opacity: 0.15;
-        mix-blend-mode: multiply;
+        background-image: url("https://www.transparenttextures.com/patterns/paper-fibers.png");
+        opacity: 0.1;
+        mix-blend-mode: overlay;
         pointer-events: none;
     }}
     .welcome {{
@@ -193,13 +199,13 @@ def main_page(is_mobile=False):
         text-align: center;
         font-size: clamp(30px, 5vw, 65px);
         font-family: 'Playfair Display', serif;
-        text-shadow: 0 0 25px rgba(0,0,0,0.6);
-        background: linear-gradient(270deg, #ffdf9e, #f5b97f, #eac386, #fff5c2);
+        text-shadow: 0 0 25px rgba(0,0,0,0.5);
+        background: linear-gradient(270deg, #ffe8a3, #ffca7f, #f9d58e, #fff5c7);
         background-size: 600% 600%;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         animation: gradientShift 6s ease infinite, fadeIn 2s ease-in-out forwards;
-        letter-spacing: 3px;
+        letter-spacing: 2.5px;
         z-index: 3;
     }}
     @keyframes gradientShift {{
