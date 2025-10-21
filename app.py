@@ -70,6 +70,8 @@ def intro_screen(is_mobile=False):
             object-fit: cover;
         }}
         audio {{ display: none; }}
+
+        /* ----- TEXT HIỆU ỨNG ----- */
         #intro-text {{
             position: absolute;
             top: 50%;
@@ -81,18 +83,18 @@ def intro_screen(is_mobile=False):
             font-size: clamp(22px, 6vw, 60px);
             font-weight: bold;
             font-family: 'Playfair Display', serif;
-            background: linear-gradient(90deg, #e8d8a5, #fff3c4, #e8d8a5);
-            background-size: 300%;
+            background: linear-gradient(120deg, #d9c997 20%, #fff9d6 40%, #d9c997 60%);
+            background-size: 200%;
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 15px rgba(255,255,240,0.4);
-            animation: shimmer 5s linear infinite, fadeInOut 6s ease-in-out forwards;
+            text-shadow: 0 0 25px rgba(255,255,240,0.4);
+            animation: lightSweep 5s linear infinite, fadeInOut 6s ease-in-out forwards;
             line-height: 1.2;
             word-wrap: break-word;
         }}
-        @keyframes shimmer {{
-            0% {{ background-position: 0% 50%; }}
-            100% {{ background-position: 100% 50%; }}
+        @keyframes lightSweep {{
+            0% {{ background-position: 200% 0%; }}
+            100% {{ background-position: -200% 0%; }}
         }}
         @keyframes fadeInOut {{
             0% {{ opacity: 0; }}
@@ -155,7 +157,7 @@ def intro_screen(is_mobile=False):
     """
     components.html(intro_html, height=800, scrolling=False)
 
-# ====== TRANG CHÍNH PHONG CÁCH VINTAGE ======
+# ====== TRANG CHÍNH VINTAGE SÁNG ======
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -173,27 +175,27 @@ def main_page(is_mobile=False):
         margin: 0 !important;
         padding: 0 !important;
         animation: fadeInBg 1.2s ease-in-out forwards;
-        filter: sepia(35%) contrast(1.05) brightness(0.95) saturate(0.9);
+        filter: sepia(25%) contrast(1.05) brightness(1.05) saturate(1.05);
     }}
-    /* Lớp phủ vintage nhẹ */
+    /* Lớp phủ vintage sáng */
     .stApp::before {{
         content: "";
         position: absolute;
         top: 0; left: 0;
         width: 100%; height: 100%;
-        background: radial-gradient(circle at center, rgba(255,250,230,0.2) 0%, rgba(30,20,10,0.55) 100%);
-        backdrop-filter: blur(1.5px);
+        background: radial-gradient(circle at center, rgba(255,245,220,0.35) 0%, rgba(40,30,10,0.3) 100%);
+        backdrop-filter: blur(1.2px);
         mix-blend-mode: soft-light;
         z-index: 0;
     }}
-    /* Lớp noise vintage */
+    /* Lớp noise film */
     .stApp::after {{
         content: "";
         position: absolute;
         top: 0; left: 0;
         width: 100%; height: 100%;
         background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
-        opacity: 0.18;
+        opacity: 0.12;
         z-index: 1;
     }}
     @keyframes fadeInBg {{
@@ -209,7 +211,7 @@ def main_page(is_mobile=False):
         font-size: clamp(28px, 5vw, 60px);
         color: #f6eddc;
         font-family: 'Playfair Display', serif;
-        text-shadow: 0 0 15px rgba(0,0,0,0.9), 0 0 35px rgba(255,230,180,0.4);
+        text-shadow: 0 0 20px rgba(0,0,0,0.9), 0 0 35px rgba(255,230,180,0.4);
         animation: fadeIn 2s ease-in-out;
         width: 100%;
         padding: 0 5vw;
