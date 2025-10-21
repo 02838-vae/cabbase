@@ -76,25 +76,28 @@ def intro_screen(is_mobile=False):
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            width: 100vw;
+            max-width: 100%;
+            padding: 0 5vw;
             text-align: center;
             color: white;
-            font-size: clamp(24px, 6vw, 60px);
+            font-size: clamp(22px, 6vw, 60px);
             font-weight: 700;
             font-family: 'Playfair Display', serif;
+            line-height: 1.3;
+            word-wrap: break-word;
+            overflow-wrap: break-word;
             text-shadow: 0 0 25px rgba(0,0,0,0.6);
-            width: 100vw;
-            padding: 0 5vw;
-            box-sizing: border-box;
-            line-height: 1.2;
-            background: linear-gradient(120deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.9) 50%, rgba(255,255,255,0.1) 100%);
+            background: linear-gradient(110deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,1) 50%, rgba(255,255,255,0.1) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            animation: fadeInOut 6s ease-in-out forwards, lightSweep 5s linear infinite;
+            background-size: 200%;
+            animation: fadeInOut 9s ease-in-out forwards, lightSweep 9s linear forwards;
         }}
         @keyframes fadeInOut {{
             0% {{ opacity: 0; }}
-            20% {{ opacity: 1; }}
-            80% {{ opacity: 1; }}
+            10% {{ opacity: 1; }}
+            90% {{ opacity: 1; }}
             100% {{ opacity: 0; }}
         }}
         @keyframes lightSweep {{
