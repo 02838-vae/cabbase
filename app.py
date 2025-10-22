@@ -26,17 +26,24 @@ st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 
 # Kích thước lưới và thời gian
 GRID_SIZE = 8
-SHATTER_DURATION = 1.8  # Thời gian hiệu ứng tan vỡ (giây)
-RECONSTRUCT_DURATION = 1.8 # Thời gian hiệu ứng ghép lại (giây)
-BLACKOUT_DELAY = 0.2    # Thời gian màn hình đen
+SHATTER_DURATION = 1.8
+RECONSTRUCT_DURATION = 1.8
+BLACKOUT_DELAY = 0.2
 
-# ========== HÀM ẨN UI STREAMLIT ==========
+# ========== HÀM ẨN UI STREAMLIT (ĐÃ CẬP NHẬT) ==========
 
 def hide_streamlit_ui():
     st.markdown("""
     <style>
     [data-testid="stToolbar"], header, footer, iframe[title*="keyboard"], [tabindex="0"][aria-live] {
         display: none !important;
+    }
+    
+    /* FIX HEIGHT MOBILE: Đảm bảo phần tử bao ngoài full screen */
+    html, body {
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
     }
     .stApp, .main, .block-container {
         padding: 0 !important;
@@ -45,18 +52,26 @@ def hide_streamlit_ui():
         height: 100vh !important;
         overflow: hidden !important;
     }
+
+    /* FIX HEIGHT iOS/Safari: Sử dụng thuộc tính đặc biệt để khắc phục thanh địa chỉ mobile */
+    @media only screen and (max-width: 600px) {
+        .stApp, .main, .block-container {
+            height: 100% !important;
+            min-height: -webkit-fill-available !important;
+        }
+    }
     </style>
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO ==========
+# ========== MÀN HÌNH INTRO (GIỮ NGUYÊN) ==========
+# ... (Nội dung hàm intro_screen giữ nguyên từ phiên bản trước) ...
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
     shutter_file = SHUTTER_MOBILE if is_mobile else SHUTTER_PC
     bg_file = BG_MOBILE if is_mobile else BG_PC
     
-    # ... (Đọc file và mã hóa Base64 giữ nguyên) ...
     try:
         with open(video_file, "rb") as f:
             video_b64 = base64.b64encode(f.read()).decode()
@@ -73,11 +88,9 @@ def intro_screen(is_mobile=False):
     
     shards_html = "".join([f"<div class='shard' id='shard-{i}'></div>" for i in range(GRID_SIZE * GRID_SIZE)])
 
-    # Chuyển đổi hằng số Python sang JS
     js_shatter_duration = SHATTER_DURATION * 1000
     js_reconstruct_duration = RECONSTRUCT_DURATION * 1000
     js_blackout_delay = BLACKOUT_DELAY * 1000
-
 
     intro_html = f"""
     <html>
@@ -116,7 +129,6 @@ def intro_screen(is_mobile=False):
         @keyframes lightSweep {{ 0% {{ background-position: 200% 0%; }} 100% {{ background-position: -200% 0%; }} }}
         @keyframes fadeInOut {{ 0% {{ opacity: 0; }} 20% {{ opacity: 1; }} 80% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}
 
-        /* === STYLE HIỆU ỨNG TAN VỠ VÀ GHÉP LẠI === */
         #shatter-overlay {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: grid; grid-template-columns: repeat({GRID_SIZE}, 1fr); grid-template-rows: repeat({GRID_SIZE}, 1fr);
@@ -130,7 +142,6 @@ def intro_screen(is_mobile=False):
             opacity: 1; 
         }}
         
-        /* Khi ghép lại */
         .reconstructing .shard {{
             transform: translate(0, 0) rotate(0deg) scale(1) !important; 
             transition: transform {RECONSTRUCT_DURATION}s cubic-bezier(0.19, 1, 0.22, 1), opacity {RECONSTRUCT_DURATION}s ease-in-out; 
@@ -138,7 +149,6 @@ def intro_screen(is_mobile=False):
             opacity: 1 !important; 
         }}
 
-        /* Lớp phủ màn hình đen */
         #black-fade {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: black; opacity: 1; z-index: 40;
@@ -193,11 +203,9 @@ def intro_screen(is_mobile=False):
             if (ended) return;
             ended = true;
             
-            // BƯỚC 0: Chuyển từ Video sang Ảnh tĩnh (shutter)
             vid.style.opacity = 0; 
             staticFrame.style.opacity = 1; 
             
-            // BƯỚC 1: Bắt đầu Tan Vỡ (Shatter)
             setTimeout(() => {{ 
                 blackFade.style.opacity = 0; 
                 shatterOverlay.style.opacity = 1; 
@@ -213,13 +221,11 @@ def intro_screen(is_mobile=False):
                 }});
             }}, 10);
             
-            // BƯỚC 2: Màn Hình Đen (Blackout)
             setTimeout(() => {{
                 shatterOverlay.style.opacity = 0; 
                 blackFade.style.opacity = 1; 
             }}, SHATTER_DURATION * 1000); 
 
-            // BƯỚC 3: Ghép Lại (Reconstruction) - Bắt đầu sau khi màn đen kết thúc
             setTimeout(() => {{
                 shatterOverlay.style.opacity = 1; 
                 blackFade.style.opacity = 0; 
@@ -231,7 +237,6 @@ def intro_screen(is_mobile=False):
                     shard.style.transitionDelay = (RECONSTRUCT_DURATION - (initialTransforms[index].delay * 1000)) + 's';
                 }});
 
-                // BƯỚC 4: Thông báo hoàn thành - Tải lại trang NGAY LẬP TỨC
                 setTimeout(() => {{
                     window.parent.postMessage({{type: 'intro_done'}}, '*');
                 }}, RECONSTRUCT_DURATION * 1000 + 10); 
@@ -240,7 +245,6 @@ def intro_screen(is_mobile=False):
 
         }}
 
-        // Logic play video/audio
         vid.addEventListener('canplay', () => {{
             vid.play().catch(() => console.log('Autoplay bị chặn'));
             blackFade.style.opacity = 0; 
@@ -270,9 +274,8 @@ def intro_screen(is_mobile=False):
     """
     components.html(intro_html, height=800, scrolling=False)
 
-# ----------------------------------------------------------------------------------------------------------------------
 
-# ========== TRANG CHÍNH CÓ HIỆU ỨNG STARFALL (ĐÃ SỬA LỖI MOBILE BG) ==========
+# ========== TRANG CHÍNH CÓ HIỆU ỨNG STARFALL (ĐÃ CẬP NHẬT) ==========
 
 def main_page(is_mobile=False):
     hide_streamlit_ui()
@@ -284,33 +287,42 @@ def main_page(is_mobile=False):
         st.error(f"Lỗi: Không tìm thấy file tài nguyên: {e.filename}")
         st.stop()
     
-    # KHỐI CSS STARFALL VÀ STYLE TRANG CHÍNH
+    # KHỐI CSS STARFALL VÀ STYLE TRANG CHÍNH (ĐÃ CẬP NHẬT PHẦN FIX MOBILE BG)
     starfall_css = """
-    /* Điều chỉnh body/stApp để phù hợp với nền Starfall (màu tối) */
-    html, body, .stApp {
+    /* ĐẢM BẢO HTML VÀ BODY CHIẾM TRỌN MÀN HÌNH */
+    html, body {
+        height: 100% !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        overflow: hidden !important;
+    }
+    
+    /* Điều chỉnh .stApp (Streamlit main app container) */
+    .stApp {
         height: 100vh !important;
-        /* BACKGROUND của bạn */
+        width: 100vw !important;
+        
+        /* BACKGROUND SETTINGS */
         background: 
             linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
             url("data:image/jpeg;base64,__BG_B64__") no-repeat center center fixed !important;
         
-        /* Mặc định cho PC và tổng thể */
+        /* Đảm bảo COVER hoạt động trên mọi thiết bị */
         background-size: cover !important; 
-        background-position: center center !important; 
+        background-position: center center !important;
 
         overflow: hidden !important;
-        margin: 0 !important;
-        padding: 0 !important;
         position: relative;
         filter: brightness(1.05) contrast(1.1) saturate(1.05);
         animation: fadeInBg 0.5s ease-in-out forwards; 
     }
-
-    /* MEDIA QUERY ĐÃ SỬA: Đảm bảo background-size là cover trên mobile */
+    
+    /* MEDIA QUERY FIX CHO MOBILE/iOS SAFARI: */
     @media only screen and (max-width: 600px) {
         .stApp {
-            background-size: cover !important; /* ĐÃ SỬA TỪ 'auto' SANG 'cover' */
-            background-position: center center !important; /* ĐÃ SỬA TỪ 'right' SANG 'center center' */
+            height: 100% !important; /* Dùng 100% kết hợp với min-height bên dưới */
+            min-height: -webkit-fill-available !important; /* Fix lỗi thanh địa chỉ mobile */
+            background-size: cover !important; /* Bắt buộc cover */
         }
     }
     
@@ -335,8 +347,7 @@ def main_page(is_mobile=False):
         box-shadow: 0 0 5px 1px rgba(0, 209, 178, 0.7);
     }
     
-    /* === ANIMATIONS VÀ KEYFRAMES STARFALL (Giữ nguyên) === */
-
+    /* === ANIMATIONS VÀ KEYFRAMES STARFALL (CẦN ĐẢM BẢO ĐỦ 40 THẺ) === */
     .falling-star:nth-child(1) { transform: translateX(68vw) translateY(-8px); animation: anim1 4s infinite; animation-delay: 0.3s; }
     .falling-star:nth-child(2) { transform: translateX(57vw) translateY(-8px); animation: anim2 4s infinite; animation-delay: 0.6s; }
     .falling-star:nth-child(3) { transform: translateX(70vw) translateY(-8px); animation: anim3 4s infinite; animation-delay: 0.9s; }
@@ -420,7 +431,7 @@ def main_page(is_mobile=False):
     @keyframes anim40 { 10% { opacity: 0.5; } 12% { opacity: 1; box-shadow: 0 0 3px 0 #fff; } 15% { opacity: 0.5; } 50% { opacity: 0; } 100% { transform: translateX(61vw) translateY(100vh); opacity: 0; } }
 
 
-    /* Lớp phủ noise và văn bản (Giữ nguyên Z-index cao hơn starfall) */
+    /* Lớp phủ noise và văn bản */
     .stApp::after {
         content: "";
         position: absolute;
@@ -429,7 +440,7 @@ def main_page(is_mobile=False):
         background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
         opacity: 0.09;
         mix-blend-mode: multiply;
-        z-index: 2; /* Phải cao hơn starfall (z-index: 1) */
+        z-index: 2;
     }
     @keyframes fadeInBg {
         from { opacity: 0; }
@@ -450,7 +461,7 @@ def main_page(is_mobile=False):
         -webkit-text-fill-color: transparent;
         animation: textLight 10s linear infinite, fadeIn 1s ease-in-out forwards; 
         letter-spacing: 2px;
-        z-index: 3; /* Phải cao hơn noise (z-index: 2) và starfall (z-index: 1) */
+        z-index: 3;
     }
     @keyframes textLight {
         0% { background-position: 200% 0%; }
@@ -462,7 +473,7 @@ def main_page(is_mobile=False):
     }
     """
 
-    # KHỐI HTML STARFALL
+    # KHỐI HTML STARFALL (GIỮ NGUYÊN)
     starfall_html = """
     <div class="starfall">
         <div class="falling-star"></div><div class="falling-star"></div><div class="falling-star"></div><div class="falling-star"></div>
@@ -491,20 +502,17 @@ def main_page(is_mobile=False):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-# ========== LUỒNG CHÍNH ==========
+# ========== LUỒNG CHÍNH (GIỮ NGUYÊN) ==========
 
 hide_streamlit_ui()
 
 if "is_mobile" not in st.session_state:
-    # Lấy User Agent từ JS để xác định thiết bị
     ua_string = st_javascript("window.navigator.userAgent;")
     if ua_string:
         ua = parse(ua_string)
-        # Lưu trạng thái thiết bị vào session state
         st.session_state.is_mobile = not ua.is_pc
-        st.rerun()  # Tải lại trang để áp dụng session_state.is_mobile
+        st.rerun()
     else:
-        # Nếu chưa nhận được UA, hiển thị thông báo chờ
         st.info("Đang xác định thiết bị...")
         time.sleep(1) 
         st.stop()
@@ -514,29 +522,21 @@ if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
 if not st.session_state.intro_done:
-    # HIỂN THỊ MÀN HÌNH INTRO
     intro_screen(st.session_state.is_mobile)
     
-    # Listener JavaScript để nhận thông báo từ iframe khi hiệu ứng hoàn tất
     st.markdown("""
     <script>
     window.addEventListener("message", (event) => {
-        // Kiểm tra loại thông báo từ iframe
         if (event.data.type === "intro_done") {
-            // Thiết lập trạng thái intro_done và tải lại trang chính
-            // Dùng AJAX/fetch hoặc cập nhật một biến Streamlit nếu cần, 
-            // nhưng giải pháp đơn giản nhất là buộc tải lại trang chính.
             window.parent.location.reload(); 
         }
     });
     </script>
     """, unsafe_allow_html=True)
     
-    # Thiết lập timeout dự phòng
     time.sleep(15)  
     st.session_state.intro_done = True
-    st.rerun() # Buộc chạy lại Streamlit để chuyển sang main_page
+    st.rerun()
 
 else:
-    # HIỂN THỊ TRANG CHÍNH
     main_page(st.session_state.is_mobile)
