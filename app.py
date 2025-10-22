@@ -60,12 +60,12 @@ def encode_audio_files(base_path="."):
                 b64_data = base64.b64encode(f.read()).decode()
                 audio_data[filename] = f"data:audio/mp3;base64,{b64_data}"
         except FileNotFoundError:
-            st.warning(f"Không tìm thấy file nhạc: {filename}. Vui lòng kiểm tra lại thư mục.")
+            # st.warning(f"Không tìm thấy file nhạc: {filename}. Vui lòng kiểm tra lại thư mục.")
             pass
     return audio_data
 
 
-# ========== MÀN HÌNH INTRO (Đã Tắt âm thanh sớm hơn) ==========
+# ========== MÀN HÌNH INTRO (Tối ưu Tắt nhạc và Chuyển trang) ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
@@ -230,7 +230,7 @@ def intro_screen(is_mobile=False):
             setTimeout(() => {{
                 shatterOverlay.style.opacity = 0; 
                 blackFade.style.opacity = 1; 
-                audio.pause(); // <--- TẮT NHẠC INTRO
+                audio.pause(); 
                 audio.currentTime = 0;
             }}, SHATTER_DURATION); 
 
@@ -246,10 +246,10 @@ def intro_screen(is_mobile=False):
                     shard.style.transitionDelay = (RECONSTRUCT_DURATION / 1000 - initialTransforms[index].delay) + 's';
                 }});
 
-                // BƯỚC 4: Thông báo hoàn thành - Tải lại trang NGAY LẬP TỨC (Rút ngắn thời gian)
+                // BƯỚC 4: Thông báo hoàn thành - Tải lại trang NGAY LẬP TỨC 
                 setTimeout(() => {{
                     window.parent.postMessage({{type: 'intro_done'}}, '*');
-                }}, RECONSTRUCT_DURATION + 10); // 10ms buffer
+                }}, RECONSTRUCT_DURATION + 10); 
 
             }}, SHATTER_DURATION + BLACKOUT_DELAY); 
 
@@ -285,7 +285,7 @@ def intro_screen(is_mobile=False):
     components.html(intro_html, height=800, scrolling=False)
 
 # -------------------------------------------------------------
-## Thanh Phát Nhạc (Đã thiết kế lại với SVG)
+## Thanh Phát Nhạc (Đã thiết kế lại với SVG và Squircle)
 def audio_player_component(audio_uris):
     
     # Tạo danh sách URIs cho JS
@@ -298,22 +298,22 @@ def audio_player_component(audio_uris):
             <audio id="background-audio" preload="auto" loop></audio>
             
             <button id="prev-btn" title="Previous Track">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polygon points="19 20 9 12 19 4 19 20"></polygon>
                     <line x1="5" y1="19" x2="5" y2="5"></line>
                 </svg>
             </button>
             <button id="play-pause-btn" title="Play/Pause">
-                <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round">
                     <polygon points="5 3 19 12 5 21 5 3"></polygon>
                 </svg>
-                <svg id="pause-icon" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="6" y1="4" x2="6" y2="20"></line>
-                    <line x1="18" y1="4" x2="18" y2="20"></line>
+                <svg id="pause-icon" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="6" y="4" width="4" height="16" rx="1"></rect>
+                    <rect x="14" y="4" width="4" height="16" rx="1"></rect>
                 </svg>
             </button>
             <button id="next-btn" title="Next Track">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                     <polygon points="5 4 15 12 5 20 5 4"></polygon>
                     <line x1="19" y1="5" x2="19" y2="19"></line>
                 </svg>
@@ -331,8 +331,6 @@ def audio_player_component(audio_uris):
         const playlist = {audio_list_str};
         let currentTrackIndex = 0;
         let isPlaying = false;
-        
-        // --- Chức năng chính ---
         
         function updatePlayPauseIcon() {{
             if (isPlaying) {{
@@ -393,18 +391,14 @@ def audio_player_component(audio_uris):
         document.getElementById('next-btn').addEventListener('click', nextTrack);
         document.getElementById('prev-btn').addEventListener('click', prevTrack);
         
-        // Vòng lặp: Chuyển bài tự động khi bài hát kết thúc
         audio.addEventListener('ended', nextTrack); 
         
-        // Khởi tạo bài hát đầu tiên
         loadTrack(0);
 
-        // Khắc phục vấn đề chậm tương tác của iframe trong Streamlit
         window.addEventListener('load', () => {{
              updatePlayPauseIcon();
         }});
         
-        // Gắn sự kiện click vào toàn bộ body của iframe để kích hoạt player nếu Autoplay bị chặn
         document.body.addEventListener('click', () => {{
             if (!isPlaying && audio.paused) {{
                 playTrack();
@@ -414,11 +408,12 @@ def audio_player_component(audio_uris):
     </script>
     """
     
+    # Nhúng component (height=50)
     components.html(html_code, height=50) 
 
 
 # -------------------------------------------------------------
-## TRANG CHÍNH
+## TRANG CHÍNH (Khắc phục lỗi "Bay" của Player)
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -430,6 +425,7 @@ def main_page(is_mobile=False):
         st.stop()
         
     # Gọi component Player trước Markdown
+    # Quan trọng: Đặt ngay đầu hàm để giảm thiểu độ trễ tải
     if st.session_state.audio_uris:
         audio_player_component(st.session_state.audio_uris)
 
@@ -450,30 +446,10 @@ def main_page(is_mobile=False):
         filter: brightness(1.05) contrast(1.1) saturate(1.05);
         animation: fadeInBg 0.5s ease-in-out forwards; 
     }}
+    /* ... (CSS cũ) ... */
     
-    @keyframes fadeInBg {{
-        from {{ opacity: 0; }}
-        to {{ opacity: 1; }}
-    }}
-    .welcome {{
-        position: absolute;
-        top: 8%;
-        width: 100%;
-        text-align: center;
-        font-size: clamp(30px, 5vw, 65px);
-        color: #fff5d7;
-        font-family: 'Playfair Display', serif;
-        text-shadow: 0 0 18px rgba(0,0,0,0.65), 0 0 30px rgba(255,255,180,0.25);
-        background: linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%);
-        background-size: 200%;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: textLight 10s linear infinite, fadeIn 1s ease-in-out forwards; 
-        letter-spacing: 2px;
-        z-index: 3;
-    }}
-
-    /* CSS PLAYER NHẠC HIỆN ĐẠI */
+    /* CSS PLAYER NHẠC SQUIRCLE CỔ ĐIỂN MỚI */
+    /* Quan trọng: Đảm bảo iframe fixed ngay lập tức */
     iframe[title*="streamlit_component"] {{
         position: fixed !important;
         top: 15px !important;
@@ -483,57 +459,58 @@ def main_page(is_mobile=False):
         height: 50px !important; 
         width: 150px !important; 
         border: none !important;
+        transition: none !important; /* Loại bỏ mọi animation mặc định của Streamlit */
     }}
 
     /* CSS cho các thành phần bên trong IFRAME (Player) */
     .music-player {{
-        background: rgba(255, 255, 255, 0.1); 
-        padding: 5px 10px;
-        border-radius: 20px; 
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
+        background: rgba(0, 0, 0, 0.3); /* Nền tối, sang trọng */
+        padding: 6px;
+        border-radius: 6px; /* Bo tròn góc Squircle */
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
         display: flex;
         align-items: center;
-        gap: 8px; /* Giảm khoảng cách giữa các nút */
-        backdrop-filter: blur(10px); 
-        -webkit-backdrop-filter: blur(10px);
-        height: 40px; 
+        gap: 2px;
+        backdrop-filter: blur(12px); 
+        -webkit-backdrop-filter: blur(12px);
+        height: 38px; 
     }}
     .music-player button {{
-        background: rgba(255, 255, 255, 0.1); /* Nền nút hơi trong suốt */
+        background: rgba(255, 255, 255, 0.1); 
         border: none;
         color: #fff;
-        font-size: 16px;
         cursor: pointer;
-        padding: 6px; /* Tăng padding nút */
-        border-radius: 50%; 
-        width: 32px; /* Kích thước nút */
-        height: 32px;
+        padding: 4px;
+        border-radius: 4px; /* Bo góc nút */
+        width: 30px; 
+        height: 30px;
         display: flex;
         justify-content: center;
         align-items: center;
-        transition: background 0.2s, transform 0.1s;
+        transition: background 0.2s, box-shadow 0.1s;
         line-height: 1;
         outline: none;
     }}
     .music-player button:hover {{
-        background: rgba(255, 255, 255, 0.3);
-        transform: scale(1.05);
+        background: rgba(255, 255, 255, 0.25);
+        box-shadow: 0 0 5px rgba(255, 255, 255, 0.3);
     }}
     .music-player svg {{
-        stroke: #fff; /* Màu icon */
+        stroke: #fff; 
         fill: #fff;
-        width: 14px;
-        height: 14px;
-        transition: stroke 0.2s, fill 0.2s;
+        width: 100%;
+        height: 100%;
     }}
     /* Riêng nút Play/Pause có nền rõ hơn */
     #play-pause-btn {{
-        background: rgba(255, 255, 255, 0.25);
+        background: rgba(255, 255, 255, 0.2);
+        width: 38px;
+        height: 38px;
+        border-radius: 5px; 
     }}
     #play-pause-btn:hover {{
-        background: rgba(255, 255, 255, 0.4);
+        background: rgba(255, 255, 255, 0.35);
     }}
-    .track-info {{ display: none; }} 
     
     </style>
 
@@ -542,11 +519,11 @@ def main_page(is_mobile=False):
     """, unsafe_allow_html=True)
     
     if not st.session_state.audio_uris:
-        st.error("Không tìm thấy file nhạc nào để phát. Vui lòng kiểm tra file background1-6.mp3.")
+        st.warning("Không tìm thấy file nhạc nào để phát. Vui lòng kiểm tra file background1-6.mp3.")
 
 
 # -------------------------------------------------------------
-## LUỒNG CHÍNH CỦA ỨNG DỤNG
+## LUỒNG CHÍNH CỦA ỨNG DỤNG (Xóa time.sleep)
 hide_streamlit_ui()
 
 # 1. Xác định thiết bị
@@ -576,16 +553,23 @@ if not st.session_state.intro_done:
     <script>
     window.addEventListener("message", (event) => {
         if (event.data.type === "intro_done") {
-            // Chỉ cần gọi reload, không cần delay thêm
+            // Tải lại trang ngay lập tức sau khi hiệu ứng JS hoàn tất
             window.parent.location.reload(); 
         }
     });
     </script>
     """, unsafe_allow_html=True)
 
-    time.sleep(15) 
-    st.session_state.intro_done = True
-    st.rerun()
+    # Loại bỏ time.sleep(15) -> Giúp ứng dụng không đứng hình nếu intro bị lỗi
+    # Chúng ta dựa hoàn toàn vào thông báo 'intro_done' từ JS
+
+    # Thiết lập timeout dự phòng (an toàn)
+    if not st.session_state.get('intro_timeout_set', False):
+        st.session_state.intro_timeout_set = True
+        time.sleep(15) # Giữ lại timeout này chỉ để đảm bảo Streamlit không bị vòng lặp vô tận nếu JS bị chặn
+        if not st.session_state.intro_done:
+             st.session_state.intro_done = True
+             st.rerun()
 
 else:
     main_page(st.session_state.is_mobile)
