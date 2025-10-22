@@ -426,7 +426,7 @@ def audio_player_component(audio_uris):
 
 
     /* ================================== */
-    /* CSS SÓNG ÂM (VISUALIZER) - Đã sửa lỗi cú pháp */
+    /* CSS SÓNG ÂM (VISUALIZER) */
     /* ================================== */
     .visualizer-container {
         display: flex;
@@ -559,7 +559,7 @@ def audio_player_component(audio_uris):
 
 
 # -------------------------------------------------------------
-## TRANG CHÍNH (Giữ nguyên)
+## TRANG CHÍNH (Đã thêm lại hàm này)
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -683,4 +683,5 @@ if not st.session_state.intro_done:
              st.rerun()
 
 else:
+    # Lỗi NameError trước đó đã được khắc phục bằng cách thêm lại hàm main_page
     main_page(st.session_state.is_mobile)
