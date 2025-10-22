@@ -1,12 +1,13 @@
 import streamlit as st
 import base64
 import time
+import os
 from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
 
-# ========== CẤU HÌNH VÀ TÀI NGUYÊN MỚI ==========
+# ========== CẤU HÌNH VÀ TÀI NGUYÊN ==========
 
 # File video và âm thanh intro
 VIDEO_PC = "airplane.mp4"
@@ -28,11 +29,11 @@ GRID_SIZE = 8
 SHATTER_DURATION = 1.8  # Thời gian hiệu ứng tan vỡ (giây)
 RECONSTRUCT_DURATION = 1.8 # Thời gian hiệu ứng ghép lại (giây)
 BLACKOUT_DELAY = 0.2    # Thời gian màn hình đen
-# KHÔNG CẦN ĐỊNH NGHĨA LOAD_DELAY TRONG PYTHON NỮA
 
-# ========== ẨN UI STREAMLIT ==========
+# ========== HÀM PHỤ TRỢ ==========
 
 def hide_streamlit_ui():
+    """Ẩn các thành phần UI mặc định của Streamlit."""
     st.markdown("""
     <style>
     [data-testid="stToolbar"], header, footer, iframe[title*="keyboard"], [tabindex="0"][aria-live] {
@@ -48,15 +49,30 @@ def hide_streamlit_ui():
     </style>
     """, unsafe_allow_html=True)
 
+def encode_audio_files(base_path="."):
+    """Đọc và mã hóa Base64 cho các file nhạc nền."""
+    audio_data = {}
+    for i in range(1, 7):
+        filename = f"background{i}.mp3"
+        filepath = os.path.join(base_path, filename)
+        try:
+            with open(filepath, "rb") as f:
+                b64_data = base64.b64encode(f.read()).decode()
+                audio_data[filename] = f"data:audio/mp3;base64,{b64_data}"
+        except FileNotFoundError:
+            st.warning(f"Không tìm thấy file nhạc: {filename}. Vui lòng kiểm tra lại thư mục.")
+            pass
+    return audio_data
 
-# ========== MÀN HÌNH INTRO ĐÃ BỎ LOAD_DELAY ==========
+
+# ========== MÀN HÌNH INTRO ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
     shutter_file = SHUTTER_MOBILE if is_mobile else SHUTTER_PC
     bg_file = BG_MOBILE if is_mobile else BG_PC
     
-    # ... (Đọc file và mã hóa Base64 giữ nguyên) ...
+    # Đọc file và mã hóa Base64
     try:
         with open(video_file, "rb") as f:
             video_b64 = base64.b64encode(f.read()).decode()
@@ -102,9 +118,9 @@ def intro_screen(is_mobile=False):
         audio {{ display: none; }}
         #intro-text {{
             position: absolute; 
-            top: 8%; /* <--- ĐIỀU CHỈNH: Đặt 8% từ trên xuống */
+            top: 8%; /* Đặt 8% từ trên xuống */
             left: 50%; 
-            transform: translate(-50%, 0); /* <--- ĐIỀU CHỈNH: Chỉ dịch 50% theo chiều ngang */
+            transform: translate(-50%, 0); /* Chỉ dịch 50% theo chiều ngang */
             width: 90vw; text-align: center; color: #f8f4e3;
             font-size: clamp(22px, 6vw, 60px); font-weight: bold; font-family: 'Playfair Display', serif;
             background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
@@ -116,7 +132,7 @@ def intro_screen(is_mobile=False):
         @keyframes lightSweep {{ 0% {{ background-position: 200% 0%; }} 100% {{ background-position: -200% 0%; }} }}
         @keyframes fadeInOut {{ 0% {{ opacity: 0; }} 20% {{ opacity: 1; }} 80% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}
 
-        /* === STYLE HIỆU ỨNG TAN VỠ VÀ GHÉP LẠI (Giữ nguyên) === */
+        /* === STYLE HIỆU ỨNG TAN VỠ VÀ GHÉP LẠI === */
         #shatter-overlay {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: grid; grid-template-columns: repeat({GRID_SIZE}, 1fr); grid-template-rows: repeat({GRID_SIZE}, 1fr);
@@ -231,7 +247,7 @@ def intro_screen(is_mobile=False):
                     shard.style.transitionDelay = (RECONSTRUCT_DURATION / 1000 - initialTransforms[index].delay) + 's';
                 }});
 
-                // BƯỚC 4: Thông báo hoàn thành - Tải lại trang NGAY LẬP TỨC
+                // BƯỚC 4: Thông báo hoàn thành - Tải lại trang NGAY LẬP TỨC (Không trễ)
                 setTimeout(() => {{
                     window.parent.postMessage({{type: 'intro_done'}}, '*');
                 }}, RECONSTRUCT_DURATION + 10); 
@@ -270,9 +286,117 @@ def intro_screen(is_mobile=False):
     """
     components.html(intro_html, height=800, scrolling=False)
 
+# -------------------------------------------------------------
+## Thanh Phát Nhạc (Audio Player Component)
+def audio_player_component(audio_uris):
+    
+    # Tạo danh sách URIs và tên bài hát cho JS
+    js_audio_list = []
+    for name, uri in audio_uris.items():
+        track_name = name.replace(".mp3", "")
+        js_audio_list.append(f"{{name: '{track_name.capitalize()}', uri: '{uri}'}}")
+        
+    audio_list_str = "[" + ", ".join(js_audio_list) + "]"
+    
+    html_code = f"""
+    <div class="music-player">
+        <audio id="background-audio" preload="auto"></audio>
+        
+        <button id="prev-btn" title="Previous Track">⏮️</button>
+        <button id="play-pause-btn" title="Play/Pause">▶️</button>
+        <button id="next-btn" title="Next Track">⏭️</button>
+        <button id="stop-btn" title="Stop">⏹️</button>
+        
+        <div class="track-info" id="current-track-info">Ready.</div>
+    </div>
 
-# ========== TRANG CHÍNH (Giữ nguyên) ==========
+    <script>
+        const audio = document.getElementById('background-audio');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const stopBtn = document.getElementById('stop-btn');
+        const trackInfo = document.getElementById('current-track-info');
 
+        const playlist = {audio_list_str};
+        let currentTrackIndex = 0;
+        let isPlaying = false;
+        
+        // --- Chức năng chính ---
+        
+        function loadTrack(index) {{
+            if (playlist.length === 0) return;
+            currentTrackIndex = (index % playlist.length + playlist.length) % playlist.length;
+            audio.src = playlist[currentTrackIndex].uri;
+            trackInfo.textContent = playlist[currentTrackIndex].name;
+            audio.load();
+        }}
+        
+        function playTrack() {{
+            if (!audio.src) loadTrack(currentTrackIndex);
+            
+            audio.play().then(() => {{
+                isPlaying = true;
+                playPauseBtn.textContent = '⏸️';
+            }}).catch(error => {{
+                // Trình duyệt chặn Autoplay (thường xảy ra)
+                console.log("Autoplay blocked:", error);
+                isPlaying = true;
+                playPauseBtn.textContent = '⏸️';
+            }});
+        }}
+        
+        function pauseTrack() {{
+            audio.pause();
+            isPlaying = false;
+            playPauseBtn.textContent = '▶️';
+        }}
+        
+        function togglePlayPause() {{
+            if (isPlaying) {{
+                pauseTrack();
+            }} else {{
+                playTrack();
+            }}
+        }}
+
+        function stopTrack() {{
+            pauseTrack();
+            audio.currentTime = 0;
+            trackInfo.textContent = playlist[currentTrackIndex].name + " (Stopped)";
+        }}
+        
+        function nextTrack() {{
+            loadTrack(currentTrackIndex + 1);
+            if (isPlaying) playTrack();
+        }}
+        
+        function prevTrack() {{
+            loadTrack(currentTrackIndex - 1);
+            if (isPlaying) playTrack();
+        }}
+
+        // --- Event Listeners ---
+        
+        playPauseBtn.addEventListener('click', togglePlayPause);
+        stopBtn.addEventListener('click', stopTrack);
+        nextBtn.addEventListener('click', nextTrack);
+        prevBtn.addEventListener('click', prevTrack);
+        
+        audio.addEventListener('ended', nextTrack); 
+        
+        // Khởi tạo bài hát đầu tiên khi load
+        window.addEventListener('load', () => loadTrack(0));
+        
+    </script>
+    """
+    
+    # Sử dụng iframe của Streamlit Component để nhúng Player
+    components.html(html_code, height=50) 
+
+
+# -------------------------------------------------------------
+## TRANG CHÍNH
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -286,6 +410,7 @@ def main_page(is_mobile=False):
 
     st.markdown(f"""
     <style>
+    /* CSS NỀN VÀ TIÊU ĐỀ */
     html, body, .stApp {{
         height: 100vh !important;
         background: 
@@ -337,17 +462,69 @@ def main_page(is_mobile=False):
         from {{ opacity: 0; transform: scale(0.97); }}
         to {{ opacity: 1; transform: scale(1); }}
     }}
+
+    /* CSS PLAYER NHẠC */
+    /* Component Player nằm trong một iframe riêng, nên CSS này chỉ áp dụng cho chính component đó */
+    /* Tuy nhiên, các thuộc tính fixed và z-index cần thiết để định vị nó trên trang chính */
+    .music-player {{
+        position: fixed; 
+        top: 15px; 
+        left: 15px; 
+        z-index: 1000; 
+        background: rgba(0, 0, 0, 0.6);
+        padding: 8px 10px;
+        border-radius: 10px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        backdrop-filter: blur(4px);
+        -webkit-backdrop-filter: blur(4px);
+    }}
+    .music-player button {{
+        background: none;
+        border: none;
+        color: #fff;
+        font-size: 18px; 
+        cursor: pointer;
+        padding: 5px;
+        border-radius: 5px;
+        transition: background 0.2s;
+        line-height: 1;
+        outline: none;
+    }}
+    .music-player button:hover {{
+        background: rgba(255, 255, 255, 0.2);
+    }}
+    .track-info {{
+        color: #fff;
+        font-size: 12px;
+        margin: 0 5px;
+        min-width: 100px;
+        max-width: 150px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        font-family: Arial, sans-serif;
+    }}
     </style>
 
 
     <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
     """, unsafe_allow_html=True)
+    
+    # Chèn Component Player vào Trang Chính
+    if st.session_state.audio_uris:
+        audio_player_component(st.session_state.audio_uris)
+    else:
+        st.error("Không tìm thấy file nhạc nào để phát. Vui lòng kiểm tra file background1-6.mp3.")
 
 
-# ========== LUỒNG CHÍNH (Giữ nguyên) ==========
-
+# -------------------------------------------------------------
+## LUỒNG CHÍNH CỦA ỨNG DỤNG
 hide_streamlit_ui()
 
+# 1. Xác định thiết bị
 if "is_mobile" not in st.session_state:
     ua_string = st_javascript("window.navigator.userAgent;")
     if ua_string:
@@ -359,7 +536,11 @@ if "is_mobile" not in st.session_state:
         time.sleep(1) 
         st.stop()
 
+# 2. Mã hóa file nhạc LẦN ĐẦU (Chỉ chạy 1 lần)
+if "audio_uris" not in st.session_state or not st.session_state.audio_uris:
+    st.session_state.audio_uris = encode_audio_files()
 
+# 3. Quản lý trạng thái Intro
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
@@ -376,6 +557,7 @@ if not st.session_state.intro_done:
     </script>
     """, unsafe_allow_html=True)
 
+    # Chặn vòng lặp vô tận nếu video bị lỗi
     time.sleep(15) 
     st.session_state.intro_done = True
     st.rerun()
