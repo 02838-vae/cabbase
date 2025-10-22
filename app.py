@@ -298,33 +298,61 @@ def audio_player_component(audio_uris):
     audio_list_str = "[" + ", ".join(js_audio_list) + "]"
     
     # Định nghĩa khối CSS Visualizer như một chuỗi thô (Raw String)
+    # TÁCH CSS VÀO st.markdown (BÊN DƯỚI) ĐỂ KHẮC PHỤC LỖI CÚ PHÁP LẶP LẠI
     visualizer_css = """
-    /* Keyframes (Đã loại bỏ transform và đổi màu để phù hợp hơn) */
     @keyframes Rofa {
-        0% { height: 0%; }
-        5% { height: 100%; }
-        10% { height: 90%; }
-        15% { height: 80%; }
-        20% { height: 70%; }
-        25% { height: 0%; }
-        30% { height: 70%; }
-        35% { height: 0%; }
-        40% { height: 60%; }
-        45% { height: 0%; }
-        50% { height: 50%; }
-        55% { height: 0%; }
-        60% { height: 40%; }
-        65% { height: 0%; }
-        70% { height: 30%; }
-        75% { height: 0%; }
-        80% { height: 20%; }
-        85% { height: 0%; }
-        90% { height: 10%; }
-        95% { height: 5%; }
+        0% { height: 0%; } 5% { height: 100%; } 10% { height: 90%; } 15% { height: 80%; }
+        20% { height: 70%; } 25% { height: 0%; } 30% { height: 70%; } 35% { height: 0%; }
+        40% { height: 60%; } 45% { height: 0%; } 50% { height: 50%; } 55% { height: 0%; }
+        60% { height: 40%; } 65% { height: 0%; } 70% { height: 30%; } 75% { height: 0%; }
+        80% { height: 20%; } 85% { height: 0%; } 90% { height: 10%; } 95% { height: 5%; }
         100% { height: 0; }
+    }
+    .music-player {
+        background: rgba(255, 255, 255, 0.9); padding: 8px; border-radius: 20px; 
+        box-shadow: inset 3px 3px 6px rgba(255, 255, 255, 0.7), inset -3px -3px 6px rgba(0, 0, 0, 0.1),
+            8px 8px 16px rgba(0, 0, 0, 0.2), -8px -8px 16px rgba(255, 255, 255, 0.6);
+        display: flex; align-items: center; gap: 12px; backdrop-filter: blur(5px); 
+        -webkit-backdrop-filter: blur(5px); height: 55px; width: 100%; max-width: 280px; 
+    }
+    .controls-group { display: flex; gap: 8px; align-items: center; }
+    .music-player button {
+        background: #e0e0f0; border: none; color: #6a6a80; cursor: pointer; padding: 0;
+        border-radius: 12px; width: 35px; height: 35px; display: flex; justify-content: center;
+        align-items: center; box-shadow: 3px 3px 6px rgba(0, 0, 0, 0.15), -3px -3px 6px rgba(255, 255, 255, 0.8);
+        transition: all 0.2s ease; outline: none;
+    }
+    .music-player button:active, .music-player button.active {
+        box-shadow: inset 3px 3px 6px rgba(0, 0, 0, 0.2), inset -3px -3px 6px rgba(255, 255, 255, 0.7);
+        transform: scale(0.95);
+    }
+    .music-player svg { stroke: #6a6a80; fill: #6a6a80; width: 16px; height: 16px; }
+    #play-pause-btn { width: 40px; height: 40px; border-radius: 15px; background: #dddde5; }
+    .visualizer-container {
+        display: flex; align-items: flex-end; height: 40px; padding: 0 5px;
+        gap: 3px; border-radius: 5px; background: #eee; transition: opacity 0.3s;
+        opacity: 0.4; 
+    }
+    .visualizer-colum1 {
+        width: 3px; height: 100%; border-radius: 1px; display: inline-block; position: relative;
+    }
+    .visualizer-colum1 .visualizer-row {
+        width: 100%; height: 100%; border-radius: 1px; background: linear-gradient(to top, #c7a46e, #e9dcb5); 
+        position: absolute; animation: Rofa 10s infinite ease-in-out; bottom: 0; transform-origin: bottom; 
     }
     """
     
+    # Tách CSS ra khỏi components.html và đặt vào st.markdown
+    # Điều này giúp Streamlit xử lý CSS dễ dàng hơn.
+    st.markdown(f"""
+    <style>
+    @import url('https://fonts.googleapis.com/css?family=Allerta&display=swap');
+    * {{ font-family: 'Allerta', sans-serif; }}
+    {visualizer_css}
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Chỉ giữ lại HTML và JS trong components.html
     html_code = f"""
     <div class="music-player-container">
         <div class="music-player">
@@ -358,108 +386,6 @@ def audio_player_component(audio_uris):
         </div>
     </div>
 
-    <style>
-    /* Gọi Font Allerta (Theo yêu cầu) */
-    @import url('https://fonts.googleapis.com/css?family=Allerta&display=swap');
-
-    * {{ font-family: 'Allerta', sans-serif; }}
-
-    /* CLAYMORPHISM cho Thanh Phát Nhạc */
-    .music-player {{
-        background: rgba(255, 255, 255, 0.9); /* Nền sáng */
-        padding: 8px; 
-        border-radius: 20px; 
-        box-shadow: 
-            inset 3px 3px 6px rgba(255, 255, 255, 0.7),
-            inset -3px -3px 6px rgba(0, 0, 0, 0.1),
-            8px 8px 16px rgba(0, 0, 0, 0.2), 
-            -8px -8px 16px rgba(255, 255, 255, 0.6);
-        display: flex;
-        align-items: center;
-        gap: 12px; 
-        backdrop-filter: blur(5px); 
-        -webkit-backdrop-filter: blur(5px);
-        height: 55px; 
-        width: 100%;
-        max-width: 280px; 
-    }}
-    .controls-group {{
-        display: flex;
-        gap: 8px;
-        align-items: center;
-    }}
-    
-    .music-player button {{
-        background: #e0e0f0; 
-        border: none;
-        color: #6a6a80; 
-        cursor: pointer;
-        padding: 0;
-        border-radius: 12px; 
-        width: 35px; 
-        height: 35px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        box-shadow: 
-            3px 3px 6px rgba(0, 0, 0, 0.15),
-            -3px -3px 6px rgba(255, 255, 255, 0.8);
-        transition: all 0.2s ease;
-        outline: none;
-    }}
-    .music-player button:hover {{
-        box-shadow: 
-            2px 2px 4px rgba(0, 0, 0, 0.1),
-            -2px -2px 4px rgba(255, 255, 255, 0.7);
-        transform: scale(0.98);
-        background: #f0f0ff;
-    }}
-    .music-player button:active, .music-player button.active {{
-        box-shadow: 
-            inset 3px 3px 6px rgba(0, 0, 0, 0.2),
-            inset -3px -3px 6px rgba(255, 255, 255, 0.7);
-        transform: scale(0.95);
-    }}
-    .music-player svg {{ stroke: #6a6a80; fill: #6a6a80; width: 16px; height: 16px; }}
-    #play-pause-btn {{ width: 40px; height: 40px; border-radius: 15px; background: #dddde5; }}
-    #play-pause-btn:hover {{ background: #eeeeff; }}
-
-
-    /* ================================== */
-    /* CSS SÓNG ÂM (VISUALIZER) */
-    /* ================================== */
-    .visualizer-container {
-        display: flex;
-        align-items: flex-end; 
-        height: 40px; 
-        padding: 0 5px;
-        gap: 3px;
-        border-radius: 5px;
-        background: #eee;
-        transition: opacity 0.3s;
-        opacity: 0.4; /* Mặc định mờ */
-    }
-    .visualizer-colum1 {
-        width: 3px; 
-        height: 100%;
-        border-radius: 1px;
-        display: inline-block;
-        position: relative;
-    }
-    .visualizer-colum1 .visualizer-row {
-        width: 100%;
-        height: 100%;
-        border-radius: 1px;
-        background: linear-gradient(to top, #c7a46e, #e9dcb5); 
-        position: absolute;
-        animation: Rofa 10s infinite ease-in-out;
-        bottom: 0;
-        transform-origin: bottom; 
-    }
-
-    {visualizer_css}
-    </style>
-    
     <script>
         const audio = document.getElementById('background-audio');
         const playPauseBtn = document.getElementById('play-pause-btn');
@@ -475,11 +401,11 @@ def audio_player_component(audio_uris):
             if (isPlaying) {{
                 playIcon.style.display = 'none';
                 pauseIcon.style.display = 'block';
-                visualizer.style.opacity = '1'; // Hiển thị sóng âm khi phát
+                visualizer.style.opacity = '1'; 
             }} else {{
                 playIcon.style.display = 'block';
                 pauseIcon.style.display = 'none';
-                visualizer.style.opacity = '0.4'; // Mờ đi khi dừng
+                visualizer.style.opacity = '0.4'; 
             }}
         }}
 
