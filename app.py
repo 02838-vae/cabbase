@@ -56,7 +56,7 @@ def intro_screen(is_mobile=False):
     shutter_file = SHUTTER_MOBILE if is_mobile else SHUTTER_PC
     bg_file = BG_MOBILE if is_mobile else BG_PC
     
-    # Đọc file và mã hóa Base64
+    # ... (Đọc file và mã hóa Base64 giữ nguyên) ...
     try:
         with open(video_file, "rb") as f:
             video_b64 = base64.b64encode(f.read()).decode()
@@ -101,7 +101,10 @@ def intro_screen(is_mobile=False):
         }}
         audio {{ display: none; }}
         #intro-text {{
-            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            position: absolute; 
+            top: 8%; /* <--- ĐIỀU CHỈNH: Đặt 8% từ trên xuống */
+            left: 50%; 
+            transform: translate(-50%, 0); /* <--- ĐIỀU CHỈNH: Chỉ dịch 50% theo chiều ngang */
             width: 90vw; text-align: center; color: #f8f4e3;
             font-size: clamp(22px, 6vw, 60px); font-weight: bold; font-family: 'Playfair Display', serif;
             background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
@@ -113,7 +116,7 @@ def intro_screen(is_mobile=False):
         @keyframes lightSweep {{ 0% {{ background-position: 200% 0%; }} 100% {{ background-position: -200% 0%; }} }}
         @keyframes fadeInOut {{ 0% {{ opacity: 0; }} 20% {{ opacity: 1; }} 80% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}
 
-        /* === STYLE HIỆU ỨNG TAN VỠ VÀ GHÉP LẠI === */
+        /* === STYLE HIỆU ỨNG TAN VỠ VÀ GHÉP LẠI (Giữ nguyên) === */
         #shatter-overlay {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: grid; grid-template-columns: repeat({GRID_SIZE}, 1fr); grid-template-rows: repeat({GRID_SIZE}, 1fr);
@@ -230,7 +233,6 @@ def intro_screen(is_mobile=False):
 
                 // BƯỚC 4: Thông báo hoàn thành - Tải lại trang NGAY LẬP TỨC
                 setTimeout(() => {{
-                    // Bỏ độ trễ, chỉ thêm 10ms buffer để đảm bảo transition kết thúc
                     window.parent.postMessage({{type: 'intro_done'}}, '*');
                 }}, RECONSTRUCT_DURATION + 10); 
 
