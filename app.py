@@ -73,7 +73,11 @@ def intro_component(is_mobile=False):
 def main_page(is_mobile=False):
     hide_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
-    bg_b64 = base64.b64encode(open(bg, "rb").read()).decode()
+    if os.path.exists(bg):
+        bg_b64 = base64.b64encode(open(bg, "rb").read()).decode()
+    else:
+        bg_b64 = ""
+        st.warning(f"⚠️ Không tìm thấy ảnh nền: {bg}")
 
     st.markdown(f"""
     <style>
@@ -111,7 +115,7 @@ def main():
     st.set_page_config(layout="wide", page_title="CABBASE Intro", page_icon="🎬")
     hide_ui()
 
-    # Gửi tín hiệu từ iframe → Streamlit
+    # Nhận tín hiệu từ iframe → Streamlit
     components.html("""
     <script>
     window.addEventListener("message", (e)=>{
@@ -122,19 +126,18 @@ def main():
     </script>
     """, height=0)
 
+    # Session state
     if "intro_done" not in st.session_state:
         st.session_state.intro_done = False
     if "is_mobile" not in st.session_state:
         st.session_state.is_mobile = False
 
-    # Đọc tín hiệu từ component
-    val = st.experimental_get_query_params().get("trigger", [""])[0]
+    # Dùng API mới: st.query_params
+    params = st.query_params
+    trigger = params.get("trigger", "")
 
     if not st.session_state.intro_done:
         intro_component(st.session_state.is_mobile)
-        comp_val = components.html("", height=0, key="msg_receiver")
-        # Poll kết quả
-        time.sleep(0.2)
         st.stop()
     else:
         main_page(st.session_state.is_mobile)
