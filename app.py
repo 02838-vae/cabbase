@@ -286,7 +286,6 @@ def intro_screen(is_mobile=False):
 def audio_player_component(audio_uris):
     
     # Tạo HTML cho 16 cột sóng âm
-    # Sử dụng delay ngẫu nhiên để mô phỏng sóng âm
     wave_columns_html = "".join([
         f'<div class="visualizer-colum1" style="animation-delay: {3.99 - i * 0.1}s;">'
         '<div class="visualizer-row"></div>'
@@ -655,9 +654,8 @@ if "is_mobile" not in st.session_state:
         time.sleep(1) 
         st.stop()
 
-# 2. Mã hóa file nhạc LẦN ĐẦU (Chỉ chạy 1 lần)
+# 2. Mã hóa file nhạc LẦN ĐẦU (ĐÃ SỬA LỖI TÊN BIẾN)
 if "audio_uris" not in st.session_state or not st.session_state.audio_uris:
-    # Sửa lỗi tên biến ở dòng 434 (trong code cũ)
     st.session_state.audio_uris = encode_audio_files()
 
 # 3. Quản lý trạng thái Intro
