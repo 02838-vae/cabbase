@@ -27,8 +27,8 @@ st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 GRID_SIZE = 8
 SHATTER_DURATION = 1.8  # Thời gian hiệu ứng tan vỡ (giây)
 RECONSTRUCT_DURATION = 1.8 # Thời gian hiệu ứng ghép lại (giây)
-BLACKOUT_DELAY = 0.2    # <--- ĐIỀU CHỈNH: Thời gian màn hình đen (rút ngắn)
-LOAD_DELAY = 0.25       # <--- ĐIỀU CHỈNH: Độ trễ tải lại trang sau khi nối lại xong (250ms)
+BLACKOUT_DELAY = 0.2    # Thời gian màn hình đen
+# KHÔNG CẦN ĐỊNH NGHĨA LOAD_DELAY TRONG PYTHON NỮA
 
 # ========== ẨN UI STREAMLIT ==========
 
@@ -49,7 +49,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO ĐÃ TỐI ƯU HÓA HIỆU ỨNG LIỀN MẠCH ==========
+# ========== MÀN HÌNH INTRO ĐÃ BỎ LOAD_DELAY ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
@@ -77,7 +77,6 @@ def intro_screen(is_mobile=False):
     js_shatter_duration = SHATTER_DURATION * 1000
     js_reconstruct_duration = RECONSTRUCT_DURATION * 1000
     js_blackout_delay = BLACKOUT_DELAY * 1000
-    js_load_delay = LOAD_DELAY * 1000
 
 
     intro_html = f"""
@@ -163,7 +162,6 @@ def intro_screen(is_mobile=False):
         const SHATTER_DURATION = {js_shatter_duration};
         const RECONSTRUCT_DURATION = {js_reconstruct_duration};
         const BLACKOUT_DELAY = {js_blackout_delay};
-        const LOAD_DELAY = {js_load_delay}; // Đã thêm biến này
 
         const vid = document.getElementById('introVid');
         const audio = document.getElementById('flySfx');
@@ -212,7 +210,7 @@ def intro_screen(is_mobile=False):
                 }});
             }}, 10);
             
-            // BƯỚC 2: Màn Hình Đen (Blackout) - Đã rút ngắn thời gian chờ
+            // BƯỚC 2: Màn Hình Đen (Blackout)
             setTimeout(() => {{
                 shatterOverlay.style.opacity = 0; 
                 blackFade.style.opacity = 1; 
@@ -230,10 +228,11 @@ def intro_screen(is_mobile=False):
                     shard.style.transitionDelay = (RECONSTRUCT_DURATION / 1000 - initialTransforms[index].delay) + 's';
                 }});
 
-                // BƯỚC 4: Thông báo hoàn thành + Độ trễ tải lại trang (LOAD_DELAY)
+                // BƯỚC 4: Thông báo hoàn thành - Tải lại trang NGAY LẬP TỨC
                 setTimeout(() => {{
+                    // Bỏ độ trễ, chỉ thêm 10ms buffer để đảm bảo transition kết thúc
                     window.parent.postMessage({{type: 'intro_done'}}, '*');
-                }}, RECONSTRUCT_DURATION + LOAD_DELAY); // <--- ĐÃ THÊM LOAD_DELAY Ở ĐÂY
+                }}, RECONSTRUCT_DURATION + 10); 
 
             }}, SHATTER_DURATION + BLACKOUT_DELAY); 
 
