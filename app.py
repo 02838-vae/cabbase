@@ -83,7 +83,6 @@ def intro_screen(is_mobile=False):
             background: black;
             height: 100%;
         }}
-        /* Preload ảnh nền trang chính (ẩn) */
         #pre-load-bg {{
             display: none; 
             background-image: url("data:image/jpeg;base64,{bg_b64}");
@@ -95,7 +94,6 @@ def intro_screen(is_mobile=False):
             height: 100%;
             object-fit: cover;
         }}
-        /* Lớp phủ ảnh tĩnh (shutter) để che video khi nó kết thúc */
         #static-frame {{
             position: absolute;
             top: 0; left: 0;
@@ -104,7 +102,7 @@ def intro_screen(is_mobile=False):
             object-fit: cover;
             background-image: url("data:image/jpeg;base64,{shutter_b64}");
             background-size: cover;
-            opacity: 0; /* Ban đầu ẩn */
+            opacity: 0; 
             z-index: 20;
             transition: opacity 0.1s linear;
         }}
@@ -142,7 +140,6 @@ def intro_screen(is_mobile=False):
         }}
         .shard {{
             position: relative;
-            /* Đảm bảo dùng ảnh SHUTTER để vỡ */
             background-image: url("data:image/jpeg;base64,{shutter_b64}"); 
             background-size: 100vw 100vh;
             transition: transform {SHATTER_DURATION}s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 1.5s ease-in-out; 
@@ -153,7 +150,6 @@ def intro_screen(is_mobile=False):
         .reconstructing .shard {{
             transform: translate(0, 0) rotate(0deg) scale(1) !important; 
             transition: transform {RECONSTRUCT_DURATION}s cubic-bezier(0.19, 1, 0.22, 1), opacity {RECONSTRUCT_DURATION}s ease-in-out; 
-            /* CHỈNH SỬA: Dùng ảnh nền Trang chính để ghép lại */
             background-image: url("data:image/jpeg;base64,{bg_b64}") !important;
             opacity: 1 !important; 
         }}
@@ -177,7 +173,8 @@ def intro_screen(is_mobile=False):
         <video id='introVid' autoplay muted playsinline>
             <source src='data:video/mp4;base64,{video_b64}' type='video/mp4'>
         </video>
-        <div id='static-frame'></div> <audio id='flySfx'>
+        <div id='static-frame'></div>
+        <audio id='flySfx'>
             <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
         </audio>
         <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
@@ -197,22 +194,19 @@ def intro_screen(is_mobile=False):
 
         const vid = document.getElementById('introVid');
         const audio = document.getElementById('flySfx');
-        const staticFrame = document.getElementById('static-frame'); // Biến mới
+        const staticFrame = document.getElementById('static-frame');
         const shatterOverlay = document.getElementById('shatter-overlay');
         const shards = document.querySelectorAll('.shard');
         const blackFade = document.getElementById('black-fade');
         let ended = false;
         let initialTransforms = []; 
 
-        // 1. Tính toán vị trí nền và transforms ngẫu nhiên
         shards.forEach((shard, index) => {{
             const row = Math.floor(index / GRID_SIZE);
             const col = index % GRID_SIZE;
             
-            // Background Position
             shard.style.backgroundPosition = 'calc(-' + col + ' * 100vw / ' + GRID_SIZE + ') calc(-' + row + ' * 100vh / ' + GRID_SIZE + ')';
             
-            // Random Transforms
             const randX = (Math.random() - 0.5) * 200; 
             const randY = (Math.random() - 0.5) * 200; 
             const randR = (Math.random() - 0.5) * 360; 
@@ -226,22 +220,24 @@ def intro_screen(is_mobile=False):
             ended = true;
             
             // BƯỚC 0: Chuyển từ Video sang Ảnh tĩnh (shutter)
-            vid.style.opacity = 0; // Ẩn video
-            staticFrame.style.opacity = 1; // Hiện ảnh tĩnh chụp từ cuối video
+            vid.style.opacity = 0; 
+            staticFrame.style.opacity = 1; 
             
             // BƯỚC 1: Bắt đầu Tan Vỡ (Shatter)
-            blackFade.style.opacity = 0; 
-            shatterOverlay.style.opacity = 1; // Hiện lớp phủ mảnh vỡ
-            staticFrame.style.opacity = 0; // Ẩn ảnh tĩnh gốc, chỉ để lại lớp mảnh vỡ
-            
-            shatterOverlay.classList.remove('reconstructing');
-            shatterOverlay.classList.add('shattering');
-            shards.forEach((shard, index) => {{
-                const t = initialTransforms[index];
-                shard.style.transform = 'translate(' + t.randX + 'vw, ' + t.randY + 'vh) rotate(' + t.randR + 'deg) scale(0.1)';
-                shard.style.transitionDelay = t.delay + 's';
-                shard.style.opacity = 0; 
-            }});
+            setTimeout(() => {{ // Chờ 10ms để staticFrame kịp hiện
+                blackFade.style.opacity = 0; 
+                shatterOverlay.style.opacity = 1; 
+                staticFrame.style.opacity = 0; 
+                
+                shatterOverlay.classList.remove('reconstructing');
+                shatterOverlay.classList.add('shattering');
+                shards.forEach((shard, index) => {{
+                    const t = initialTransforms[index];
+                    shard.style.transform = 'translate(' + t.randX + 'vw, ' + t.randY + 'vh) rotate(' + t.randR + 'deg) scale(0.1)';
+                    shard.style.transitionDelay = t.delay + 's';
+                    shard.style.opacity = 0; 
+                }});
+            }}, 10);
             
             // BƯỚC 2: Màn Hình Đen (Blackout)
             setTimeout(() => {{
@@ -251,10 +247,11 @@ def intro_screen(is_mobile=False):
 
             // BƯỚC 3: Ghép Lại (Reconstruction)
             setTimeout(() => {{
-                // Đảo ngược hiệu ứng: Hiện lại mảnh vỡ, chuẩn bị ghép (lúc này các mảnh đã có background là ảnh nền trang chính)
+                // LÚC NÀY MÀN HÌNH ĐANG ĐEN
+                // Hiện lớp phủ mảnh vỡ (đã có background mới)
                 shatterOverlay.style.opacity = 1; 
-                blackFade.style.opacity = 0; 
-
+                blackFade.style.opacity = 0; // Tắt màn hình đen
+                
                 shatterOverlay.classList.remove('shattering');
                 shatterOverlay.classList.add('reconstructing'); 
                 
@@ -262,10 +259,11 @@ def intro_screen(is_mobile=False):
                     shard.style.transitionDelay = (RECONSTRUCT_DURATION / 1000 - initialTransforms[index].delay) + 's';
                 }});
 
-                // 4. Thông báo hoàn thành sau khi ghép lại
+                // 4. Thông báo hoàn thành ngay khi hiệu ứng ghép lại kết thúc
+                // Tải lại trang ngay lập tức
                 setTimeout(() => {{
                     window.parent.postMessage({{type: 'intro_done'}}, '*');
-                }}, RECONSTRUCT_DURATION); 
+                }}, RECONSTRUCT_DURATION + 50); // Thêm 50ms buffer để đảm bảo transition hoàn tất
 
             }}, SHATTER_DURATION + BLACKOUT_DELAY); 
 
@@ -291,9 +289,8 @@ def intro_screen(is_mobile=False):
         }}, {{once:true}});
 
         vid.addEventListener('ended', finishIntro);
-        setTimeout(finishIntro, 9000); // Tối đa 9 giây để chuyển cảnh
+        setTimeout(finishIntro, 9000); 
 
-        // Ban đầu: Màn hình đen che mọi thứ
         blackFade.style.opacity = 1;
 
         </script>
@@ -303,7 +300,7 @@ def intro_screen(is_mobile=False):
     components.html(intro_html, height=800, scrolling=False)
 
 
-# ========== TRANG CHÍNH (Giữ nguyên) ==========
+# ========== TRANG CHÍNH ĐÃ TỐI ƯU HÓA HIỂN THỊ TIÊU ĐỀ ==========
 
 def main_page(is_mobile=False):
     hide_streamlit_ui()
@@ -318,7 +315,6 @@ def main_page(is_mobile=False):
 
     st.markdown(f"""
     <style>
-    /* ... (Style cho trang chính giữ nguyên) ... */
     html, body, .stApp {{
         height: 100vh !important;
         background: 
@@ -330,7 +326,7 @@ def main_page(is_mobile=False):
         padding: 0 !important;
         position: relative;
         filter: brightness(1.05) contrast(1.1) saturate(1.05);
-        animation: fadeInBg 1s ease-in-out forwards; 
+        animation: fadeInBg 0.5s ease-in-out forwards; /* Tăng tốc độ fadeIn nền */
     }}
     .stApp::after {{
         content: "";
@@ -358,7 +354,8 @@ def main_page(is_mobile=False):
         background-size: 200%;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        animation: textLight 10s linear infinite, fadeIn 2s ease-in-out forwards;
+        /* Tiêu đề xuất hiện NGAY LẬP TỨC (0s delay) */
+        animation: textLight 10s linear infinite, fadeIn 1s ease-in-out forwards; 
         letter-spacing: 2px;
         z-index: 3;
     }}
@@ -381,7 +378,6 @@ def main_page(is_mobile=False):
 
 hide_streamlit_ui()
 
-# 1. Xác định thiết bị
 if "is_mobile" not in st.session_state:
     ua_string = st_javascript("window.navigator.userAgent;")
     if ua_string:
@@ -394,14 +390,12 @@ if "is_mobile" not in st.session_state:
         st.stop()
 
 
-# 2. Xử lý chuyển cảnh
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
 if not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
     
-    # Script lắng nghe thông báo hoàn thành từ iframe
     st.markdown("""
     <script>
     window.addEventListener("message", (event) => {
@@ -412,7 +406,6 @@ if not st.session_state.intro_done:
     </script>
     """, unsafe_allow_html=True)
 
-    # Đặt thời gian chờ tối đa 
     time.sleep(15) 
     st.session_state.intro_done = True
     st.rerun()
