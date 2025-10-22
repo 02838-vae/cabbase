@@ -30,7 +30,7 @@ SHATTER_DURATION = 1.8  # Thời gian hiệu ứng tan vỡ (giây)
 RECONSTRUCT_DURATION = 1.8 # Thời gian hiệu ứng ghép lại (giây)
 BLACKOUT_DELAY = 0.2    # Thời gian màn hình đen
 
-# Số lượng cột sóng âm (theo code bạn cung cấp, ta dùng 16)
+# Số lượng cột sóng âm
 WAVE_COLUMNS = 16 
 
 # ========== HÀM PHỤ TRỢ ==========
@@ -286,6 +286,7 @@ def intro_screen(is_mobile=False):
 def audio_player_component(audio_uris):
     
     # Tạo HTML cho 16 cột sóng âm
+    # Sử dụng delay ngẫu nhiên để mô phỏng sóng âm
     wave_columns_html = "".join([
         f'<div class="visualizer-colum1" style="animation-delay: {3.99 - i * 0.1}s;">'
         '<div class="visualizer-row"></div>'
@@ -296,6 +297,34 @@ def audio_player_component(audio_uris):
     # Tạo danh sách URIs cho JS
     js_audio_list = [f"{{uri: '{uri}'}}" for uri in audio_uris.values()]
     audio_list_str = "[" + ", ".join(js_audio_list) + "]"
+    
+    # Định nghĩa khối CSS Visualizer như một chuỗi thô (Raw String)
+    visualizer_css = """
+    /* Keyframes (Đã loại bỏ transform và đổi màu để phù hợp hơn) */
+    @keyframes Rofa {
+        0% { height: 0%; }
+        5% { height: 100%; }
+        10% { height: 90%; }
+        15% { height: 80%; }
+        20% { height: 70%; }
+        25% { height: 0%; }
+        30% { height: 70%; }
+        35% { height: 0%; }
+        40% { height: 60%; }
+        45% { height: 0%; }
+        50% { height: 50%; }
+        55% { height: 0%; }
+        60% { height: 40%; }
+        65% { height: 0%; }
+        70% { height: 30%; }
+        75% { height: 0%; }
+        80% { height: 20%; }
+        85% { height: 0%; }
+        90% { height: 10%; }
+        95% { height: 5%; }
+        100% { height: 0; }
+    }
+    """
     
     html_code = f"""
     <div class="music-player-container">
@@ -348,12 +377,12 @@ def audio_player_component(audio_uris):
             -8px -8px 16px rgba(255, 255, 255, 0.6);
         display: flex;
         align-items: center;
-        gap: 12px; /* Tăng khoảng cách giữa nút và Visualizer */
+        gap: 12px; 
         backdrop-filter: blur(5px); 
         -webkit-backdrop-filter: blur(5px);
         height: 55px; 
         width: 100%;
-        max-width: 280px; /* Giới hạn chiều rộng tổng thể */
+        max-width: 280px; 
     }}
     .controls-group {{
         display: flex;
@@ -398,19 +427,21 @@ def audio_player_component(audio_uris):
 
 
     /* ================================== */
-    /* CSS SÓNG ÂM (VISUALIZER) - Dựa trên code của bạn */
+    /* CSS SÓNG ÂM (VISUALIZER) - Đã sửa lỗi cú pháp */
     /* ================================== */
     .visualizer-container {
         display: flex;
-        align-items: flex-end; /* Quan trọng: căn cột xuống đáy */
+        align-items: flex-end; 
         height: 40px; 
         padding: 0 5px;
         gap: 3px;
         border-radius: 5px;
         background: #eee;
+        transition: opacity 0.3s;
+        opacity: 0.4; /* Mặc định mờ */
     }
     .visualizer-colum1 {
-        width: 3px; /* Giảm chiều rộng cột để nhiều cột hơn */
+        width: 3px; 
         height: 100%;
         border-radius: 1px;
         display: inline-block;
@@ -420,39 +451,14 @@ def audio_player_component(audio_uris):
         width: 100%;
         height: 100%;
         border-radius: 1px;
-        /* Điều chỉnh màu Gradient cho Visualizer: Tông Vàng/Đồng */
         background: linear-gradient(to top, #c7a46e, #e9dcb5); 
         position: absolute;
         animation: Rofa 10s infinite ease-in-out;
         bottom: 0;
-        transform-origin: bottom; /* Cột giãn nở từ dưới lên */
-        /* Animation delays được điều khiển bằng inline style ở Python */
+        transform-origin: bottom; 
     }
 
-    /* Keyframes (Đã loại bỏ transform và đổi màu để phù hợp hơn) */
-    @keyframes Rofa {
-        0% { height: 0%; }
-        5% { height: 100%; }
-        10% { height: 90%; }
-        15% { height: 80%; }
-        20% { height: 70%; }
-        25% { height: 0%; }
-        30% { height: 70%; }
-        35% { height: 0%; }
-        40% { height: 60%; }
-        45% { height: 0%; }
-        50% { height: 50%; }
-        55% { height: 0%; }
-        60% { height: 40%; }
-        65% { height: 0%; }
-        70% { height: 30%; }
-        75% { height: 0%; }
-        80% { height: 20%; }
-        85% { height: 0%; }
-        90% { height: 10%; }
-        95% { height: 5%; }
-        100% { height: 0; }
-    }
+    {visualizer_css}
     </style>
     
     <script>
@@ -554,6 +560,86 @@ def audio_player_component(audio_uris):
 
 
 # -------------------------------------------------------------
+## TRANG CHÍNH (Giữ nguyên)
+def main_page(is_mobile=False):
+    hide_streamlit_ui()
+    bg = BG_MOBILE if is_mobile else BG_PC
+    try:
+        with open(bg, "rb") as f:
+            bg_b64 = base64.b64encode(f.read()).decode()
+    except FileNotFoundError as e:
+        st.error(f"Lỗi: Không tìm thấy file tài nguyên: {e.filename}")
+        st.stop()
+        
+    if st.session_state.audio_uris:
+        audio_player_component(st.session_state.audio_uris)
+
+
+    st.markdown(f"""
+    <style>
+    /* CSS NỀN VÀ TIÊU ĐỀ (Giữ nguyên) */
+    html, body, .stApp {{
+        height: 100vh !important;
+        background: 
+            linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
+            url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
+        background-size: cover !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        position: relative;
+        filter: brightness(1.05) contrast(1.1) saturate(1.05);
+        animation: fadeInBg 0.5s ease-in-out forwards; 
+    }}
+    
+    @keyframes fadeInBg {{
+        from {{ opacity: 0; }}
+        to {{ opacity: 1; }}
+    }}
+    .welcome {{
+        position: absolute;
+        top: 8%;
+        width: 100%;
+        text-align: center;
+        font-size: clamp(30px, 5vw, 65px);
+        color: #fff5d7;
+        font-family: 'Playfair Display', serif;
+        text-shadow: 0 0 18px rgba(0,0,0,0.65), 0 0 30px rgba(255,255,180,0.25);
+        background: linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%);
+        background-size: 200%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: textLight 10s linear infinite, fadeIn 1s ease-in-out forwards; 
+        letter-spacing: 2px;
+        z-index: 3;
+    }}
+
+    /* KHẮC PHỤC LỖI "BAY" CỦA PLAYER */
+    iframe[title*="streamlit_component"] {{
+        position: fixed !important;
+        top: 15px !important;
+        left: 15px !important;
+        z-index: 1000 !important;
+        background: transparent !important;
+        height: 65px !important; 
+        width: 300px !important; /* Đủ rộng cho player + visualizer */
+        border: none !important;
+        transition: none !important; 
+    }}
+
+    /* ... (Phần CSS khác) ... */
+    
+    </style>
+
+
+    <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
+    """, unsafe_allow_html=True)
+    
+    if not st.session_state.audio_uris:
+        st.warning("Không tìm thấy file nhạc nào để phát. Vui lòng kiểm tra file background1-6.mp3.")
+
+
+# -------------------------------------------------------------
 ## LUỒNG CHÍNH CỦA ỨNG DỤNG
 hide_streamlit_ui()
 
@@ -571,7 +657,8 @@ if "is_mobile" not in st.session_state:
 
 # 2. Mã hóa file nhạc LẦN ĐẦU (Chỉ chạy 1 lần)
 if "audio_uris" not in st.session_state or not st.session_state.audio_uris:
-    st.session_uris = encode_audio_files()
+    # Sửa lỗi tên biến ở dòng 434 (trong code cũ)
+    st.session_state.audio_uris = encode_audio_files()
 
 # 3. Quản lý trạng thái Intro
 if "intro_done" not in st.session_state:
