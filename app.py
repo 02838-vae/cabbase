@@ -12,23 +12,20 @@ BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 
 
-# ====== HÀM ẨN GIAO DIỆN STREAMLIT ======
+# ====== ẨN GIAO DIỆN STREAMLIT ======
 def hide_streamlit_ui():
-    st.markdown(
-        """
-        <style>
-        #MainMenu, footer, header {visibility: hidden;}
-        .block-container {
-            padding: 0 !important;
-            margin: 0 !important;
-        }
-        </style>
-        """,
-        unsafe_allow_html=True,
-    )
+    st.markdown("""
+    <style>
+    #MainMenu, footer, header {visibility: hidden;}
+    .block-container {
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 
-# ====== HÀM HIỂN THỊ VIDEO INTRO CÓ SHUTTER ======
+# ====== INTRO (VIDEO + HIỆU ỨNG SHUTTER) ======
 def intro_component(is_mobile=False):
     hide_streamlit_ui()
 
@@ -54,7 +51,7 @@ def intro_component(is_mobile=False):
       #left,#right {{
         position:fixed; top:0; width:50vw; height:100vh;
         background:black; z-index:10;
-        transition:all 1s ease-in-out;
+        transition:all 1.2s ease-in-out;
       }}
       #left{{left:-50vw;}}
       #right{{right:-50vw;}}
@@ -63,7 +60,7 @@ def intro_component(is_mobile=False):
     </style>
     </head>
     <body>
-      <video id="introVideo" autoplay playsinline>
+      <video id="introVideo" autoplay playsinline muted>
         <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
       </video>
       <audio id="introAudio" autoplay>
@@ -74,14 +71,14 @@ def intro_component(is_mobile=False):
         const video = document.getElementById("introVideo");
         const audio = document.getElementById("introAudio");
 
-        // Khi video gần hết, đóng màn
+        // Đóng shutter gần cuối video
         video.addEventListener('timeupdate', () => {{
           if(video.currentTime > video.duration - 1.5){{
             document.body.classList.add('close');
           }}
         }});
 
-        // Khi video kết thúc -> gửi tín hiệu sang Streamlit
+        // Khi video kết thúc → gửi tín hiệu sang Streamlit
         video.addEventListener('ended', () => {{
           window.parent.postMessage({{"type":"end_intro"}}, "*");
         }});
@@ -92,14 +89,12 @@ def intro_component(is_mobile=False):
     components.html(html, height=1080, scrolling=False, key="intro_comp")
 
 
-# ====== HÀM TRANG CHÍNH (CÓ HIỆU ỨNG SHUTTER MỞ RA) ======
+# ====== TRANG CHÍNH (CÓ HIỆU ỨNG SHUTTER MỞ RA) ======
 def main_page(is_mobile=False):
     hide_streamlit_ui()
 
     bg = BG_MOBILE if is_mobile else BG_PC
     bg_b64 = ""
-
-    # Đọc file nền an toàn
     if os.path.exists(bg):
         with open(bg, "rb") as f:
             bg_b64 = base64.b64encode(f.read()).decode()
@@ -149,36 +144,43 @@ def main_page(is_mobile=False):
     """, unsafe_allow_html=True)
 
 
-# ====== LOGIC CHÍNH ======
+# ====== LUỒNG CHÍNH ======
 def main():
     st.set_page_config(page_title="CABBASE Intro", page_icon="🎬", layout="wide")
+    hide_streamlit_ui()
 
-    # Phát hiện thiết bị (đơn giản)
-    if "user_agent" not in st.session_state:
-        st.session_state.user_agent = st.runtime.scriptrunner.get_script_run_ctx().session.client.request.headers.get("User-Agent", "")
-    is_mobile = "Mobile" in st.session_state.user_agent or "Android" in st.session_state.user_agent
+    # Dò thiết bị bằng JavaScript
+    if "is_mobile" not in st.session_state:
+        components.html("""
+        <script>
+        const ua = navigator.userAgent || "";
+        const isMobile = /Mobi|Android/i.test(ua);
+        window.parent.postMessage({type: "set_device", is_mobile: isMobile}, "*");
+        </script>
+        """, height=0)
+        st.stop()
 
     if "intro_done" not in st.session_state:
         st.session_state.intro_done = False
 
     if not st.session_state.intro_done:
-        intro_component(is_mobile)
-        # Lắng nghe tín hiệu từ iframe
+        intro_component(st.session_state.is_mobile)
         components.html("""
         <script>
         window.addEventListener("message", (event) => {
           if(event.data.type === "end_intro") {
             window.parent.postMessage({type: "streamlit:setComponentValue", value: true}, "*");
           }
+          if(event.data.type === "set_device") {
+            window.parent.postMessage({type: "streamlit:setSessionState", key: "is_mobile", value: event.data.is_mobile}, "*");
+          }
         });
         </script>
         """, height=0)
-        result = st.session_state.get("intro_result", False)
-        if result:
-            st.session_state.intro_done = True
-            st.experimental_rerun()
+        time.sleep(0.2)
+        st.stop()
     else:
-        main_page(is_mobile)
+        main_page(st.session_state.is_mobile)
 
 
 if __name__ == "__main__":
