@@ -35,11 +35,12 @@ BLACKOUT_DELAY = 0.2
 def hide_streamlit_ui():
     st.markdown("""
     <style>
+    /* ẨN CÁC THÀNH PHẦN UI CỦA STREAMLIT */
     [data-testid="stToolbar"], header, footer, iframe[title*="keyboard"], [tabindex="0"][aria-live] {
         display: none !important;
     }
     
-    /* FIX HEIGHT MOBILE: Đảm bảo phần tử bao ngoài full screen */
+    /* Đảm bảo phần tử bao ngoài full screen */
     html, body {
         height: 100% !important;
         margin: 0 !important;
@@ -64,7 +65,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO (ĐÃ KHẮC PHỤC LỖI RECONSTRUCT) ==========
+# ========== MÀN HÌNH INTRO (ĐÃ KHẮC PHỤC LỖI SHUTTER VÀ LOAD TRANG CHÍNH) ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
@@ -77,9 +78,9 @@ def intro_screen(is_mobile=False):
         with open(SFX, "rb") as a:
             audio_b64 = base64.b64encode(a.read()).decode()
         with open(shutter_file, "rb") as s:
-            shutter_b64 = base64.b64encode(s.read()).decode()
+            shutter_b64 = base64.b64encode(s.read()).decode() # Ảnh shutter dùng cho hiệu ứng vỡ
         with open(bg_file, "rb") as b:
-            bg_b64 = base64.b64encode(b.read()).decode()
+            bg_b64 = base64.b64encode(b.read()).decode()      # Ảnh nền dùng cho hiệu ứng nối lại
             
     except FileNotFoundError as e:
         st.error(f"Lỗi: Không tìm thấy file tài nguyên. Vui lòng kiểm tra: {e.filename}")
@@ -108,7 +109,7 @@ def intro_screen(is_mobile=False):
         }}
         #static-frame {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
-            background-image: url("data:image/jpeg;base64,{shutter_b64}");
+            background-image: url("data:image/jpeg;base64,{shutter_b64}"); /* Sử dụng SHUTTER IMAGE */
             background-size: cover; opacity: 0; z-index: 20; transition: opacity 0.1s linear;
         }}
         audio {{ display: none; }}
@@ -135,7 +136,7 @@ def intro_screen(is_mobile=False):
         }}
         .shard {{
             position: relative;
-            background-image: url("data:image/jpeg;base64,{shutter_b64}"); 
+            background-image: url("data:image/jpeg;base64,{shutter_b64}"); /* BUỘC DÙNG SHUTTER CHO TRẠNG THÁI VỠ */
             background-size: 100vw 100vh;
             transition: transform {SHATTER_DURATION}s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 1.5s ease-in-out; 
             opacity: 1; 
@@ -144,10 +145,9 @@ def intro_screen(is_mobile=False):
         .reconstructing .shard {{
             transform: translate(0, 0) rotate(0deg) scale(1) !important; 
             transition: transform {RECONSTRUCT_DURATION}s cubic-bezier(0.19, 1, 0.22, 1), opacity {RECONSTRUCT_DURATION}s ease-in-out; 
-            background-image: url("data:image/jpeg;base64,{bg_b64}") !important;
+            background-image: url("data:image/jpeg;base64,{bg_b64}") !important; /* DÙNG BACKGROUND IMAGE ĐỂ NỐI LẠI */
             opacity: 1 !important; 
-            /* Fix: Đảm bảo background position về 0 khi reconstruct */
-            background-position: 0 0 !important; 
+            background-position: 0 0 !important; /* Đảm bảo căn chỉnh đúng cho ảnh nền chính */
         }}
 
         #black-fade {{
@@ -228,7 +228,7 @@ def intro_screen(is_mobile=False):
             setTimeout(() => {{
                 shatterOverlay.style.opacity = 0; 
                 blackFade.style.opacity = 1; 
-            }}, SHATTER_DURATION + 500); // Đợi shatter xong + 0.5s
+            }}, SHATTER_DURATION * 1000 + 500); // Đợi shatter xong + 0.5s
 
 
             setTimeout(() => {{
@@ -238,18 +238,18 @@ def intro_screen(is_mobile=False):
                 shatterOverlay.classList.remove('shattering');
                 shatterOverlay.classList.add('reconstructing'); 
                 
-                // === BẮT ĐẦU RECONSTRUCT (FIXED: Không cần tính toán delay ngược) ===
+                // === BẮT ĐẦU RECONSTRUCT (Sử dụng random delay) ===
                 shards.forEach((shard, index) => {{
-                    // Đặt lại delay ngẫu nhiên để hiệu ứng trông tự nhiên hơn
                     shard.style.transitionDelay = (Math.random() * 0.5) + 's'; 
                 }});
 
                 // Hoàn thành intro sau khi reconstruct xong
                 setTimeout(() => {{
-                    window.parent.postMessage({{type: 'intro_done'}}, '*');
-                }}, RECONSTRUCT_DURATION + 500); 
+                    // Dùng postMessage để reload an toàn hơn
+                    window.parent.postMessage({{type: 'intro_done', success: true}}, '*'); 
+                }}, RECONSTRUCT_DURATION * 1000 + 500); 
 
-            }}, SHATTER_DURATION + BLACKOUT_DELAY + 500); // Chờ shatter + blackout delay
+            }}, SHATTER_DURATION * 1000 + BLACKOUT_DELAY * 1000 + 500); 
 
         }}
 
@@ -283,10 +283,12 @@ def intro_screen(is_mobile=False):
     components.html(intro_html, height=800, scrolling=False)
 
 
-# ========== TRANG CHÍNH (ĐÃ BỎ HIỆU ỨNG STARFALL) ==========
+# ========== TRANG CHÍNH (ĐÃ BỎ HIỆU ỨNG STARFALL VÀ FIX LỖI MOBILE BG) ==========
 
 def main_page(is_mobile=False):
-    hide_streamlit_ui()
+    # Đảm bảo UI Streamlit bị ẩn ngay khi trang chính load
+    hide_streamlit_ui() 
+    
     bg = BG_MOBILE if is_mobile else BG_PC
     try:
         with open(bg, "rb") as f:
@@ -328,9 +330,9 @@ def main_page(is_mobile=False):
     /* MEDIA QUERY FIX CHO MOBILE/iOS SAFARI: */
     @media only screen and (max-width: 600px) {
         .stApp {
-            height: 100% !important; /* Dùng 100% kết hợp với min-height bên dưới */
-            min-height: -webkit-fill-available !important; /* Fix lỗi thanh địa chỉ mobile */
-            background-size: cover !important; /* Bắt buộc cover */
+            height: 100% !important; 
+            min-height: -webkit-fill-available !important; 
+            background-size: cover !important; 
         }
     }
     
@@ -374,7 +376,6 @@ def main_page(is_mobile=False):
         from { opacity: 0; transform: scale(0.97); }
         to { opacity: 1; transform: scale(1); }
     }
-    </style>
     """
 
     # HIỂN THỊ CUỐI CÙNG
@@ -393,12 +394,14 @@ def main_page(is_mobile=False):
 hide_streamlit_ui()
 
 if "is_mobile" not in st.session_state:
+    # Lấy UserAgent để xác định thiết bị
     ua_string = st_javascript("window.navigator.userAgent;")
     if ua_string:
         ua = parse(ua_string)
         st.session_state.is_mobile = not ua.is_pc
         st.rerun()
     else:
+        # Nếu JavaScript chưa chạy xong
         st.info("Đang xác định thiết bị...")
         time.sleep(1) 
         st.stop()
@@ -410,16 +413,21 @@ if "intro_done" not in st.session_state:
 if not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
     
+    # Lắng nghe postMessage từ iframe (intro_screen) để reload trang
     st.markdown("""
     <script>
     window.addEventListener("message", (event) => {
         if (event.data.type === "intro_done") {
-            window.parent.location.reload(); 
+            // Khi hiệu ứng hoàn tất, gửi lệnh reload đến Streamlit
+            if (event.data.success) {
+                window.parent.location.reload(); 
+            }
         }
     });
     </script>
     """, unsafe_allow_html=True)
     
+    # Fallback time. Nếu reload không thành công sau 15s, buộc chuyển trạng thái
     time.sleep(15)  
     st.session_state.intro_done = True
     st.rerun()
