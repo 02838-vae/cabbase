@@ -8,7 +8,6 @@ import streamlit.components.v1 as components
 
 # ========== CẤU HÌNH ==========
 
-# Đảm bảo bạn đã có các file sau trong cùng thư mục:
 VIDEO_PC = "airplane.mp4"
 VIDEO_MOBILE = "mobile.mp4"
 BG_PC = "cabbase.jpg"
@@ -153,8 +152,8 @@ def intro_screen(is_mobile=False):
             const row = Math.floor(index / GRID_SIZE);
             const col = index % GRID_SIZE;
             
-            // Tính toán vị trí nền để nó khớp với vị trí của mảnh vỡ
-            shard.style.backgroundPosition = `calc(-${col} * 100vw / ${GRID_SIZE}) calc(-${row} * 100vh / ${GRID_SIZE})`;
+            // SỬA LỖI: Dùng dấu nháy đơn và toán tử '+' thay vì backtick ` `
+            shard.style.backgroundPosition = 'calc(-' + col + ' * 100vw / ' + GRID_SIZE + ') calc(-' + row + ' * 100vh / ' + GRID_SIZE + ')';
             
             // Thêm random transform ban đầu (ẩn) cho đẹp mắt hơn khi tan vỡ
             shard.dataset.randX = (Math.random() - 0.5) * 200; // -100vw đến +100vw
@@ -177,8 +176,9 @@ def intro_screen(is_mobile=False):
 
             // Thiết lập transform ngẫu nhiên cho từng mảnh vỡ
             shards.forEach((shard) => {{
-                shard.style.transform = `translate(${shard.dataset.randX}vw, ${shard.dataset.randY}vh) rotate(${shard.dataset.randR}deg) scale(0.1)`;
-                shard.style.transitionDelay = `${shard.dataset.delay}s`;
+                // SỬA LỖI: Dùng dấu nháy đơn và toán tử '+' thay vì backtick ` `
+                shard.style.transform = 'translate(' + shard.dataset.randX + 'vw, ' + shard.dataset.randY + 'vh) rotate(' + shard.dataset.randR + 'deg) scale(0.1)';
+                shard.style.transitionDelay = `${{shard.dataset.delay}}s`; // Dùng lại template literal cho transitionDelay vì nó nằm trong f-string
             }});
 
             // 3. Chuyển sang trang chính sau khi hiệu ứng hoàn tất
@@ -202,7 +202,7 @@ def intro_screen(is_mobile=False):
             vid.play();
             audio.volume = 1.0;
             audio.currentTime = 0;
-            audio.play().catch(()=>{{}}); /* <--- ĐÃ SỬA: nhân đôi ngoặc nhọn */
+            audio.play().catch(()=>{{}}); 
         }}, {{once:true}});
 
         vid.addEventListener('ended', finishIntro);
