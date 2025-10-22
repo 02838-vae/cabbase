@@ -27,7 +27,8 @@ st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 GRID_SIZE = 8
 SHATTER_DURATION = 1.8  # Thời gian hiệu ứng tan vỡ (giây)
 RECONSTRUCT_DURATION = 1.8 # Thời gian hiệu ứng ghép lại (giây)
-BLACKOUT_DELAY = 0.5    # Thời gian màn hình đen
+BLACKOUT_DELAY = 0.2    # <--- ĐIỀU CHỈNH: Thời gian màn hình đen (rút ngắn)
+LOAD_DELAY = 0.25       # <--- ĐIỀU CHỈNH: Độ trễ tải lại trang sau khi nối lại xong (250ms)
 
 # ========== ẨN UI STREAMLIT ==========
 
@@ -72,6 +73,13 @@ def intro_screen(is_mobile=False):
     
     shards_html = "".join([f"<div class='shard' id='shard-{i}'></div>" for i in range(GRID_SIZE * GRID_SIZE)])
 
+    # Chuyển đổi hằng số Python sang JS
+    js_shatter_duration = SHATTER_DURATION * 1000
+    js_reconstruct_duration = RECONSTRUCT_DURATION * 1000
+    js_blackout_delay = BLACKOUT_DELAY * 1000
+    js_load_delay = LOAD_DELAY * 1000
+
+
     intro_html = f"""
     <html>
     <head>
@@ -83,28 +91,14 @@ def intro_screen(is_mobile=False):
             background: black;
             height: 100%;
         }}
-        #pre-load-bg {{
-            display: none; 
-            background-image: url("data:image/jpeg;base64,{bg_b64}");
-        }}
+        #pre-load-bg {{ display: none; background-image: url("data:image/jpeg;base64,{bg_b64}"); }}
         video {{
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
         }}
         #static-frame {{
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
             background-image: url("data:image/jpeg;base64,{shutter_b64}");
-            background-size: cover;
-            opacity: 0; 
-            z-index: 20;
-            transition: opacity 0.1s linear;
+            background-size: cover; opacity: 0; z-index: 20; transition: opacity 0.1s linear;
         }}
         audio {{ display: none; }}
         #intro-text {{
@@ -117,26 +111,14 @@ def intro_screen(is_mobile=False):
             animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards;
             line-height: 1.2; word-wrap: break-word; z-index: 10;
         }}
-        @keyframes lightSweep {{
-            0% {{ background-position: 200% 0%; }}
-            100% {{ background-position: -200% 0%; }}
-        }}
-        @keyframes fadeInOut {{
-            0% {{ opacity: 0; }} 20% {{ opacity: 1; }}
-            80% {{ opacity: 1; }} 100% {{ opacity: 0; }}
-        }}
+        @keyframes lightSweep {{ 0% {{ background-position: 200% 0%; }} 100% {{ background-position: -200% 0%; }} }}
+        @keyframes fadeInOut {{ 0% {{ opacity: 0; }} 20% {{ opacity: 1; }} 80% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}
 
         /* === STYLE HIỆU ỨNG TAN VỠ VÀ GHÉP LẠI === */
         #shatter-overlay {{
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            display: grid;
-            grid-template-columns: repeat({GRID_SIZE}, 1fr);
-            grid-template-rows: repeat({GRID_SIZE}, 1fr);
-            opacity: 0; 
-            pointer-events: none;
-            z-index: 30; 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: grid; grid-template-columns: repeat({GRID_SIZE}, 1fr); grid-template-rows: repeat({GRID_SIZE}, 1fr);
+            opacity: 0; pointer-events: none; z-index: 30; 
         }}
         .shard {{
             position: relative;
@@ -156,14 +138,9 @@ def intro_screen(is_mobile=False):
 
         /* Lớp phủ màn hình đen */
         #black-fade {{
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
-            background: black;
-            opacity: 1;
-            z-index: 40;
-            transition: opacity 1s ease-in-out;
-            pointer-events: none;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: black; opacity: 1; z-index: 40;
+            transition: opacity 1s ease-in-out; pointer-events: none;
         }}
 
         </style>
@@ -174,23 +151,19 @@ def intro_screen(is_mobile=False):
             <source src='data:video/mp4;base64,{video_b64}' type='video/mp4'>
         </video>
         <div id='static-frame'></div>
-        <audio id='flySfx'>
-            <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
-        </audio>
+        <audio id='flySfx'> <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'></audio>
         <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
 
-        <div id='shatter-overlay'>
-            {shards_html}
-        </div>
-        
+        <div id='shatter-overlay'>{shards_html}</div>
         <div id='black-fade'></div>
 
 
         <script>
         const GRID_SIZE = {GRID_SIZE};
-        const SHATTER_DURATION = {SHATTER_DURATION} * 1000;
-        const RECONSTRUCT_DURATION = {RECONSTRUCT_DURATION} * 1000;
-        const BLACKOUT_DELAY = {BLACKOUT_DELAY} * 1000;
+        const SHATTER_DURATION = {js_shatter_duration};
+        const RECONSTRUCT_DURATION = {js_reconstruct_duration};
+        const BLACKOUT_DELAY = {js_blackout_delay};
+        const LOAD_DELAY = {js_load_delay}; // Đã thêm biến này
 
         const vid = document.getElementById('introVid');
         const audio = document.getElementById('flySfx');
@@ -224,7 +197,7 @@ def intro_screen(is_mobile=False):
             staticFrame.style.opacity = 1; 
             
             // BƯỚC 1: Bắt đầu Tan Vỡ (Shatter)
-            setTimeout(() => {{ // Chờ 10ms để staticFrame kịp hiện
+            setTimeout(() => {{ 
                 blackFade.style.opacity = 0; 
                 shatterOverlay.style.opacity = 1; 
                 staticFrame.style.opacity = 0; 
@@ -239,18 +212,16 @@ def intro_screen(is_mobile=False):
                 }});
             }}, 10);
             
-            // BƯỚC 2: Màn Hình Đen (Blackout)
+            // BƯỚC 2: Màn Hình Đen (Blackout) - Đã rút ngắn thời gian chờ
             setTimeout(() => {{
                 shatterOverlay.style.opacity = 0; 
                 blackFade.style.opacity = 1; 
             }}, SHATTER_DURATION); 
 
-            // BƯỚC 3: Ghép Lại (Reconstruction)
+            // BƯỚC 3: Ghép Lại (Reconstruction) - Bắt đầu sau khi màn đen kết thúc
             setTimeout(() => {{
-                // LÚC NÀY MÀN HÌNH ĐANG ĐEN
-                // Hiện lớp phủ mảnh vỡ (đã có background mới)
                 shatterOverlay.style.opacity = 1; 
-                blackFade.style.opacity = 0; // Tắt màn hình đen
+                blackFade.style.opacity = 0; 
                 
                 shatterOverlay.classList.remove('shattering');
                 shatterOverlay.classList.add('reconstructing'); 
@@ -259,11 +230,10 @@ def intro_screen(is_mobile=False):
                     shard.style.transitionDelay = (RECONSTRUCT_DURATION / 1000 - initialTransforms[index].delay) + 's';
                 }});
 
-                // 4. Thông báo hoàn thành ngay khi hiệu ứng ghép lại kết thúc
-                // Tải lại trang ngay lập tức
+                // BƯỚC 4: Thông báo hoàn thành + Độ trễ tải lại trang (LOAD_DELAY)
                 setTimeout(() => {{
                     window.parent.postMessage({{type: 'intro_done'}}, '*');
-                }}, RECONSTRUCT_DURATION + 50); // Thêm 50ms buffer để đảm bảo transition hoàn tất
+                }}, RECONSTRUCT_DURATION + LOAD_DELAY); // <--- ĐÃ THÊM LOAD_DELAY Ở ĐÂY
 
             }}, SHATTER_DURATION + BLACKOUT_DELAY); 
 
@@ -300,7 +270,7 @@ def intro_screen(is_mobile=False):
     components.html(intro_html, height=800, scrolling=False)
 
 
-# ========== TRANG CHÍNH ĐÃ TỐI ƯU HÓA HIỂN THỊ TIÊU ĐỀ ==========
+# ========== TRANG CHÍNH (Giữ nguyên) ==========
 
 def main_page(is_mobile=False):
     hide_streamlit_ui()
@@ -326,7 +296,7 @@ def main_page(is_mobile=False):
         padding: 0 !important;
         position: relative;
         filter: brightness(1.05) contrast(1.1) saturate(1.05);
-        animation: fadeInBg 0.5s ease-in-out forwards; /* Tăng tốc độ fadeIn nền */
+        animation: fadeInBg 0.5s ease-in-out forwards; 
     }}
     .stApp::after {{
         content: "";
@@ -354,7 +324,6 @@ def main_page(is_mobile=False):
         background-size: 200%;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        /* Tiêu đề xuất hiện NGAY LẬP TỨC (0s delay) */
         animation: textLight 10s linear infinite, fadeIn 1s ease-in-out forwards; 
         letter-spacing: 2px;
         z-index: 3;
