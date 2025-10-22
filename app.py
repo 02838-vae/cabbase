@@ -671,7 +671,7 @@ def main_page(is_mobile=False):
     </div>
 
     <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
-    """, unsafe_allow_html=True)
+    """, unsafe_allow_html=True
 
 
 # ========== LUỒNG CHÍNH (Giữ nguyên) ==========
