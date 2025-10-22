@@ -271,7 +271,7 @@ def intro_screen(is_mobile=False):
     components.html(intro_html, height=800, scrolling=False)
 
 
-# ========== TRANG CHÍNH (Giữ nguyên) ==========
+# ========== TRANG CHÍNH CÓ HIỆU ỨNG STARFALL ==========
 
 def main_page(is_mobile=False):
     hide_streamlit_ui()
@@ -283,11 +283,12 @@ def main_page(is_mobile=False):
         st.error(f"Lỗi: Không tìm thấy file tài nguyên: {e.filename}")
         st.stop()
 
-
-    st.markdown(f"""
-    <style>
+    # CSS CHO HIỆU ỨNG STARFALL (Đã được điều chỉnh để hoạt động tốt trong Streamlit)
+    starfall_css = f"""
+    /* Điều chỉnh body/stApp để phù hợp với nền Starfall (màu tối) */
     html, body, .stApp {{
         height: 100vh !important;
+        /* SỬ DỤNG BACKGROUND TỪ CODE CỦA BẠN (vẫn dùng ảnh base64) */
         background: 
             linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
             url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
@@ -299,6 +300,292 @@ def main_page(is_mobile=False):
         filter: brightness(1.05) contrast(1.1) saturate(1.05);
         animation: fadeInBg 0.5s ease-in-out forwards; 
     }}
+
+    /* CSS STARFALL - PHẦN QUAN TRỌNG: Cần đặt Z-index thấp hơn nội dung trang chính */
+    .starfall {{
+        position: absolute;
+        height: 100%;
+        width: 100%;
+        top: 0;
+        left: 0;
+        transform-style: preserve-3d;
+        perspective: 1000px;
+        z-index: 1; /* Đảm bảo nó nằm dưới lớp phủ và văn bản */
+    }}
+    .starfall .falling-star {{
+        width: 8px;
+        height: 8px;
+        background: #00d1b2;
+        position: absolute;
+        border-radius: 50%;
+        opacity: 0.5;
+        /* Thêm box-shadow để làm ngôi sao nổi bật hơn */
+        box-shadow: 0 0 5px 1px rgba(0, 209, 178, 0.7);
+    }}
+
+    /* === KEYFRAMES VÀ ANIMATION STARFALL (Phải giữ nguyên để hiệu ứng hoạt động) === */
+
+    /* Kích thước của ngôi sao có thể cần điều chỉnh cho mobile nếu muốn */
+    @media only screen and (max-width: 600px) {{
+        /* Giữ nguyên background-size từ code cũ của bạn */
+        .stApp {{
+            background-size: auto !important;
+            background-position: right !important;
+        }}
+    }}
+
+    /* Thêm các Keyframe và Animation từ CSS Starfall của bạn */
+    
+    /* ********** BẮT ĐẦU CSS RƠI SAO ********** */
+
+    .falling-star:nth-child(1) {{
+        transform: translateX(68vw) translateY(-8px);
+        animation: anim1 4s infinite;
+        animation-delay: 0.3s;
+    }}
+    .falling-star:nth-child(2) {{
+        transform: translateX(57vw) translateY(-8px);
+        animation: anim2 4s infinite;
+        animation-delay: 0.6s;
+    }}
+    .falling-star:nth-child(3) {{
+        transform: translateX(70vw) translateY(-8px);
+        animation: anim3 4s infinite;
+        animation-delay: 0.9s;
+    }}
+    .falling-star:nth-child(4) {{
+        transform: translateX(54vw) translateY(-8px);
+        animation: anim4 4s infinite;
+        animation-delay: 1.2s;
+    }}
+    .falling-star:nth-child(5) {{
+        transform: translateX(85vw) translateY(-8px);
+        animation: anim5 4s infinite;
+        animation-delay: 1.5s;
+    }}
+    .falling-star:nth-child(6) {{
+        transform: translateX(59vw) translateY(-8px);
+        animation: anim6 4s infinite;
+        animation-delay: 1.8s;
+    }}
+    .falling-star:nth-child(7) {{
+        transform: translateX(33vw) translateY(-8px);
+        animation: anim7 4s infinite;
+        animation-delay: 2.1s;
+    }}
+    .falling-star:nth-child(8) {{
+        transform: translateX(82vw) translateY(-8px);
+        animation: anim8 4s infinite;
+        animation-delay: 2.4s;
+    }}
+    .falling-star:nth-child(9) {{
+        transform: translateX(24vw) translateY(-8px);
+        animation: anim9 4s infinite;
+        animation-delay: 2.7s;
+    }}
+    .falling-star:nth-child(10) {{
+        transform: translateX(54vw) translateY(-8px);
+        animation: anim10 4s infinite;
+        animation-delay: 3s;
+    }}
+    .falling-star:nth-child(11) {{
+        transform: translateX(11vw) translateY(-8px);
+        animation: anim11 4s infinite;
+        animation-delay: 3.3s;
+    }}
+    .falling-star:nth-child(12) {{
+        transform: translateX(14vw) translateY(-8px);
+        animation: anim12 4s infinite;
+        animation-delay: 3.6s;
+    }}
+    .falling-star:nth-child(13) {{
+        transform: translateX(66vw) translateY(-8px);
+        animation: anim13 4s infinite;
+        animation-delay: 3.9s;
+    }}
+    .falling-star:nth-child(14) {{
+        transform: translateX(64vw) translateY(-8px);
+        animation: anim14 4s infinite;
+        animation-delay: 4.2s;
+    }}
+    .falling-star:nth-child(15) {{
+        transform: translateX(3vw) translateY(-8px);
+        animation: anim15 4s infinite;
+        animation-delay: 4.5s;
+    }}
+    .falling-star:nth-child(16) {{
+        transform: translateX(40vw) translateY(-8px);
+        animation: anim16 4s infinite;
+        animation-delay: 4.8s;
+    }}
+    .falling-star:nth-child(17) {{
+        transform: translateX(96vw) translateY(-8px);
+        animation: anim17 4s infinite;
+        animation-delay: 5.1s;
+    }}
+    .falling-star:nth-child(18) {{
+        transform: translateX(47vw) translateY(-8px);
+        animation: anim18 4s infinite;
+        animation-delay: 5.4s;
+    }}
+    .falling-star:nth-child(19) {{
+        transform: translateX(79vw) translateY(-8px);
+        animation: anim19 4s infinite;
+        animation-delay: 5.7s;
+    }}
+    .falling-star:nth-child(20) {{
+        transform: translateX(98vw) translateY(-8px);
+        animation: anim20 4s infinite;
+        animation-delay: 6s;
+    }}
+    .falling-star:nth-child(21) {{
+        transform: translateX(29vw) translateY(-8px);
+        animation: anim21 4s infinite;
+        animation-delay: 6.3s;
+    }}
+    .falling-star:nth-child(22) {{
+        transform: translateX(36vw) translateY(-8px);
+        animation: anim22 4s infinite;
+        animation-delay: 6.6s;
+    }}
+    .falling-star:nth-child(23) {{
+        transform: translateX(21vw) translateY(-8px);
+        animation: anim23 4s infinite;
+        animation-delay: 6.9s;
+    }}
+    .falling-star:nth-child(24) {{
+        transform: translateX(91vw) translateY(-8px);
+        animation: anim24 4s infinite;
+        animation-delay: 7.2s;
+    }}
+    .falling-star:nth-child(25) {{
+        transform: translateX(46vw) translateY(-8px);
+        animation: anim25 4s infinite;
+        animation-delay: 7.5s;
+    }}
+    .falling-star:nth-child(26) {{
+        transform: translateX(39vw) translateY(-8px);
+        animation: anim26 4s infinite;
+        animation-delay: 7.8s;
+    }}
+    .falling-star:nth-child(27) {{
+        transform: translateX(18vw) translateY(-8px);
+        animation: anim27 4s infinite;
+        animation-delay: 8.1s;
+    }}
+    .falling-star:nth-child(28) {{
+        transform: translateX(94vw) translateY(-8px);
+        animation: anim28 4s infinite;
+        animation-delay: 8.4s;
+    }}
+    .falling-star:nth-child(29) {{
+        transform: translateX(17vw) translateY(-8px);
+        animation: anim29 4s infinite;
+        animation-delay: 8.7s;
+    }}
+    .falling-star:nth-child(30) {{
+        transform: translateX(13vw) translateY(-8px);
+        animation: anim30 4s infinite;
+        animation-delay: 9s;
+    }}
+    .falling-star:nth-child(31) {{
+        transform: translateX(87vw) translateY(-8px);
+        animation: anim31 4s infinite;
+        animation-delay: 9.3s;
+    }}
+    .falling-star:nth-child(32) {{
+        transform: translateX(32vw) translateY(-8px);
+        animation: anim32 4s infinite;
+        animation-delay: 9.6s;
+    }}
+    .falling-star:nth-child(33) {{
+        transform: translateX(38vw) translateY(-8px);
+        animation: anim33 4s infinite;
+        animation-delay: 9.9s;
+    }}
+    .falling-star:nth-child(34) {{
+        transform: translateX(95vw) translateY(-8px);
+        animation: anim34 4s infinite;
+        animation-delay: 10.2s;
+    }}
+    .falling-star:nth-child(35) {{
+        transform: translateX(78vw) translateY(-8px);
+        animation: anim35 4s infinite;
+        animation-delay: 10.5s;
+    }}
+    .falling-star:nth-child(36) {{
+        transform: translateX(12vw) translateY(-8px);
+        animation: anim36 4s infinite;
+        animation-delay: 10.8s;
+    }}
+    .falling-star:nth-child(37) {{
+        transform: translateX(93vw) translateY(-8px);
+        animation: anim37 4s infinite;
+        animation-delay: 11.1s;
+    }}
+    .falling-star:nth-child(38) {{
+        transform: translateX(92vw) translateY(-8px);
+        animation: anim38 4s infinite;
+        animation-delay: 11.4s;
+    }}
+    .falling-star:nth-child(39) {{
+        transform: translateX(20vw) translateY(-8px);
+        animation: anim39 4s infinite;
+        animation-delay: 11.7s;
+    }}
+    .falling-star:nth-child(40) {{
+        transform: translateX(41vw) translateY(-8px);
+        animation: anim40 4s infinite;
+        animation-delay: 12s;
+    }}
+    
+    /* ********** KEYFRAMES ********** */
+    
+    @keyframes anim1 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(88vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim2 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(77vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim3 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(90vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim4 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(74vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim5 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(105vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim6 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(79vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim7 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(53vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim8 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(102vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim9 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(44vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim10 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(74vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim11 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(31vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim12 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(34vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim13 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(86vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim14 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(84vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim15 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(23vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim16 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(60vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim17 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(116vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim18 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(67vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim19 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(99vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim20 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(118vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim21 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(49vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim22 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(56vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim23 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(41vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim24 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(111vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim25 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(66vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim26 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(59vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim27 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(38vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim28 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(114vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim29 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(37vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim30 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(33vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim31 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(107vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim32 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(52vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim33 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(58vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim34 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(115vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim35 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(98vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim36 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(32vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim37 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(113vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim38 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(112vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim39 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(40vw) translateY(100vh); opacity: 0; }} }}
+    @keyframes anim40 {{ 10% {{ opacity: 0.5; }} 12% {{ opacity: 1; box-shadow: 0 0 3px 0 #fff; }} 15% {{ opacity: 0.5; }} 50% {{ opacity: 0; }} 100% {{ transform: translateX(61vw) translateY(100vh); opacity: 0; }} }}
+
+    /* ********** KẾT THÚC CSS RƠI SAO ********** */
+
+    /* Các CSS khác của trang chính (Không đổi) */
+
     .stApp::after {{
         content: "";
         position: absolute;
@@ -307,6 +594,7 @@ def main_page(is_mobile=False):
         background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
         opacity: 0.09;
         mix-blend-mode: multiply;
+        z-index: 2; /* Phải cao hơn starfall (z-index: 1) */
     }}
     @keyframes fadeInBg {{
         from {{ opacity: 0; }}
@@ -327,7 +615,7 @@ def main_page(is_mobile=False):
         -webkit-text-fill-color: transparent;
         animation: textLight 10s linear infinite, fadeIn 1s ease-in-out forwards; 
         letter-spacing: 2px;
-        z-index: 3;
+        z-index: 3; /* Phải cao hơn noise (z-index: 2) và starfall (z-index: 1) */
     }}
     @keyframes textLight {{
         0% {{ background-position: 200% 0%; }}
@@ -338,7 +626,49 @@ def main_page(is_mobile=False):
         to {{ opacity: 1; transform: scale(1); }}
     }}
     </style>
-
+    
+    <div class="starfall">
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+        <div class="falling-star"></div>
+    </div>
 
     <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
     """, unsafe_allow_html=True)
