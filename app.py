@@ -55,11 +55,11 @@ def intro_component(is_mobile=False):
     with open(video_file, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
 
+    audio_html = ""
     if os.path.exists(SFX):
         with open(SFX, "rb") as a:
             audio_b64 = base64.b64encode(a.read()).decode()
-    else:
-        audio_b64 = ""
+        audio_html = f"<audio id='flySfx'><source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'></audio>"
 
     html = f"""
     <html>
@@ -87,8 +87,6 @@ def intro_component(is_mobile=False):
     }}
     @keyframes lightSweep{{0%{{background-position:200% 0%;}}100%{{background-position:-200% 0%;}}}}
     @keyframes fadeInOut{{0%{{opacity:0;}}20%{{opacity:1;}}80%{{opacity:1;}}100%{{opacity:0;}}}}
-
-    /* Shutter effect */
     #left,#right{{
       position:fixed;top:0;width:50vw;height:100vh;background:black;
       z-index:10;transition:all 1.2s ease-in-out;
@@ -102,7 +100,7 @@ def intro_component(is_mobile=False):
       <video id='introVid' autoplay playsinline muted>
         <source src='data:video/mp4;base64,{video_b64}' type='video/mp4'>
       </video>
-      {"<audio id='flySfx'><source src='data:audio/mp3;base64," + audio_b64 + "' type='audio/mp3'></audio>" if audio_b64 else ""}
+      {audio_html}
       <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
       <div id='left'></div><div id='right'></div>
 
@@ -110,7 +108,6 @@ def intro_component(is_mobile=False):
         const vid=document.getElementById('introVid');
         const audio=document.getElementById('flySfx');
         let shutterClosed=false;
-
         vid.addEventListener('canplay',()=>{{vid.play().catch(()=>{{}});}});
         vid.addEventListener('play',()=>{{
             if(audio){{audio.currentTime=0;audio.play().catch(()=>{{}});}}
@@ -129,13 +126,12 @@ def intro_component(is_mobile=False):
       </script>
     </body></html>
     """
-    components.html(html, height=1080, scrolling=False, key="intro_html")
+    components.html(str(html), height=1080, scrolling=False, key="intro_html")
 
 # ========== TRANG CHÍNH ==========
 def main_page(is_mobile=False):
     hide_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
-
     if not os.path.exists(bg):
         st.error(f"❌ Không tìm thấy hình nền: {bg}")
         st.stop()
@@ -175,7 +171,7 @@ def main_page(is_mobile=False):
       </script>
     </body></html>
     """
-    components.html(html, height=1080, scrolling=False, key="main_html")
+    components.html(str(html), height=1080, scrolling=False, key="main_html")
 
 # ========== LUỒNG CHÍNH ==========
 hide_ui()
