@@ -153,11 +153,7 @@ def intro_screen(is_mobile=False):
             const row = Math.floor(index / GRID_SIZE);
             const col = index % GRID_SIZE;
             
-            // Tính toán % để background-position khớp với vị trí của shard
-            // Vị trí background-position phải là số âm để ảnh nền dịch chuyển ngược lại
-            // -100% * col / (GRID_SIZE-1) không đúng, phải là - (col * (100/GRID_SIZE))
-            
-            // Background-size là 100vw 100vh. Vị trí nền được tính dựa trên kích thước của nền.
+            // Tính toán vị trí nền để nó khớp với vị trí của mảnh vỡ
             shard.style.backgroundPosition = `calc(-${col} * 100vw / ${GRID_SIZE}) calc(-${row} * 100vh / ${GRID_SIZE})`;
             
             // Thêm random transform ban đầu (ẩn) cho đẹp mắt hơn khi tan vỡ
@@ -187,7 +183,6 @@ def intro_screen(is_mobile=False):
 
             // 3. Chuyển sang trang chính sau khi hiệu ứng hoàn tất
             setTimeout(() => {{
-                // Gửi thông báo đến Streamlit để tải lại trang
                 window.parent.postMessage({{type: 'intro_done'}}, '*');
             }}, 1500 + 500); // 1.5s là thời gian transition chính + 0.5s buffer/delay tối đa
 
@@ -207,7 +202,7 @@ def intro_screen(is_mobile=False):
             vid.play();
             audio.volume = 1.0;
             audio.currentTime = 0;
-            audio.play().catch(()=>{});
+            audio.play().catch(()=>{{}}); /* <--- ĐÃ SỬA: nhân đôi ngoặc nhọn */
         }}, {{once:true}});
 
         vid.addEventListener('ended', finishIntro);
@@ -329,19 +324,14 @@ if not st.session_state.intro_done:
         if (event.data.type === "intro_done") {
             // Đặt biến session state và buộc Streamlit rerender
             // Cách đơn giản nhất để rerender sau khi nhận postMessage là reload
-            // Streamlit sẽ tự nhận ra session_state.intro_done = True sau reload
             window.parent.location.reload(); 
         }
     });
     </script>
     """, unsafe_allow_html=True)
 
-    # Đặt intro_done = True sau một thời gian (đề phòng JS lỗi)
-    # Tuy nhiên, cách trên (reload) hiệu quả hơn. Ta chỉ dùng sleep để giữ trang
-    # Nếu không có reload, cần thêm logic kiểm tra và cập nhật session state.
-    # Trong môi trường Streamlit, reload là cách tốt nhất để đảm bảo state được cập nhật
-    # và render lại toàn bộ trang chính.
-    time.sleep(10) # Giữ cho script chạy đủ lâu
+    # Đặt thời gian chờ tối đa
+    time.sleep(10)
     st.session_state.intro_done = True
     st.rerun()
 
