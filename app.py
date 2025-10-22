@@ -98,8 +98,6 @@ def main_page(is_mobile=False):
     if os.path.exists(bg):
         with open(bg, "rb") as f:
             bg_b64 = base64.b64encode(f.read()).decode()
-    else:
-        st.warning(f"⚠️ Không tìm thấy file nền: {bg}")
 
     st.markdown(f"""
     <style>
@@ -149,7 +147,11 @@ def main():
     st.set_page_config(page_title="CABBASE Intro", page_icon="🎬", layout="wide")
     hide_streamlit_ui()
 
-    # Dò thiết bị bằng JavaScript
+    # Khi load lại trang → reset intro
+    if "intro_done" not in st.session_state:
+        st.session_state.intro_done = False
+
+    # Dò thiết bị (bằng JS gửi về)
     if "is_mobile" not in st.session_state:
         components.html("""
         <script>
@@ -159,9 +161,6 @@ def main():
         </script>
         """, height=0)
         st.stop()
-
-    if "intro_done" not in st.session_state:
-        st.session_state.intro_done = False
 
     if not st.session_state.intro_done:
         intro_component(st.session_state.is_mobile)
@@ -184,4 +183,7 @@ def main():
 
 
 if __name__ == "__main__":
+    # Reset intro khi người dùng refresh (F5)
+    if "intro_done" in st.session_state:
+        st.session_state.intro_done = False
     main()
