@@ -3,15 +3,13 @@ import streamlit.components.v1 as components
 import base64
 import os
 
-
-# ===================== CẤU HÌNH CƠ BẢN =====================
+# ===================== CẤU HÌNH =====================
 st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 
 VIDEO_PC = "airplane.mp4"
 VIDEO_MOBILE = "mobile.mp4"
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
-
 
 # ===================== ẨN GIAO DIỆN STREAMLIT =====================
 def hide_ui():
@@ -23,7 +21,7 @@ def hide_ui():
     """, unsafe_allow_html=True)
 
 
-# ===================== HIỂN THỊ INTRO =====================
+# ===================== INTRO =====================
 def intro_component(is_mobile=False):
     hide_ui()
     video_path = VIDEO_MOBILE if is_mobile and os.path.exists(VIDEO_MOBILE) else VIDEO_PC
@@ -96,7 +94,6 @@ def intro_component(is_mobile=False):
     </html>
     """
 
-    # Không dùng key để tránh TypeError
     components.html(html, height=1080, scrolling=False)
 
 
@@ -154,7 +151,7 @@ def main_page(is_mobile=False):
     """, unsafe_allow_html=True)
 
 
-# ===================== ỨNG DỤNG CHÍNH =====================
+# ===================== LUỒNG CHÍNH =====================
 def main():
     hide_ui()
 
@@ -163,26 +160,28 @@ def main():
     if "is_mobile" not in st.session_state:
         st.session_state.is_mobile = False
 
-    # JS xác định thiết bị (mobile/PC)
-    components.html("""
+    # JS phát hiện thiết bị, gửi về Streamlit
+    device_detect = """
     <script>
     const isMobile = window.innerWidth < 768;
-    window.parent.postMessage({type:'set_device', isMobile:isMobile}, '*');
+    window.parent.postMessage({type:'streamlit:setComponentValue', value: isMobile, key:'is_mobile'}, '*');
     </script>
-    """, height=0)
+    """
+    components.html(device_detect, height=0)
 
-    # JS nhận tín hiệu kết thúc intro
-    components.html("""
+    # JS nhận sự kiện kết thúc intro
+    listener = """
     <script>
     window.addEventListener("message", (e)=>{
         if(e.data.type === "end_intro"){
-            window.parent.postMessage({type:"streamlit:setComponentValue",value:"end_intro"}, "*");
+            window.parent.postMessage({type:"streamlit:setComponentValue", key:"intro_done", value:true}, "*");
         }
     });
     </script>
-    """, height=0)
+    """
+    components.html(listener, height=0)
 
-    # Hiển thị intro hoặc trang chính
+    # Render
     if not st.session_state.intro_done:
         intro_component(st.session_state.is_mobile)
         st.stop()
