@@ -30,6 +30,9 @@ SHATTER_DURATION = 1.8  # Thời gian hiệu ứng tan vỡ (giây)
 RECONSTRUCT_DURATION = 1.8 # Thời gian hiệu ứng ghép lại (giây)
 BLACKOUT_DELAY = 0.2    # Thời gian màn hình đen
 
+# Số lượng cột sóng âm (theo code bạn cung cấp, ta dùng 16)
+WAVE_COLUMNS = 16 
+
 # ========== HÀM PHỤ TRỢ ==========
 
 def hide_streamlit_ui():
@@ -60,19 +63,17 @@ def encode_audio_files(base_path="."):
                 b64_data = base64.b64encode(f.read()).decode()
                 audio_data[filename] = f"data:audio/mp3;base64,{b64_data}"
         except FileNotFoundError:
-            # st.warning(f"Không tìm thấy file nhạc: {filename}. Vui lòng kiểm tra lại thư mục.")
             pass
     return audio_data
 
 
-# ========== MÀN HÌNH INTRO (Giữ nguyên logic tốc độ) ==========
+# ========== MÀN HÌNH INTRO (Giữ nguyên) ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
     shutter_file = SHUTTER_MOBILE if is_mobile else SHUTTER_PC
     bg_file = BG_MOBILE if is_mobile else BG_PC
     
-    # Đọc file và mã hóa Base64
     try:
         with open(video_file, "rb") as f:
             video_b64 = base64.b64encode(f.read()).decode()
@@ -89,7 +90,6 @@ def intro_screen(is_mobile=False):
     
     shards_html = "".join([f"<div class='shard' id='shard-{i}'></div>" for i in range(GRID_SIZE * GRID_SIZE)])
 
-    # Chuyển đổi hằng số Python sang JS
     js_shatter_duration = SHATTER_DURATION * 1000
     js_reconstruct_duration = RECONSTRUCT_DURATION * 1000
     js_blackout_delay = BLACKOUT_DELAY * 1000
@@ -107,7 +107,6 @@ def intro_screen(is_mobile=False):
             background: black;
             height: 100%;
         }}
-        /* ... (Các style Intro khác giữ nguyên) ... */
         #pre-load-bg {{ display: none; background-image: url("data:image/jpeg;base64,{bg_b64}"); }}
         video {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
@@ -183,14 +182,13 @@ def intro_screen(is_mobile=False):
 
         const vid = document.getElementById('introVid');
         const audio = document.getElementById('flySfx');
-        const blackFade = document.getElementById('black-fade');
-        let ended = false;
-        
-        // ... (Initial transforms & setup code) ...
         const staticFrame = document.getElementById('static-frame');
         const shatterOverlay = document.getElementById('shatter-overlay');
         const shards = document.querySelectorAll('.shard');
+        const blackFade = document.getElementById('black-fade');
+        let ended = false;
         let initialTransforms = []; 
+
         shards.forEach((shard, index) => {{
             const row = Math.floor(index / GRID_SIZE);
             const col = index % GRID_SIZE;
@@ -201,7 +199,6 @@ def intro_screen(is_mobile=False):
             const delay = Math.random() * 0.5; 
             initialTransforms.push({{randX, randY, randR, delay}});
         }});
-        // ...
 
         function finishIntro() {{
             if (ended) return;
@@ -285,8 +282,16 @@ def intro_screen(is_mobile=False):
     components.html(intro_html, height=800, scrolling=False)
 
 # -------------------------------------------------------------
-## Thanh Phát Nhạc (Claymorphism)
+## Thanh Phát Nhạc (Claymorphism + Visualizer Sóng âm)
 def audio_player_component(audio_uris):
+    
+    # Tạo HTML cho 16 cột sóng âm
+    wave_columns_html = "".join([
+        f'<div class="visualizer-colum1" style="animation-delay: {3.99 - i * 0.1}s;">'
+        '<div class="visualizer-row"></div>'
+        '</div>'
+        for i in range(WAVE_COLUMNS)
+    ])
     
     # Tạo danh sách URIs cho JS
     js_audio_list = [f"{{uri: '{uri}'}}" for uri in audio_uris.values()]
@@ -297,37 +302,166 @@ def audio_player_component(audio_uris):
         <div class="music-player">
             <audio id="background-audio" preload="auto" loop></audio>
             
-            <button id="prev-btn" title="Previous Track">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="19 20 9 12 19 4 19 20"></polygon>
-                    <line x1="5" y1="19" x2="5" y2="5"></line>
-                </svg>
-            </button>
-            <button id="play-pause-btn" title="Play/Pause">
-                <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
-                </svg>
-                <svg id="pause-icon" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round">
-                    <rect x="6" y="4" width="4" height="16" rx="1"></rect>
-                    <rect x="14" y="4" width="4" height="16" rx="1"></rect>
-                </svg>
-            </button>
-            <button id="next-btn" title="Next Track">
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polygon points="5 4 15 12 5 20 5 4"></polygon>
-                    <line x1="19" y1="5" x2="19" y2="19"></line>
-                </svg>
-            </button>
+            <div class="controls-group">
+                <button id="prev-btn" title="Previous Track">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="19 20 9 12 19 4 19 20"></polygon><line x1="5" y1="19" x2="5" y2="5"></line>
+                    </svg>
+                </button>
+                <button id="play-pause-btn" title="Play/Pause">
+                    <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                    </svg>
+                    <svg id="pause-icon" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="0" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="6" y="4" width="4" height="16" rx="1"></rect><rect x="14" y="4" width="4" height="16" rx="1"></rect>
+                    </svg>
+                </button>
+                <button id="next-btn" title="Next Track">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="5 4 15 12 5 20 5 4"></polygon><line x1="19" y1="5" x2="19" y2="19"></line>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="visualizer-container">
+                 {wave_columns_html}
+            </div>
             
         </div>
     </div>
 
+    <style>
+    /* Gọi Font Allerta (Theo yêu cầu) */
+    @import url('https://fonts.googleapis.com/css?family=Allerta&display=swap');
+
+    * {{ font-family: 'Allerta', sans-serif; }}
+
+    /* CLAYMORPHISM cho Thanh Phát Nhạc */
+    .music-player {{
+        background: rgba(255, 255, 255, 0.9); /* Nền sáng */
+        padding: 8px; 
+        border-radius: 20px; 
+        box-shadow: 
+            inset 3px 3px 6px rgba(255, 255, 255, 0.7),
+            inset -3px -3px 6px rgba(0, 0, 0, 0.1),
+            8px 8px 16px rgba(0, 0, 0, 0.2), 
+            -8px -8px 16px rgba(255, 255, 255, 0.6);
+        display: flex;
+        align-items: center;
+        gap: 12px; /* Tăng khoảng cách giữa nút và Visualizer */
+        backdrop-filter: blur(5px); 
+        -webkit-backdrop-filter: blur(5px);
+        height: 55px; 
+        width: 100%;
+        max-width: 280px; /* Giới hạn chiều rộng tổng thể */
+    }}
+    .controls-group {{
+        display: flex;
+        gap: 8px;
+        align-items: center;
+    }}
+    
+    .music-player button {{
+        background: #e0e0f0; 
+        border: none;
+        color: #6a6a80; 
+        cursor: pointer;
+        padding: 0;
+        border-radius: 12px; 
+        width: 35px; 
+        height: 35px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        box-shadow: 
+            3px 3px 6px rgba(0, 0, 0, 0.15),
+            -3px -3px 6px rgba(255, 255, 255, 0.8);
+        transition: all 0.2s ease;
+        outline: none;
+    }}
+    .music-player button:hover {{
+        box-shadow: 
+            2px 2px 4px rgba(0, 0, 0, 0.1),
+            -2px -2px 4px rgba(255, 255, 255, 0.7);
+        transform: scale(0.98);
+        background: #f0f0ff;
+    }}
+    .music-player button:active, .music-player button.active {{
+        box-shadow: 
+            inset 3px 3px 6px rgba(0, 0, 0, 0.2),
+            inset -3px -3px 6px rgba(255, 255, 255, 0.7);
+        transform: scale(0.95);
+    }}
+    .music-player svg {{ stroke: #6a6a80; fill: #6a6a80; width: 16px; height: 16px; }}
+    #play-pause-btn {{ width: 40px; height: 40px; border-radius: 15px; background: #dddde5; }}
+    #play-pause-btn:hover {{ background: #eeeeff; }}
+
+
+    /* ================================== */
+    /* CSS SÓNG ÂM (VISUALIZER) - Dựa trên code của bạn */
+    /* ================================== */
+    .visualizer-container {
+        display: flex;
+        align-items: flex-end; /* Quan trọng: căn cột xuống đáy */
+        height: 40px; 
+        padding: 0 5px;
+        gap: 3px;
+        border-radius: 5px;
+        background: #eee;
+    }
+    .visualizer-colum1 {
+        width: 3px; /* Giảm chiều rộng cột để nhiều cột hơn */
+        height: 100%;
+        border-radius: 1px;
+        display: inline-block;
+        position: relative;
+    }
+    .visualizer-colum1 .visualizer-row {
+        width: 100%;
+        height: 100%;
+        border-radius: 1px;
+        /* Điều chỉnh màu Gradient cho Visualizer: Tông Vàng/Đồng */
+        background: linear-gradient(to top, #c7a46e, #e9dcb5); 
+        position: absolute;
+        animation: Rofa 10s infinite ease-in-out;
+        bottom: 0;
+        transform-origin: bottom; /* Cột giãn nở từ dưới lên */
+        /* Animation delays được điều khiển bằng inline style ở Python */
+    }
+
+    /* Keyframes (Đã loại bỏ transform và đổi màu để phù hợp hơn) */
+    @keyframes Rofa {
+        0% { height: 0%; }
+        5% { height: 100%; }
+        10% { height: 90%; }
+        15% { height: 80%; }
+        20% { height: 70%; }
+        25% { height: 0%; }
+        30% { height: 70%; }
+        35% { height: 0%; }
+        40% { height: 60%; }
+        45% { height: 0%; }
+        50% { height: 50%; }
+        55% { height: 0%; }
+        60% { height: 40%; }
+        65% { height: 0%; }
+        70% { height: 30%; }
+        75% { height: 0%; }
+        80% { height: 20%; }
+        85% { height: 0%; }
+        90% { height: 10%; }
+        95% { height: 5%; }
+        100% { height: 0; }
+    }
+    </style>
+    
     <script>
         const audio = document.getElementById('background-audio');
         const playPauseBtn = document.getElementById('play-pause-btn');
         const playIcon = document.getElementById('play-icon');
         const pauseIcon = document.getElementById('pause-icon');
-        
+        const visualizer = document.querySelector('.visualizer-container');
+
         const playlist = {audio_list_str};
         let currentTrackIndex = 0;
         let isPlaying = false;
@@ -336,9 +470,11 @@ def audio_player_component(audio_uris):
             if (isPlaying) {{
                 playIcon.style.display = 'none';
                 pauseIcon.style.display = 'block';
+                visualizer.style.opacity = '1'; // Hiển thị sóng âm khi phát
             }} else {{
                 playIcon.style.display = 'block';
                 pauseIcon.style.display = 'none';
+                visualizer.style.opacity = '0.4'; // Mờ đi khi dừng
             }}
         }}
 
@@ -352,8 +488,8 @@ def audio_player_component(audio_uris):
         function playTrack() {{
             if (!audio.src) loadTrack(currentTrackIndex);
             
-            playPauseBtn.classList.remove('active'); // Tắt active state trước
-            playPauseBtn.classList.add('active'); // Thêm active state để kích hoạt CSS :active
+            playPauseBtn.classList.remove('active');
+            playPauseBtn.classList.add('active'); 
             
             audio.play().then(() => {{
                 isPlaying = true;
@@ -363,7 +499,6 @@ def audio_player_component(audio_uris):
                 isPlaying = true; 
                 updatePlayPauseIcon();
             }}).finally(() => {{
-                // Xóa active class sau một khoảng trễ ngắn
                  setTimeout(() => playPauseBtn.classList.remove('active'), 150);
             }});
         }}
@@ -415,162 +550,7 @@ def audio_player_component(audio_uris):
     </script>
     """
     
-    components.html(html_code, height=55) 
-
-
-# -------------------------------------------------------------
-## TRANG CHÍNH (Đã áp dụng Claymorphism CSS)
-def main_page(is_mobile=False):
-    hide_streamlit_ui()
-    bg = BG_MOBILE if is_mobile else BG_PC
-    try:
-        with open(bg, "rb") as f:
-            bg_b64 = base64.b64encode(f.read()).decode()
-    except FileNotFoundError as e:
-        st.error(f"Lỗi: Không tìm thấy file tài nguyên: {e.filename}")
-        st.stop()
-        
-    # Gọi component Player trước Markdown
-    if st.session_state.audio_uris:
-        audio_player_component(st.session_state.audio_uris)
-
-
-    st.markdown(f"""
-    <style>
-    /* CSS NỀN VÀ TIÊU ĐỀ (Giữ nguyên) */
-    html, body, .stApp {{
-        height: 100vh !important;
-        background: 
-            linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
-            url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
-        background-size: cover !important;
-        overflow: hidden !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        position: relative;
-        filter: brightness(1.05) contrast(1.1) saturate(1.05);
-        animation: fadeInBg 0.5s ease-in-out forwards; 
-    }}
-    
-    @keyframes fadeInBg {{
-        from {{ opacity: 0; }}
-        to {{ opacity: 1; }}
-    }}
-    .welcome {{
-        position: absolute;
-        top: 8%;
-        width: 100%;
-        text-align: center;
-        font-size: clamp(30px, 5vw, 65px);
-        color: #fff5d7;
-        font-family: 'Playfair Display', serif;
-        text-shadow: 0 0 18px rgba(0,0,0,0.65), 0 0 30px rgba(255,255,180,0.25);
-        background: linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%);
-        background-size: 200%;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: textLight 10s linear infinite, fadeIn 1s ease-in-out forwards; 
-        letter-spacing: 2px;
-        z-index: 3;
-    }}
-
-    /* KHẮC PHỤC LỖI "BAY" CỦA PLAYER */
-    iframe[title*="streamlit_component"] {{
-        position: fixed !important;
-        top: 15px !important;
-        left: 15px !important;
-        z-index: 1000 !important;
-        background: transparent !important;
-        height: 55px !important; 
-        width: 200px !important; /* Tăng chiều rộng để phù hợp với thiết kế mới */
-        border: none !important;
-        transition: none !important; 
-    }}
-
-    /* CSS CLAYMORPHISM cho các thành phần bên trong IFRAME (Player) */
-    .music-player {{
-        background: rgba(240, 240, 255, 0.9); /* Màu nền sáng nhạt */
-        padding: 8px 12px; 
-        border-radius: 20px; 
-        box-shadow: 
-            /* Inner top highlight */
-            inset 3px 3px 6px rgba(255, 255, 255, 0.7),
-            /* Inner bottom shadow */
-            inset -3px -3px 6px rgba(0, 0, 0, 0.1),
-            /* Outer soft shadow */
-            8px 8px 16px rgba(0, 0, 0, 0.2), 
-            -8px -8px 16px rgba(255, 255, 255, 0.6);
-        
-        display: flex;
-        align-items: center;
-        gap: 8px; 
-        backdrop-filter: blur(5px); 
-        -webkit-backdrop-filter: blur(5px);
-        height: 48px; 
-    }}
-    .music-player button {{
-        background: #e0e0f0; 
-        border: none;
-        color: #6a6a80; 
-        cursor: pointer;
-        padding: 0; /* Xử lý padding bằng width/height */
-        border-radius: 12px; /* Bo tròn mềm mại */
-        width: 35px; 
-        height: 35px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        box-shadow: 
-            3px 3px 6px rgba(0, 0, 0, 0.15),
-            -3px -3px 6px rgba(255, 255, 255, 0.8);
-        transition: all 0.2s ease;
-        outline: none;
-    }}
-    
-    .music-player button:hover {{
-        box-shadow: 
-            2px 2px 4px rgba(0, 0, 0, 0.1),
-            -2px -2px 4px rgba(255, 255, 255, 0.7);
-        transform: scale(0.98);
-        background: #f0f0ff;
-    }}
-
-    /* Hiệu ứng NÚT NHẤN (Pressed State) */
-    .music-player button:active, .music-player button.active {{
-        box-shadow: 
-            inset 3px 3px 6px rgba(0, 0, 0, 0.2),
-            inset -3px -3px 6px rgba(255, 255, 255, 0.7);
-        transform: scale(0.95);
-    }}
-    
-    .music-player svg {{
-        stroke: #6a6a80; 
-        fill: #6a6a80;
-        width: 16px; 
-        height: 16px;
-    }}
-    
-    /* Play/Pause button nổi bật hơn */
-    #play-pause-btn {{
-        width: 40px;
-        height: 40px;
-        border-radius: 15px;
-        background: #dddde5;
-    }}
-    #play-pause-btn:hover {{
-        background: #eeeeff;
-    }}
-
-    .track-info {{ display: none; }} 
-    
-    </style>
-
-
-    <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
-    """, unsafe_allow_html=True)
-    
-    if not st.session_state.audio_uris:
-        st.warning("Không tìm thấy file nhạc nào để phát. Vui lòng kiểm tra file background1-6.mp3.")
+    components.html(html_code, height=65) 
 
 
 # -------------------------------------------------------------
@@ -591,7 +571,7 @@ if "is_mobile" not in st.session_state:
 
 # 2. Mã hóa file nhạc LẦN ĐẦU (Chỉ chạy 1 lần)
 if "audio_uris" not in st.session_state or not st.session_state.audio_uris:
-    st.session_state.audio_uris = encode_audio_files()
+    st.session_uris = encode_audio_files()
 
 # 3. Quản lý trạng thái Intro
 if "intro_done" not in st.session_state:
@@ -610,7 +590,6 @@ if not st.session_state.intro_done:
     </script>
     """, unsafe_allow_html=True)
 
-    # Thiết lập timeout dự phòng
     if not st.session_state.get('intro_timeout_set', False):
         st.session_state.intro_timeout_set = True
         time.sleep(15) 
