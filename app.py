@@ -5,22 +5,31 @@ from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
-# ========== CẤU HÌNH ==========
-st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 
+# ========== CẤU HÌNH ==========
+
+# Đảm bảo bạn đã có các file sau trong cùng thư mục:
 VIDEO_PC = "airplane.mp4"
 VIDEO_MOBILE = "mobile.mp4"
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 SFX = "plane_fly.mp3"
 
+st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
+
+# Kích thước lưới cho hiệu ứng tan vỡ (ví dụ: 8x8 mảnh vỡ)
+GRID_SIZE = 8
+
 # ========== ẨN UI STREAMLIT ==========
+
 def hide_streamlit_ui():
     st.markdown("""
     <style>
+    /* Ẩn các thành phần UI mặc định của Streamlit */
     [data-testid="stToolbar"], header, footer, iframe[title*="keyboard"], [tabindex="0"][aria-live] {
         display: none !important;
     }
+    /* Đảm bảo ứng dụng chiếm toàn bộ màn hình */
     .stApp, .main, .block-container {
         padding: 0 !important;
         margin: 0 !important;
@@ -31,25 +40,27 @@ def hide_streamlit_ui():
     </style>
     """, unsafe_allow_html=True)
 
-# ========== XÁC ĐỊNH THIẾT BỊ ==========
-if "is_mobile" not in st.session_state:
-    ua_string = st_javascript("window.navigator.userAgent;")
-    if ua_string:
-        ua = parse(ua_string)
-        st.session_state.is_mobile = not ua.is_pc
-        st.rerun()
-    else:
-        st.info("Đang xác định thiết bị...")
-        st.stop()
 
-# ========== MÀN HÌNH INTRO ==========
+# ========== MÀN HÌNH INTRO - ĐÃ CHỈNH SỬA VỚI HIỆU ỨNG TAN VỠ ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
-    with open(video_file, "rb") as f:
-        video_b64 = base64.b64encode(f.read()).decode()
-    with open(SFX, "rb") as a:
-        audio_b64 = base64.b64encode(a.read()).decode()
+    bg_file = BG_MOBILE if is_mobile else BG_PC # Ảnh nền làm ảnh chụp cho hiệu ứng tan vỡ
+
+    # Đọc file và mã hóa Base64
+    try:
+        with open(video_file, "rb") as f:
+            video_b64 = base64.b64encode(f.read()).decode()
+        with open(SFX, "rb") as a:
+            audio_b64 = base64.b64encode(a.read()).decode()
+        with open(bg_file, "rb") as b:
+            bg_b64 = base64.b64encode(b.read()).decode()
+    except FileNotFoundError as e:
+        st.error(f"Lỗi: Không tìm thấy file tài nguyên. Vui lòng kiểm tra: {e.filename}")
+        st.stop()
+    
+    # Tạo các mảnh vỡ HTML (GRID_SIZE x GRID_SIZE)
+    shards_html = "".join([f"<div class='shard' id='shard-{i}'></div>" for i in range(GRID_SIZE * GRID_SIZE)])
 
     intro_html = f"""
     <html>
@@ -71,43 +82,49 @@ def intro_screen(is_mobile=False):
         }}
         audio {{ display: none; }}
         #intro-text {{
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 90vw;
-            text-align: center;
-            color: #f8f4e3;
-            font-size: clamp(22px, 6vw, 60px);
-            font-weight: bold;
-            font-family: 'Playfair Display', serif;
+            position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            width: 90vw; text-align: center; color: #f8f4e3;
+            font-size: clamp(22px, 6vw, 60px); font-weight: bold; font-family: 'Playfair Display', serif;
             background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
-            background-size: 200%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
+            background-size: 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             text-shadow: 0 0 15px rgba(255,255,230,0.4);
             animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards;
-            line-height: 1.2;
-            word-wrap: break-word;
+            line-height: 1.2; word-wrap: break-word; z-index: 10;
         }}
         @keyframes lightSweep {{
             0% {{ background-position: 200% 0%; }}
             100% {{ background-position: -200% 0%; }}
         }}
         @keyframes fadeInOut {{
-            0% {{ opacity: 0; }}
-            20% {{ opacity: 1; }}
-            80% {{ opacity: 1; }}
-            100% {{ opacity: 0; }}
+            0% {{ opacity: 0; }} 20% {{ opacity: 1; }}
+            80% {{ opacity: 1; }} 100% {{ opacity: 0; }}
         }}
-        #fade {{
+
+        /* === STYLE HIỆU ỨNG TAN VỠ === */
+        #shatter-overlay {{
             position: absolute;
             top: 0; left: 0;
             width: 100%; height: 100%;
-            background: black;
-            opacity: 0;
-            transition: opacity 1.5s ease-in-out;
+            display: grid;
+            grid-template-columns: repeat({GRID_SIZE}, 1fr);
+            grid-template-rows: repeat({GRID_SIZE}, 1fr);
+            opacity: 0; /* Ban đầu ẩn */
+            pointer-events: none;
+            z-index: 30; /* Đảm bảo lớp phủ nằm trên mọi thứ */
         }}
+        .shard {{
+            position: relative;
+            /* Dùng ảnh nền (BG) làm ảnh cho mảnh vỡ */
+            background-image: url("data:image/jpeg;base64,{bg_b64}");
+            background-size: 100vw 100vh; /* Quan trọng để ảnh nền phủ hết viewport */
+            transform: translate(0, 0) rotate(0deg); 
+            transition: transform 1.5s cubic-bezier(0.25, 0.46, 0.45, 0.94), opacity 1.5s ease-out; 
+        }}
+        /* Hiệu ứng khi tan vỡ: Dịch chuyển, xoay và mờ dần */
+        .shattering .shard {{
+            opacity: 0;
+        }}
+
         </style>
     </head>
     <body>
@@ -118,20 +135,65 @@ def intro_screen(is_mobile=False):
             <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
         </audio>
         <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-        <div id='fade'></div>
+
+        <div id='shatter-overlay'>
+            {shards_html}
+        </div>
+
         <script>
+        const GRID_SIZE = {GRID_SIZE};
         const vid = document.getElementById('introVid');
         const audio = document.getElementById('flySfx');
-        const fade = document.getElementById('fade');
+        const shatterOverlay = document.getElementById('shatter-overlay');
+        const shards = document.querySelectorAll('.shard');
         let ended = false;
+
+        // 1. Tính toán và áp dụng background-position cho từng mảnh vỡ
+        shards.forEach((shard, index) => {{
+            const row = Math.floor(index / GRID_SIZE);
+            const col = index % GRID_SIZE;
+            
+            // Tính toán % để background-position khớp với vị trí của shard
+            // Vị trí background-position phải là số âm để ảnh nền dịch chuyển ngược lại
+            // -100% * col / (GRID_SIZE-1) không đúng, phải là - (col * (100/GRID_SIZE))
+            
+            // Background-size là 100vw 100vh. Vị trí nền được tính dựa trên kích thước của nền.
+            shard.style.backgroundPosition = `calc(-${col} * 100vw / ${GRID_SIZE}) calc(-${row} * 100vh / ${GRID_SIZE})`;
+            
+            // Thêm random transform ban đầu (ẩn) cho đẹp mắt hơn khi tan vỡ
+            shard.dataset.randX = (Math.random() - 0.5) * 200; // -100vw đến +100vw
+            shard.dataset.randY = (Math.random() - 0.5) * 200; // -100vh đến +100vh
+            shard.dataset.randR = (Math.random() - 0.5) * 360; // -180deg đến +180deg
+            shard.dataset.delay = Math.random() * 0.5; // Delay ngẫu nhiên
+        }});
+
+
         function finishIntro() {{
             if (ended) return;
             ended = true;
-            fade.style.opacity = 1;
+
+            // 2. Kích hoạt lớp phủ và bắt đầu hiệu ứng tan vỡ
+            shatterOverlay.style.opacity = 1; // Hiện lớp phủ
+            vid.style.opacity = 0; // Ẩn video
+
+            // Thêm class 'shattering' để kích hoạt CSS opacity transition
+            shatterOverlay.classList.add('shattering');
+
+            // Thiết lập transform ngẫu nhiên cho từng mảnh vỡ
+            shards.forEach((shard) => {{
+                shard.style.transform = `translate(${shard.dataset.randX}vw, ${shard.dataset.randY}vh) rotate(${shard.dataset.randR}deg) scale(0.1)`;
+                shard.style.transitionDelay = `${shard.dataset.delay}s`;
+            }});
+
+            // 3. Chuyển sang trang chính sau khi hiệu ứng hoàn tất
             setTimeout(() => {{
+                // Gửi thông báo đến Streamlit để tải lại trang
                 window.parent.postMessage({{type: 'intro_done'}}, '*');
-            }}, 1000);
+            }}, 1500 + 500); // 1.5s là thời gian transition chính + 0.5s buffer/delay tối đa
+
         }}
+
+        // Logic play video/audio
         vid.addEventListener('canplay', () => {{
             vid.play().catch(() => console.log('Autoplay bị chặn'));
         }});
@@ -145,25 +207,35 @@ def intro_screen(is_mobile=False):
             vid.play();
             audio.volume = 1.0;
             audio.currentTime = 0;
-            audio.play().catch(()=>{{}});
+            audio.play().catch(()=>{});
         }}, {{once:true}});
+
         vid.addEventListener('ended', finishIntro);
-        setTimeout(finishIntro, 9000);
+        setTimeout(finishIntro, 9000); // Tối đa 9 giây để chuyển cảnh
+
         </script>
     </body>
     </html>
     """
     components.html(intro_html, height=800, scrolling=False)
 
+
 # ========== TRANG CHÍNH ==========
+
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
-    with open(bg, "rb") as f:
-        bg_b64 = base64.b64encode(f.read()).decode()
+    try:
+        with open(bg, "rb") as f:
+            bg_b64 = base64.b64encode(f.read()).decode()
+    except FileNotFoundError as e:
+        st.error(f"Lỗi: Không tìm thấy file tài nguyên: {e.filename}")
+        st.stop()
+
 
     st.markdown(f"""
     <style>
+    /* ... (Style cho trang chính giữ nguyên) ... */
     html, body, .stApp {{
         height: 100vh !important;
         background: 
@@ -217,26 +289,62 @@ def main_page(is_mobile=False):
     }}
     </style>
 
+
     <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
     """, unsafe_allow_html=True)
 
+
 # ========== LUỒNG CHÍNH ==========
+
 hide_streamlit_ui()
+
+# 1. Xác định thiết bị
+if "is_mobile" not in st.session_state:
+    # Lấy User Agent từ JavaScript
+    ua_string = st_javascript("window.navigator.userAgent;")
+    if ua_string:
+        ua = parse(ua_string)
+        st.session_state.is_mobile = not ua.is_pc
+        st.rerun() # Tải lại để sử dụng thông tin thiết bị
+    else:
+        # Trường hợp chậm, chờ hoặc thông báo
+        st.info("Đang xác định thiết bị...")
+        time.sleep(1) # Ngủ 1s để tránh vòng lặp rerun quá nhanh nếu JS không chạy
+        st.stop()
+
+
+# 2. Xử lý chuyển cảnh
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
+
 if not st.session_state.intro_done:
+    # Hiển thị màn hình giới thiệu và hiệu ứng tan vỡ
     intro_screen(st.session_state.is_mobile)
+    
+    # Script lắng nghe thông báo hoàn thành từ iframe
     st.markdown("""
     <script>
+    // Lắng nghe postMessage từ iframe (intro_screen)
     window.addEventListener("message", (event) => {
         if (event.data.type === "intro_done") {
-            window.parent.location.reload();
+            // Đặt biến session state và buộc Streamlit rerender
+            // Cách đơn giản nhất để rerender sau khi nhận postMessage là reload
+            // Streamlit sẽ tự nhận ra session_state.intro_done = True sau reload
+            window.parent.location.reload(); 
         }
     });
     </script>
     """, unsafe_allow_html=True)
-    time.sleep(9)
+
+    # Đặt intro_done = True sau một thời gian (đề phòng JS lỗi)
+    # Tuy nhiên, cách trên (reload) hiệu quả hơn. Ta chỉ dùng sleep để giữ trang
+    # Nếu không có reload, cần thêm logic kiểm tra và cập nhật session state.
+    # Trong môi trường Streamlit, reload là cách tốt nhất để đảm bảo state được cập nhật
+    # và render lại toàn bộ trang chính.
+    time.sleep(10) # Giữ cho script chạy đủ lâu
     st.session_state.intro_done = True
     st.rerun()
+
 else:
+    # Hiển thị trang chính
     main_page(st.session_state.is_mobile)
