@@ -58,15 +58,14 @@ def encode_audio_files(base_path="."):
         try:
             with open(filepath, "rb") as f:
                 b64_data = base64.b64encode(f.read()).decode()
-                # Lưu tên file gốc để tham chiếu, thay vì tên bài hát
-                audio_data[filename] = f"data:audio/mp3;base64,{b64_data}" 
+                audio_data[filename] = f"data:audio/mp3;base64,{b64_data}"
         except FileNotFoundError:
             st.warning(f"Không tìm thấy file nhạc: {filename}. Vui lòng kiểm tra lại thư mục.")
             pass
     return audio_data
 
 
-# ========== MÀN HÌNH INTRO (Giữ nguyên) ==========
+# ========== MÀN HÌNH INTRO (Đã Tắt âm thanh sớm hơn) ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
@@ -211,6 +210,7 @@ def intro_screen(is_mobile=False):
             vid.style.opacity = 0; 
             staticFrame.style.opacity = 1; 
             
+            // BƯỚC 1: Bắt đầu Tan Vỡ (Shatter)
             setTimeout(() => {{ 
                 blackFade.style.opacity = 0; 
                 shatterOverlay.style.opacity = 1; 
@@ -226,11 +226,15 @@ def intro_screen(is_mobile=False):
                 }});
             }}, 10);
             
+            // BƯỚC 2: Màn Hình Đen (Blackout) & TẮT NHẠC NGAY LẬP TỨC
             setTimeout(() => {{
                 shatterOverlay.style.opacity = 0; 
                 blackFade.style.opacity = 1; 
+                audio.pause(); // <--- TẮT NHẠC INTRO
+                audio.currentTime = 0;
             }}, SHATTER_DURATION); 
 
+            // BƯỚC 3: Ghép Lại (Reconstruction)
             setTimeout(() => {{
                 shatterOverlay.style.opacity = 1; 
                 blackFade.style.opacity = 0; 
@@ -242,9 +246,10 @@ def intro_screen(is_mobile=False):
                     shard.style.transitionDelay = (RECONSTRUCT_DURATION / 1000 - initialTransforms[index].delay) + 's';
                 }});
 
+                // BƯỚC 4: Thông báo hoàn thành - Tải lại trang NGAY LẬP TỨC (Rút ngắn thời gian)
                 setTimeout(() => {{
                     window.parent.postMessage({{type: 'intro_done'}}, '*');
-                }}, RECONSTRUCT_DURATION + 10); 
+                }}, RECONSTRUCT_DURATION + 10); // 10ms buffer
 
             }}, SHATTER_DURATION + BLACKOUT_DELAY); 
 
@@ -280,15 +285,11 @@ def intro_screen(is_mobile=False):
     components.html(intro_html, height=800, scrolling=False)
 
 # -------------------------------------------------------------
-## Thanh Phát Nhạc (Audio Player Component)
+## Thanh Phát Nhạc (Đã thiết kế lại với SVG)
 def audio_player_component(audio_uris):
     
     # Tạo danh sách URIs cho JS
-    js_audio_list = []
-    # Chỉ truyền URI, tên file không cần thiết nữa
-    for uri in audio_uris.values():
-        js_audio_list.append(f"{{uri: '{uri}'}}")
-        
+    js_audio_list = [f"{{uri: '{uri}'}}" for uri in audio_uris.values()]
     audio_list_str = "[" + ", ".join(js_audio_list) + "]"
     
     html_code = f"""
@@ -297,14 +298,25 @@ def audio_player_component(audio_uris):
             <audio id="background-audio" preload="auto" loop></audio>
             
             <button id="prev-btn" title="Previous Track">
-                <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></path></svg>
-                <span class="icon-prev"></span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="19 20 9 12 19 4 19 20"></polygon>
+                    <line x1="5" y1="19" x2="5" y2="5"></line>
+                </svg>
             </button>
             <button id="play-pause-btn" title="Play/Pause">
-                <span class="icon-play">▶️</span>
+                <svg id="play-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="5 3 19 12 5 21 5 3"></polygon>
+                </svg>
+                <svg id="pause-icon" style="display:none;" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="6" y1="4" x2="6" y2="20"></line>
+                    <line x1="18" y1="4" x2="18" y2="20"></line>
+                </svg>
             </button>
             <button id="next-btn" title="Next Track">
-                <span class="icon-next">⏭️</span>
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="5 4 15 12 5 20 5 4"></polygon>
+                    <line x1="19" y1="5" x2="19" y2="19"></line>
+                </svg>
             </button>
             
         </div>
@@ -313,16 +325,25 @@ def audio_player_component(audio_uris):
     <script>
         const audio = document.getElementById('background-audio');
         const playPauseBtn = document.getElementById('play-pause-btn');
+        const playIcon = document.getElementById('play-icon');
+        const pauseIcon = document.getElementById('pause-icon');
+        
         const playlist = {audio_list_str};
         let currentTrackIndex = 0;
         let isPlaying = false;
         
-        // Sử dụng SVG hoặc Icon Unicode để dễ tùy chỉnh
-        const iconPlay = '▶️'; 
-        const iconPause = '⏸️';
-        
         // --- Chức năng chính ---
         
+        function updatePlayPauseIcon() {{
+            if (isPlaying) {{
+                playIcon.style.display = 'none';
+                pauseIcon.style.display = 'block';
+            }} else {{
+                playIcon.style.display = 'block';
+                pauseIcon.style.display = 'none';
+            }}
+        }}
+
         function loadTrack(index) {{
             if (playlist.length === 0) return;
             currentTrackIndex = (index % playlist.length + playlist.length) % playlist.length;
@@ -335,19 +356,18 @@ def audio_player_component(audio_uris):
             
             audio.play().then(() => {{
                 isPlaying = true;
-                playPauseBtn.innerHTML = iconPause;
+                updatePlayPauseIcon();
             }}).catch(error => {{
-                // Xử lý khi Autoplay bị chặn
                 console.log("Autoplay blocked or playback failed:", error);
-                isPlaying = true; // Vẫn coi như đang ở trạng thái play
-                playPauseBtn.innerHTML = iconPause;
+                isPlaying = true; 
+                updatePlayPauseIcon();
             }});
         }}
         
         function pauseTrack() {{
             audio.pause();
             isPlaying = false;
-            playPauseBtn.innerHTML = iconPlay;
+            updatePlayPauseIcon();
         }}
         
         function togglePlayPause() {{
@@ -369,7 +389,6 @@ def audio_player_component(audio_uris):
         }}
 
         // --- Event Listeners ---
-        // Gắn listeners sau khi load trang
         document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
         document.getElementById('next-btn').addEventListener('click', nextTrack);
         document.getElementById('prev-btn').addEventListener('click', prevTrack);
@@ -377,14 +396,21 @@ def audio_player_component(audio_uris):
         // Vòng lặp: Chuyển bài tự động khi bài hát kết thúc
         audio.addEventListener('ended', nextTrack); 
         
-        // Khởi tạo bài hát đầu tiên khi load component
+        // Khởi tạo bài hát đầu tiên
         loadTrack(0);
 
-        // Để giải quyết lỗi DOM load chậm trong iframe
-        window.onload = function() {{
-             // Không tự động play, chờ người dùng click
-        }};
+        // Khắc phục vấn đề chậm tương tác của iframe trong Streamlit
+        window.addEventListener('load', () => {{
+             updatePlayPauseIcon();
+        }});
         
+        // Gắn sự kiện click vào toàn bộ body của iframe để kích hoạt player nếu Autoplay bị chặn
+        document.body.addEventListener('click', () => {{
+            if (!isPlaying && audio.paused) {{
+                playTrack();
+            }}
+        }}, {{once: true}}); 
+
     </script>
     """
     
@@ -403,16 +429,14 @@ def main_page(is_mobile=False):
         st.error(f"Lỗi: Không tìm thấy file tài nguyên: {e.filename}")
         st.stop()
         
-    # *****************************************************************
-    # Gọi component Player TRƯỚC khi gọi Markdown để đảm bảo vị trí
-    # *****************************************************************
+    # Gọi component Player trước Markdown
     if st.session_state.audio_uris:
         audio_player_component(st.session_state.audio_uris)
 
 
     st.markdown(f"""
     <style>
-    /* CSS NỀN VÀ TIÊU ĐỀ (Giữ nguyên) */
+    /* CSS NỀN VÀ TIÊU ĐỀ */
     html, body, .stApp {{
         height: 100vh !important;
         background: 
@@ -426,7 +450,6 @@ def main_page(is_mobile=False):
         filter: brightness(1.05) contrast(1.1) saturate(1.05);
         animation: fadeInBg 0.5s ease-in-out forwards; 
     }}
-    /* ... (CSS cũ) ... */
     
     @keyframes fadeInBg {{
         from {{ opacity: 0; }}
@@ -450,8 +473,7 @@ def main_page(is_mobile=False):
         z-index: 3;
     }}
 
-    /* CSS PLAYER NHẠC HIỆN ĐẠI MỚI - ÁP DỤNG CHO IFRAME */
-    /* Cần CSS cho IFRAME container */
+    /* CSS PLAYER NHẠC HIỆN ĐẠI */
     iframe[title*="streamlit_component"] {{
         position: fixed !important;
         top: 15px !important;
@@ -459,46 +481,58 @@ def main_page(is_mobile=False):
         z-index: 1000 !important;
         background: transparent !important;
         height: 50px !important; 
-        width: 150px !important; /* Đặt kích thước cố định cho iframe */
+        width: 150px !important; 
         border: none !important;
     }}
 
-    /* CSS cho các thành phần bên trong IFRAME (Được nhúng qua audio_player_component) */
+    /* CSS cho các thành phần bên trong IFRAME (Player) */
     .music-player {{
-        background: rgba(255, 255, 255, 0.15); /* Nền sáng mờ */
+        background: rgba(255, 255, 255, 0.1); 
         padding: 5px 10px;
-        border-radius: 20px; /* Bo tròn mạnh */
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        border-radius: 20px; 
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.4);
         display: flex;
         align-items: center;
-        gap: 10px;
-        backdrop-filter: blur(8px); /* Blur nền */
-        -webkit-backdrop-filter: blur(8px);
+        gap: 8px; /* Giảm khoảng cách giữa các nút */
+        backdrop-filter: blur(10px); 
+        -webkit-backdrop-filter: blur(10px);
         height: 40px; 
     }}
     .music-player button {{
-        background: none;
+        background: rgba(255, 255, 255, 0.1); /* Nền nút hơi trong suốt */
         border: none;
         color: #fff;
         font-size: 16px;
         cursor: pointer;
-        padding: 5px;
-        border-radius: 50%; /* Nút tròn */
-        width: 30px; 
-        height: 30px;
+        padding: 6px; /* Tăng padding nút */
+        border-radius: 50%; 
+        width: 32px; /* Kích thước nút */
+        height: 32px;
         display: flex;
         justify-content: center;
         align-items: center;
         transition: background 0.2s, transform 0.1s;
         line-height: 1;
         outline: none;
-        box-shadow: 0 0 5px rgba(0, 0, 0, 0.1);
     }}
     .music-player button:hover {{
         background: rgba(255, 255, 255, 0.3);
         transform: scale(1.05);
     }}
-    /* ẨN VÙNG THÔNG TIN TRACK */
+    .music-player svg {{
+        stroke: #fff; /* Màu icon */
+        fill: #fff;
+        width: 14px;
+        height: 14px;
+        transition: stroke 0.2s, fill 0.2s;
+    }}
+    /* Riêng nút Play/Pause có nền rõ hơn */
+    #play-pause-btn {{
+        background: rgba(255, 255, 255, 0.25);
+    }}
+    #play-pause-btn:hover {{
+        background: rgba(255, 255, 255, 0.4);
+    }}
     .track-info {{ display: none; }} 
     
     </style>
@@ -542,6 +576,7 @@ if not st.session_state.intro_done:
     <script>
     window.addEventListener("message", (event) => {
         if (event.data.type === "intro_done") {
+            // Chỉ cần gọi reload, không cần delay thêm
             window.parent.location.reload(); 
         }
     });
