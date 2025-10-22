@@ -559,7 +559,7 @@ def audio_player_component(audio_uris):
 
 
 # -------------------------------------------------------------
-## TRANG CHÍNH (Đã thêm lại hàm này)
+## TRANG CHÍNH
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -570,7 +570,7 @@ def main_page(is_mobile=False):
         st.error(f"Lỗi: Không tìm thấy file tài nguyên: {e.filename}")
         st.stop()
         
-    if st.session_state.audio_uris:
+    if st.session_state.get('audio_uris'):
         audio_player_component(st.session_state.audio_uris)
 
 
@@ -634,7 +634,7 @@ def main_page(is_mobile=False):
     <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
     """, unsafe_allow_html=True)
     
-    if not st.session_state.audio_uris:
+    if not st.session_state.get('audio_uris'):
         st.warning("Không tìm thấy file nhạc nào để phát. Vui lòng kiểm tra file background1-6.mp3.")
 
 
@@ -654,8 +654,8 @@ if "is_mobile" not in st.session_state:
         time.sleep(1) 
         st.stop()
 
-# 2. Mã hóa file nhạc LẦN ĐẦU (ĐÃ SỬA LỖI TÊN BIẾN)
-if "audio_uris" not in st.session_state or not st.session_state.audio_uris:
+# 2. Mã hóa file nhạc LẦN ĐẦU
+if "audio_uris" not in st.session_state or not st.session_state.get('audio_uris'):
     st.session_state.audio_uris = encode_audio_files()
 
 # 3. Quản lý trạng thái Intro
@@ -683,5 +683,4 @@ if not st.session_state.intro_done:
              st.rerun()
 
 else:
-    # Lỗi NameError trước đó đã được khắc phục bằng cách thêm lại hàm main_page
     main_page(st.session_state.is_mobile)
