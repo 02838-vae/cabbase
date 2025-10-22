@@ -20,6 +20,8 @@ SHUTTER_MOBILE = "mobile_shutter.jpg"
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 
+# LƯU Ý: Đảm bảo các file trên tồn tại trong cùng thư mục với app.py
+
 st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 
 # Kích thước lưới và thời gian
@@ -100,9 +102,9 @@ def intro_screen(is_mobile=False):
         audio {{ display: none; }}
         #intro-text {{
             position: absolute; 
-            top: 8%; /* <--- ĐIỀU CHỈNH: Đặt 8% từ trên xuống */
+            top: 8%;
             left: 50%; 
-            transform: translate(-50%, 0); /* <--- ĐIỀU CHỈNH: Chỉ dịch 50% theo chiều ngang */
+            transform: translate(-50%, 0);
             width: 90vw; text-align: center; color: #f8f4e3;
             font-size: clamp(22px, 6vw, 60px); font-weight: bold; font-family: 'Playfair Display', serif;
             background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
@@ -114,7 +116,7 @@ def intro_screen(is_mobile=False):
         @keyframes lightSweep {{ 0% {{ background-position: 200% 0%; }} 100% {{ background-position: -200% 0%; }} }}
         @keyframes fadeInOut {{ 0% {{ opacity: 0; }} 20% {{ opacity: 1; }} 80% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}
 
-        /* === STYLE HIỆU ỨNG TAN VỠ VÀ GHÉP LẠI (Giữ nguyên) === */
+        /* === STYLE HIỆU ỨNG TAN VỠ VÀ GHÉP LẠI === */
         #shatter-overlay {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: grid; grid-template-columns: repeat({GRID_SIZE}, 1fr); grid-template-rows: repeat({GRID_SIZE}, 1fr);
@@ -215,7 +217,7 @@ def intro_screen(is_mobile=False):
             setTimeout(() => {{
                 shatterOverlay.style.opacity = 0; 
                 blackFade.style.opacity = 1; 
-            }}, SHATTER_DURATION); 
+            }}, SHATTER_DURATION * 1000); 
 
             // BƯỚC 3: Ghép Lại (Reconstruction) - Bắt đầu sau khi màn đen kết thúc
             setTimeout(() => {{
@@ -226,15 +228,15 @@ def intro_screen(is_mobile=False):
                 shatterOverlay.classList.add('reconstructing'); 
                 
                 shards.forEach((shard, index) => {{
-                    shard.style.transitionDelay = (RECONSTRUCT_DURATION / 1000 - initialTransforms[index].delay) + 's';
+                    shard.style.transitionDelay = (RECONSTRUCT_DURATION - (initialTransforms[index].delay * 1000)) + 's';
                 }});
 
                 // BƯỚC 4: Thông báo hoàn thành - Tải lại trang NGAY LẬP TỨC
                 setTimeout(() => {{
                     window.parent.postMessage({{type: 'intro_done'}}, '*');
-                }}, RECONSTRUCT_DURATION + 10); 
+                }}, RECONSTRUCT_DURATION * 1000 + 10); 
 
-            }}, SHATTER_DURATION + BLACKOUT_DELAY); 
+            }}, SHATTER_DURATION * 1000 + BLACKOUT_DELAY); 
 
         }}
 
@@ -270,7 +272,7 @@ def intro_screen(is_mobile=False):
 
 # ----------------------------------------------------------------------------------------------------------------------
 
-# ========== TRANG CHÍNH CÓ HIỆU ỨNG STARFALL ==========
+# ========== TRANG CHÍNH CÓ HIỆU ỨNG STARFALL (ĐÃ SỬA LỖI MOBILE BG) ==========
 
 def main_page(is_mobile=False):
     hide_streamlit_ui()
@@ -283,17 +285,19 @@ def main_page(is_mobile=False):
         st.stop()
     
     # KHỐI CSS STARFALL VÀ STYLE TRANG CHÍNH
-    # CHÚ Ý: Đã thay thế background-image bằng placeholder và sau đó dùng .replace()
-    # để tránh lỗi cú pháp f-string phức tạp
     starfall_css = """
     /* Điều chỉnh body/stApp để phù hợp với nền Starfall (màu tối) */
     html, body, .stApp {
         height: 100vh !important;
-        /* BACKGROUND của bạn, sử dụng placeholder để thay thế bằng base64 */
+        /* BACKGROUND của bạn */
         background: 
             linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
             url("data:image/jpeg;base64,__BG_B64__") no-repeat center center fixed !important;
-        background-size: cover !important;
+        
+        /* Mặc định cho PC và tổng thể */
+        background-size: cover !important; 
+        background-position: center center !important; 
+
         overflow: hidden !important;
         margin: 0 !important;
         padding: 0 !important;
@@ -302,11 +306,11 @@ def main_page(is_mobile=False):
         animation: fadeInBg 0.5s ease-in-out forwards; 
     }
 
-    /* MEDIA QUERY CỦA BẠN */
+    /* MEDIA QUERY ĐÃ SỬA: Đảm bảo background-size là cover trên mobile */
     @media only screen and (max-width: 600px) {
         .stApp {
-            background-size: auto !important;
-            background-position: right !important;
+            background-size: cover !important; /* ĐÃ SỬA TỪ 'auto' SANG 'cover' */
+            background-position: center center !important; /* ĐÃ SỬA TỪ 'right' SANG 'center center' */
         }
     }
     
@@ -319,7 +323,7 @@ def main_page(is_mobile=False):
         left: 0;
         transform-style: preserve-3d;
         perspective: 1000px;
-        z-index: 1; /* Thấp hơn noise (2) và văn bản (3) */
+        z-index: 1;
     }
     .starfall .falling-star {
         width: 8px;
@@ -331,7 +335,7 @@ def main_page(is_mobile=False):
         box-shadow: 0 0 5px 1px rgba(0, 209, 178, 0.7);
     }
     
-    /* === ANIMATIONS VÀ KEYFRAMES STARFALL === */
+    /* === ANIMATIONS VÀ KEYFRAMES STARFALL (Giữ nguyên) === */
 
     .falling-star:nth-child(1) { transform: translateX(68vw) translateY(-8px); animation: anim1 4s infinite; animation-delay: 0.3s; }
     .falling-star:nth-child(2) { transform: translateX(57vw) translateY(-8px); animation: anim2 4s infinite; animation-delay: 0.6s; }
@@ -414,6 +418,7 @@ def main_page(is_mobile=False):
     @keyframes anim38 { 10% { opacity: 0.5; } 12% { opacity: 1; box-shadow: 0 0 3px 0 #fff; } 15% { opacity: 0.5; } 50% { opacity: 0; } 100% { transform: translateX(112vw) translateY(100vh); opacity: 0; } }
     @keyframes anim39 { 10% { opacity: 0.5; } 12% { opacity: 1; box-shadow: 0 0 3px 0 #fff; } 15% { opacity: 0.5; } 50% { opacity: 0; } 100% { transform: translateX(40vw) translateY(100vh); opacity: 0; } }
     @keyframes anim40 { 10% { opacity: 0.5; } 12% { opacity: 1; box-shadow: 0 0 3px 0 #fff; } 15% { opacity: 0.5; } 50% { opacity: 0; } 100% { transform: translateX(61vw) translateY(100vh); opacity: 0; } }
+
 
     /* Lớp phủ noise và văn bản (Giữ nguyên Z-index cao hơn starfall) */
     .stApp::after {
@@ -518,7 +523,9 @@ if not st.session_state.intro_done:
     window.addEventListener("message", (event) => {
         // Kiểm tra loại thông báo từ iframe
         if (event.data.type === "intro_done") {
-            // Tải lại trang chính sau khi hiệu ứng hoàn tất
+            // Thiết lập trạng thái intro_done và tải lại trang chính
+            // Dùng AJAX/fetch hoặc cập nhật một biến Streamlit nếu cần, 
+            // nhưng giải pháp đơn giản nhất là buộc tải lại trang chính.
             window.parent.location.reload(); 
         }
     });
