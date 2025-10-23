@@ -27,8 +27,8 @@ st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 # Kích thước lưới và thời gian
 GRID_SIZE = 8
 SHATTER_DURATION = 1.8  # Thời gian hiệu ứng tan vỡ (giây)
-RECONSTRUCT_DURATION = 1.8 # Thời gian hiệu ứng ghép lại (giây)
-BLACKOUT_DELAY = 0.5    # Thời gian màn hình đen
+RECONSTRUCT_DURATION = 2.5 # Tăng thời gian ghép lại (giây) để đảm bảo load ảnh
+BLACKOUT_DELAY = 1.0    # Tăng thời gian màn hình đen (giây) để load tài nguyên
 
 # ========== HÀM ẨN UI STREAMLIT (FIX MOBILE HEIGHT) ==========
 
@@ -65,7 +65,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO - ĐÃ SỬA LỖI ẢNH RECONSTRUCT ==========
+# ========== MÀN HÌNH INTRO - ĐÃ SỬA LỖI ẢNH RECONSTRUCT (BASE64 FORCE LOAD) ==========
 
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
@@ -152,11 +152,12 @@ def intro_screen(is_mobile=False):
             opacity: 1; 
         }}
         
-        /* Khi ghép lại: Chuyển sang ảnh nền chính và reset transform */
+        /* Khi ghép lại: Gỡ background-image để JS gán */
         .reconstructing .shard {{
             transform: translate(0, 0) rotate(0deg) scale(1) !important; 
             transition: transform {RECONSTRUCT_DURATION}s cubic-bezier(0.19, 1, 0.22, 1), opacity {RECONSTRUCT_DURATION}s ease-in-out; 
-            /* Bỏ background-image ở đây, để JS gán thẳng (để khắc phục lỗi caching) */
+            /* Bỏ background-image ở đây để JS gán cứng */
+            background-image: none !important; 
             opacity: 1 !important;
             background-position: 0 0 !important;
         }}
@@ -245,7 +246,7 @@ def intro_screen(is_mobile=False):
             }}, SHATTER_DURATION * 1000 + 50); 
 
 
-            // BƯỚC 3: Ghép Lại (Reconstruction) - ĐÃ FIX LỖI ẢNH NỀN
+            // BƯỚC 3: Ghép Lại (Reconstruction) - FIX LỖI ẢNH NỀN
             setTimeout(() => {{
                 shatterOverlay.style.opacity = 1; 
                 blackFade.style.opacity = 0; 
@@ -254,7 +255,7 @@ def intro_screen(is_mobile=False):
                 shatterOverlay.classList.add('reconstructing'); 
                 
                 shards.forEach((shard, index) => {{
-                    // Ghi đè background-image BẰNG JS để khắc phục lỗi cache/ưu tiên CSS
+                    // *** QUAN TRỌNG: GÁN BACKGROUND-IMAGE BẰNG JS VÀ DÙNG !IMPORTANT ***
                     shard.style.setProperty('background-image', BG_B64_URL, 'important');
                     
                     const t = initialTransforms[index];
@@ -295,7 +296,7 @@ def intro_screen(is_mobile=False):
         }}, {{once:true}});
 
         vid.addEventListener('ended', finishIntro);
-        setTimeout(finishIntro, 9000); 
+        setTimeout(finishIntro, 10000); // Đặt fallback lâu hơn
 
         blackFade.style.opacity = 1;
         </script>
@@ -418,8 +419,8 @@ if not st.session_state.intro_done:
     </script>
     """, unsafe_allow_html=True)
 
-    # Thời gian chờ fallback (15s)
-    time.sleep(15) 
+    # Thời gian chờ fallback (18s)
+    time.sleep(18) 
     st.session_state.intro_done = True
     st.rerun()
 
