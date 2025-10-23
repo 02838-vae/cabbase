@@ -66,7 +66,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO - ĐÃ SỬA LỖI VỊ TRÍ ẢNH RECONSTRUCT VÀ BỎ DELAY ==========
+# ========== MÀN HÌNH INTRO - ĐÃ XÓA CHỮ TRÊN VIDEO ==========
 
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
@@ -114,26 +114,20 @@ def intro_screen(is_mobile=False):
         }}
         audio {{ display: none; }}
         
+        /* Đã xóa #intro-text CSS, chỉ giữ lại placeholder HTML */
         #intro-text {{
             position: absolute; 
             top: 8%; 
             left: 50%; 
             transform: translate(-50%, 0);
+            /* Đặt opacity 0 để chữ biến mất */
+            opacity: 0;
             width: 90vw; text-align: center; color: #f8f4e3;
             font-size: clamp(22px, 6vw, 60px); font-weight: bold; font-family: 'Playfair Display', serif;
             background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
             background-size: 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             text-shadow: 0 0 15px rgba(255,255,230,0.4);
-            animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards;
             line-height: 1.2; word-wrap: break-word; z-index: 10;
-        }}
-        @keyframes lightSweep {{
-            0% {{ background-position: 200% 0%; }}
-            100% {{ background-position: -200% 0%; }}
-        }}
-        @keyframes fadeInOut {{
-            0% {{ opacity: 0; }} 20% {{ opacity: 1; }}
-            80% {{ opacity: 1; }} 100% {{ opacity: 0; }}
         }}
 
 
@@ -180,7 +174,7 @@ def intro_screen(is_mobile=False):
         <audio id='flySfx'>
             <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
         </audio>
-        <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+        <div id='intro-text'></div> 
 
         <div id='shatter-overlay'>
             {shards_html}
@@ -368,7 +362,7 @@ def main_page(is_mobile=False):
         left: 20px;
         z-index: 1000;
         width: clamp(250px, 40vw, 350px);
-        /* Loại bỏ khung đen: PC vẫn giữ background nhẹ cho dễ nhìn */
+        /* PC vẫn giữ background nhẹ cho dễ nhìn */
         background: rgba(30, 30, 30, 0.85); 
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
         border-radius: 8px;
@@ -409,13 +403,14 @@ def main_page(is_mobile=False):
         .music-player-container {{
             position: absolute !important; 
             top: 0 !important;
-            bottom: unset !important; /* Quan trọng để hủy bottom: 20px */
+            bottom: unset !important; /* Hủy bottom: 20px */
             left: 0 !important;
             right: 0 !important;
             width: 100% !important;
             border-radius: 0;
             padding: 5px 10px;
-            background: rgba(30, 30, 30, 0.95) !important; /* Nền tối nhẹ trên cùng */
+            /* Khung đen biến mất (chỉ giữ background tối mờ) */
+            background: rgba(30, 30, 30, 0.95) !important; 
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); 
         }}
         .music-player-container audio {{
@@ -425,7 +420,7 @@ def main_page(is_mobile=False):
         /* 2. Tiêu đề dưới thanh phát nhạc */
         .welcome {{
             position: relative; 
-            margin-top: 55px; /* Đẩy xuống dưới thanh nhạc (35px audio + 5px padding x 2 = 45px, dùng 55px cho khoảng cách an toàn) */
+            margin-top: 55px; /* Đẩy xuống dưới thanh nhạc */
             top: unset; 
             transform: none; 
             padding: 0 10px;
