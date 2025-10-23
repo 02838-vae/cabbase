@@ -61,11 +61,16 @@ def hide_streamlit_ui():
             min-height: -webkit-fill-available !important;
         }
     }
+    
+    /* **QUAN TRỌNG:** Xóa background của Streamlit để background trong iframe hiển thị */
+    .stApp, .main, .block-container {
+        background: transparent !important;
+    }
     </style>
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO - ĐÃ SỬA LỖI VỊ TRÍ ẢNH RECONSTRUCT ==========
+# ========== MÀN HÌNH INTRO - ĐÃ SỬA ĐỂ HIỂN THỊ TIÊU ĐỀ SAU KHI GHÉP LẠI ==========
 
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
@@ -113,6 +118,7 @@ def intro_screen(is_mobile=False):
         }}
         audio {{ display: none; }}
         
+        /* Tiêu đề intro (trước khi tan vỡ) */
         #intro-text {{
             position: absolute; 
             top: 8%; 
@@ -134,7 +140,39 @@ def intro_screen(is_mobile=False):
             0% {{ opacity: 0; }} 20% {{ opacity: 1; }}
             80% {{ opacity: 1; }} 100% {{ opacity: 0; }}
         }}
-
+        
+        /* === TIÊU ĐỀ TRANG CHÍNH (Sau khi ghép lại) === */
+        #main-title {{
+            position: absolute;
+            top: -20%; /* Bắt đầu từ ngoài màn hình */
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            text-align: center;
+            font-size: clamp(30px, 5vw, 65px);
+            color: #fff5d7;
+            font-family: 'Playfair Display', serif;
+            text-shadow: 0 0 18px rgba(0,0,0,0.65), 0 0 30px rgba(255,255,180,0.25);
+            background: linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%);
+            background-size: 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            letter-spacing: 2px;
+            z-index: 3;
+            opacity: 0; /* Mặc định ẩn */
+            transition: all 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Hiệu ứng bay vào */
+        }}
+        
+        .title-fly-in {{
+            opacity: 1 !important;
+            top: 8% !important; /* Vị trí cuối cùng */
+            animation: textLight 10s linear infinite; 
+        }}
+        
+        @keyframes textLight {{
+            0% {{ background-position: 200% 0%; }}
+            100% {{ background-position: -200% 0%; }}
+        }}
 
         /* === STYLE HIỆU ỨNG TAN VỠ VÀ GHÉP LẠI === */
         #shatter-overlay {{
@@ -179,7 +217,11 @@ def intro_screen(is_mobile=False):
         <audio id='flySfx'>
             <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
         </audio>
-        <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+        
+        <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div> 
+        
+        <div id='main-title'>TỔ BẢO DƯỠNG SỐ 1</div>
+
 
         <div id='shatter-overlay'>
             {shards_html}
@@ -201,6 +243,8 @@ def intro_screen(is_mobile=False):
         const shatterOverlay = document.getElementById('shatter-overlay');
         const shards = document.querySelectorAll('.shard');
         const blackFade = document.getElementById('black-fade');
+        const introText = document.getElementById('intro-text');
+        const mainTitle = document.getElementById('main-title'); // Lấy tiêu đề chính
         let ended = false;
         let initialTransforms = []; 
 
@@ -232,6 +276,7 @@ def intro_screen(is_mobile=False):
             blackFade.style.opacity = 0; 
             shatterOverlay.style.opacity = 1; 
             vid.style.opacity = 0; 
+            introText.style.display = 'none'; // **Ẩn tiêu đề intro**
             shatterOverlay.classList.remove('reconstructing');
             shatterOverlay.classList.add('shattering');
             
@@ -243,19 +288,24 @@ def intro_screen(is_mobile=False):
             }});
             
             // BƯỚC 2 & 3: GHÉP LẠI NGAY SAU KHI TAN VỠ KẾT THÚC
-            // Thời gian chờ = SHATTER_DURATION (kết thúc tan vỡ)
             const RECONSTRUCT_START_DELAY = SHATTER_DURATION * 1000 + 50; 
 
             setTimeout(() => {{
                 // Đảm bảo màn hình đen không hiện (opacity 0)
                 blackFade.style.opacity = 0; 
                 shatterOverlay.style.opacity = 1; 
-
+                
+                // *** ÁP DỤNG BACKGROUND CHÍNH LÊN BODY/HTML ĐỂ LÀM NỀN TRANG CHÍNH ***
+                document.body.style.backgroundImage = BG_B64_URL;
+                document.body.style.backgroundRepeat = 'no-repeat';
+                document.body.style.backgroundSize = 'cover';
+                document.body.style.backgroundPosition = 'center center';
+                
                 shatterOverlay.classList.remove('shattering');
                 shatterOverlay.classList.add('reconstructing'); 
                 
                 shards.forEach((shard, index) => {{
-                    // *** GÁN BACKGROUND-IMAGE VÀ BACKGROUND-POSITION BẰNG JS VÀ DÙNG !IMPORTANT ***
+                    // *** Gán background-image cho các mảnh vỡ ***
                     const t = initialTransforms[index];
 
                     shard.style.setProperty('background-image', BG_B64_URL, 'important');
@@ -267,13 +317,25 @@ def intro_screen(is_mobile=False):
                     shard.style.opacity = 1; 
                 }});
 
-                // 4. Thông báo hoàn thành sau khi ghép lại
+                // 4. Tiêu đề bay vào & Báo hoàn thành
                 setTimeout(() => {{
-                    window.parent.postMessage({{type: 'intro_done'}}, '*');
-                }}, RECONSTRUCT_DURATION * 1000 + 500); 
+                    // **TIÊU ĐỀ BAY VÀO**
+                    mainTitle.classList.add('title-fly-in');
+
+                    // 5. Thông báo hoàn thành (để Streamlit biết)
+                    setTimeout(() => {{
+                        // Báo cho Streamlit, không reload, chỉ cập nhật trạng thái
+                        window.parent.postMessage({{type: 'intro_done_no_reload'}}, '*');
+                        
+                        // Xóa các mảnh vỡ để không đè lên content của Streamlit
+                        shatterOverlay.style.display = 'none'; 
+
+                    }}, 1200); // Đợi 1.2s sau khi tiêu đề bay vào
 
 
-            }}, RECONSTRUCT_START_DELAY); 
+                }}, RECONSTRUCT_DURATION * 1000 + 500); // Chờ ghép lại xong
+
+            }}, RECONSTRUCT_START_DELAY); // Chờ tan vỡ xong
 
         }}
 
@@ -305,81 +367,22 @@ def intro_screen(is_mobile=False):
     </body>
     </html>
     """
-    components.html(intro_html, height=800, scrolling=False)
+    # Đặt height=None, width=None để iframe chiếm hết không gian được cung cấp bởi Streamlit
+    components.html(intro_html, height=None, width=None, scrolling=False)
 
 
-# ========== TRANG CHÍNH ==========
-
-
+# Hàm main_page không cần thiết cho tiêu đề/background nữa, chỉ để thêm content Streamlit
 def main_page(is_mobile=False):
     hide_streamlit_ui()
-    bg = BG_MOBILE if is_mobile else BG_PC
-    try:
-        with open(bg, "rb") as f:
-            bg_b64 = base64.b64encode(f.read()).decode()
-    except FileNotFoundError as e:
-        st.error(f"Lỗi: Không tìm thấy file tài nguyên: {e.filename}")
-        st.stop()
-
+    
+    # Bạn có thể thêm các widget hoặc nội dung khác của Streamlit vào đây.
+    # Ví dụ:
     st.markdown(f"""
-    <style>
-    /* FIX LỖI ẢNH NỀN KHÔNG HIỂN THỊ TRONG TRANG CHÍNH TRÊN MOBILE */
-    html, body, .stApp {{
-        height: 100vh !important;
-        min-height: -webkit-fill-available !important; /* Fix iOS Safari */
-        
-        background: 
-            linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
-            url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
-        background-size: cover !important;
-        overflow: hidden !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        position: relative;
-        filter: brightness(1.05) contrast(1.1) saturate(1.05);
-        animation: fadeInBg 1s ease-in-out forwards; 
-    }}
-    .stApp::after {{
-        content: "";
-        position: absolute;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
-        opacity: 0.09;
-        mix-blend-mode: multiply;
-    }}
-    @keyframes fadeInBg {{
-        from {{ opacity: 0; }}
-        to {{ opacity: 1; }}
-    }}
-    .welcome {{
-        position: absolute;
-        top: 8%;
-        width: 100%;
-        text-align: center;
-        font-size: clamp(30px, 5vw, 65px);
-        color: #fff5d7;
-        font-family: 'Playfair Display', serif;
-        text-shadow: 0 0 18px rgba(0,0,0,0.65), 0 0 30px rgba(255,255,180,0.25);
-        background: linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%);
-        background-size: 200%;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: textLight 10s linear infinite, fadeIn 2s ease-in-out forwards;
-        letter-spacing: 2px;
-        z-index: 3;
-    }}
-    @keyframes textLight {{
-        0% {{ background-position: 200% 0%; }}
-        100% {{ background-position: -200% 0%; }}
-    }}
-    @keyframes fadeIn {{
-        from {{ opacity: 0; transform: scale(0.97); }}
-        to {{ opacity: 1; transform: scale(1); }}
-    }}
-    </style>
-
-    <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
+    <div style='position: absolute; top: 25vh; left: 50%; transform: translateX(-50%); width: 80%; text-align: center; color: white;'>
+        <h2 style='color: #fff7d6; text-shadow: 0 0 10px rgba(0,0,0,0.5);'>Hệ thống đã sẵn sàng</h2>
+        <p>Bắt đầu công việc bảo dưỡng ngay bây giờ.</p>
+        {st.button("VÀO HỆ THỐNG")}
+    </div>
     """, unsafe_allow_html=True)
 
 
@@ -403,28 +406,54 @@ if "is_mobile" not in st.session_state:
 
 
 # 2. Xử lý chuyển cảnh
-if "intro_done" not in st.session_state:
-    st.session_state.intro_done = False
+if "intro_state" not in st.session_state:
+    st.session_state.intro_state = 'RUNNING' # Trạng thái: RUNNING (đang intro), COMPLETE (đã hoàn thành intro)
 
 
-if not st.session_state.intro_done:
+if st.session_state.intro_state == 'RUNNING':
     intro_screen(st.session_state.is_mobile)
     
     # Script lắng nghe thông báo hoàn thành từ iframe
     st.markdown("""
     <script>
     window.addEventListener("message", (event) => {
-        if (event.data.type === "intro_done") {
-            window.parent.location.reload(); 
+        if (event.data.type === "intro_done_no_reload") {
+            // Sau khi iframe hoàn tất chuyển cảnh, thông báo cho Streamlit rerender 
+            // để hiển thị nội dung chính.
+            // Do không thể set session state trực tiếp, ta dùng một trick (hoặc reload nhẹ)
+            // Tuy nhiên, vì mục tiêu là KHÔNG RELOAD, ta chỉ set state và rerender.
+            
+            // Dùng AJAX/Fetch để cập nhật trạng thái session state (cần server-side logic phức tạp)
+            // Hoặc đơn giản là dùng `st.rerun()` sau khi cập nhật state.
+            
+            // *** PHƯƠNG ÁN TỐT NHẤT TRONG STREAMLIT VẪN LÀ GỬI THÔNG BÁO VÀ KÍCH HOẠT RERUN ***
+            // Trong môi trường Streamlit, cập nhật trạng thái và rerun là cách duy nhất.
+            // Giả sử có một API để set state từ JS, nhưng ta sẽ dùng logic fallback:
+            
+            // Kích hoạt một sự kiện để Streamlit chạy lại
+            const target_url = new URL(window.location.href);
+            if (!target_url.searchParams.has('intro_done')) {
+                target_url.searchParams.set('intro_done', '1');
+                window.location.href = target_url.toString(); // **Tái kích hoạt Streamlit, không phải reload iframe**
+            }
         }
     });
     </script>
     """, unsafe_allow_html=True)
+    
+    # Kiểm tra URL Query Params (giả sử đã reload nhẹ để cập nhật state)
+    if st.experimental_get_query_params().get('intro_done', ['0'])[0] == '1':
+        st.session_state.intro_state = 'COMPLETE'
+        # Xóa param để tránh lặp lại
+        st.experimental_set_query_params(intro_done=None)
+        st.rerun()
 
-    # Thời gian chờ fallback (18s)
+    # Thời gian chờ fallback (18s) - nếu intro bị kẹt
     time.sleep(18) 
-    st.session_state.intro_done = True
+    st.session_state.intro_state = 'COMPLETE'
     st.rerun()
 
 else:
+    # Trạng thái COMPLETE: Hiển thị nội dung Streamlit chính
+    # Background và Tiêu đề đã được giữ lại trong iframe của intro_screen
     main_page(st.session_state.is_mobile)
