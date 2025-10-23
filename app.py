@@ -29,7 +29,6 @@ GRID_SIZE = 8
 SHATTER_DURATION = 1.8  # Thời gian hiệu ứng tan vỡ (giây)
 RECONSTRUCT_DURATION = 2.5 # Thời gian ghép lại (giây)
 BLACKOUT_DELAY = 0.0    # Đã bỏ độ trễ màn hình đen
-MUSIC_SRC = "https://s3-us-west-2.amazonaws.com/s.cdpn.io/9473/new_year_dubstep_minimix.ogg" # Nguồn nhạc
 
 # ========== HÀM ẨN UI STREAMLIT (FIX MOBILE HEIGHT) ==========
 
@@ -66,14 +65,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# Callback Function để thay đổi trạng thái và RERUN
-def set_intro_done():
-    # 💡 LƯU Ý QUAN TRỌNG: Chỉ set trạng thái, RERUN sẽ được xử lý tự động khi st_javascript
-    # hoàn thành (hoặc gọi thủ công nếu cần).
-    st.session_state.intro_done = True
-
-
-# ========== MÀN HÌNH INTRO (ĐÃ XÓA VÙNG ĐEN PHÍA TRÊN VÀ THANH NHẠC) ==========
+# ========== MÀN HÌNH INTRO - ĐÃ SỬA LỖI VỊ TRÍ ẢNH RECONSTRUCT ==========
 
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
@@ -131,7 +123,7 @@ def intro_screen(is_mobile=False):
             background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
             background-size: 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             text-shadow: 0 0 15px rgba(255,255,230,0.4);
-            animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards; 
+            animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards;
             line-height: 1.2; word-wrap: break-word; z-index: 10;
         }}
         @keyframes lightSweep {{
@@ -187,7 +179,7 @@ def intro_screen(is_mobile=False):
         <audio id='flySfx'>
             <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
         </audio>
-        <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div> 
+        <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
 
         <div id='shatter-overlay'>
             {shards_html}
@@ -267,7 +259,7 @@ def intro_screen(is_mobile=False):
                     const t = initialTransforms[index];
 
                     shard.style.setProperty('background-image', BG_B64_URL, 'important');
-                    shard.style.setProperty('background-position', t.bgPosition, 'important'); // Khắc phục lỗi vị trí
+                    shard.style.setProperty('background-position', t.bgPosition, 'important'); // <<< Khắc phục lỗi vị trí
 
                     const reverseDelay = RECONSTRUCT_DURATION - t.delay; 
                     
@@ -277,14 +269,7 @@ def intro_screen(is_mobile=False):
 
                 // 4. Thông báo hoàn thành sau khi ghép lại
                 setTimeout(() => {{
-                    // Gửi tín hiệu đến Streamlit bằng cách set giá trị component
-                    // Streamlit sẽ nhận message này và tự động RERUN
-                    window.parent.postMessage({{
-                        is-streamlit: true,
-                        type: 'streamlit:setComponentValue',
-                        value: true, 
-                        id: 'intro_done_flag' // ID phải khớp với key trong st_javascript
-                    }}, '*');
+                    window.parent.postMessage({{type: 'intro_done'}}, '*');
                 }}, RECONSTRUCT_DURATION * 1000 + 500); 
 
 
@@ -320,17 +305,11 @@ def intro_screen(is_mobile=False):
     </body>
     </html>
     """
-    
-    components.html(
-        intro_html, 
-        height=800, 
-        scrolling=False,
-        # Set height=800 để nó chiếm đủ không gian ngang/dọc, tránh vùng đen.
-        # Streamlit sẽ tự điều chỉnh kích thước iframe.
-    )
+    components.html(intro_html, height=800, scrolling=False)
 
 
-# ========== TRANG CHÍNH (BỐ CỤC ĐÃ TỐI ƯU) ==========
+# ========== TRANG CHÍNH ==========
+
 
 def main_page(is_mobile=False):
     hide_streamlit_ui()
@@ -341,15 +320,13 @@ def main_page(is_mobile=False):
     except FileNotFoundError as e:
         st.error(f"Lỗi: Không tìm thấy file tài nguyên: {e.filename}")
         st.stop()
-        
-    MUSIC_SRC = "https://s3-us-west-2.amazonaws.com/s.cdpn.io/9473/new_year_dubstep_minimix.ogg" # Nguồn nhạc mẫu
 
     st.markdown(f"""
     <style>
-    /* CSS CHUNG CHO BODY/BACKGROUND */
+    /* FIX LỖI ẢNH NỀN KHÔNG HIỂN THỊ TRONG TRANG CHÍNH TRÊN MOBILE */
     html, body, .stApp {{
         height: 100vh !important;
-        min-height: -webkit-fill-available !important; 
+        min-height: -webkit-fill-available !important; /* Fix iOS Safari */
         
         background: 
             linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
@@ -362,8 +339,19 @@ def main_page(is_mobile=False):
         filter: brightness(1.05) contrast(1.1) saturate(1.05);
         animation: fadeInBg 1s ease-in-out forwards; 
     }}
-
-    /* Tiêu đề mặc định (PC) */
+    .stApp::after {{
+        content: "";
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
+        opacity: 0.09;
+        mix-blend-mode: multiply;
+    }}
+    @keyframes fadeInBg {{
+        from {{ opacity: 0; }}
+        to {{ opacity: 1; }}
+    }}
     .welcome {{
         position: absolute;
         top: 8%;
@@ -381,103 +369,21 @@ def main_page(is_mobile=False):
         letter-spacing: 2px;
         z-index: 3;
     }}
-    
-    /* === STYLE CHO THANH PHÁT NHẠC (PC) === */
-    .music-player-container {{
-        position: fixed; 
-        bottom: 20px;
-        left: 20px;
-        z-index: 1000;
-        width: clamp(250px, 40vw, 350px);
-        /* PC vẫn giữ background nhẹ cho dễ nhìn */
-        background: rgba(30, 30, 30, 0.85); 
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
-        border-radius: 8px;
-        padding: 10px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
+    @keyframes textLight {{
+        0% {{ background-position: 200% 0%; }}
+        100% {{ background-position: -200% 0%; }}
     }}
-    .music-player-container audio {{
-        flex-grow: 1;
-        outline: none;
-        filter: invert(100%);
-        height: 40px; 
+    @keyframes fadeIn {{
+        from {{ opacity: 0; transform: scale(0.97); }}
+        to {{ opacity: 1; transform: scale(1); }}
     }}
-    .nav-buttons {{
-        display: flex;
-        gap: 5px;
-    }}
-    .nav-buttons button {{
-        background: transparent;
-        border: none;
-        color: white;
-        font-size: 18px;
-        cursor: pointer;
-        padding: 5px;
-        opacity: 0.8;
-        transition: opacity 0.2s;
-    }}
-    .nav-buttons button:hover {{
-        opacity: 1;
-    }}
-
-    /* ************************************************************************* */
-    /* === MOBILE OVERRIDES (ÁP DỤNG KHI MÀN HÌNH NHỎ HƠN 600PX) === */
-    @media only screen and (max-width: 600px) {{
-        
-        /* 1. Thanh phát nhạc lên trên cùng, bỏ khung đen */
-        .music-player-container {{
-            position: absolute !important; 
-            top: 0 !important;
-            bottom: unset !important; /* Hủy bottom: 20px */
-            left: 0 !important;
-            right: 0 !important;
-            width: 100% !important;
-            border-radius: 0;
-            padding: 5px 10px;
-            /* Khung đen biến mất (chỉ giữ background tối mờ) */
-            background: rgba(30, 30, 30, 0.95) !important; 
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); 
-        }}
-        .music-player-container audio {{
-            height: 35px; /* Giảm chiều cao thanh audio trên mobile */
-        }}
-
-        /* 2. Tiêu đề dưới thanh phát nhạc */
-        .welcome {{
-            position: relative; 
-            margin-top: 55px; /* Đẩy xuống dưới thanh nhạc */
-            top: unset; 
-            transform: none; 
-            padding: 0 10px;
-        }}
-    }}
-    /* ************************************************************************* */
-
     </style>
 
-    <div class="music-player-container">
-        <div class="nav-buttons">
-            <button onclick="alert('Chức năng Previous chưa được triển khai')">⏮</button>
-        </div>
-        
-        <audio controls loop autoplay>
-            <source src="{MUSIC_SRC}" type="audio/ogg">
-            Trình duyệt của bạn không hỗ trợ audio tag.
-        </audio>
-
-        <div class="nav-buttons">
-            <button onclick="alert('Chức năng Next chưa được triển khai')">⏭</button>
-        </div>
-    </div>
-    
     <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
-
     """, unsafe_allow_html=True)
 
 
-# ========== LUỒNG CHÍNH (ĐÃ FIX LỖI `TypeError`) ==========
+# ========== LUỒNG CHÍNH ==========
 
 
 hide_streamlit_ui()
@@ -502,31 +408,23 @@ if "intro_done" not in st.session_state:
 
 
 if not st.session_state.intro_done:
-    # 💥 FIX LỖI `TypeError`: Đặt st_javascript ngay trước khi gọi component tùy chỉnh (iframe)
-    # Nếu st_javascript được đặt ở đây, nó sẽ được xử lý trước khi iframe được render.
-    
-    # Chúng ta sử dụng key "intro_done_flag" để lắng nghe giá trị True từ JS trong iframe
-    # (xem phần script trong intro_screen).
-    intro_flag = st_javascript(
-        "return window.parent.document.querySelector('iframe[title=\"streamlit_component\"]').contentWindow.document.body.getAttribute('data-intro-done') === 'true';",
-        key="intro_done_flag"
-    )
-
     intro_screen(st.session_state.is_mobile)
+    
+    # Script lắng nghe thông báo hoàn thành từ iframe
+    st.markdown("""
+    <script>
+    window.addEventListener("message", (event) => {
+        if (event.data.type === "intro_done") {
+            window.parent.location.reload(); 
+        }
+    });
+    </script>
+    """, unsafe_allow_html=True)
 
-    # Lắng nghe giá trị True từ iframe thông qua st_javascript
-    # Streamlit sẽ tự động RERUN khi giá trị này thay đổi.
-    if st.session_state.get('intro_done_flag'):
-        set_intro_done()
-        st.rerun() # Kích hoạt RERUN ngay lập tức khi trạng thái thay đổi
-
-    # Fallback Timeout (đề phòng JS không chạy)
-    if not st.session_state.get('intro_done_flag'):
-        time.sleep(18) 
-        if not st.session_state.intro_done:
-            st.session_state.intro_done = True
-            st.rerun()
+    # Thời gian chờ fallback (18s)
+    time.sleep(18) 
+    st.session_state.intro_done = True
+    st.rerun()
 
 else:
-    # 💡 Thanh phát nhạc CHỈ XUẤT HIỆN Ở ĐÂY (trang chính)
     main_page(st.session_state.is_mobile)
