@@ -309,7 +309,7 @@ def intro_screen(is_mobile=False):
     components.html(intro_html, height=800, scrolling=False)
 
 
-# ========== TRANG CHÍNH (ĐÃ THÊM THANH PHÁT NHẠC) ==========
+# ========== TRANG CHÍNH (ĐÃ THÊM THANH PHÁT NHẠC VÀ BỐ CỤC MOBILE) ==========
 
 def main_page(is_mobile=False):
     hide_streamlit_ui()
@@ -320,13 +320,15 @@ def main_page(is_mobile=False):
     except FileNotFoundError as e:
         st.error(f"Lỗi: Không tìm thấy file tài nguyên: {e.filename}")
         st.stop()
+        
+    MUSIC_SRC = "https://s3-us-west-2.amazonaws.com/s.cdpn.io/9473/new_year_dubstep_minimix.ogg" # Nguồn nhạc mẫu
 
     st.markdown(f"""
     <style>
-    /* FIX LỖI ẢNH NỀN KHÔNG HIỂN THỊ TRONG TRANG CHÍNH TRÊN MOBILE */
+    /* CSS CHUNG CHO BODY/BACKGROUND */
     html, body, .stApp {{
         height: 100vh !important;
-        min-height: -webkit-fill-available !important; /* Fix iOS Safari */
+        min-height: -webkit-fill-available !important; 
         
         background: 
             linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
@@ -339,19 +341,8 @@ def main_page(is_mobile=False):
         filter: brightness(1.05) contrast(1.1) saturate(1.05);
         animation: fadeInBg 1s ease-in-out forwards; 
     }}
-    .stApp::after {{
-        content: "";
-        position: absolute;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
-        opacity: 0.09;
-        mix-blend-mode: multiply;
-    }}
-    @keyframes fadeInBg {{
-        from {{ opacity: 0; }}
-        to {{ opacity: 1; }}
-    }}
+
+    /* Tiêu đề mặc định (PC) */
     .welcome {{
         position: absolute;
         top: 8%;
@@ -369,44 +360,97 @@ def main_page(is_mobile=False):
         letter-spacing: 2px;
         z-index: 3;
     }}
-    @keyframes textLight {{
-        0% {{ background-position: 200% 0%; }}
-        100% {{ background-position: -200% 0%; }}
-    }}
-    @keyframes fadeIn {{
-        from {{ opacity: 0; transform: scale(0.97); }}
-        to {{ opacity: 1; transform: scale(1); }}
-    }}
-
-    /* === STYLE CHO THANH PHÁT NHẠC === */
-    .music-player-overlay {{
-        position: fixed; /* Giữ cố định trên màn hình */
+    
+    /* === STYLE CHO THANH PHÁT NHẠC (PC) === */
+    .music-player-container {{
+        position: fixed; 
         bottom: 20px;
         left: 20px;
-        z-index: 1000; /* Đảm bảo nó nằm trên tất cả */
+        z-index: 1000;
         width: clamp(250px, 40vw, 350px);
+        /* Loại bỏ khung đen: PC vẫn giữ background nhẹ cho dễ nhìn */
+        background: rgba(30, 30, 30, 0.85); 
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
         border-radius: 8px;
-        background: rgba(30, 30, 30, 0.85); /* Nền tối */
-        backdrop-filter: blur(5px);
         padding: 10px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }}
-    .music-player-overlay audio {{
-        width: 100%;
+    .music-player-container audio {{
+        flex-grow: 1;
         outline: none;
-        /* Chuyển màu thanh audio sang sáng để dễ nhìn trên nền tối */
-        filter: invert(100%) sepia(0%) saturate(7500%) hue-rotate(180deg) brightness(100%) contrast(100%); 
+        filter: invert(100%);
+        height: 40px; 
     }}
+    .nav-buttons {{
+        display: flex;
+        gap: 5px;
+    }}
+    .nav-buttons button {{
+        background: transparent;
+        border: none;
+        color: white;
+        font-size: 18px;
+        cursor: pointer;
+        padding: 5px;
+        opacity: 0.8;
+        transition: opacity 0.2s;
+    }}
+    .nav-buttons button:hover {{
+        opacity: 1;
+    }}
+
+    /* ************************************************************************* */
+    /* === MOBILE OVERRIDES (ÁP DỤNG KHI MÀN HÌNH NHỎ HƠN 600PX) === */
+    @media only screen and (max-width: 600px) {{
+        
+        /* 1. Thanh phát nhạc lên trên cùng, bỏ khung đen */
+        .music-player-container {{
+            position: absolute !important; 
+            top: 0 !important;
+            bottom: unset !important; /* Quan trọng để hủy bottom: 20px */
+            left: 0 !important;
+            right: 0 !important;
+            width: 100% !important;
+            border-radius: 0;
+            padding: 5px 10px;
+            background: rgba(30, 30, 30, 0.95) !important; /* Nền tối nhẹ trên cùng */
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6); 
+        }}
+        .music-player-container audio {{
+            height: 35px; /* Giảm chiều cao thanh audio trên mobile */
+        }}
+
+        /* 2. Tiêu đề dưới thanh phát nhạc */
+        .welcome {{
+            position: relative; 
+            margin-top: 55px; /* Đẩy xuống dưới thanh nhạc (35px audio + 5px padding x 2 = 45px, dùng 55px cho khoảng cách an toàn) */
+            top: unset; 
+            transform: none; 
+            padding: 0 10px;
+        }}
+    }}
+    /* ************************************************************************* */
+
     </style>
 
-    <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
-    
-    <div class="music-player-overlay">
+    <div class="music-player-container">
+        <div class="nav-buttons">
+            <button onclick="alert('Chức năng Previous chưa được triển khai')">⏮</button>
+        </div>
+        
         <audio controls loop autoplay>
             <source src="{MUSIC_SRC}" type="audio/ogg">
             Trình duyệt của bạn không hỗ trợ audio tag.
         </audio>
+
+        <div class="nav-buttons">
+            <button onclick="alert('Chức năng Next chưa được triển khai')">⏭</button>
+        </div>
     </div>
+    
+    <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
 
     """, unsafe_allow_html=True)
 
