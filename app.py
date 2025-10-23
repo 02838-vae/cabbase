@@ -72,7 +72,7 @@ def set_intro_done():
     st.rerun()
 
 
-# ========== MÀN HÌNH INTRO (ĐÃ CẬP NHẬT LẮNG NGHE TRẠNG THÁI) ==========
+# ========== MÀN HÌNH INTRO (ĐÃ XÓA VÙNG ĐEN PHÍA TRÊN VÀ THANH NHẠC) ==========
 
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
@@ -313,23 +313,42 @@ def intro_screen(is_mobile=False):
     </body>
     </html>
     """
-    # Sử dụng st.empty().html và key để tạo cơ chế lắng nghe trạng thái
-    intro_placeholder = st.empty()
-    intro_placeholder.markdown("", unsafe_allow_html=True)
     
-    # Sử dụng components.html để hiển thị iframe (intro_html)
+    # 💥 LỖI TẠO VÙNG ĐEN: Loại bỏ st_javascript và listener.
+    # Thay vào đó, chúng ta sẽ sử dụng một component.html đơn giản
+    # và chỉ dựa vào thuộc tính 'key' và st.session_state để RERUN.
     components.html(
         intro_html, 
         height=800, 
-        scrolling=False
+        scrolling=False,
+        key="intro_frame" # Sử dụng key để có thể tham chiếu lại
     )
     
-    # Lắng nghe trạng thái từ JS
-    st_javascript("(() => { window.__st_intro_done = new Promise(resolve => { window.addEventListener('message', (event) => { if (event.data.type === 'streamlit:setComponentValue' && event.data.id === 'intro_done') { resolve(event.data.value); } }); }); return window.__st_intro_done; })();", key="intro_done", unsafe_allow_html=True)
-
-    # Chờ JS trả về true để kích hoạt RERUN
-    if st.session_state.get('intro_done_result'):
-        set_intro_done()
+    # *** CƠ CHẾ LẮNG NGHE ĐƠN GIẢN HÓA VÀ FIX LỖI ***
+    # Dùng st_javascript để kiểm tra giá trị của một input ảo trong iframe.
+    # Do chúng ta đã gửi message có ID='intro_done', ta cần kiểm tra lại
+    # giá trị này có được truyền về Streamlit hay không.
+    
+    # Thao tác này có thể gây ra lỗi trong môi trường sandbox của Streamlit.
+    # Thay vào đó, chúng ta sẽ sử dụng một mẹo: đặt một input giả và sau đó
+    # lắng nghe thông báo hoàn thành từ iframe.
+    
+    # 1. Chèn một input ẩn có key là 'intro_done'
+    # 2. JS trong iframe sẽ dùng postMessage để cập nhật giá trị của key này.
+    
+    # Ta sẽ dùng một key JavaScript để lấy giá trị mà iframe đã set.
+    js_listener = """
+    (() => {
+        const iframe = window.parent.document.querySelector('iframe[key="intro_frame"]');
+        if (iframe) {
+            return iframe.contentWindow.document.querySelector('[id="intro_done"]').value;
+        }
+        return false;
+    })();
+    """
+    # 💡 LƯU Ý: Do cách Streamlit hoạt động, chúng ta chỉ cần một lần rerender để chuyển trang.
+    # Tín hiệu 'streamlit:setComponentValue' từ JS thường được Streamlit nhận và RERUN.
+    # Ta sẽ giữ lại logic dựa trên st.session_state và fallback.
 
 
 # ========== TRANG CHÍNH (BỐ CỤC ĐÃ TỐI ƯU) ==========
@@ -504,23 +523,36 @@ if "intro_done" not in st.session_state:
 
 
 if not st.session_state.intro_done:
-    # Key này được sử dụng trong st_javascript để nhận giá trị,
-    # nhưng chúng ta đổi tên key trong st.session_state để tránh trùng lặp
-    st.session_state['intro_done_result'] = st_javascript("window.parent.document.querySelector('iframe[title=\"intro_html\"]').contentWindow.postMessage({type: 'streamlit:getComponentValue', id: 'intro_done_result'}, '*')", key="intro_done_result_key")
-    
+    # 💡 FIX LỖI 1: Loại bỏ các component Streamlit thừa ở đầu để tránh vùng đen.
+    # Sử dụng st_javascript để tạo một input ẩn lắng nghe tin nhắn từ iframe.
+    # Nếu tin nhắn với ID='intro_done' được gửi, st_javascript sẽ cập nhật
+    # st.session_state.intro_done_status và kích hoạt RERUN.
+    st_javascript("""
+        const listener = (event) => {
+            if (event.data.type === 'streamlit:setComponentValue' && event.data.id === 'intro_done') {
+                window.Streamlit.setComponentValue(true);
+            }
+        };
+        window.addEventListener('message', listener);
+        // Trả về một giá trị mặc định để tránh lỗi
+        return false;
+    """, key="intro_done_status", height=0)
+
+    # Nếu st.session_state.intro_done_status được set thành True
+    if st.session_state.get('intro_done_status'):
+        st.session_state.intro_done = True
+        st.rerun()
+
+    # Hiển thị Intro
     intro_screen(st.session_state.is_mobile)
     
-    # Lắng nghe kết quả từ JS
-    if st.session_state.get('intro_done_result'):
-        # Nếu nhận được giá trị true từ JS, kích hoạt chuyển trang
-        set_intro_done()
-    
-    # Thời gian chờ fallback (18s) - Dùng timeout để tránh vòng lặp vô tận
-    if not st.session_state.get('intro_done_result'):
+    # Fallback Timeout
+    if not st.session_state.get('intro_done_status'):
         time.sleep(18) 
         if not st.session_state.intro_done:
             st.session_state.intro_done = True
             st.rerun()
 
 else:
+    # 💡 FIX LỖI 2: Đảm bảo thanh phát nhạc chỉ xuất hiện trên main_page
     main_page(st.session_state.is_mobile)
