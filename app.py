@@ -61,16 +61,11 @@ def hide_streamlit_ui():
             min-height: -webkit-fill-available !important;
         }
     }
-    
-    /* **QUAN TRỌNG:** Xóa background của Streamlit để background trong iframe hiển thị */
-    .stApp, .main, .block-container {
-        background: transparent !important;
-    }
     </style>
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO ==========
+# ========== MÀN HÌNH INTRO - ĐÃ SỬA LỖI VỊ TRÍ ẢNH RECONSTRUCT ==========
 
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
@@ -118,7 +113,6 @@ def intro_screen(is_mobile=False):
         }}
         audio {{ display: none; }}
         
-        /* Tiêu đề intro (trước khi tan vỡ) */
         #intro-text {{
             position: absolute; 
             top: 8%; 
@@ -140,39 +134,7 @@ def intro_screen(is_mobile=False):
             0% {{ opacity: 0; }} 20% {{ opacity: 1; }}
             80% {{ opacity: 1; }} 100% {{ opacity: 0; }}
         }}
-        
-        /* === TIÊU ĐỀ TRANG CHÍNH (Sau khi ghép lại) === */
-        #main-title {{
-            position: absolute;
-            top: -20%; /* Bắt đầu từ ngoài màn hình */
-            left: 50%;
-            transform: translateX(-50%);
-            width: 100%;
-            text-align: center;
-            font-size: clamp(30px, 5vw, 65px);
-            color: #fff5d7;
-            font-family: 'Playfair Display', serif;
-            text-shadow: 0 0 18px rgba(0,0,0,0.65), 0 0 30px rgba(255,255,180,0.25);
-            background: linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%);
-            background-size: 200%;
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            letter-spacing: 2px;
-            z-index: 3;
-            opacity: 0; /* Mặc định ẩn */
-            transition: all 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94); /* Hiệu ứng bay vào */
-        }}
-        
-        .title-fly-in {{
-            opacity: 1 !important;
-            top: 8% !important; /* Vị trí cuối cùng */
-            animation: textLight 10s linear infinite; 
-        }}
-        
-        @keyframes textLight {{
-            0% {{ background-position: 200% 0%; }}
-            100% {{ background-position: -200% 0%; }}
-        }}
+
 
         /* === STYLE HIỆU ỨNG TAN VỠ VÀ GHÉP LẠI === */
         #shatter-overlay {{
@@ -194,8 +156,10 @@ def intro_screen(is_mobile=False):
         .reconstructing .shard {{
             transform: translate(0, 0) rotate(0deg) scale(1) !important; 
             transition: transform {RECONSTRUCT_DURATION}s cubic-bezier(0.19, 1, 0.22, 1), opacity {RECONSTRUCT_DURATION}s ease-in-out; 
+            /* Bỏ background-image ở đây để JS gán cứng */
             background-image: none !important; 
             opacity: 1 !important;
+            /* Bỏ background-position ở đây để JS gán cứng */
             background-position: 0 0 !important;
         }}
 
@@ -215,11 +179,7 @@ def intro_screen(is_mobile=False):
         <audio id='flySfx'>
             <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
         </audio>
-        
-        <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div> 
-        
-        <div id='main-title'>TỔ BẢO DƯỠNG SỐ 1</div>
-
+        <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
 
         <div id='shatter-overlay'>
             {shards_html}
@@ -241,8 +201,6 @@ def intro_screen(is_mobile=False):
         const shatterOverlay = document.getElementById('shatter-overlay');
         const shards = document.querySelectorAll('.shard');
         const blackFade = document.getElementById('black-fade');
-        const introText = document.getElementById('intro-text');
-        const mainTitle = document.getElementById('main-title'); // Lấy tiêu đề chính
         let ended = false;
         let initialTransforms = []; 
 
@@ -274,7 +232,6 @@ def intro_screen(is_mobile=False):
             blackFade.style.opacity = 0; 
             shatterOverlay.style.opacity = 1; 
             vid.style.opacity = 0; 
-            introText.style.display = 'none'; // **Ẩn tiêu đề intro**
             shatterOverlay.classList.remove('reconstructing');
             shatterOverlay.classList.add('shattering');
             
@@ -286,24 +243,19 @@ def intro_screen(is_mobile=False):
             }});
             
             // BƯỚC 2 & 3: GHÉP LẠI NGAY SAU KHI TAN VỠ KẾT THÚC
+            // Thời gian chờ = SHATTER_DURATION (kết thúc tan vỡ)
             const RECONSTRUCT_START_DELAY = SHATTER_DURATION * 1000 + 50; 
 
             setTimeout(() => {{
                 // Đảm bảo màn hình đen không hiện (opacity 0)
                 blackFade.style.opacity = 0; 
                 shatterOverlay.style.opacity = 1; 
-                
-                // *** ÁP DỤNG BACKGROUND CHÍNH LÊN BODY/HTML ĐỂ LÀM NỀN TRANG CHÍNH ***
-                document.body.style.backgroundImage = BG_B64_URL;
-                document.body.style.backgroundRepeat = 'no-repeat';
-                document.body.style.backgroundSize = 'cover';
-                document.body.style.backgroundPosition = 'center center';
-                
+
                 shatterOverlay.classList.remove('shattering');
                 shatterOverlay.classList.add('reconstructing'); 
                 
                 shards.forEach((shard, index) => {{
-                    // *** Gán background-image cho các mảnh vỡ ***
+                    // *** GÁN BACKGROUND-IMAGE VÀ BACKGROUND-POSITION BẰNG JS VÀ DÙNG !IMPORTANT ***
                     const t = initialTransforms[index];
 
                     shard.style.setProperty('background-image', BG_B64_URL, 'important');
@@ -315,25 +267,13 @@ def intro_screen(is_mobile=False):
                     shard.style.opacity = 1; 
                 }});
 
-                // 4. Tiêu đề bay vào & Báo hoàn thành
+                // 4. Thông báo hoàn thành sau khi ghép lại
                 setTimeout(() => {{
-                    // **TIÊU ĐỀ BAY VÀO**
-                    mainTitle.classList.add('title-fly-in');
-
-                    // 5. Thông báo hoàn thành (để Streamlit biết)
-                    setTimeout(() => {{
-                        // Báo cho Streamlit, không reload, chỉ cập nhật trạng thái
-                        window.parent.postMessage({{type: 'intro_done_no_reload'}}, '*');
-                        
-                        // Xóa các mảnh vỡ để không đè lên content của Streamlit
-                        shatterOverlay.style.display = 'none'; 
-
-                    }}, 1200); // Đợi 1.2s sau khi tiêu đề bay vào
+                    window.parent.postMessage({{type: 'intro_done'}}, '*');
+                }}, RECONSTRUCT_DURATION * 1000 + 500); 
 
 
-                }}, RECONSTRUCT_DURATION * 1000 + 500); // Chờ ghép lại xong
-
-            }}, RECONSTRUCT_START_DELAY); // Chờ tan vỡ xong
+            }}, RECONSTRUCT_START_DELAY); 
 
         }}
 
@@ -365,25 +305,89 @@ def intro_screen(is_mobile=False):
     </body>
     </html>
     """
-    components.html(intro_html, height=None, width=None, scrolling=False)
+    components.html(intro_html, height=800, scrolling=False)
 
 
-# Hàm main_page để chứa các widget và nội dung Streamlit
+# ========== TRANG CHÍNH ==========
+
+
 def main_page(is_mobile=False):
     hide_streamlit_ui()
-    
+    bg = BG_MOBILE if is_mobile else BG_PC
+    try:
+        with open(bg, "rb") as f:
+            bg_b64 = base64.b64encode(f.read()).decode()
+    except FileNotFoundError as e:
+        st.error(f"Lỗi: Không tìm thấy file tài nguyên: {e.filename}")
+        st.stop()
+
     st.markdown(f"""
-    <div style='position: absolute; top: 25vh; left: 50%; transform: translateX(-50%); width: 80%; text-align: center; color: white;'>
-        <h2 style='color: #fff7d6; text-shadow: 0 0 10px rgba(0,0,0,0.5);'>Hệ thống đã sẵn sàng</h2>
-        <p>Bắt đầu công việc bảo dưỡng ngay bây giờ.</p>
-        {st.button("VÀO HỆ THỐNG")}
-    </div>
+    <style>
+    /* FIX LỖI ẢNH NỀN KHÔNG HIỂN THỊ TRONG TRANG CHÍNH TRÊN MOBILE */
+    html, body, .stApp {{
+        height: 100vh !important;
+        min-height: -webkit-fill-available !important; /* Fix iOS Safari */
+        
+        background: 
+            linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
+            url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
+        background-size: cover !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        position: relative;
+        filter: brightness(1.05) contrast(1.1) saturate(1.05);
+        animation: fadeInBg 1s ease-in-out forwards; 
+    }}
+    .stApp::after {{
+        content: "";
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
+        opacity: 0.09;
+        mix-blend-mode: multiply;
+    }}
+    @keyframes fadeInBg {{
+        from {{ opacity: 0; }}
+        to {{ opacity: 1; }}
+    }}
+    .welcome {{
+        position: absolute;
+        top: 8%;
+        width: 100%;
+        text-align: center;
+        font-size: clamp(30px, 5vw, 65px);
+        color: #fff5d7;
+        font-family: 'Playfair Display', serif;
+        text-shadow: 0 0 18px rgba(0,0,0,0.65), 0 0 30px rgba(255,255,180,0.25);
+        background: linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%);
+        background-size: 200%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: textLight 10s linear infinite, fadeIn 2s ease-in-out forwards;
+        letter-spacing: 2px;
+        z-index: 3;
+    }}
+    @keyframes textLight {{
+        0% {{ background-position: 200% 0%; }}
+        100% {{ background-position: -200% 0%; }}
+    }}
+    @keyframes fadeIn {{
+        from {{ opacity: 0; transform: scale(0.97); }}
+        to {{ opacity: 1; transform: scale(1); }}
+    }}
+    </style>
+
+    <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
     """, unsafe_allow_html=True)
 
 
 # ========== LUỒNG CHÍNH ==========
 
+
 hide_streamlit_ui()
+
 
 # 1. Xác định thiết bị
 if "is_mobile" not in st.session_state:
@@ -399,44 +403,28 @@ if "is_mobile" not in st.session_state:
 
 
 # 2. Xử lý chuyển cảnh
-if "intro_state" not in st.session_state:
-    st.session_state.intro_state = 'RUNNING' 
+if "intro_done" not in st.session_state:
+    st.session_state.intro_done = False
 
 
-if st.session_state.intro_state == 'RUNNING':
+if not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
     
     # Script lắng nghe thông báo hoàn thành từ iframe
     st.markdown("""
     <script>
     window.addEventListener("message", (event) => {
-        if (event.data.type === "intro_done_no_reload") {
-            // Kích hoạt một sự kiện để Streamlit chạy lại bằng cách thêm query param
-            const target_url = new URL(window.location.href);
-            if (target_url.searchParams.get('intro_done') !== '1') {
-                target_url.searchParams.set('intro_done', '1');
-                window.location.href = target_url.toString(); 
-            }
+        if (event.data.type === "intro_done") {
+            window.parent.location.reload(); 
         }
     });
     </script>
     """, unsafe_allow_html=True)
-    
-    # *** ĐÃ THAY THẾ st.experimental_get_query_params bằng st.query_params ***
-    
-    # Kiểm tra URL Query Params để cập nhật state
-    if 'intro_done' in st.query_params and st.query_params['intro_done'] == '1':
-        st.session_state.intro_state = 'COMPLETE'
-        # Xóa param sau khi đọc
-        del st.query_params['intro_done']
-        st.rerun()
 
-    # Thời gian chờ fallback (18s) - nếu intro bị kẹt
+    # Thời gian chờ fallback (18s)
     time.sleep(18) 
-    if st.session_state.intro_state == 'RUNNING':
-        st.session_state.intro_state = 'COMPLETE'
-        st.rerun()
+    st.session_state.intro_done = True
+    st.rerun()
 
 else:
-    # Trạng thái COMPLETE: Hiển thị nội dung Streamlit chính
     main_page(st.session_state.is_mobile)
