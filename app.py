@@ -6,7 +6,7 @@ from user_agents import parse
 import streamlit.components.v1 as components
 
 
-# ========== CẤU HÌNH VÀ TÀI NGUYÊN ==========
+# ========== CẤU HÌNH TÀI NGUYÊN ==========
 
 VIDEO_PC = "airplane.mp4"
 VIDEO_MOBILE = "mobile.mp4"
@@ -25,8 +25,7 @@ SHATTER_DURATION = 1.8
 BLACKOUT_DELAY = 0.2
 
 
-# ========== ẨN UI STREAMLIT ==========
-
+# ========== ẨN GIAO DIỆN STREAMLIT ==========
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -45,7 +44,6 @@ def hide_streamlit_ui():
 
 
 # ========== MÀN HÌNH INTRO ==========
-
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
@@ -62,11 +60,10 @@ def intro_screen(is_mobile=False):
         with open(bg_file, "rb") as b:
             bg_b64 = base64.b64encode(b.read()).decode()
     except FileNotFoundError as e:
-        st.error(f"Lỗi: Không tìm thấy file tài nguyên. ({e.filename})")
+        st.error(f"Lỗi: Không tìm thấy file tài nguyên {e.filename}")
         st.stop()
-    
-    shards_html = "".join([f"<div class='shard' id='shard-{i}'></div>" for i in range(GRID_SIZE * GRID_SIZE)])
 
+    shards_html = "".join([f"<div class='shard' id='shard-{i}'></div>" for i in range(GRID_SIZE * GRID_SIZE)])
     js_shatter_duration = SHATTER_DURATION * 1000
     js_blackout_delay = BLACKOUT_DELAY * 1000
 
@@ -81,56 +78,50 @@ def intro_screen(is_mobile=False):
             background: black;
             height: 100%;
         }}
-        #pre-load-bg {{ display: none; background-image: url("data:image/jpeg;base64,{bg_b64}"); }}
         video {{
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%; object-fit: cover;
         }}
         #static-frame {{
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
             background-image: url("data:image/jpeg;base64,{shutter_b64}");
-            background-size: cover; opacity: 0; z-index: 20; transition: opacity 0.1s linear;
+            background-size: cover; opacity: 0;
+            z-index: 20; transition: opacity 0.2s linear;
         }}
         audio {{ display: none; }}
-        #intro-text {{
-            position: absolute; top: 8%; left: 50%; transform: translate(-50%, 0);
-            width: 90vw; text-align: center; color: #f8f4e3;
-            font-size: clamp(22px, 6vw, 60px); font-weight: bold; font-family: 'Playfair Display', serif;
-            background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
-            background-size: 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 15px rgba(255,255,230,0.4);
-            animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards;
-            line-height: 1.2; word-wrap: break-word; z-index: 10;
-        }}
-        @keyframes lightSweep {{ 0% {{ background-position: 200% 0%; }} 100% {{ background-position: -200% 0%; }} }}
-        @keyframes fadeInOut {{ 0% {{ opacity: 0; }} 20% {{ opacity: 1; }} 80% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}
-
         #shatter-overlay {{
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: grid; grid-template-columns: repeat({GRID_SIZE}, 1fr); grid-template-rows: repeat({GRID_SIZE}, 1fr);
-            opacity: 0; pointer-events: none; z-index: 30; 
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: grid;
+            grid-template-columns: repeat({GRID_SIZE}, 1fr);
+            grid-template-rows: repeat({GRID_SIZE}, 1fr);
+            opacity: 0; pointer-events: none; z-index: 30;
         }}
         .shard {{
             position: relative;
-            background-image: url("data:image/jpeg;base64,{shutter_b64}"); 
+            background-image: url("data:image/jpeg;base64,{shutter_b64}");
             background-size: 100vw 100vh;
-            transition: transform {SHATTER_DURATION}s cubic-bezier(0.68,-0.55,0.27,1.55), opacity 1.5s ease-in-out; 
-            opacity: 1; 
+            transition: transform {SHATTER_DURATION}s cubic-bezier(0.68, -0.55, 0.27, 1.55),
+                        opacity 1.2s ease-in-out;
+            opacity: 1;
         }}
         #black-fade {{
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
             background: black; opacity: 1; z-index: 40;
-            transition: opacity 1s ease-in-out; pointer-events: none;
+            transition: opacity 1s ease-in-out;
         }}
         </style>
     </head>
     <body>
-        <div id="pre-load-bg"></div>
         <video id='introVid' autoplay muted playsinline>
             <source src='data:video/mp4;base64,{video_b64}' type='video/mp4'>
         </video>
         <div id='static-frame'></div>
-        <audio id='flySfx'><source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'></audio>
-        <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+        <audio id='flySfx'>
+            <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
+        </audio>
         <div id='shatter-overlay'>{shards_html}</div>
         <div id='black-fade'></div>
 
@@ -146,12 +137,12 @@ def intro_screen(is_mobile=False):
         const shards = document.querySelectorAll('.shard');
         const blackFade = document.getElementById('black-fade');
         let ended = false;
-        let initialTransforms = [];
 
-        shards.forEach((shard, index) => {{
-            const row = Math.floor(index / GRID_SIZE);
-            const col = index % GRID_SIZE;
-            shard.style.backgroundPosition = 'calc(-' + col + ' * 100vw / ' + GRID_SIZE + ') calc(-' + row + ' * 100vh / ' + GRID_SIZE + ')';
+        let initialTransforms = [];
+        shards.forEach((shard, i) => {{
+            const row = Math.floor(i / GRID_SIZE);
+            const col = i % GRID_SIZE;
+            shard.style.backgroundPosition = `calc(-${{col}} * 100vw / ${{GRID_SIZE}}) calc(-${{row}} * 100vh / ${{GRID_SIZE}})`;
             const randX = (Math.random() - 0.5) * 200;
             const randY = (Math.random() - 0.5) * 200;
             const randR = (Math.random() - 0.5) * 360;
@@ -166,27 +157,26 @@ def intro_screen(is_mobile=False):
             vid.style.opacity = 0;
             staticFrame.style.opacity = 1;
 
-            // Tan vỡ
+            // Bước 1: hiệu ứng tan vỡ
             setTimeout(() => {{
                 blackFade.style.opacity = 0;
                 shatterOverlay.style.opacity = 1;
                 staticFrame.style.opacity = 0;
-                shards.forEach((shard, index) => {{
-                    const t = initialTransforms[index];
-                    shard.style.transform = 'translate(' + t.randX + 'vw,' + t.randY + 'vh) rotate(' + t.randR + 'deg) scale(0.1)';
+
+                shards.forEach((shard, i) => {{
+                    const t = initialTransforms[i];
+                    shard.style.transform = `translate(${{t.randX}}vw, ${{t.randY}}vh) rotate(${{t.randR}}deg) scale(0.1)`;
                     shard.style.transitionDelay = t.delay + 's';
                     shard.style.opacity = 0;
                 }});
             }}, 10);
 
-            // Màn đen
+            // Bước 2: Sau khi tan vỡ xong → hiện nền và tiêu đề fade-in
             setTimeout(() => {{
                 shatterOverlay.style.opacity = 0;
                 blackFade.style.opacity = 1;
-            }}, SHATTER_DURATION);
 
-            // Hiện background mờ dần
-            setTimeout(() => {{
+                // Nền chính fade-in
                 const fadeBg = document.createElement('div');
                 fadeBg.style.position = 'absolute';
                 fadeBg.style.top = '0';
@@ -201,38 +191,53 @@ def intro_screen(is_mobile=False):
                 fadeBg.style.zIndex = '45';
                 document.body.appendChild(fadeBg);
 
+                // Tiêu đề fade-in
+                const title = document.createElement('div');
+                title.innerText = 'TỔ BẢO DƯỠNG SỐ 1';
+                title.style.position = 'absolute';
+                title.style.top = '8%';
+                title.style.width = '100%';
+                title.style.textAlign = 'center';
+                title.style.color = '#fff5d7';
+                title.style.fontFamily = "'Playfair Display', serif";
+                title.style.fontSize = 'clamp(30px, 5vw, 65px)';
+                title.style.textShadow = '0 0 18px rgba(0,0,0,0.65)';
+                title.style.background = 'linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%)';
+                title.style.backgroundSize = '200%';
+                title.style.webkitBackgroundClip = 'text';
+                title.style.webkitTextFillColor = 'transparent';
+                title.style.opacity = '0';
+                title.style.transition = 'opacity 2.5s ease-in-out 0.3s';
+                title.style.zIndex = '50';
+                document.body.appendChild(title);
+
                 setTimeout(() => {{
                     blackFade.style.opacity = 0;
                     fadeBg.style.opacity = 1;
+                    title.style.opacity = 1;
                 }}, 200);
 
-                setTimeout(() => {{
-                    window.parent.postMessage({{type: 'intro_done'}}, '*');
-                }}, 2500);
             }}, SHATTER_DURATION + BLACKOUT_DELAY);
         }}
 
         vid.addEventListener('canplay', () => {{
-            vid.play().catch(() => {{}}); 
+            vid.play().catch(()=>{{}});
             blackFade.style.opacity = 0;
         }});
         vid.addEventListener('play', () => {{
             audio.volume = 1.0;
             audio.currentTime = 0;
-            audio.play().catch(() => {{}}); 
+            audio.play().catch(()=>{{}});
         }});
         document.addEventListener('click', () => {{
             vid.muted = false;
             vid.play();
             audio.volume = 1.0;
-            audio.currentTime = 0;
-            audio.play().catch(() => {{}}); 
+            audio.play().catch(()=>{{}});
             blackFade.style.opacity = 0;
         }}, {{once:true}});
-
         vid.addEventListener('ended', finishIntro);
         setTimeout(finishIntro, 9000);
-        blackFade.style.opacity = 1;
         </script>
     </body>
     </html>
@@ -241,7 +246,6 @@ def intro_screen(is_mobile=False):
 
 
 # ========== TRANG CHÍNH ==========
-
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -249,18 +253,17 @@ def main_page(is_mobile=False):
         with open(bg, "rb") as f:
             bg_b64 = base64.b64encode(f.read()).decode()
     except FileNotFoundError as e:
-        st.error(f"Lỗi: Không tìm thấy file: {e.filename}")
+        st.error(f"Lỗi: Không tìm thấy file {e.filename}")
         st.stop()
 
     st.markdown(f"""
     <style>
     html, body, .stApp {{
         height: 100vh !important;
-        background:
-            linear-gradient(to bottom, rgba(255,235,200,0.25) 0%, rgba(160,130,90,0.35) 50%, rgba(90,70,50,0.5) 100%),
-            url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
+        background: url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed;
         background-size: cover !important;
-        animation: fadeInBg 1.2s ease-in-out forwards; 
+        overflow: hidden !important;
+        animation: fadeInBg 1s ease-in-out forwards;
     }}
     @keyframes fadeInBg {{
         from {{ opacity: 0; }}
@@ -275,15 +278,7 @@ def main_page(is_mobile=False):
         color: #fff5d7;
         font-family: 'Playfair Display', serif;
         text-shadow: 0 0 18px rgba(0,0,0,0.65);
-        background: linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%);
-        background-size: 200%;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: textLight 10s linear infinite, fadeIn 1s ease-in-out forwards; 
-    }}
-    @keyframes textLight {{
-        0% {{ background-position: 200% 0%; }}
-        100% {{ background-position: -200% 0%; }}
+        animation: fadeIn 2s ease-in-out forwards;
     }}
     @keyframes fadeIn {{
         from {{ opacity: 0; transform: scale(0.97); }}
@@ -295,7 +290,6 @@ def main_page(is_mobile=False):
 
 
 # ========== LUỒNG CHÍNH ==========
-
 hide_streamlit_ui()
 
 if "is_mobile" not in st.session_state:
@@ -314,17 +308,5 @@ if "intro_done" not in st.session_state:
 
 if not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
-    st.markdown("""
-    <script>
-    window.addEventListener("message", (event) => {{
-        if (event.data.type === "intro_done") {{
-            window.parent.location.reload(); 
-        }}
-    }});
-    </script>
-    """, unsafe_allow_html=True)
-    time.sleep(15)
-    st.session_state.intro_done = True
-    st.rerun()
 else:
     main_page(st.session_state.is_mobile)
