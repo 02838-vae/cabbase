@@ -73,7 +73,7 @@ def main_page():
 
 # ========== GIAO DIỆN INTRO ==========
 def intro_page():
-    video_path = "intro.mp4"  # video bạn muốn chạy
+    video_path = "airplane.mp4"  # video bạn muốn chạy
 
     with open(video_path, "rb") as f:
         video_bytes = f.read()
