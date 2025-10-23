@@ -66,7 +66,13 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO - ĐÃ KHÔI PHỤC DÒNG CHỮ TRÊN VIDEO ==========
+# Callback Function để thay đổi trạng thái và RERUN
+def set_intro_done():
+    st.session_state.intro_done = True
+    st.rerun()
+
+
+# ========== MÀN HÌNH INTRO (ĐÃ CẬP NHẬT LẮNG NGHE TRẠNG THÁI) ==========
 
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
@@ -124,7 +130,6 @@ def intro_screen(is_mobile=False):
             background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
             background-size: 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             text-shadow: 0 0 15px rgba(255,255,230,0.4);
-            /* KHÔI PHỤC ANIMATION VÀ OPACITY */
             animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards; 
             line-height: 1.2; word-wrap: break-word; z-index: 10;
         }}
@@ -271,7 +276,8 @@ def intro_screen(is_mobile=False):
 
                 // 4. Thông báo hoàn thành sau khi ghép lại
                 setTimeout(() => {{
-                    window.parent.postMessage({{type: 'intro_done'}}, '*');
+                    // Gửi tin nhắn đến Streamlit để kích hoạt RERUN và chuyển trang
+                    window.parent.postMessage({{type: 'streamlit:setComponentValue', value: true, dataType: 'json', id: 'intro_done'}}, '*');
                 }}, RECONSTRUCT_DURATION * 1000 + 500); 
 
 
@@ -307,10 +313,26 @@ def intro_screen(is_mobile=False):
     </body>
     </html>
     """
-    components.html(intro_html, height=800, scrolling=False)
+    # Sử dụng st.empty().html và key để tạo cơ chế lắng nghe trạng thái
+    intro_placeholder = st.empty()
+    intro_placeholder.markdown("", unsafe_allow_html=True)
+    
+    # Sử dụng components.html để hiển thị iframe (intro_html)
+    components.html(
+        intro_html, 
+        height=800, 
+        scrolling=False
+    )
+    
+    # Lắng nghe trạng thái từ JS
+    st_javascript("(() => { window.__st_intro_done = new Promise(resolve => { window.addEventListener('message', (event) => { if (event.data.type === 'streamlit:setComponentValue' && event.data.id === 'intro_done') { resolve(event.data.value); } }); }); return window.__st_intro_done; })();", key="intro_done", unsafe_allow_html=True)
+
+    # Chờ JS trả về true để kích hoạt RERUN
+    if st.session_state.get('intro_done_result'):
+        set_intro_done()
 
 
-# ========== TRANG CHÍNH (ĐÃ THÊM THANH PHÁT NHẠC VÀ BỐ CỤC MOBILE) ==========
+# ========== TRANG CHÍNH (BỐ CỤC ĐÃ TỐI ƯU) ==========
 
 def main_page(is_mobile=False):
     hide_streamlit_ui()
@@ -482,24 +504,23 @@ if "intro_done" not in st.session_state:
 
 
 if not st.session_state.intro_done:
+    # Key này được sử dụng trong st_javascript để nhận giá trị,
+    # nhưng chúng ta đổi tên key trong st.session_state để tránh trùng lặp
+    st.session_state['intro_done_result'] = st_javascript("window.parent.document.querySelector('iframe[title=\"intro_html\"]').contentWindow.postMessage({type: 'streamlit:getComponentValue', id: 'intro_done_result'}, '*')", key="intro_done_result_key")
+    
     intro_screen(st.session_state.is_mobile)
     
-    # Script lắng nghe thông báo hoàn thành từ iframe
-    st.markdown("""
-    <script>
-    window.addEventListener("message", (event) => {
-        if (event.data.type === "intro_done") {
-            // Sửa lỗi: Cần đảm bảo rằng Streamlit biết trạng thái đã thay đổi trước khi tải lại
-            window.parent.location.reload(); 
-        }
-    });
-    </script>
-    """, unsafe_allow_html=True)
-
-    # Thời gian chờ fallback (18s)
-    time.sleep(18) 
-    st.session_state.intro_done = True
-    st.rerun()
+    # Lắng nghe kết quả từ JS
+    if st.session_state.get('intro_done_result'):
+        # Nếu nhận được giá trị true từ JS, kích hoạt chuyển trang
+        set_intro_done()
+    
+    # Thời gian chờ fallback (18s) - Dùng timeout để tránh vòng lặp vô tận
+    if not st.session_state.get('intro_done_result'):
+        time.sleep(18) 
+        if not st.session_state.intro_done:
+            st.session_state.intro_done = True
+            st.rerun()
 
 else:
     main_page(st.session_state.is_mobile)
