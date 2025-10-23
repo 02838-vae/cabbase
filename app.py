@@ -34,7 +34,7 @@ st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 # Kích thước lưới và thời gian
 GRID_SIZE = 8
 SHATTER_DURATION = 1.8   # Thời gian hiệu ứng tan vỡ (giây)
-# Loại bỏ RECONSTRUCT_DURATION
+# Đã loại bỏ RECONSTRUCT_DURATION
 BLACKOUT_DELAY = 0.0     # Đã bỏ độ trễ màn hình đen
 
 
@@ -92,7 +92,7 @@ def intro_screen(is_mobile=False):
         # Ảnh tĩnh SHUTTER cho pha TAN VỠ
         with open(shutter_file, "rb") as s:
             shutter_b64 = base64.b64encode(s.read()).decode()
-        # Ảnh nền BG cho pha GHÉP LẠI (cabbase.jpg / mobile.jpg) -> Vẫn cần đọc để tránh lỗi
+        # Ảnh nền BG (cần đọc để tránh lỗi FileNotFoundError)
         with open(bg_file, "rb") as b:
             bg_b64 = base64.b64encode(b.read()).decode()
             
@@ -358,7 +358,7 @@ def show_flying_title():
         -webkit-text-fill-color: transparent;
         letter-spacing: 2px;
         z-index: 50; 
-        /* Bắt đầu bay lên ngay sau khi trang chính render (2.5s sau rerun) */
+        /* Bắt đầu bay lên ngay sau khi trang chính render (0.5s sau rerun) */
         animation: 
             flyUp 2s ease-out 0.5s forwards, /* Độ trễ 0.5s để chờ nền ổn định */
             textLight 10s linear infinite 2.5s; 
@@ -449,6 +449,5 @@ else:
         time.sleep(0.1) # Đợi một chút để DOM kịp cập nhật
         intro_placeholder.empty() 
         st.session_state.placeholder_removed = True
-        # Không cần rerun lần nữa nếu không muốn gián đoạn hiệu ứng bay
         
     st.stop()
