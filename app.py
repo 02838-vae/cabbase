@@ -163,11 +163,10 @@ def intro_screen(is_mobile=False):
             if (ended) return;
             ended = true;
 
-            // BƯỚC 0: Chuyển từ video sang ảnh tĩnh
             vid.style.opacity = 0;
             staticFrame.style.opacity = 1;
 
-            // BƯỚC 1: Tan vỡ
+            // Tan vỡ
             setTimeout(() => {{
                 blackFade.style.opacity = 0;
                 shatterOverlay.style.opacity = 1;
@@ -180,13 +179,13 @@ def intro_screen(is_mobile=False):
                 }});
             }}, 10);
 
-            // BƯỚC 2: Màn hình đen
+            // Màn đen
             setTimeout(() => {{
                 shatterOverlay.style.opacity = 0;
                 blackFade.style.opacity = 1;
             }}, SHATTER_DURATION);
 
-            // BƯỚC 3: Hiện background với hiệu ứng mờ dần
+            // Hiện background mờ dần
             setTimeout(() => {{
                 const fadeBg = document.createElement('div');
                 fadeBg.style.position = 'absolute';
@@ -214,20 +213,20 @@ def intro_screen(is_mobile=False):
         }}
 
         vid.addEventListener('canplay', () => {{
-            vid.play().catch(()=>{});
+            vid.play().catch(() => {{}}); 
             blackFade.style.opacity = 0;
         }});
         vid.addEventListener('play', () => {{
             audio.volume = 1.0;
             audio.currentTime = 0;
-            audio.play().catch(()=>{});
+            audio.play().catch(() => {{}}); 
         }});
         document.addEventListener('click', () => {{
             vid.muted = false;
             vid.play();
             audio.volume = 1.0;
             audio.currentTime = 0;
-            audio.play().catch(()=>{{}});
+            audio.play().catch(() => {{}}); 
             blackFade.style.opacity = 0;
         }}, {{once:true}});
 
@@ -261,11 +260,6 @@ def main_page(is_mobile=False):
             linear-gradient(to bottom, rgba(255,235,200,0.25) 0%, rgba(160,130,90,0.35) 50%, rgba(90,70,50,0.5) 100%),
             url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
         background-size: cover !important;
-        overflow: hidden !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        position: relative;
-        filter: brightness(1.05) contrast(1.1) saturate(1.05);
         animation: fadeInBg 1.2s ease-in-out forwards; 
     }}
     @keyframes fadeInBg {{
@@ -280,13 +274,12 @@ def main_page(is_mobile=False):
         font-size: clamp(30px, 5vw, 65px);
         color: #fff5d7;
         font-family: 'Playfair Display', serif;
-        text-shadow: 0 0 18px rgba(0,0,0,0.65), 0 0 30px rgba(255,255,180,0.25);
+        text-shadow: 0 0 18px rgba(0,0,0,0.65);
         background: linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%);
         background-size: 200%;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
         animation: textLight 10s linear infinite, fadeIn 1s ease-in-out forwards; 
-        letter-spacing: 2px;
     }}
     @keyframes textLight {{
         0% {{ background-position: 200% 0%; }}
@@ -323,11 +316,11 @@ if not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
     st.markdown("""
     <script>
-    window.addEventListener("message", (event) => {
-        if (event.data.type === "intro_done") {
+    window.addEventListener("message", (event) => {{
+        if (event.data.type === "intro_done") {{
             window.parent.location.reload(); 
-        }
-    });
+        }}
+    }});
     </script>
     """, unsafe_allow_html=True)
     time.sleep(15)
