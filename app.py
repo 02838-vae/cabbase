@@ -27,8 +27,8 @@ st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 # Kích thước lưới và thời gian
 GRID_SIZE = 8
 SHATTER_DURATION = 1.8  # Thời gian hiệu ứng tan vỡ (giây)
-RECONSTRUCT_DURATION = 2.5 # Tăng thời gian ghép lại (giây) để đảm bảo load ảnh
-BLACKOUT_DELAY = 1.0    # Tăng thời gian màn hình đen (giây) để load tài nguyên
+RECONSTRUCT_DURATION = 2.5 # Thời gian ghép lại (giây)
+BLACKOUT_DELAY = 0.0    # <<< ĐÃ BỎ ĐỘ TRỄ MÀN HÌNH ĐEN (SET VỀ 0.0)
 
 # ========== HÀM ẨN UI STREAMLIT (FIX MOBILE HEIGHT) ==========
 
@@ -65,7 +65,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO - ĐÃ SỬA LỖI ẢNH RECONSTRUCT (BASE64 FORCE LOAD) ==========
+# ========== MÀN HÌNH INTRO - ĐÃ BỎ BLACKOUT DELAY ==========
 
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
@@ -239,23 +239,20 @@ def intro_screen(is_mobile=False):
                 shard.style.opacity = 0; 
             }});
             
-            // BƯỚC 2: Màn Hình Đen (Blackout)
-            setTimeout(() => {{
-                shatterOverlay.style.opacity = 0; 
-                blackFade.style.opacity = 1; 
-            }}, SHATTER_DURATION * 1000 + 50); 
+            // BƯỚC 2 & 3: GHÉP LẠI NGAY SAU KHI TAN VỠ KẾT THÚC
+            // Thời gian chờ = SHATTER_DURATION (kết thúc tan vỡ)
+            const RECONSTRUCT_START_DELAY = SHATTER_DURATION * 1000 + 50; 
 
-
-            // BƯỚC 3: Ghép Lại (Reconstruction) - FIX LỖI ẢNH NỀN
             setTimeout(() => {{
-                shatterOverlay.style.opacity = 1; 
+                // Đảm bảo màn hình đen không hiện (opacity 0)
                 blackFade.style.opacity = 0; 
+                shatterOverlay.style.opacity = 1; 
 
                 shatterOverlay.classList.remove('shattering');
                 shatterOverlay.classList.add('reconstructing'); 
                 
                 shards.forEach((shard, index) => {{
-                    // *** QUAN TRỌNG: GÁN BACKGROUND-IMAGE BẰNG JS VÀ DÙNG !IMPORTANT ***
+                    // *** GÁN BACKGROUND-IMAGE BẰNG JS VÀ DÙNG !IMPORTANT ***
                     shard.style.setProperty('background-image', BG_B64_URL, 'important');
                     
                     const t = initialTransforms[index];
@@ -271,7 +268,7 @@ def intro_screen(is_mobile=False):
                 }}, RECONSTRUCT_DURATION * 1000 + 500); 
 
 
-            }}, (SHATTER_DURATION + BLACKOUT_DELAY) * 1000 + 50); 
+            }}, RECONSTRUCT_START_DELAY); 
 
         }}
 
