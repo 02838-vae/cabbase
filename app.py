@@ -173,35 +173,65 @@ def intro_screen():
 # ========== TRANG CHÍNH ==========
 def main_page():
     hide_streamlit_ui()
+
+    # Đọc file ảnh nền
     try:
         with open(BG_PC, "rb") as f:
             bg_b64 = base64.b64encode(f.read()).decode()
-    except:
-        st.error("Thiếu ảnh nền")
-        return
+        bg_style = f'url("data:image/jpeg;base64,{bg_b64}")'
+    except Exception as e:
+        st.warning(f"⚠️ Không tìm thấy file nền {BG_PC}, sẽ dùng nền đen.")
+        bg_style = "none"
 
+    # CSS nền cinematic + hiệu ứng chữ
     st.markdown(f"""
     <style>
     html, body, .stApp {{
         height: 100vh !important;
         margin: 0; padding: 0;
-        background: black;
+        overflow: hidden !important;
+        background: {bg_style} no-repeat center center fixed;
+        background-size: cover;
+        background-color: black; /* fallback */
         animation: fadeInBg 1s ease-in-out forwards;
+        filter: brightness(1.05) contrast(1.1) saturate(1.08);
     }}
     @keyframes fadeInBg {{
-        from {{opacity: 0;}}
-        to {{opacity: 1;}}
+        from {{opacity: 0; transform: scale(1.03);}}
+        to {{opacity: 1; transform: scale(1);}}
     }}
+
+    /* lớp overlay nhẹ */
+    .stApp::after {{
+        content: "";
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background: radial-gradient(circle at 50% 60%, rgba(0,0,0,0.25) 0%, rgba(0,0,0,0.6) 80%);
+        pointer-events: none;
+    }}
+
+    /* tiêu đề chính */
     .welcome {{
         position: absolute;
         top: 8%;
         width: 100%;
         text-align: center;
-        font-size: clamp(35px, 6vw, 70px);
+        font-size: clamp(32px, 5vw, 70px);
         color: #fff5d7;
         font-family: 'Playfair Display', serif;
-        text-shadow: 0 0 25px rgba(0,0,0,0.75);
-        animation: fadeText 1s ease-in-out forwards;
+        text-shadow: 0 0 25px rgba(0,0,0,0.8);
+        background: linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%);
+        background-size: 200%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: textLight 10s linear infinite, fadeText 1s ease-in-out forwards;
+        letter-spacing: 1.5px;
+        z-index: 3;
+    }}
+    @keyframes textLight {{
+        0% {{background-position: 200% 0%;}}
+        100% {{background-position: -200% 0%;}}
     }}
     @keyframes fadeText {{
         from {{opacity: 0; transform: scale(0.97);}}
@@ -211,6 +241,7 @@ def main_page():
 
     <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
     """, unsafe_allow_html=True)
+
 
 # ========== LUỒNG CHÍNH ==========
 hide_streamlit_ui()
