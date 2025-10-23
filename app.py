@@ -65,7 +65,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO - ĐÃ SỬA LỖI NỐI LẠI VÀ CHỮ INTRO ==========
+# ========== MÀN HÌNH INTRO - ĐÃ SỬA LỖI ẢNH RECONSTRUCT ==========
 
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
@@ -113,10 +113,9 @@ def intro_screen(is_mobile=False):
         }}
         audio {{ display: none; }}
         
-        /* ĐIỀU CHỈNH: Đưa intro-text lên trên cùng */
         #intro-text {{
             position: absolute; 
-            top: 8%; /* Đưa lên top */
+            top: 8%; 
             left: 50%; 
             transform: translate(-50%, 0);
             width: 90vw; text-align: center; color: #f8f4e3;
@@ -157,8 +156,7 @@ def intro_screen(is_mobile=False):
         .reconstructing .shard {{
             transform: translate(0, 0) rotate(0deg) scale(1) !important; 
             transition: transform {RECONSTRUCT_DURATION}s cubic-bezier(0.19, 1, 0.22, 1), opacity {RECONSTRUCT_DURATION}s ease-in-out; 
-            /* SỬ DỤNG ẢNH BG CHÍNH ĐỂ GHÉP LẠI (ĐÃ FIX) */
-            background-image: url("data:image/jpeg;base64,{bg_b64}") !important; 
+            /* Bỏ background-image ở đây, để JS gán thẳng (để khắc phục lỗi caching) */
             opacity: 1 !important;
             background-position: 0 0 !important;
         }}
@@ -193,6 +191,7 @@ def intro_screen(is_mobile=False):
         const SHATTER_DURATION = {js_shatter_duration}; // giây
         const RECONSTRUCT_DURATION = {js_reconstruct_duration}; // giây
         const BLACKOUT_DELAY = {js_blackout_delay}; // giây
+        const BG_B64_URL = "url('data:image/jpeg;base64,{bg_b64}')"; // Lưu ảnh nền chính
 
 
         const vid = document.getElementById('introVid');
@@ -246,7 +245,7 @@ def intro_screen(is_mobile=False):
             }}, SHATTER_DURATION * 1000 + 50); 
 
 
-            // BƯỚC 3: Ghép Lại (Reconstruction) - ĐÃ FIX LỖI DELAY
+            // BƯỚC 3: Ghép Lại (Reconstruction) - ĐÃ FIX LỖI ẢNH NỀN
             setTimeout(() => {{
                 shatterOverlay.style.opacity = 1; 
                 blackFade.style.opacity = 0; 
@@ -255,6 +254,9 @@ def intro_screen(is_mobile=False):
                 shatterOverlay.classList.add('reconstructing'); 
                 
                 shards.forEach((shard, index) => {{
+                    // Ghi đè background-image BẰNG JS để khắc phục lỗi cache/ưu tiên CSS
+                    shard.style.setProperty('background-image', BG_B64_URL, 'important');
+                    
                     const t = initialTransforms[index];
                     const reverseDelay = RECONSTRUCT_DURATION - t.delay; 
                     
