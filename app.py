@@ -5,32 +5,41 @@ from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
+
 # ========== CẤU HÌNH VÀ TÀI NGUYÊN ==========
+
 
 # File video và âm thanh intro
 VIDEO_PC = "airplane.mp4"
 VIDEO_MOBILE = "mobile.mp4"
 SFX = "plane_fly.mp3"
 
+
 # File ảnh tĩnh cho hiệu ứng SHATTER (Ảnh chụp từ frame cuối video)
 SHUTTER_PC = "airplane_shutter.jpg"
 SHUTTER_MOBILE = "mobile_shutter.jpg"
+
 
 # File ảnh nền của trang chính (Dùng cho quá trình RECONSTRUCT và Trang Chính)
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 
+
 # LƯU Ý: Đảm bảo các file trên tồn tại trong cùng thư mục với app.py
 
+
 st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
+
 
 # Kích thước lưới và thời gian
 GRID_SIZE = 8
 SHATTER_DURATION = 1.8   # Thời gian hiệu ứng tan vỡ (giây)
-RECONSTRUCT_DURATION = 2.5 # Thời gian ghép lại (giây)
+# Loại bỏ RECONSTRUCT_DURATION
 BLACKOUT_DELAY = 0.0     # Đã bỏ độ trễ màn hình đen
 
+
 # ========== HÀM ẨN UI STREAMLIT (FIX MOBILE HEIGHT) ==========
+
 
 def hide_streamlit_ui():
     st.markdown("""
@@ -65,7 +74,8 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO - ĐÃ SỬA LỖI VỊ TRÍ ẢNH RECONSTRUCT ==========
+# ========== MÀN HÌNH INTRO (ĐÃ LOẠI BỎ HIỆU ỨNG NỐI LẠI) ==========
+
 
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
@@ -82,7 +92,7 @@ def intro_screen(is_mobile=False):
         # Ảnh tĩnh SHUTTER cho pha TAN VỠ
         with open(shutter_file, "rb") as s:
             shutter_b64 = base64.b64encode(s.read()).decode()
-        # Ảnh nền BG cho pha GHÉP LẠI (cabbase.jpg / mobile.jpg)
+        # Ảnh nền BG cho pha GHÉP LẠI (cabbase.jpg / mobile.jpg) -> Vẫn cần đọc để tránh lỗi
         with open(bg_file, "rb") as b:
             bg_b64 = base64.b64encode(b.read()).decode()
             
@@ -94,8 +104,6 @@ def intro_screen(is_mobile=False):
 
     # Chuyển đổi thời gian sang giây (cho JS/CSS)
     js_shatter_duration = SHATTER_DURATION 
-    js_reconstruct_duration = RECONSTRUCT_DURATION
-    js_blackout_delay = BLACKOUT_DELAY 
 
     intro_html = f"""
     <html>
@@ -135,7 +143,7 @@ def intro_screen(is_mobile=False):
             80% {{ opacity: 1; }} 100% {{ opacity: 0; }}
         }}
 
-        /* === STYLE HIỆU ỨNG TAN VỠ VÀ GHÉP LẠI === */
+        /* === STYLE HIỆU ỨNG TAN VỠ === */
         #shatter-overlay {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: grid; grid-template-columns: repeat({GRID_SIZE}, 1fr); grid-template-rows: repeat({GRID_SIZE}, 1fr);
@@ -144,22 +152,10 @@ def intro_screen(is_mobile=False):
         }}
         .shard {{
             position: relative;
-            /* DÙNG ẢNH SHUTTER LÀM NỀN BAN ĐẦU (cho pha tan vỡ) */
             background-image: url("data:image/jpeg;base64,{shutter_b64}"); 
             background-size: 100vw 100vh;
             transition: transform {SHATTER_DURATION}s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 1.5s ease-in-out; 
             opacity: 1; 
-        }}
-        
-        /* Khi ghép lại: Gỡ background-image để JS gán */
-        .reconstructing .shard {{
-            transform: translate(0, 0) rotate(0deg) scale(1) !important; 
-            transition: transform {RECONSTRUCT_DURATION}s cubic-bezier(0.19, 1, 0.22, 1), opacity {RECONSTRUCT_DURATION}s ease-in-out; 
-            /* Bỏ background-image ở đây để JS gán cứng */
-            background-image: none !important; 
-            opacity: 1 !important;
-            /* Bỏ background-position ở đây để JS gán cứng */
-            background-position: 0 0 !important;
         }}
 
         /* Lớp phủ màn hình đen */
@@ -188,9 +184,8 @@ def intro_screen(is_mobile=False):
         <script>
         const GRID_SIZE = {GRID_SIZE};
         const SHATTER_DURATION = {js_shatter_duration}; // giây
-        const RECONSTRUCT_DURATION = {js_reconstruct_duration}; // giây
-        const BLACKOUT_DELAY = {js_blackout_delay}; // giây
-        const BG_B64_URL = "url('data:image/jpeg;base64,{bg_b64}')"; // Lưu ảnh nền chính
+        // const RECONSTRUCT_DURATION = {js_reconstruct_duration}; // Đã loại bỏ
+        const BG_B64_URL = "url('data:image/jpeg;base64,{bg_b64}')"; 
 
         const vid = document.getElementById('introVid');
         const audio = document.getElementById('flySfx');
@@ -205,7 +200,6 @@ def intro_screen(is_mobile=False):
             const row = Math.floor(index / GRID_SIZE);
             const col = index % GRID_SIZE;
             
-            // Background position cho ảnh SHUTTER và sau này là ảnh BG
             const bgPosition = 'calc(-' + col + ' * 100vw / ' + GRID_SIZE + ') calc(-' + row + ' * 100vh / ' + GRID_SIZE + ')';
             shard.style.backgroundPosition = bgPosition;
             
@@ -214,7 +208,6 @@ def intro_screen(is_mobile=False):
             const randR = (Math.random() - 0.5) * 360; 
             const delay = Math.random() * 0.5; 
 
-            // Lưu trữ vị trí nền BAN ĐẦU
             initialTransforms.push({{randX, randY, randR, delay, bgPosition}});
         }});
 
@@ -226,7 +219,6 @@ def intro_screen(is_mobile=False):
             blackFade.style.opacity = 0; 
             shatterOverlay.style.opacity = 1; 
             vid.style.opacity = 0; 
-            shatterOverlay.classList.remove('reconstructing');
             shatterOverlay.classList.add('shattering');
             
             shards.forEach((shard, index) => {{
@@ -236,38 +228,20 @@ def intro_screen(is_mobile=False):
                 shard.style.opacity = 0; 
             }});
             
-            // BƯỚC 2 & 3: GHÉP LẠI NGAY SAU KHI TAN VỠ KẾT THÚC
-            // Thời gian chờ = SHATTER_DURATION (kết thúc tan vỡ)
-            const RECONSTRUCT_START_DELAY = SHATTER_DURATION * 1000 + 50; 
+            // BƯỚC 2: Gửi tín hiệu hoàn thành sau khi tan vỡ kết thúc
+            const SHATTER_END_DELAY = SHATTER_DURATION * 1000 + 500; // Đợi tan vỡ xong
 
             setTimeout(() => {{
-                // Đảm bảo màn hình đen không hiện (opacity 0)
-                blackFade.style.opacity = 0; 
-                shatterOverlay.style.opacity = 1; 
-
-                shatterOverlay.classList.remove('shattering');
-                shatterOverlay.classList.add('reconstructing'); 
+                // Gửi thông báo
+                window.parent.postMessage({{type: 'intro_done'}}, '*'); 
                 
-                shards.forEach((shard, index) => {{
-                    // *** GÁN BACKGROUND-IMAGE VÀ BACKGROUND-POSITION BẰNG JS VÀ DÙNG !IMPORTANT ***
-                    const t = initialTransforms[index];
-
-                    shard.style.setProperty('background-image', BG_B64_URL, 'important');
-                    shard.style.setProperty('background-position', t.bgPosition, 'important'); // <<< Khắc phục lỗi vị trí
-
-                    const reverseDelay = RECONSTRUCT_DURATION - t.delay; 
-                    
-                    shard.style.transitionDelay = (Math.max(0, reverseDelay) + (Math.random() * 0.2)) + 's'; 
-                    shard.style.opacity = 1; 
-                }});
-
-                // 4. Thông báo hoàn thành sau khi ghép lại
+                // Mờ dần lớp phủ (để tránh Streamlit xóa iframe đột ngột)
                 setTimeout(() => {{
-                    // *** THAY ĐỔI TẠI ĐÂY: GỬI THÔNG BÁO VỀ APP CHÍNH MÀ KHÔNG RELOAD ***
-                    window.parent.postMessage({{type: 'intro_done'}}, '*'); 
-                }}, RECONSTRUCT_DURATION * 1000 + 500); 
+                    shatterOverlay.style.transition = 'opacity 0.5s ease-out';
+                    shatterOverlay.style.opacity = 0; 
+                }}, 100); 
 
-            }}, RECONSTRUCT_START_DELAY); 
+            }}, SHATTER_END_DELAY); 
         }}
 
         // Logic play video/audio
@@ -300,7 +274,7 @@ def intro_screen(is_mobile=False):
     components.html(intro_html, height=800, scrolling=False)
 
 
-# ========== TRANG CHÍNH (CHỈ CÒN ẢNH NỀN) ==========
+# ========== TRANG CHÍNH (ĐÃ THÊM HIỆU ỨNG PHÓNG TO NỀN) ==========
 
 def main_page(is_mobile=False):
     hide_streamlit_ui()
@@ -314,22 +288,36 @@ def main_page(is_mobile=False):
 
     st.markdown(f"""
     <style>
-    /* FIX LỖI ẢNH NỀN KHÔNG HIỂN THỊ TRONG TRANG CHÍNH TRÊN MOBILE */
+    /* ẢNH NỀN CỦA TRANG CHÍNH */
     html, body, .stApp {{
         height: 100vh !important;
-        min-height: -webkit-fill-available !important; /* Fix iOS Safari */
+        min-height: -webkit-fill-available !important; 
         
         background: 
             linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
             url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
-        background-size: cover !important;
+        
+        /* Hiệu ứng phóng to nền */
+        background-size: 150vw 150vh !important; /* Bắt đầu từ kích thước lớn */
+        background-position: center center !important;
+        
         overflow: hidden !important;
         margin: 0 !important;
         padding: 0 !important;
         position: relative;
         filter: brightness(1.05) contrast(1.1) saturate(1.05);
-        animation: fadeInBg 1s ease-in-out forwards; 
+        
+        /* Áp dụng hiệu ứng phóng to */
+        animation: 
+            zoomInBg 2s cubic-bezier(0.23, 1, 0.32, 1) forwards, /* Phóng to */
+            fadeInBg 1s ease-in-out forwards; /* Mờ dần xuất hiện */
     }}
+    
+    @keyframes zoomInBg {{
+        from {{ background-size: 150vw 150vh; }}
+        to {{ background-size: cover; }}
+    }}
+    
     .stApp::after {{
         content: "";
         position: absolute;
@@ -343,14 +331,13 @@ def main_page(is_mobile=False):
         from {{ opacity: 0; }}
         to {{ opacity: 1; }}
     }}
-    /* ẨN CLASS CŨ (welcome) để dùng flying-title */
     .welcome {{ display: none !important; }} 
     </style>
-
     """, unsafe_allow_html=True)
 
 
 # ========== HIỂN THỊ TIÊU ĐỀ BAY LÊN ==========
+
 def show_flying_title():
     st.markdown("""
     <style>
@@ -371,11 +358,11 @@ def show_flying_title():
         -webkit-text-fill-color: transparent;
         letter-spacing: 2px;
         z-index: 50; 
-        /* Hiệu ứng bay lên và hiệu ứng ánh sáng (bắt đầu sau 2s) */
+        /* Bắt đầu bay lên ngay sau khi trang chính render (2.5s sau rerun) */
         animation: 
-            flyUp 2s ease-out forwards, 
-            textLight 10s linear infinite 2s; 
-        opacity: 0; /* Bắt đầu ẩn */
+            flyUp 2s ease-out 0.5s forwards, /* Độ trễ 0.5s để chờ nền ổn định */
+            textLight 10s linear infinite 2.5s; 
+        opacity: 0; 
     }
 
     @keyframes flyUp {
@@ -399,9 +386,8 @@ def show_flying_title():
 
 hide_streamlit_ui()
 
-# 1. Xác định thiết bị (Giữ nguyên)
+# 1. Xác định thiết bị
 if "is_mobile" not in st.session_state:
-    # Lấy User Agent
     ua_string = st_javascript("window.navigator.userAgent;")
     if ua_string:
         ua = parse(ua_string)
@@ -416,7 +402,9 @@ if "is_mobile" not in st.session_state:
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
-# **Tạo placeholder để chứa và xóa Intro**
+if "placeholder_removed" not in st.session_state:
+    st.session_state.placeholder_removed = False
+
 intro_placeholder = st.empty()
 
 if not st.session_state.intro_done:
@@ -427,38 +415,40 @@ if not st.session_state.intro_done:
     # Script lắng nghe thông báo hoàn thành từ iframe
     st.markdown("""
     <script>
-    // Lắng nghe message từ iframe (intro_screen)
     window.addEventListener("message", (event) => {
         if (event.data.type === "intro_done") {
-            // Đặt cờ trong session storage và gọi rerender
             sessionStorage.setItem('introComplete', 'true');
-            // Kích hoạt lại Python script bằng cách giả lập một lần đọc st_javascript (sẽ thực hiện trong luồng python)
         }
     });
     </script>
     """, unsafe_allow_html=True)
 
-    # Dùng st_javascript để kiểm tra cờ (vì không thể gọi st.rerun() trực tiếp từ JS event listener)
+    # Dùng st_javascript để kiểm tra cờ
     intro_complete_check = st_javascript("sessionStorage.getItem('introComplete');")
 
     if intro_complete_check == 'true':
-        # Dọn dẹp session storage ngay lập tức
+        # Dọn dẹp session storage và chuyển trạng thái
         st_javascript("sessionStorage.removeItem('introComplete');")
         st.session_state.intro_done = True
-        st.rerun()
+        st.rerun() # Rerun để chuyển sang main_page
 
-    # Thêm một chút delay để tránh lỗi lặp vô hạn và chờ st_javascript hoàn thành
     time.sleep(0.1)
     st.stop()
 
 else:
     # Sau khi intro_done=True và RERUN:
     
-    # 1. Xóa Intro
-    intro_placeholder.empty() 
-    
-    # 2. Hiển thị Trang Chính (ảnh nền)
+    # 1. Hiển thị Trang Chính (ảnh nền với hiệu ứng zoom-in)
     main_page(st.session_state.is_mobile)
     
-    # 3. Hiển thị tiêu đề bay lên ngay lập tức (không cần tải lại trang)
+    # 2. Hiển thị tiêu đề bay lên
     show_flying_title()
+    
+    # 3. Xóa Intro Placeholder để giải phóng iframe
+    if not st.session_state.placeholder_removed:
+        time.sleep(0.1) # Đợi một chút để DOM kịp cập nhật
+        intro_placeholder.empty() 
+        st.session_state.placeholder_removed = True
+        # Không cần rerun lần nữa nếu không muốn gián đoạn hiệu ứng bay
+        
+    st.stop()
