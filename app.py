@@ -28,7 +28,7 @@ st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 GRID_SIZE = 8
 SHATTER_DURATION = 1.8  # Thời gian hiệu ứng tan vỡ (giây)
 RECONSTRUCT_DURATION = 2.5 # Thời gian ghép lại (giây)
-BLACKOUT_DELAY = 0.0    # <<< ĐÃ BỎ ĐỘ TRỄ MÀN HÌNH ĐEN (SET VỀ 0.0)
+BLACKOUT_DELAY = 0.0    # Đã bỏ độ trễ màn hình đen
 
 # ========== HÀM ẨN UI STREAMLIT (FIX MOBILE HEIGHT) ==========
 
@@ -65,7 +65,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO - ĐÃ BỎ BLACKOUT DELAY ==========
+# ========== MÀN HÌNH INTRO - ĐÃ SỬA LỖI VỊ TRÍ ẢNH RECONSTRUCT ==========
 
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
@@ -159,6 +159,7 @@ def intro_screen(is_mobile=False):
             /* Bỏ background-image ở đây để JS gán cứng */
             background-image: none !important; 
             opacity: 1 !important;
+            /* Bỏ background-position ở đây để JS gán cứng */
             background-position: 0 0 !important;
         }}
 
@@ -209,15 +210,17 @@ def intro_screen(is_mobile=False):
             const row = Math.floor(index / GRID_SIZE);
             const col = index % GRID_SIZE;
             
-            // Background position cho ảnh SHUTTER
-            shard.style.backgroundPosition = 'calc(-' + col + ' * 100vw / ' + GRID_SIZE + ') calc(-' + row + ' * 100vh / ' + GRID_SIZE + ')';
+            // Background position cho ảnh SHUTTER và sau này là ảnh BG
+            const bgPosition = 'calc(-' + col + ' * 100vw / ' + GRID_SIZE + ') calc(-' + row + ' * 100vh / ' + GRID_SIZE + ')';
+            shard.style.backgroundPosition = bgPosition;
             
             const randX = (Math.random() - 0.5) * 200; 
             const randY = (Math.random() - 0.5) * 200; 
             const randR = (Math.random() - 0.5) * 360; 
             const delay = Math.random() * 0.5; 
 
-            initialTransforms.push({{randX, randY, randR, delay}});
+            // Lưu trữ vị trí nền BAN ĐẦU
+            initialTransforms.push({{randX, randY, randR, delay, bgPosition}});
         }});
 
 
@@ -252,10 +255,12 @@ def intro_screen(is_mobile=False):
                 shatterOverlay.classList.add('reconstructing'); 
                 
                 shards.forEach((shard, index) => {{
-                    // *** GÁN BACKGROUND-IMAGE BẰNG JS VÀ DÙNG !IMPORTANT ***
-                    shard.style.setProperty('background-image', BG_B64_URL, 'important');
-                    
+                    // *** GÁN BACKGROUND-IMAGE VÀ BACKGROUND-POSITION BẰNG JS VÀ DÙNG !IMPORTANT ***
                     const t = initialTransforms[index];
+
+                    shard.style.setProperty('background-image', BG_B64_URL, 'important');
+                    shard.style.setProperty('background-position', t.bgPosition, 'important'); // <<< Khắc phục lỗi vị trí
+
                     const reverseDelay = RECONSTRUCT_DURATION - t.delay; 
                     
                     shard.style.transitionDelay = (Math.max(0, reverseDelay) + (Math.random() * 0.2)) + 's'; 
