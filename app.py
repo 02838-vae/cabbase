@@ -66,7 +66,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO - ĐÃ XÓA CHỮ TRÊN VIDEO ==========
+# ========== MÀN HÌNH INTRO - ĐÃ KHÔI PHỤC DÒNG CHỮ TRÊN VIDEO ==========
 
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
@@ -114,20 +114,27 @@ def intro_screen(is_mobile=False):
         }}
         audio {{ display: none; }}
         
-        /* Đã xóa #intro-text CSS, chỉ giữ lại placeholder HTML */
         #intro-text {{
             position: absolute; 
             top: 8%; 
             left: 50%; 
             transform: translate(-50%, 0);
-            /* Đặt opacity 0 để chữ biến mất */
-            opacity: 0;
             width: 90vw; text-align: center; color: #f8f4e3;
             font-size: clamp(22px, 6vw, 60px); font-weight: bold; font-family: 'Playfair Display', serif;
             background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
             background-size: 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             text-shadow: 0 0 15px rgba(255,255,230,0.4);
+            /* KHÔI PHỤC ANIMATION VÀ OPACITY */
+            animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards; 
             line-height: 1.2; word-wrap: break-word; z-index: 10;
+        }}
+        @keyframes lightSweep {{
+            0% {{ background-position: 200% 0%; }}
+            100% {{ background-position: -200% 0%; }}
+        }}
+        @keyframes fadeInOut {{
+            0% {{ opacity: 0; }} 20% {{ opacity: 1; }}
+            80% {{ opacity: 1; }} 100% {{ opacity: 0; }}
         }}
 
 
@@ -174,7 +181,7 @@ def intro_screen(is_mobile=False):
         <audio id='flySfx'>
             <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
         </audio>
-        <div id='intro-text'></div> 
+        <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div> 
 
         <div id='shatter-overlay'>
             {shards_html}
@@ -482,6 +489,7 @@ if not st.session_state.intro_done:
     <script>
     window.addEventListener("message", (event) => {
         if (event.data.type === "intro_done") {
+            // Sửa lỗi: Cần đảm bảo rằng Streamlit biết trạng thái đã thay đổi trước khi tải lại
             window.parent.location.reload(); 
         }
     });
