@@ -94,19 +94,18 @@ def intro_screen(is_mobile=False):
         }}
         #pre-load-bg {{ display: none; background-image: url("data:image/jpeg;base64,{bg_b64}"); }}
         
-        /* ĐIỀU CHỈNH CHÍNH: Thay đổi 'cover' thành 'contain' để video hiển thị trọn vẹn */
+        /* Cài đặt video hiển thị trọn vẹn (contain) và lấp đầy khoảng trống bằng màu đen */
         video {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            object-fit: contain; /* <--- ĐÃ SỬA: Video vừa vặn trong khung, không cắt xén */
-            background: black; /* Đảm bảo background video cũng là đen, lấp đầy 2 dải thừa */
+            object-fit: contain; /* <--- CHẾ ĐỘ FIT: Hiện thị trọn vẹn */
+            background: black; /* Lấp đầy khoảng trống bằng màu đen */
         }}
         
-        /* #static-frame cũng cần dùng 'contain' để ảnh tĩnh không bị cắt */
+        /* Ảnh tĩnh cũng dùng contain để khớp với video */
         #static-frame {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            object-fit: contain; /* <--- ĐÃ SỬA */
             background-image: url("data:image/jpeg;base64,{shutter_b64}");
-            background-size: contain; /* <--- ĐÃ SỬA: Ảnh tĩnh vừa vặn */
+            background-size: contain; /* <--- Ảnh tĩnh vừa vặn */
             background-repeat: no-repeat;
             background-position: center;
             opacity: 0; z-index: 20; transition: opacity 0.1s linear;
@@ -128,7 +127,7 @@ def intro_screen(is_mobile=False):
         @keyframes lightSweep {{ 0% {{ background-position: 200% 0%; }} 100% {{ background-position: -200% 0%; }} }}
         @keyframes fadeInOut {{ 0% {{ opacity: 0; }} 20% {{ opacity: 1; }} 80% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}
 
-        /* === STYLE HIỆU ỨNG TAN VỠ VÀ GHÉP LẠI (Giữ nguyên) === */
+        /* === STYLE HIỆU ỨNG TAN VỠ VÀ GHÉP LẠI === */
         #shatter-overlay {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: grid; grid-template-columns: repeat({GRID_SIZE}, 1fr); grid-template-rows: repeat({GRID_SIZE}, 1fr);
@@ -137,11 +136,10 @@ def intro_screen(is_mobile=False):
         }}
         .shard {{
             position: relative;
-            /* Background image giờ dùng 'contain' để khớp với video */
+            /* Shard cần dùng background-size: cover/100vw 100vh để chiếm toàn bộ màn hình, 
+               nếu không hiệu ứng tan vỡ sẽ chỉ xảy ra trong khu vực contain (phức tạp) */
             background-image: url("data:image/jpeg;base64,{shutter_b64}"); 
-            background-size: contain; /* <--- ĐÃ SỬA: Dùng contain */
-            background-repeat: no-repeat;
-            background-position: center;
+            background-size: 100vw 100vh; /* <--- Dùng COVER/FULL SCREEN cho hiệu ứng tan vỡ */
             transition: transform {SHATTER_DURATION}s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 1.5s ease-in-out; 
             opacity: 1; 
         }}
@@ -192,89 +190,24 @@ def intro_screen(is_mobile=False):
         let ended = false;
         let initialTransforms = []; 
 
+        // Khôi phục lại logic tính background-position ban đầu (dựa trên vw/vh)
         shards.forEach((shard, index) => {{
             const row = Math.floor(index / GRID_SIZE);
             const col = index % GRID_SIZE;
             
-            // Tính toán vị trí nền cho hiệu ứng tan vỡ (phải tính theo tỷ lệ contain mới chuẩn)
-            const vpWidth = window.innerWidth;
-            const vpHeight = window.innerHeight;
-            const videoRatio = vpWidth / vpHeight; // Tỷ lệ khung hình của viewport (giả sử là tỷ lệ của video)
+            // Tính toán background-position dựa trên kích thước viewport (cover)
+            shard.style.backgroundPosition = 'calc(-' + col + ' * 100vw / ' + GRID_SIZE + ') calc(-' + row + ' * 100vh / ' + GRID_SIZE + ')';
             
-            // Giả sử video PC có tỷ lệ 16:9 (1.777...)
-            // Tính toán kích thước ảo của video khi dùng 'contain'
-            let renderedWidth, renderedHeight;
-            if (videoRatio > 16/9) {{ // Nếu màn hình rộng hơn video (có dải đen 2 bên)
-                renderedHeight = vpHeight;
-                renderedWidth = vpHeight * (16/9); 
-            }} else {{ // Nếu màn hình hẹp hơn video (có dải đen trên dưới)
-                renderedWidth = vpWidth;
-                renderedHeight = vpWidth * (9/16);
-            }}
+            const randX = (Math.random() - 0.5) * 200; 
+            const randY = (Math.random() - 0.5) * 200; 
+            const randR = (Math.random() - 0.5) * 360; 
+            const delay = Math.random() * 0.5; 
 
-            const offsetX = (vpWidth - renderedWidth) / 2;
-            const offsetY = (vpHeight - renderedHeight) / 2;
-
-            // Tính toán vị trí background position cho shard (phức tạp hơn khi dùng contain, nhưng thử cách đơn giản trước)
-            // Lấy background size là 100% của khu vực chứa, để CSS xử lý 'contain'
-            shard.style.backgroundPosition = 'center'; // Giữ nguyên center cho contain
-            shard.style.backgroundSize = 'contain';
-
-            initialTransforms.push({{randX: (Math.random() - 0.5) * 200, 
-                                     randY: (Math.random() - 0.5) * 200, 
-                                     randR: (Math.random() - 0.5) * 360, 
-                                     delay: Math.random() * 0.5}});
+            initialTransforms.push({{randX, randY, randR, delay}});
         }});
-
-        // Cập nhật lại logic backgroundPosition cho shards sau khi biết kích thước
-        function updateShatterBackground() {{
-             const staticFrame = document.getElementById('static-frame');
-             const vpWidth = staticFrame.clientWidth;
-             const vpHeight = staticFrame.clientHeight;
-
-             // Giả định video là 16:9. Kích thước thật của ảnh khi dùng object-fit: contain
-             let contWidth, contHeight, xOffset, yOffset;
-             const videoAspect = 16 / 9; // Tỷ lệ video
-             const vpAspect = vpWidth / vpHeight;
-
-             if (vpAspect > videoAspect) {{
-                 // Màn hình rộng, dải đen hai bên
-                 contHeight = vpHeight;
-                 contWidth = vpHeight * videoAspect;
-                 xOffset = (vpWidth - contWidth) / 2;
-                 yOffset = 0;
-             }} else {{
-                 // Màn hình hẹp, dải đen trên dưới
-                 contWidth = vpWidth;
-                 contHeight = vpWidth / videoAspect;
-                 xOffset = 0;
-                 yOffset = (vpHeight - contHeight) / 2;
-             }}
-
-             shards.forEach((shard, index) => {{
-                 const row = Math.floor(index / GRID_SIZE);
-                 const col = index % GRID_SIZE;
-                 
-                 // Tính toán vị trí ảnh nền của mảnh vỡ trong khu vực contWidth x contHeight
-                 const bgSizeX = contWidth;
-                 const bgSizeY = contHeight;
-
-                 // Vị trí của góc trên trái của mảnh vỡ (tính bằng px)
-                 const shardPosX = col * (contWidth / GRID_SIZE) + xOffset;
-                 const shardPosY = row * (contHeight / GRID_SIZE) + yOffset;
-                 
-                 // background-position là vị trí góc trên trái của ảnh gốc (full) đặt tại góc trên trái của mảnh vỡ
-                 const bgPositionX = -shardPosX;
-                 const bgPositionY = -shardPosY;
-                 
-                 shard.style.backgroundPosition = `${bgPositionX}px ${bgPositionY}px`;
-                 shard.style.backgroundSize = `${bgSizeX}px ${bgSizeY}px`;
-             }});
-        }}
         
-        // Cần chạy updateShatterBackground khi iframe được tải và kích thước được xác định
-        window.addEventListener('load', updateShatterBackground);
-        window.addEventListener('resize', updateShatterBackground);
+        // Loại bỏ hàm updateShatterBackground và các listener gây lỗi
+        // ... (phần còn lại của JS giữ nguyên)
 
         function finishIntro() {{
             if (ended) return;
@@ -283,9 +216,6 @@ def intro_screen(is_mobile=False):
             // BƯỚC 0: Chuyển từ Video sang Ảnh tĩnh (shutter)
             vid.style.opacity = 0; 
             staticFrame.style.opacity = 1; 
-            
-            // Cập nhật lại vị trí các mảnh vỡ trước khi tan vỡ
-            updateShatterBackground();
             
             // BƯỚC 1: Bắt đầu Tan Vỡ (Shatter)
             setTimeout(() => {{ 
