@@ -70,7 +70,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO - ĐÃ SỬA ĐỂ HIỂN THỊ TIÊU ĐỀ SAU KHI GHÉP LẠI ==========
+# ========== MÀN HÌNH INTRO ==========
 
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
@@ -194,10 +194,8 @@ def intro_screen(is_mobile=False):
         .reconstructing .shard {{
             transform: translate(0, 0) rotate(0deg) scale(1) !important; 
             transition: transform {RECONSTRUCT_DURATION}s cubic-bezier(0.19, 1, 0.22, 1), opacity {RECONSTRUCT_DURATION}s ease-in-out; 
-            /* Bỏ background-image ở đây để JS gán cứng */
             background-image: none !important; 
             opacity: 1 !important;
-            /* Bỏ background-position ở đây để JS gán cứng */
             background-position: 0 0 !important;
         }}
 
@@ -367,16 +365,13 @@ def intro_screen(is_mobile=False):
     </body>
     </html>
     """
-    # Đặt height=None, width=None để iframe chiếm hết không gian được cung cấp bởi Streamlit
     components.html(intro_html, height=None, width=None, scrolling=False)
 
 
-# Hàm main_page không cần thiết cho tiêu đề/background nữa, chỉ để thêm content Streamlit
+# Hàm main_page để chứa các widget và nội dung Streamlit
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     
-    # Bạn có thể thêm các widget hoặc nội dung khác của Streamlit vào đây.
-    # Ví dụ:
     st.markdown(f"""
     <div style='position: absolute; top: 25vh; left: 50%; transform: translateX(-50%); width: 80%; text-align: center; color: white;'>
         <h2 style='color: #fff7d6; text-shadow: 0 0 10px rgba(0,0,0,0.5);'>Hệ thống đã sẵn sàng</h2>
@@ -388,9 +383,7 @@ def main_page(is_mobile=False):
 
 # ========== LUỒNG CHÍNH ==========
 
-
 hide_streamlit_ui()
-
 
 # 1. Xác định thiết bị
 if "is_mobile" not in st.session_state:
@@ -407,7 +400,7 @@ if "is_mobile" not in st.session_state:
 
 # 2. Xử lý chuyển cảnh
 if "intro_state" not in st.session_state:
-    st.session_state.intro_state = 'RUNNING' # Trạng thái: RUNNING (đang intro), COMPLETE (đã hoàn thành intro)
+    st.session_state.intro_state = 'RUNNING' 
 
 
 if st.session_state.intro_state == 'RUNNING':
@@ -418,42 +411,32 @@ if st.session_state.intro_state == 'RUNNING':
     <script>
     window.addEventListener("message", (event) => {
         if (event.data.type === "intro_done_no_reload") {
-            // Sau khi iframe hoàn tất chuyển cảnh, thông báo cho Streamlit rerender 
-            // để hiển thị nội dung chính.
-            // Do không thể set session state trực tiếp, ta dùng một trick (hoặc reload nhẹ)
-            // Tuy nhiên, vì mục tiêu là KHÔNG RELOAD, ta chỉ set state và rerender.
-            
-            // Dùng AJAX/Fetch để cập nhật trạng thái session state (cần server-side logic phức tạp)
-            // Hoặc đơn giản là dùng `st.rerun()` sau khi cập nhật state.
-            
-            // *** PHƯƠNG ÁN TỐT NHẤT TRONG STREAMLIT VẪN LÀ GỬI THÔNG BÁO VÀ KÍCH HOẠT RERUN ***
-            // Trong môi trường Streamlit, cập nhật trạng thái và rerun là cách duy nhất.
-            // Giả sử có một API để set state từ JS, nhưng ta sẽ dùng logic fallback:
-            
-            // Kích hoạt một sự kiện để Streamlit chạy lại
+            // Kích hoạt một sự kiện để Streamlit chạy lại bằng cách thêm query param
             const target_url = new URL(window.location.href);
-            if (!target_url.searchParams.has('intro_done')) {
+            if (target_url.searchParams.get('intro_done') !== '1') {
                 target_url.searchParams.set('intro_done', '1');
-                window.location.href = target_url.toString(); // **Tái kích hoạt Streamlit, không phải reload iframe**
+                window.location.href = target_url.toString(); 
             }
         }
     });
     </script>
     """, unsafe_allow_html=True)
     
-    # Kiểm tra URL Query Params (giả sử đã reload nhẹ để cập nhật state)
-    if st.experimental_get_query_params().get('intro_done', ['0'])[0] == '1':
+    # *** ĐÃ THAY THẾ st.experimental_get_query_params bằng st.query_params ***
+    
+    # Kiểm tra URL Query Params để cập nhật state
+    if 'intro_done' in st.query_params and st.query_params['intro_done'] == '1':
         st.session_state.intro_state = 'COMPLETE'
-        # Xóa param để tránh lặp lại
-        st.experimental_set_query_params(intro_done=None)
+        # Xóa param sau khi đọc
+        del st.query_params['intro_done']
         st.rerun()
 
     # Thời gian chờ fallback (18s) - nếu intro bị kẹt
     time.sleep(18) 
-    st.session_state.intro_state = 'COMPLETE'
-    st.rerun()
+    if st.session_state.intro_state == 'RUNNING':
+        st.session_state.intro_state = 'COMPLETE'
+        st.rerun()
 
 else:
     # Trạng thái COMPLETE: Hiển thị nội dung Streamlit chính
-    # Background và Tiêu đề đã được giữ lại trong iframe của intro_screen
     main_page(st.session_state.is_mobile)
