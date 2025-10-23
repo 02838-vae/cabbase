@@ -35,9 +35,11 @@ BLACKOUT_DELAY = 0.2    # Thời gian màn hình đen
 def hide_streamlit_ui():
     st.markdown("""
     <style>
+    /* Ẩn các phần tử Streamlit UI */
     [data-testid="stToolbar"], header, footer, iframe[title*="keyboard"], [tabindex="0"][aria-live] {
         display: none !important;
     }
+    /* Đảm bảo ứng dụng Streamlit chiếm 100% viewport */
     .stApp, .main, .block-container {
         padding: 0 !important;
         margin: 0 !important;
@@ -88,11 +90,12 @@ def intro_screen(is_mobile=False):
             margin: 0; padding: 0;
             overflow: hidden;
             background: black;
-            height: 100%;
+            height: 100%; /* Giữ nguyên 100% để kế thừa từ iframe cha */
         }}
         #pre-load-bg {{ display: none; background-image: url("data:image/jpeg;base64,{bg_b64}"); }}
         video {{
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            object-fit: cover; /* Đảm bảo video lấp đầy toàn bộ khu vực */
         }}
         #static-frame {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
@@ -268,7 +271,10 @@ def intro_screen(is_mobile=False):
     </body>
     </html>
     """
-    components.html(intro_html, height=800, scrolling=False)
+    
+    # DÒNG ĐÃ SỬA: Tăng chiều cao của iframe (components.html) lên 
+    # một giá trị lớn để tránh giới hạn chiều cao thực tế của viewport.
+    components.html(intro_html, height=2000, scrolling=False) 
 
 
 # ========== TRANG CHÍNH (Giữ nguyên) ==========
@@ -355,6 +361,7 @@ if "is_mobile" not in st.session_state:
         st.session_state.is_mobile = not ua.is_pc
         st.rerun() 
     else:
+        # Nếu không lấy được userAgent ngay lập tức, cần chờ hoặc đặt mặc định
         st.info("Đang xác định thiết bị...")
         time.sleep(1) 
         st.stop()
@@ -368,6 +375,7 @@ if not st.session_state.intro_done:
     
     st.markdown("""
     <script>
+    // Listener nhận thông báo 'intro_done' từ iframe và tải lại trang chính
     window.addEventListener("message", (event) => {
         if (event.data.type === "intro_done") {
             window.parent.location.reload(); 
