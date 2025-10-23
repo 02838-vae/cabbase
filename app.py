@@ -29,6 +29,7 @@ GRID_SIZE = 8
 SHATTER_DURATION = 1.8  # Thời gian hiệu ứng tan vỡ (giây)
 RECONSTRUCT_DURATION = 2.5 # Thời gian ghép lại (giây)
 BLACKOUT_DELAY = 0.0    # Đã bỏ độ trễ màn hình đen
+MUSIC_SRC = "https://s3-us-west-2.amazonaws.com/s.cdpn.io/9473/new_year_dubstep_minimix.ogg" # Nguồn nhạc
 
 # ========== HÀM ẨN UI STREAMLIT (FIX MOBILE HEIGHT) ==========
 
@@ -65,7 +66,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO - ĐÃ SỬA LỖI VỊ TRÍ ẢNH RECONSTRUCT ==========
+# ========== MÀN HÌNH INTRO - ĐÃ SỬA LỖI VỊ TRÍ ẢNH RECONSTRUCT VÀ BỎ DELAY ==========
 
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
@@ -259,7 +260,7 @@ def intro_screen(is_mobile=False):
                     const t = initialTransforms[index];
 
                     shard.style.setProperty('background-image', BG_B64_URL, 'important');
-                    shard.style.setProperty('background-position', t.bgPosition, 'important'); // <<< Khắc phục lỗi vị trí
+                    shard.style.setProperty('background-position', t.bgPosition, 'important'); // Khắc phục lỗi vị trí
 
                     const reverseDelay = RECONSTRUCT_DURATION - t.delay; 
                     
@@ -308,8 +309,7 @@ def intro_screen(is_mobile=False):
     components.html(intro_html, height=800, scrolling=False)
 
 
-# ========== TRANG CHÍNH ==========
-
+# ========== TRANG CHÍNH (ĐÃ THÊM THANH PHÁT NHẠC) ==========
 
 def main_page(is_mobile=False):
     hide_streamlit_ui()
@@ -377,9 +377,37 @@ def main_page(is_mobile=False):
         from {{ opacity: 0; transform: scale(0.97); }}
         to {{ opacity: 1; transform: scale(1); }}
     }}
+
+    /* === STYLE CHO THANH PHÁT NHẠC === */
+    .music-player-overlay {{
+        position: fixed; /* Giữ cố định trên màn hình */
+        bottom: 20px;
+        left: 20px;
+        z-index: 1000; /* Đảm bảo nó nằm trên tất cả */
+        width: clamp(250px, 40vw, 350px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+        border-radius: 8px;
+        background: rgba(30, 30, 30, 0.85); /* Nền tối */
+        backdrop-filter: blur(5px);
+        padding: 10px;
+    }}
+    .music-player-overlay audio {{
+        width: 100%;
+        outline: none;
+        /* Chuyển màu thanh audio sang sáng để dễ nhìn trên nền tối */
+        filter: invert(100%) sepia(0%) saturate(7500%) hue-rotate(180deg) brightness(100%) contrast(100%); 
+    }}
     </style>
 
     <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
+    
+    <div class="music-player-overlay">
+        <audio controls loop autoplay>
+            <source src="{MUSIC_SRC}" type="audio/ogg">
+            Trình duyệt của bạn không hỗ trợ audio tag.
+        </audio>
+    </div>
+
     """, unsafe_allow_html=True)
 
 
