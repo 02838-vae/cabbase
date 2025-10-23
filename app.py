@@ -22,6 +22,7 @@ GRID_SIZE = 8
 SHATTER_DURATION = 1.8
 BLACKOUT_DELAY = 0.2
 
+
 # ========== ẨN UI STREAMLIT ==========
 def hide_streamlit_ui():
     st.markdown("""
@@ -40,7 +41,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO (CHỈ CÒN HIỆU ỨNG TAN VỠ + FADE CINEMATIC) ==========
+# ========== MÀN HÌNH INTRO ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
@@ -69,74 +70,104 @@ def intro_screen(is_mobile=False):
     <html>
     <head>
         <meta name='viewport' content='width=device-width, initial-scale=1.0'>
-       <style>
-     html, body {
-         margin: 0 !important;
-         padding: 0 !important;
-         overflow: hidden !important;
-         background: black !important;
-         width: 100vw !important;
-         height: 100vh !important;
-     }
+        <style>
+        html, body {{
+            margin: 0 !important;
+            padding: 0 !important;
+            overflow: hidden !important;
+            background: black !important;
+            width: 100vw !important;
+            height: 100vh !important;
+        }}
 
-video {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    object-fit: cover !important;
-    background: black !important;
-}
-
-        #pre-load-bg {{ display: none; background-image: url("data:image/jpeg;base64,{bg_b64}"); }}
         video {{
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            width: 100vw !important;
+            height: 100vh !important;
+            object-fit: cover !important;
+            background: black !important;
         }}
+
         #static-frame {{
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
+            position: absolute; top: 0; left: 0;
+            width: 100%; height: 100%;
             background-image: url("data:image/jpeg;base64,{shutter_b64}");
-            background-size: cover; opacity: 0; z-index: 20; transition: opacity 0.1s linear;
+            background-size: cover;
+            opacity: 0;
+            z-index: 20;
+            transition: opacity 0.1s linear;
         }}
+
         audio {{ display: none; }}
+
         #intro-text {{
             position: absolute;
             top: 8%;
             left: 50%;
             transform: translate(-50%, 0);
-            width: 90vw; text-align: center; color: #f8f4e3;
-            font-size: clamp(22px, 6vw, 60px); font-weight: bold; font-family: 'Playfair Display', serif;
+            width: 90vw;
+            text-align: center;
+            color: #f8f4e3;
+            font-size: clamp(22px, 6vw, 60px);
+            font-weight: bold;
+            font-family: 'Playfair Display', serif;
             background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
-            background-size: 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-size: 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             text-shadow: 0 0 15px rgba(255,255,230,0.4);
             animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards;
             z-index: 10;
         }}
-        @keyframes lightSweep {{ 0% {{ background-position: 200% 0%; }} 100% {{ background-position: -200% 0%; }} }}
-        @keyframes fadeInOut {{ 0% {{ opacity: 0; }} 20% {{ opacity: 1; }} 80% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}
+
+        @keyframes lightSweep {{
+            0% {{ background-position: 200% 0%; }}
+            100% {{ background-position: -200% 0%; }}
+        }}
+
+        @keyframes fadeInOut {{
+            0% {{ opacity: 0; }}
+            20% {{ opacity: 1; }}
+            80% {{ opacity: 1; }}
+            100% {{ opacity: 0; }}
+        }}
 
         #shatter-overlay {{
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            display: grid; grid-template-columns: repeat({GRID_SIZE}, 1fr); grid-template-rows: repeat({GRID_SIZE}, 1fr);
-            opacity: 0; pointer-events: none; z-index: 30;
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: grid;
+            grid-template-columns: repeat({GRID_SIZE}, 1fr);
+            grid-template-rows: repeat({GRID_SIZE}, 1fr);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 30;
         }}
+
         .shard {{
             position: relative;
             background-image: url("data:image/jpeg;base64,{shutter_b64}");
             background-size: 100vw 100vh;
-            transition: transform {SHATTER_DURATION}s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 1.5s ease-in-out;
+            transition: transform {SHATTER_DURATION}s cubic-bezier(0.68, -0.55, 0.27, 1.55),
+                        opacity 1.5s ease-in-out;
             opacity: 1;
         }}
 
         #black-fade {{
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: black; opacity: 1; z-index: 40;
-            transition: opacity 1s ease-in-out; pointer-events: none;
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: black;
+            opacity: 1;
+            z-index: 40;
+            transition: opacity 1s ease-in-out;
+            pointer-events: none;
         }}
         </style>
     </head>
     <body>
-        <div id="pre-load-bg"></div>
         <video id='introVid' autoplay muted playsinline>
             <source src='data:video/mp4;base64,{video_b64}' type='video/mp4'>
         </video>
@@ -163,7 +194,8 @@ video {
         shards.forEach((shard, index) => {{
             const row = Math.floor(index / GRID_SIZE);
             const col = index % GRID_SIZE;
-            shard.style.backgroundPosition = 'calc(-' + col + ' * 100vw / ' + GRID_SIZE + ') calc(-' + row + ' * 100vh / ' + GRID_SIZE + ')';
+            shard.style.backgroundPosition =
+                'calc(-' + col + ' * 100vw / ' + GRID_SIZE + ') calc(-' + row + ' * 100vh / ' + GRID_SIZE + ')';
             const randX = (Math.random() - 0.5) * 200;
             const randY = (Math.random() - 0.5) * 200;
             const randR = (Math.random() - 0.5) * 360;
@@ -174,7 +206,6 @@ video {
         function finishIntro() {{
             if (ended) return;
             ended = true;
-
             vid.style.opacity = 0;
             staticFrame.style.opacity = 1;
 
@@ -190,7 +221,6 @@ video {
                 }});
             }}, 10);
 
-            // Sau khi tan vỡ xong, cinematic fade vào trang chính
             setTimeout(() => {{
                 blackFade.style.transition = "opacity 2s ease-in-out";
                 blackFade.style.opacity = 1;
@@ -225,10 +255,10 @@ video {
     </body>
     </html>
     """
-    components.html(intro_html, height=800, scrolling=False)
+    components.html(intro_html, height=900, scrolling=False)
 
 
-# ========== TRANG CHÍNH VỚI HIỆU ỨNG CINEMATIC ==========
+# ========== TRANG CHÍNH ==========
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -259,61 +289,6 @@ def main_page(is_mobile=False):
         0% {{ opacity: 0; transform: scale(1.05); filter: blur(8px); }}
         50% {{ opacity: 1; transform: scale(1.02); filter: blur(2px); }}
         100% {{ opacity: 1; transform: scale(1.0); filter: blur(0px); }}
-    }}
-
-    .stApp::before {{
-        content: "";
-        position: absolute;
-        top: 0; left: -50%;
-        width: 200%; height: 100%;
-        background: linear-gradient(120deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0) 70%);
-        transform: skewX(-15deg);
-        animation: lightSweepBg 6s ease-in-out 1;
-        pointer-events: none;
-        z-index: 1;
-    }}
-    @keyframes lightSweepBg {{
-        0% {{ left: -80%; opacity: 0; }}
-        40% {{ opacity: 0.3; }}
-        80% {{ left: 20%; opacity: 0; }}
-        100% {{ left: 100%; opacity: 0; }}
-    }}
-
-    .stApp::after {{
-        content: "";
-        position: absolute;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background: radial-gradient(circle, rgba(0,0,0,0) 60%, rgba(0,0,0,0.35) 100%);
-        pointer-events: none;
-        z-index: 2;
-        opacity: 0.8;
-    }}
-
-    .welcome {{
-        position: absolute;
-        top: 8%;
-        width: 100%;
-        text-align: center;
-        font-size: clamp(30px, 5vw, 65px);
-        color: #fff5d7;
-        font-family: 'Playfair Display', serif;
-        text-shadow: 0 0 18px rgba(0,0,0,0.65), 0 0 30px rgba(255,255,180,0.25);
-        background: linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%);
-        background-size: 200%;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: textLight 10s linear infinite, fadeIn 2.5s ease-out forwards;
-        letter-spacing: 2px;
-        z-index: 3;
-    }}
-    @keyframes textLight {{
-        0% {{ background-position: 200% 0%; }}
-        100% {{ background-position: -200% 0%; }}
-    }}
-    @keyframes fadeIn {{
-        from {{ opacity: 0; transform: translateY(15px); }}
-        to {{ opacity: 1; transform: translateY(0); }}
     }}
     </style>
 
