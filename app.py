@@ -12,11 +12,11 @@ VIDEO_PC = "airplane.mp4"
 VIDEO_MOBILE = "mobile.mp4"
 SFX = "plane_fly.mp3"
 
-# File ảnh tĩnh cho hiệu ứng SHATTER/RECONSTRUCT (Ảnh chụp từ frame cuối video)
+# File ảnh tĩnh cho hiệu ứng SHATTER (Ảnh chụp từ frame cuối video)
 SHUTTER_PC = "airplane_shutter.jpg"
 SHUTTER_MOBILE = "mobile_shutter.jpg"
 
-# File ảnh nền của trang chính (sẽ hiện ra sau khi ghép lại)
+# File ảnh nền của trang chính (Dùng cho quá trình RECONSTRUCT và Trang Chính)
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 
@@ -79,8 +79,10 @@ def intro_screen(is_mobile=False):
             video_b64 = base64.b64encode(f.read()).decode()
         with open(SFX, "rb") as a:
             audio_b64 = base64.b64encode(a.read()).decode()
+        # Ảnh tĩnh SHUTTER cho pha TAN VỠ
         with open(shutter_file, "rb") as s:
             shutter_b64 = base64.b64encode(s.read()).decode()
+        # Ảnh nền BG cho pha GHÉP LẠI (cabbase.jpg / mobile.jpg)
         with open(bg_file, "rb") as b:
             bg_b64 = base64.b64encode(b.read()).decode()
             
@@ -144,10 +146,9 @@ def intro_screen(is_mobile=False):
         }}
         .shard {{
             position: relative;
-            /* DÙNG ẢNH SHUTTER LÀM NỀN BAN ĐẦU */
+            /* DÙNG ẢNH SHUTTER LÀM NỀN BAN ĐẦU (cho pha tan vỡ) */
             background-image: url("data:image/jpeg;base64,{shutter_b64}"); 
             background-size: 100vw 100vh;
-            /* Dùng SHATTER_DURATION cho transition */
             transition: transform {SHATTER_DURATION}s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 1.5s ease-in-out; 
             opacity: 1; 
         }}
@@ -155,11 +156,10 @@ def intro_screen(is_mobile=False):
         /* Khi ghép lại: Chuyển sang ảnh nền chính và reset transform */
         .reconstructing .shard {{
             transform: translate(0, 0) rotate(0deg) scale(1) !important; 
-            /* Dùng RECONSTRUCT_DURATION cho transition */
             transition: transform {RECONSTRUCT_DURATION}s cubic-bezier(0.19, 1, 0.22, 1), opacity {RECONSTRUCT_DURATION}s ease-in-out; 
+            /* SỬ DỤNG ẢNH BG CHÍNH ĐỂ GHÉP LẠI (ĐÃ FIX) */
             background-image: url("data:image/jpeg;base64,{bg_b64}") !important; 
             opacity: 1 !important;
-            /* ĐẢM BẢO BACKGROUND POSITION VỀ 0 0 CHO ẢNH NỀN CHÍNH */
             background-position: 0 0 !important;
         }}
 
@@ -209,12 +209,13 @@ def intro_screen(is_mobile=False):
             const row = Math.floor(index / GRID_SIZE);
             const col = index % GRID_SIZE;
             
+            // Background position cho ảnh SHUTTER
             shard.style.backgroundPosition = 'calc(-' + col + ' * 100vw / ' + GRID_SIZE + ') calc(-' + row + ' * 100vh / ' + GRID_SIZE + ')';
             
             const randX = (Math.random() - 0.5) * 200; 
             const randY = (Math.random() - 0.5) * 200; 
             const randR = (Math.random() - 0.5) * 360; 
-            const delay = Math.random() * 0.5; // Delay ngẫu nhiên tối đa 0.5s cho hiệu ứng tan vỡ
+            const delay = Math.random() * 0.5; 
 
             initialTransforms.push({{randX, randY, randR, delay}});
         }});
@@ -254,14 +255,9 @@ def intro_screen(is_mobile=False):
                 shatterOverlay.classList.add('reconstructing'); 
                 
                 shards.forEach((shard, index) => {{
-                    // KHẮC PHỤC LỖI: Tính toán delay ngược
                     const t = initialTransforms[index];
-                    // Tính thời gian cần thiết để mảnh này quay về:
-                    // Tổng thời gian Reconstruct - delay ban đầu (max 0.5s)
                     const reverseDelay = RECONSTRUCT_DURATION - t.delay; 
                     
-                    // Thêm một chút jittering (0 đến 0.2s) để tránh bị delay âm nếu reverseDelay quá nhỏ
-                    // Đồng thời, sử dụng Math.max(0, ...) để đảm bảo delay không âm
                     shard.style.transitionDelay = (Math.max(0, reverseDelay) + (Math.random() * 0.2)) + 's'; 
                     shard.style.opacity = 1; 
                 }});
@@ -307,7 +303,7 @@ def intro_screen(is_mobile=False):
     components.html(intro_html, height=800, scrolling=False)
 
 
-# ========== TRANG CHÍNH (ĐÃ BỎ STARFALL) ==========
+# ========== TRANG CHÍNH ==========
 
 
 def main_page(is_mobile=False):
