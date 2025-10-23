@@ -26,9 +26,9 @@ st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 
 # Kích thước lưới và thời gian
 GRID_SIZE = 8
-SHATTER_DURATION = 1.8  # Thời gian hiệu ứng tan vỡ (giây)
+SHATTER_DURATION = 1.8   # Thời gian hiệu ứng tan vỡ (giây)
 RECONSTRUCT_DURATION = 2.5 # Thời gian ghép lại (giây)
-BLACKOUT_DELAY = 0.0    # Đã bỏ độ trễ màn hình đen
+BLACKOUT_DELAY = 0.0     # Đã bỏ độ trễ màn hình đen
 
 # ========== HÀM ẨN UI STREAMLIT (FIX MOBILE HEIGHT) ==========
 
@@ -135,7 +135,6 @@ def intro_screen(is_mobile=False):
             80% {{ opacity: 1; }} 100% {{ opacity: 0; }}
         }}
 
-
         /* === STYLE HIỆU ỨNG TAN VỠ VÀ GHÉP LẠI === */
         #shatter-overlay {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -163,7 +162,6 @@ def intro_screen(is_mobile=False):
             background-position: 0 0 !important;
         }}
 
-
         /* Lớp phủ màn hình đen */
         #black-fade {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -187,14 +185,12 @@ def intro_screen(is_mobile=False):
         
         <div id='black-fade'></div>
 
-
         <script>
         const GRID_SIZE = {GRID_SIZE};
         const SHATTER_DURATION = {js_shatter_duration}; // giây
         const RECONSTRUCT_DURATION = {js_reconstruct_duration}; // giây
         const BLACKOUT_DELAY = {js_blackout_delay}; // giây
         const BG_B64_URL = "url('data:image/jpeg;base64,{bg_b64}')"; // Lưu ảnh nền chính
-
 
         const vid = document.getElementById('introVid');
         const audio = document.getElementById('flySfx');
@@ -203,7 +199,6 @@ def intro_screen(is_mobile=False):
         const blackFade = document.getElementById('black-fade');
         let ended = false;
         let initialTransforms = []; 
-
 
         // 1. Tính toán vị trí nền và transforms ngẫu nhiên
         shards.forEach((shard, index) => {{
@@ -222,7 +217,6 @@ def intro_screen(is_mobile=False):
             // Lưu trữ vị trí nền BAN ĐẦU
             initialTransforms.push({{randX, randY, randR, delay, bgPosition}});
         }});
-
 
         function finishIntro() {{
             if (ended) return;
@@ -269,14 +263,12 @@ def intro_screen(is_mobile=False):
 
                 // 4. Thông báo hoàn thành sau khi ghép lại
                 setTimeout(() => {{
-                    window.parent.postMessage({{type: 'intro_done'}}, '*');
+                    // *** THAY ĐỔI TẠI ĐÂY: GỬI THÔNG BÁO VỀ APP CHÍNH MÀ KHÔNG RELOAD ***
+                    window.parent.postMessage({{type: 'intro_done'}}, '*'); 
                 }}, RECONSTRUCT_DURATION * 1000 + 500); 
 
-
             }}, RECONSTRUCT_START_DELAY); 
-
         }}
-
 
         // Logic play video/audio
         vid.addEventListener('canplay', () => {{
@@ -308,8 +300,7 @@ def intro_screen(is_mobile=False):
     components.html(intro_html, height=800, scrolling=False)
 
 
-# ========== TRANG CHÍNH ==========
-
+# ========== TRANG CHÍNH (CHỈ CÒN ẢNH NỀN) ==========
 
 def main_page(is_mobile=False):
     hide_streamlit_ui()
@@ -352,9 +343,22 @@ def main_page(is_mobile=False):
         from {{ opacity: 0; }}
         to {{ opacity: 1; }}
     }}
-    .welcome {{
+    /* ẨN CLASS CŨ (welcome) để dùng flying-title */
+    .welcome {{ display: none !important; }} 
+    </style>
+
+    """, unsafe_allow_html=True)
+
+
+# ========== HIỂN THỊ TIÊU ĐỀ BAY LÊN ==========
+def show_flying_title():
+    st.markdown("""
+    <style>
+    .flying-title {
         position: absolute;
-        top: 8%;
+        top: 85%; /* Vị trí bắt đầu: Gần dưới cùng */
+        left: 50%;
+        transform: translate(-50%, 0);
         width: 100%;
         text-align: center;
         font-size: clamp(30px, 5vw, 65px);
@@ -365,32 +369,39 @@ def main_page(is_mobile=False):
         background-size: 200%;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        animation: textLight 10s linear infinite, fadeIn 2s ease-in-out forwards;
         letter-spacing: 2px;
-        z-index: 3;
-    }}
-    @keyframes textLight {{
-        0% {{ background-position: 200% 0%; }}
-        100% {{ background-position: -200% 0%; }}
-    }}
-    @keyframes fadeIn {{
-        from {{ opacity: 0; transform: scale(0.97); }}
-        to {{ opacity: 1; transform: scale(1); }}
-    }}
-    </style>
+        z-index: 50; 
+        /* Hiệu ứng bay lên và hiệu ứng ánh sáng (bắt đầu sau 2s) */
+        animation: 
+            flyUp 2s ease-out forwards, 
+            textLight 10s linear infinite 2s; 
+        opacity: 0; /* Bắt đầu ẩn */
+    }
 
-    <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
+    @keyframes flyUp {
+        0% { top: 85%; opacity: 0; transform: translate(-50%, 0) scale(1.05); }
+        20% { opacity: 1; }
+        100% { top: 8%; opacity: 1; transform: translate(-50%, 0) scale(1); } /* Đích đến là vị trí 8% */
+    }
+
+    @keyframes textLight { 
+        0% { background-position: 200% 0%; }
+        100% { background-position: -200% 0%; }
+    }
+    </style>
+    
+    <div class="flying-title">TỔ BẢO DƯỠNG SỐ 1</div>
+
     """, unsafe_allow_html=True)
 
 
-# ========== LUỒNG CHÍNH ==========
-
+# ========== LUỒNG CHÍNH ĐÃ KHẮC PHỤC ==========
 
 hide_streamlit_ui()
 
-
-# 1. Xác định thiết bị
+# 1. Xác định thiết bị (Giữ nguyên)
 if "is_mobile" not in st.session_state:
+    # Lấy User Agent
     ua_string = st_javascript("window.navigator.userAgent;")
     if ua_string:
         ua = parse(ua_string)
@@ -401,30 +412,53 @@ if "is_mobile" not in st.session_state:
         time.sleep(1) 
         st.stop()
 
-
 # 2. Xử lý chuyển cảnh
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
+# **Tạo placeholder để chứa và xóa Intro**
+intro_placeholder = st.empty()
 
 if not st.session_state.intro_done:
-    intro_screen(st.session_state.is_mobile)
+    
+    with intro_placeholder.container():
+        intro_screen(st.session_state.is_mobile)
     
     # Script lắng nghe thông báo hoàn thành từ iframe
     st.markdown("""
     <script>
+    // Lắng nghe message từ iframe (intro_screen)
     window.addEventListener("message", (event) => {
         if (event.data.type === "intro_done") {
-            window.parent.location.reload(); 
+            // Đặt cờ trong session storage và gọi rerender
+            sessionStorage.setItem('introComplete', 'true');
+            // Kích hoạt lại Python script bằng cách giả lập một lần đọc st_javascript (sẽ thực hiện trong luồng python)
         }
     });
     </script>
     """, unsafe_allow_html=True)
 
-    # Thời gian chờ fallback (18s)
-    time.sleep(18) 
-    st.session_state.intro_done = True
-    st.rerun()
+    # Dùng st_javascript để kiểm tra cờ (vì không thể gọi st.rerun() trực tiếp từ JS event listener)
+    intro_complete_check = st_javascript("sessionStorage.getItem('introComplete');")
+
+    if intro_complete_check == 'true':
+        # Dọn dẹp session storage ngay lập tức
+        st_javascript("sessionStorage.removeItem('introComplete');")
+        st.session_state.intro_done = True
+        st.rerun()
+
+    # Thêm một chút delay để tránh lỗi lặp vô hạn và chờ st_javascript hoàn thành
+    time.sleep(0.1)
+    st.stop()
 
 else:
+    # Sau khi intro_done=True và RERUN:
+    
+    # 1. Xóa Intro
+    intro_placeholder.empty() 
+    
+    # 2. Hiển thị Trang Chính (ảnh nền)
     main_page(st.session_state.is_mobile)
+    
+    # 3. Hiển thị tiêu đề bay lên ngay lập tức (không cần tải lại trang)
+    show_flying_title()
