@@ -35,11 +35,9 @@ BLACKOUT_DELAY = 0.2    # Thời gian màn hình đen
 def hide_streamlit_ui():
     st.markdown("""
     <style>
-    /* Ẩn các phần tử Streamlit UI */
     [data-testid="stToolbar"], header, footer, iframe[title*="keyboard"], [tabindex="0"][aria-live] {
         display: none !important;
     }
-    /* Đảm bảo ứng dụng Streamlit chiếm 100% viewport */
     .stApp, .main, .block-container {
         padding: 0 !important;
         margin: 0 !important;
@@ -89,26 +87,17 @@ def intro_screen(is_mobile=False):
         html, body {{
             margin: 0; padding: 0;
             overflow: hidden;
-            background: black; /* Đảm bảo nền là màu đen */
-            height: 100%; 
+            background: black;
+            height: 100%;
         }}
         #pre-load-bg {{ display: none; background-image: url("data:image/jpeg;base64,{bg_b64}"); }}
-        
-        /* Cài đặt video hiển thị trọn vẹn (contain) và lấp đầy khoảng trống bằng màu đen */
         video {{
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            object-fit: contain; /* <--- CHẾ ĐỘ FIT: Hiện thị trọn vẹn */
-            background: black; /* Lấp đầy khoảng trống bằng màu đen */
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
         }}
-        
-        /* Ảnh tĩnh cũng dùng contain để khớp với video */
         #static-frame {{
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
             background-image: url("data:image/jpeg;base64,{shutter_b64}");
-            background-size: contain; /* <--- Ảnh tĩnh vừa vặn */
-            background-repeat: no-repeat;
-            background-position: center;
-            opacity: 0; z-index: 20; transition: opacity 0.1s linear;
+            background-size: cover; opacity: 0; z-index: 20; transition: opacity 0.1s linear;
         }}
         audio {{ display: none; }}
         #intro-text {{
@@ -127,19 +116,16 @@ def intro_screen(is_mobile=False):
         @keyframes lightSweep {{ 0% {{ background-position: 200% 0%; }} 100% {{ background-position: -200% 0%; }} }}
         @keyframes fadeInOut {{ 0% {{ opacity: 0; }} 20% {{ opacity: 1; }} 80% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}
 
-        /* === STYLE HIỆU ỨNG TAN VỠ VÀ GHÉP LẠI === */
+        /* === STYLE HIỆU ỨNG TAN VỠ VÀ GHÉP LẠI (Giữ nguyên) === */
         #shatter-overlay {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             display: grid; grid-template-columns: repeat({GRID_SIZE}, 1fr); grid-template-rows: repeat({GRID_SIZE}, 1fr);
             opacity: 0; pointer-events: none; z-index: 30; 
-            background: black; /* Đảm bảo lớp phủ cũng có nền đen */
         }}
         .shard {{
             position: relative;
-            /* Shard cần dùng background-size: cover/100vw 100vh để chiếm toàn bộ màn hình, 
-               nếu không hiệu ứng tan vỡ sẽ chỉ xảy ra trong khu vực contain (phức tạp) */
             background-image: url("data:image/jpeg;base64,{shutter_b64}"); 
-            background-size: 100vw 100vh; /* <--- Dùng COVER/FULL SCREEN cho hiệu ứng tan vỡ */
+            background-size: 100vw 100vh;
             transition: transform {SHATTER_DURATION}s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 1.5s ease-in-out; 
             opacity: 1; 
         }}
@@ -149,7 +135,6 @@ def intro_screen(is_mobile=False):
             transform: translate(0, 0) rotate(0deg) scale(1) !important; 
             transition: transform {RECONSTRUCT_DURATION}s cubic-bezier(0.19, 1, 0.22, 1), opacity {RECONSTRUCT_DURATION}s ease-in-out; 
             background-image: url("data:image/jpeg;base64,{bg_b64}") !important;
-            background-size: 100vw 100vh !important; /* Trở lại cover cho ảnh nền trang chính */
             opacity: 1 !important; 
         }}
 
@@ -190,12 +175,10 @@ def intro_screen(is_mobile=False):
         let ended = false;
         let initialTransforms = []; 
 
-        // Khôi phục lại logic tính background-position ban đầu (dựa trên vw/vh)
         shards.forEach((shard, index) => {{
             const row = Math.floor(index / GRID_SIZE);
             const col = index % GRID_SIZE;
             
-            // Tính toán background-position dựa trên kích thước viewport (cover)
             shard.style.backgroundPosition = 'calc(-' + col + ' * 100vw / ' + GRID_SIZE + ') calc(-' + row + ' * 100vh / ' + GRID_SIZE + ')';
             
             const randX = (Math.random() - 0.5) * 200; 
@@ -205,9 +188,6 @@ def intro_screen(is_mobile=False):
 
             initialTransforms.push({{randX, randY, randR, delay}});
         }});
-        
-        // Loại bỏ hàm updateShatterBackground và các listener gây lỗi
-        // ... (phần còn lại của JS giữ nguyên)
 
         function finishIntro() {{
             if (ended) return;
@@ -288,9 +268,7 @@ def intro_screen(is_mobile=False):
     </body>
     </html>
     """
-    
-    # Giữ nguyên giá trị lớn để iframe không giới hạn chiều cao
-    components.html(intro_html, height=2000, scrolling=False) 
+    components.html(intro_html, height=800, scrolling=False)
 
 
 # ========== TRANG CHÍNH (Giữ nguyên) ==========
@@ -377,7 +355,6 @@ if "is_mobile" not in st.session_state:
         st.session_state.is_mobile = not ua.is_pc
         st.rerun() 
     else:
-        # Nếu không lấy được userAgent ngay lập tức, cần chờ hoặc đặt mặc định
         st.info("Đang xác định thiết bị...")
         time.sleep(1) 
         st.stop()
@@ -391,7 +368,6 @@ if not st.session_state.intro_done:
     
     st.markdown("""
     <script>
-    // Listener nhận thông báo 'intro_done' từ iframe và tải lại trang chính
     window.addEventListener("message", (event) => {
         if (event.data.type === "intro_done") {
             window.parent.location.reload(); 
