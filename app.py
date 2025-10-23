@@ -4,11 +4,12 @@ import time
 import os
 
 # ==============================
-# 🔧 Đường dẫn tài nguyên
+# 🔧 Cấu hình tài nguyên theo thiết bị
 # ==============================
-INTRO_VIDEO = "assets/intro.mp4"
-BG_PC = "assets/background_pc.jpg"
-BG_MOBILE = "assets/background_mobile.jpg"
+VIDEO_PC = "airplane.mp4"
+VIDEO_MOBILE = "mobile.mp4"
+BG_PC = "cabbase.jpg"
+BG_MOBILE = "mobile.jpg"
 
 # ==============================
 # Ẩn giao diện Streamlit mặc định
@@ -30,11 +31,13 @@ def hide_streamlit_ui():
 # Hiệu ứng intro video
 # ==============================
 def intro_screen(is_mobile=False):
+    video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
+
     try:
-        with open(INTRO_VIDEO, "rb") as f:
+        with open(video_file, "rb") as f:
             video_b64 = base64.b64encode(f.read()).decode()
     except FileNotFoundError:
-        st.error("❌ Không tìm thấy file intro.mp4 trong thư mục assets/")
+        st.error(f"❌ Không tìm thấy file video: {video_file}")
         st.stop()
 
     st.markdown(f"""
@@ -71,7 +74,7 @@ def intro_screen(is_mobile=False):
     </script>
     """, unsafe_allow_html=True)
 
-    # Tạm dừng để video chạy xong (khoảng 2.5s)
+    # Đợi video chạy xong (giả định 2.5–3s)
     time.sleep(2.5)
 
 # ==============================
@@ -79,12 +82,12 @@ def intro_screen(is_mobile=False):
 # ==============================
 def main_page(is_mobile=False):
     hide_streamlit_ui()
-    bg = BG_MOBILE if is_mobile else BG_PC
+    bg_file = BG_MOBILE if is_mobile else BG_PC
     try:
-        with open(bg, "rb") as f:
+        with open(bg_file, "rb") as f:
             bg_b64 = base64.b64encode(f.read()).decode()
-    except FileNotFoundError as e:
-        st.error(f"Lỗi: Không tìm thấy file tài nguyên: {e.filename}")
+    except FileNotFoundError:
+        st.error(f"❌ Không tìm thấy file nền: {bg_file}")
         st.stop()
 
     st.markdown(f"""
@@ -137,19 +140,16 @@ def main_page(is_mobile=False):
         overflow: hidden;
     }}
 
-    /* Hiệu ứng gradient chuyển động */
     @keyframes textGlow {{
         0% {{ background-position: 200% 0%; }}
         100% {{ background-position: -200% 0%; }}
     }}
 
-    /* Hiệu ứng xuất hiện mượt */
     @keyframes fadeIn {{
         from {{ opacity: 0; transform: translate(-50%, 15px); }}
         to {{ opacity: 1; transform: translate(-50%, 0); }}
     }}
 
-    /* Ánh sáng quét ngang chữ */
     .welcome::before {{
         content: "";
         position: absolute;
@@ -180,8 +180,10 @@ def main_page(is_mobile=False):
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
+# 🔹 Dùng API mới của Streamlit (thay experimental)
 if "is_mobile" not in st.session_state:
-    st.session_state.is_mobile = st.experimental_get_query_params().get("mobile", ["false"])[0] == "true"
+    params = st.query_params
+    st.session_state.is_mobile = params.get("mobile", ["false"])[0] == "true"
 
 if not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
