@@ -37,7 +37,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO KHÔNG CÓ HIỆU ỨNG TAN VỠ ==========
+# ========== MÀN HÌNH INTRO KHÔNG HIỆU ỨNG, CHUYỂN NGAY ==========
 
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
@@ -134,6 +134,7 @@ def intro_screen(is_mobile=False):
             audio.play().catch(() => console.log('Autoplay âm thanh bị chặn'));
         }});
 
+        // Cho phép click để bật âm thanh nếu trình duyệt chặn autoplay
         document.addEventListener('click', () => {{
             vid.muted = false;
             vid.play();
@@ -142,8 +143,13 @@ def intro_screen(is_mobile=False):
             audio.play().catch(()=>{{}});
         }}, {{once:true}});
 
-        vid.addEventListener('ended', finishIntro);
-        setTimeout(finishIntro, 9000); 
+        // Khi video kết thúc -> chuyển NGAY
+        vid.addEventListener('ended', () => {{
+            finishIntro();
+            setTimeout(() => {{
+                window.parent.location.reload();
+            }}, 10);
+        }});
         </script>
     </body>
     </html>
@@ -176,7 +182,7 @@ def main_page(is_mobile=False):
         padding: 0 !important;
         position: relative;
         filter: brightness(1.05) contrast(1.1) saturate(1.05);
-        animation: fadeInBg 0.5s ease-in-out forwards; 
+        animation: fadeInBg 0.3s ease-in-out forwards; 
     }}
     .stApp::after {{
         content: "";
@@ -204,7 +210,7 @@ def main_page(is_mobile=False):
         background-size: 200%;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        animation: textLight 10s linear infinite, fadeIn 1s ease-in-out forwards; 
+        animation: textLight 10s linear infinite, fadeIn 0.6s ease-in-out forwards; 
         letter-spacing: 2px;
         z-index: 3;
     }}
@@ -242,19 +248,5 @@ if "intro_done" not in st.session_state:
 
 if not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
-    
-    st.markdown("""
-    <script>
-    window.addEventListener("message", (event) => {
-        if (event.data.type === "intro_done") {
-            window.parent.location.reload(); 
-        }
-    });
-    </script>
-    """, unsafe_allow_html=True)
-
-    time.sleep(15)
-    st.session_state.intro_done = True
-    st.rerun()
 else:
     main_page(st.session_state.is_mobile)
