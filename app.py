@@ -38,21 +38,19 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO ĐÃ BỎ LOAD_DELAY ==========
+# ========== MÀN HÌNH INTRO ĐÃ DỌN DẸP ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
-    shutter_file = SHUTTER_MOBILE if is_mobile else SHUTTER_PC
     bg_file = BG_MOBILE if is_mobile else BG_PC
     
-    # ... (Đọc file và mã hóa Base64 giữ nguyên) ...
+    # ... (Đọc file và mã hóa Base64) ...
     try:
         with open(video_file, "rb") as f:
             video_b64 = base64.b64encode(f.read()).decode()
         with open(SFX, "rb") as a:
             audio_b64 = base64.b64encode(a.read()).decode()
-        with open(shutter_file, "rb") as s:
-            shutter_b64 = base64.b64encode(s.read()).decode()
+        # Đã xóa mã đọc file shutter/shutter_b64
         with open(bg_file, "rb") as b:
             bg_b64 = base64.b64encode(b.read()).decode()
             
@@ -60,10 +58,14 @@ def intro_screen(is_mobile=False):
         st.error(f"Lỗi: Không tìm thấy file tài nguyên. Vui lòng kiểm tra: {e.filename}")
         st.stop()
     
-    shards_html = "".join([f"<div class='shard' id='shard-{i}'></div>" for i in range(GRID_SIZE * GRID_SIZE)])
+    # Đã xóa `shards_html`
+    
+    # BẮT ĐẦU CHUỖI HTML VÀ SỬA LỖI SYNTAX
+    intro_html = f"""
     <html>
     <head>
         <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+        <link href='https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap' rel='stylesheet'>
         <style>
         html, body {{
             margin: 0; padding: 0;
@@ -71,13 +73,13 @@ def intro_screen(is_mobile=False):
             background: black;
             height: 100%;
         }}
-        #pre-load-bg {{ display: none; background-image: url("data:image/jpeg;base64,{bg_b64}"); }}
+        /* Đã xóa #pre-load-bg vì không dùng trong logic chuyển cảnh */
         video {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
         }}
         #static-frame {{
+            /* Đã xóa background-image: url("data:image/jpeg;base64,{shutter_b64}"); */
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
-            background-image: url("data:image/jpeg;base64,{shutter_b64}");
             background-size: cover; opacity: 0; z-index: 20; transition: opacity 0.1s linear;
         }}
         audio {{ display: none; }}
@@ -97,35 +99,68 @@ def intro_screen(is_mobile=False):
         @keyframes lightSweep {{ 0% {{ background-position: 200% 0%; }} 100% {{ background-position: -200% 0%; }} }}
         @keyframes fadeInOut {{ 0% {{ opacity: 0; }} 20% {{ opacity: 1; }} 80% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}
 
-    
+        /* Thêm các phần tử cần thiết cho JS */
+        #black-fade {{
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 100;
+            transition: opacity 1s ease-in-out; opacity: 1;
+        }}
+        </style>
+    </head>
+    <body>
+        <video id="intro-video" muted playsinline webkit-playsinline>
+            <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
+        </video>
+        <audio id="intro-audio" preload="auto">
+            <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
+        </audio>
+        <div id="static-frame"></div>
+        <div id="intro-text">CABBASE<br>MAINTENANCE<br>SQUAD 1</div>
+        <div id="black-fade"></div>
+
+        <script>
+        const vid = document.getElementById('intro-video');
+        const audio = document.getElementById('intro-audio');
+        const blackFade = document.getElementById('black-fade');
+        // const staticFrame = document.getElementById('static-frame'); // Không cần dùng nếu không có shutter
+        
+        function finishIntro() {{
+            vid.pause();
+            audio.pause();
+            
+            // Chuyển trực tiếp sang trang chính Streamlit
+            window.parent.postMessage({{ type: "intro_done" }}, "*");
+        }}
+
         // Logic play video/audio
         vid.addEventListener('canplay', () => {{
             vid.play().catch(() => console.log('Autoplay bị chặn'));
-            blackFade.style.opacity = 0; 
+            blackFade.style.opacity = 0; // Tắt màn hình đen khi video có thể chơi
         }});
         vid.addEventListener('play', () => {{
             audio.volume = 1.0;
             audio.currentTime = 0;
             audio.play().catch(() => console.log('Autoplay âm thanh bị chặn'));
         }});
+        
+        // Xử lý click để vượt qua giới hạn Autoplay
         document.addEventListener('click', () => {{
             vid.muted = false;
             vid.play();
             audio.volume = 1.0;
             audio.currentTime = 0;
             audio.play().catch(()=>{{}}); 
-            blackFade.style.opacity = 0; 
+            blackFade.style.opacity = 0; // Đảm bảo màn hình đen tắt
         }}, {{once:true}});
 
         vid.addEventListener('ended', finishIntro);
+        
+        // Fallback: Chuyển sau 9 giây nếu sự kiện 'ended' không hoạt động
         setTimeout(finishIntro, 9000); 
-
-        blackFade.style.opacity = 1;
 
         </script>
     </body>
     </html>
-    """
+    """ # Đóng chuỗi f-string
     components.html(intro_html, height=800, scrolling=False)
 
 
@@ -234,6 +269,7 @@ if not st.session_state.intro_done:
     </script>
     """, unsafe_allow_html=True)
 
+    # Chờ 15s để video có thể chạy, sau đó ép chuyển trang nếu JS không gọi reload (Fallback)
     time.sleep(15) 
     st.session_state.intro_done = True
     st.rerun()
