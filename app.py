@@ -63,7 +63,6 @@ st.markdown(font_links, unsafe_allow_html=True)
 
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
-# ĐÃ TỐI ƯU HÓA CSS MUSIC PLAYER
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -204,41 +203,33 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === MUSIC PLAYER TÙY CHỈNH (HIỆN NGAY) === */
+/* === MUSIC PLAYER TỐI GIẢN (CHỈ NÚT) === */
 #music-player-container {{
     position: fixed;
     top: 17vh; 
     left: 50%;
     transform: translateX(-50%);
     z-index: 30;
-    padding: 8px 15px;
-    background-color: rgba(0, 0, 0, 0.6); /* Đậm hơn để dễ nhìn */
+    padding: 5px 15px; /* Giảm padding */
+    background-color: rgba(0, 0, 0, 0.6); 
     backdrop-filter: blur(10px);
     border-radius: 20px;
     border: 1px solid rgba(255, 255, 255, 0.3);
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.7);
     display: flex;
-    flex-direction: column;
+    flex-direction: row; /* Thay đổi thành row */
     align-items: center;
-    gap: 10px;
+    gap: 15px; /* Giảm khoảng cách */
     opacity: 1; 
-    width: 250px; 
-    transition: all 0.5s; /* Thêm transition cho đẹp */
+    width: auto; /* Chiều rộng tự động */
+    transition: all 0.5s; 
 }}
 
-#track-info {{
-    font-family: 'Playfair Display', serif;
-    font-size: 1.1vw;
-    color: #FFD700; 
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9);
-    white-space: nowrap;
-    overflow: hidden;
-    max-width: 100%;
-}}
+/* Loại bỏ #track-info vì không cần hiển thị tên bài */
 
 #player-controls {{
     display: flex;
-    gap: 20px;
+    gap: 15px;
 }}
 
 .player-button {{
@@ -269,40 +260,11 @@ iframe:first-of-type {{
     content: "⏸"; 
 }}
 
-/* Nút kích hoạt Autoplay */
-#audio-activator {{
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0, 0, 0, 0.8);
-    color: #fff;
-    font-family: 'Playfair Display', serif;
-    font-size: 1.2rem;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    z-index: 100; /* Cao hơn các nút player khác */
-    border-radius: 20px;
-    transition: opacity 0.5s;
-}}
-
-#audio-activator.hidden {{
-    opacity: 0;
-    pointer-events: none;
-}}
-
-
 @media (max-width: 768px) {{
     #music-player-container {{
         top: 15vh;
-        width: 180px;
-        padding: 6px 10px;
-    }}
-    #track-info {{
-        font-size: 3vw;
+        width: auto;
+        padding: 4px 10px;
     }}
     .player-button {{
         font-size: 24px;
@@ -538,14 +500,11 @@ st.markdown(f"""
 
 music_player_html_js = f"""
 <div id="music-player-container">
-    <div id="track-info">Đang tải...</div>
     <div id="player-controls">
-        <button id="prev-button" class="player-button" title="Previous" onclick="window.parent.prevTrack()">⏮</button>
+        <button id="prev-button" class="player-button" title="Bài trước" onclick="window.parent.prevTrack()">⏮</button>
         <button id="play-pause-button" class="player-button play-pause" title="Play/Pause" onclick="window.parent.togglePlayPause()"></button>
-        <button id="next-button" class="player-button" title="Next" onclick="window.parent.nextTrack()">⏭</button>
+        <button id="next-button" class="player-button" title="Bài tiếp theo" onclick="window.parent.nextTrack()">⏭</button>
     </div>
-    <div id="audio-activator" onclick="window.parent.activateAudio()">Click để Kích hoạt Nhạc 🎧</div>
-
     <audio id="background-playlist-audio" preload="auto"></audio>
 </div>
 
@@ -555,19 +514,15 @@ music_player_html_js = f"""
         // Gán các phần tử và biến vào window.parent để truy cập global
         window.parent.audio = window.parent.document.getElementById('background-playlist-audio');
         window.parent.playPauseButton = window.parent.document.getElementById('play-pause-button');
-        window.parent.trackInfo = window.parent.document.getElementById('track-info');
-        window.parent.audioActivator = window.parent.document.getElementById('audio-activator');
         
+        // Danh sách nhạc từ Python
         window.parent.playlist = {bg_music_js_array}; 
-        window.parent.trackNames = ['BACKGROUND 1', 'BACKGROUND 2', 'BACKGROUND 3', 'BACKGROUND 4', 'BACKGROUND 5', 'BACKGROUND 6'];
         
         window.parent.currentTrackIndex = 0;
         window.parent.isPlaying = false;
         window.parent.playerInitialized = false;
 
         window.parent.updatePlayerState = function() {{
-            window.parent.trackInfo.textContent = '🎵 ' + window.parent.trackNames[window.parent.currentTrackIndex];
-            
             if (window.parent.isPlaying) {{
                 window.parent.playPauseButton.classList.add('playing');
             }} else {{
@@ -587,7 +542,6 @@ music_player_html_js = f"""
                 window.parent.isPlaying = true;
                 window.parent.updatePlayerState();
             }}).catch(e => {{
-                // Lỗi Autoplay sẽ xảy ra ở đây, nên không cần làm gì thêm
                 console.log("Play failed. User needs to interact.");
                 window.parent.isPlaying = false; 
                 window.parent.updatePlayerState();
@@ -599,6 +553,7 @@ music_player_html_js = f"""
                 window.parent.audio.pause();
                 window.parent.isPlaying = false;
             }} else {{
+                // Chỉ load track nếu chưa được khởi tạo (giảm tải khi Streamlit reruns)
                 if (!window.parent.playerInitialized) {{
                     window.parent.loadTrack(window.parent.currentTrackIndex);
                     window.parent.playerInitialized = true;
@@ -606,19 +561,6 @@ music_player_html_js = f"""
                 window.parent.playTrack();
             }}
             window.parent.updatePlayerState();
-        }};
-        
-        // Hàm kích hoạt audio khi người dùng click vào nút activator
-        window.parent.activateAudio = function() {{
-             if (!window.parent.playerInitialized) {{
-                window.parent.loadTrack(window.parent.currentTrackIndex);
-                window.parent.playerInitialized = true;
-            }}
-            window.parent.playTrack();
-            // Ẩn nút kích hoạt sau khi đã click
-            if(window.parent.audioActivator) {{
-                 window.parent.audioActivator.classList.add('hidden');
-            }}
         }};
         
         // Các hàm Next/Previous
@@ -641,12 +583,10 @@ music_player_html_js = f"""
         // Tự động chuyển bài khi kết thúc
         window.parent.audio.addEventListener('ended', window.parent.nextTrack);
         
-        // *** TẢI TRACK ĐẦU TIÊN NGAY LẬP TỨC ***
+        // *** TẢI TRACK ĐẦU TIÊN NGAY KHI SCRIPT CHẠY ***
         window.parent.loadTrack(window.parent.currentTrackIndex);
         window.parent.playerInitialized = true; 
     }}
-
-    // Không cần lắng nghe sự kiện body click nữa vì đã có nút kích hoạt rõ ràng.
 </script>
 """
 
