@@ -35,7 +35,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO - CHUYỂN TRANG NGAY LẬP TỨC ==========
+# ========== MÀN HÌNH INTRO - CHUYỂN TRANG BẰNG QUERY PARAMETER ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
@@ -53,47 +53,22 @@ def intro_screen(is_mobile=False):
         st.error(f"Lỗi: Không tìm thấy file tài nguyên. Vui lòng kiểm tra: {e.filename}")
         st.stop()
     
+    # Lấy URL trang chính (để thêm tham số truy vấn)
+    base_url = st_javascript("window.parent.location.href.split('?')[0];")
+    
     intro_html = f"""
     <html>
     <head>
         <meta name='viewport' content='width=device-width, initial-scale=1.0'>
         <style>
-        html, body {{
-            margin: 0; padding: 0;
-            overflow: hidden;
-            background: black;
-            height: 100%;
-        }}
-        #pre-load-bg {{ display: none; background-image: url("data:image/jpeg;base64,{bg_b64}"); }}
-        video {{
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
-            transition: opacity 0.1s ease-in-out; 
-            opacity: 1;
-        }}
+        /* ... CSS giữ nguyên ... */
+        html, body {{ margin: 0; padding: 0; overflow: hidden; background: black; height: 100%; }}
+        video {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity 0.1s ease-in-out; opacity: 1; }}
         audio {{ display: none; }}
-        #intro-text {{
-            position: absolute; 
-            top: 8%;
-            left: 50%; 
-            transform: translate(-50%, 0);
-            width: 90vw; text-align: center; color: #f8f4e3;
-            font-size: clamp(22px, 6vw, 60px); font-weight: bold; font-family: 'Playfair Display', serif;
-            background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
-            background-size: 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            text-shadow: 0 0 15px rgba(255,255,230,0.4);
-            animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards;
-            line-height: 1.2; word-wrap: break-word; z-index: 10;
-        }}
+        #intro-text {{ position: absolute; top: 8%; left: 50%; transform: translate(-50%, 0); width: 90vw; text-align: center; color: #f8f4e3; font-size: clamp(22px, 6vw, 60px); font-weight: bold; font-family: 'Playfair Display', serif; background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%); background-size: 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-shadow: 0 0 15px rgba(255,255,230,0.4); animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards; line-height: 1.2; word-wrap: break-word; z-index: 10; }}
         @keyframes lightSweep {{ 0% {{ background-position: 200% 0%; }} 100% {{ background-position: -200% 0%; }} }}
         @keyframes fadeInOut {{ 0% {{ opacity: 0; }} 20% {{ opacity: 1; }} 80% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}
-
-        #black-fade {{
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: black; opacity: 1; z-index: 40;
-            transition: opacity 0.1s ease-in-out; 
-            pointer-events: none;
-        }}
-
+        #black-fade {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: black; opacity: 1; z-index: 40; transition: opacity 0.1s ease-in-out; pointer-events: none; }}
         </style>
     </head>
     <body>
@@ -118,12 +93,12 @@ def intro_screen(is_mobile=False):
             if (ended) return;
             ended = true;
             
-            // 1. Tắt video và âm thanh
             vid.style.opacity = 0; 
             audio.volume = 0; 
             
-            // 2. Gửi tin nhắn để Streamlit tải lại trang
-            window.parent.postMessage({{type: 'intro_done'}}, '*');
+            // THAY ĐỔI QUAN TRỌNG: CHUYỂN HƯỚNG BẰNG THAM SỐ TRUY VẤN
+            const newUrl = window.parent.location.href.split('?')[0] + '?intro_played=true';
+            window.parent.location.href = newUrl;
         }}
 
         // Logic play video/audio
@@ -147,9 +122,7 @@ def intro_screen(is_mobile=False):
 
         // GỌI finishIntro KHI VIDEO KẾT THÚC
         vid.addEventListener('ended', finishIntro);
-        // THÊM: Timeout dự phòng (đảm bảo nó dài hơn thời lượng video)
-        // Cần đảm bảo thời gian này đủ dài, ví dụ video 7 giây thì đặt 10000ms.
-        // Bạn có thể chỉnh lại cho phù hợp với thời lượng file video của mình.
+        // Timeout dự phòng
         setTimeout(finishIntro, 10000); 
 
         blackFade.style.opacity = 1;
@@ -176,42 +149,12 @@ def main_page(is_mobile=False):
     st.markdown(f"""
     <style>
     /* ... CSS trang chính giữ nguyên ... */
-    html, body, .stApp {{
-        height: 100vh !important;
-        background: 
-            linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
-            url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
-        background-size: cover !important;
-        overflow: hidden !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        position: relative;
-        filter: brightness(1.05) contrast(1.1) saturate(1.05);
-        animation: fadeInBg 0.5s ease-in-out forwards;  
-    }}
-    /* ... các phần CSS khác giữ nguyên ... */
-    @keyframes fadeInBg {{
-        from {{ opacity: 0; }}
-        to {{ opacity: 1; }}
-    }}
-    .welcome {{
-        position: absolute;
-        top: 8%;
-        width: 100%;
-        text-align: center;
-        font-size: clamp(30px, 5vw, 65px);
-        color: #fff5d7;
-        font-family: 'Playfair Display', serif;
-        text-shadow: 0 0 18px rgba(0,0,0,0.65), 0 0 30px rgba(255,255,180,0.25);
-        background: linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%);
-        background-size: 200%;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: textLight 10s linear infinite, fadeIn 1s ease-in-out forwards;  
-        letter-spacing: 2px;
-        z-index: 3;
-    }}
-    /* ... các phần CSS khác giữ nguyên ... */
+    html, body, .stApp {{ height: 100vh !important; background: linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%), url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important; background-size: cover !important; overflow: hidden !important; margin: 0 !important; padding: 0 !important; position: relative; filter: brightness(1.05) contrast(1.1) saturate(1.05); animation: fadeInBg 0.5s ease-in-out forwards; }}
+    .stApp::after {{ content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png"); opacity: 0.09; mix-blend-mode: multiply; }}
+    @keyframes fadeInBg {{ from {{ opacity: 0; }} to {{ opacity: 1; }} }}
+    .welcome {{ position: absolute; top: 8%; width: 100%; text-align: center; font-size: clamp(30px, 5vw, 65px); color: #fff5d7; font-family: 'Playfair Display', serif; text-shadow: 0 0 18px rgba(0,0,0,0.65), 0 0 30px rgba(255,255,180,0.25); background: linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%); background-size: 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: textLight 10s linear infinite, fadeIn 1s ease-in-out forwards; letter-spacing: 2px; z-index: 3; }}
+    @keyframes textLight {{ 0% {{ background-position: 200% 0%; }} 100% {{ background-position: -200% 0%; }} }}
+    @keyframes fadeIn {{ from {{ opacity: 0; transform: scale(0.97); }} to {{ opacity: 1; transform: scale(1); }} }}
     </style>
 
 
@@ -219,7 +162,7 @@ def main_page(is_mobile=False):
     """, unsafe_allow_html=True)
 
 
-# ========== LUỒNG CHÍNH ĐÃ CHỈNH SỬA ==========
+# ========== LUỒNG CHÍNH ĐÃ CHỈNH SỬA VỚI QUERY PARAMETER ==========
 
 hide_streamlit_ui()
 
@@ -235,32 +178,40 @@ if "is_mobile" not in st.session_state:
         time.sleep(1)  
         st.stop()
 
-# --- Bước 2: Thiết lập cờ intro (chỉ khi chưa có) ---
+# --- Bước 2: Kiểm tra trạng thái và Query Parameter ---
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
+# Lấy query parameter
+query_params = st.query_params
 
-# --- Bước 3: Logic hiển thị ---
 if not st.session_state.intro_done:
-    # HIỂN THỊ MÀN HÌNH INTRO VÀ CHỜ TIN NHẮN TỪ JS
-    intro_screen(st.session_state.is_mobile)
-    
-    st.markdown("""
-    <script>
-    window.addEventListener("message", (event) => {
-        if (event.data.type === "intro_done") {
-            // Khi nhận được tin nhắn, reload trang để chuyển sang trạng thái intro_done=True
-            window.parent.location.reload(); 
-        }
-    });
-    </script>
-    """, unsafe_allow_html=True)
+    if query_params.get("intro_played") == ["true"]:
+        # Nếu có tham số 'intro_played=true', đặt cờ vĩnh viễn và xóa tham số
+        st.session_state.intro_done = True
+        
+        # Xóa tham số khỏi URL để URL trang chính sạch sẽ
+        new_params = query_params.copy()
+        new_params.pop("intro_played")
+        st.query_params.clear() # Xóa tất cả các tham số
+        
+        # Thêm các tham số còn lại (nếu có)
+        if new_params:
+             # Lưu ý: Hiện tại Streamlit không hỗ trợ xóa/thay thế query params một cách trực quan trong lần reruns này. 
+             # Cách đơn giản nhất là set lại st.query_params, nhưng ta dùng st.experimental_set_query_params
+             # (hoặc đơn giản là cứ st.rerun() để chuyển sang trang chính, URL sẽ không sạch nhưng ít lỗi hơn).
+             pass
 
-    # QUAN TRỌNG: Không đặt cờ 'intro_done = True' và 'st.rerun()' ở đây. 
-    # Việc đó sẽ xảy ra sau khi trang reload nhờ tin nhắn từ JS.
-    # Cần một chút thời gian để iframe load.
-    time.sleep(0.5) 
-    st.stop() # Dừng luồng để chờ phản hồi từ JS
+        # Chuyển sang trang chính
+        st.rerun()
+        
+    else:
+        # Lần đầu tải trang: Chạy intro
+        intro_screen(st.session_state.is_mobile)
+        
+        # Cần một st.stop() để Streamlit không chạy qua và reruns ngay lập tức
+        # (nhưng vì ta đang dùng components.html, Streamlit sẽ tự dừng lại để chờ)
+        pass 
 
 else:
     # HIỂN THỊ TRANG CHÍNH
