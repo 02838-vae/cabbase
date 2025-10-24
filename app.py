@@ -3,34 +3,41 @@ import base64
 
 # Cấu hình trang (Tắt menu mặc định)
 st.set_page_config(
-    page_title="Tổ Bảo Dưỡng Số 1",
+    page_title="Khám phá cùng chúng tôi",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# Áp dụng CSS để ép Streamlit main container và iframe Fullscreen
+# --- SỬA LỖI 1: CSS ĐỂ ÉP STREAMLIT MAIN CONTAINER VÀ IFRAME FULLSCREEN ---
+# Áp dụng CSS cho trang Streamlit chính
 hide_streamlit_style = """
 <style>
-/* ... (Giữ nguyên CSS fullscreen cho Streamlit và iframe) ... */
+/* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 header {visibility: hidden;}
 
-.main {padding: 0; margin: 0;}
+/* Đảm bảo Main Content Container chiếm toàn bộ không gian */
+.main {
+    padding: 0; /* Xóa padding mặc định */
+    margin: 0;
+}
 
+/* Đảm bảo khu vực nội dung được căn chỉnh sát lề */
 div.block-container {
     padding: 0;
     margin: 0;
     max-width: 100% !important;
 }
 
+/* Ép iframe của component chiếm toàn bộ chiều cao/rộng */
 iframe {
     width: 100vw !important;
     height: 100vh !important;
-    position: fixed;
+    position: fixed; /* Đặt cố định để chiếm toàn bộ viewport */
     top: 0;
     left: 0;
-    z-index: 1000;
+    z-index: 1000; /* Đảm bảo nó che phủ mọi thứ */
 }
 </style>
 """
@@ -42,152 +49,45 @@ def get_base64_encoded_file(file_path):
         data = f.read()
     return base64.b64encode(data).decode("utf-8")
 
-# Mã hóa các file media
+# Mã hóa các file media (Giữ nguyên)
 try:
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
-    
-    bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
-    bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
-    
 except FileNotFoundError as e:
     st.error(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
     st.stop()
 
 
-# Số lượng ô vuông (tiles) cho hiệu ứng lật (10x10 = 100 ô)
-NUM_TILES = 100
-TILES_PER_ROW = 10
-TILE_SIZE_PERCENT = 100 / TILES_PER_ROW # 10.0%
-BACKGROUND_SIZE_PERCENT = TILES_PER_ROW * 100 # 1000%
-
-# Tạo HTML cho 100 ô vuông lật (mặt trước là video, mặt sau là màu đen)
-tiles_html = ""
-for i in range(NUM_TILES):
-    # Mỗi tile cần hai mặt (front và back) cho hiệu ứng lật 3D
-    tiles_html += f"""
-        <div class="tile">
-            <div class="tile-face front">
-                <video id="video-tile-{i}" muted playsinline></video>
-            </div>
-            <div class="tile-face back"></div>
-        </div>
-    """
-
-
-# --- MÃ HTML/CSS/JavaScript ĐÃ SỬA LỖI VIDEO PLAYBACK VÀ NỘI DUNG CHÍNH ---
+# --- MÃ HTML/CSS/JavaScript ĐÃ TỐI ƯU HÓA FULLSCREEN TRONG IFRAME ---
 
 html_content = f"""
 <!DOCTYPE html>
 <html>
 <head>
     <style>
-        /* CSS CHUNG */
+        /* SỬA LỖI 2: CSS TRONG IFRAME */
+        /* Đảm bảo html và body trong iframe chiếm 100% viewport */
         html, body {{
             margin: 0; 
             padding: 0; 
             overflow: hidden; 
             height: 100vh; 
             width: 100vw;
-            perspective: 1000px; 
         }}
         
-        /* ---------------------------------------------------- */
-        /* 1. LỚP INTRO (Mảnh lật) */
-        /* ---------------------------------------------------- */
-        #intro-tiles-container {{
-            position: fixed;
+        /* CSS cho video fullscreen */
+        #intro-video {{
+            position: absolute; /* Dùng absolute vì body đã là 100vh/100vw */
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2000;
-            display: flex;
-            flex-wrap: wrap;
+            width: 100%;   /* Chiếm 100% chiều rộng của body (100vw) */
+            height: 100%;  /* Chiếm 100% chiều cao của body (100vh) */
+            object-fit: cover; /* Đảm bảo video che phủ toàn bộ, không bị giãn méo */
+            z-index: -100;
         }}
 
-        /* Mỗi mảnh (tile) là một phần của hiệu ứng lật */
-        .tile {{
-            width: {TILE_SIZE_PERCENT}vw; 
-            height: {TILE_SIZE_PERCENT}vh; 
-            position: relative;
-            transform-style: preserve-3d; /* Rất quan trọng cho 3D */
-            transition: transform 0.8s ease-in-out; 
-            pointer-events: all; 
-        }}
-        
-        /* Các mặt của ô lật */
-        .tile-face {{
-            position: absolute;
-            width: 100%;
-            height: 100%;
-            backface-visibility: hidden; /* Ẩn mặt bị quay lưng lại */
-        }}
-
-        /* Mặt sau (Back) của ô lật */
-        .tile-face.back {{
-            background-color: black; /* Màu đen hoặc màu nền trang chính */
-            transform: rotateY(180deg); /* Mặt sau quay 180 độ */
-        }}
-
-        /* Video trong mỗi ô (đảm bảo nó lấp đầy ô và chỉ hiển thị 1/100) */
-        .tile-face.front video {{
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: {BACKGROUND_SIZE_PERCENT}vw; /* 1000vw */
-            height: {BACKGROUND_SIZE_PERCENT}vh; /* 1000vh */
-            object-fit: cover;
-            /* Mỗi video sẽ được định vị bằng JS để hiển thị 1/100 màn hình */
-        }}
-        
-        /* Hiệu ứng lật đã kích hoạt */
-        .page-flipped .tile {{
-            transform: rotateY(180deg); 
-        }}
-        
-        /* ---------------------------------------------------- */
-        /* 2. LỚP TRANG CHÍNH (Nội dung chính) */
-        /* ---------------------------------------------------- */
-        #main-content {{
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 1000; 
-            background-size: cover;
-            background-position: center;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-start; /* Căn tiêu đề lên trên */
-            align-items: center;
-            color: white;
-            padding-top: 15vh; /* Khoảng cách từ trên xuống */
-            box-sizing: border-box;
-            overflow-y: auto; 
-            opacity: 0;
-            transition: opacity 1s ease-in 1s; 
-        }}
-        .page-flipped #main-content {{
-            opacity: 1;
-        }}
-        
-        /* Tiêu đề trang chính */
-        #main-content h1 {{
-            font-size: 5vw; 
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); 
-            margin: 0;
-        }}
-
-
-        /* ---------------------------------------------------- */
-        /* 3. ĐIỀU CHỈNH CHUNG & MEDIA QUERIES */
-        /* ---------------------------------------------------- */
-
-        /* DÒNG CHỮ INTRO */
+        /* CSS cho dòng chữ cố định (Giữ nguyên) */
         #intro-text {{
             position: fixed;
             top: 5vh; 
@@ -196,8 +96,8 @@ html_content = f"""
             color: white; 
             font-size: 3vw; 
             font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9); 
-            z-index: 3000; 
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); 
+            z-index: 100; 
             pointer-events: none;
             opacity: 0; 
             transition: opacity 1s; 
@@ -207,83 +107,39 @@ html_content = f"""
             #intro-text {{
                 font-size: 8vw;
             }}
-            #main-content {{
-                background-image: url('data:image/jpeg;base64,{bg_mobile_base64}');
-            }}
-             #main-content h1 {{
-                font-size: 10vw; 
-            }}
         }}
-
-        @media (min-width: 769px) {{
-            #main-content {{
-                background-image: url('data:image/jpeg;base64,{bg_pc_base64}');
-            }}
-        }}
-
+        
     </style>
 </head>
-<body id="app-body">
-    
-    <div id="main-content">
-        <h1>TỔ BẢO DƯỠNG SỐ 1</h1>
-    </div>
+<body>
 
-    <audio id="background-audio"></audio>
-
-    <div id="intro-tiles-container">
-        {tiles_html}
-    </div>
-    
     <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-
+    
+    <video id="intro-video" muted playsinline></video>
+    
+    <audio id="background-audio"></audio>
 
     <script>
         document.addEventListener("DOMContentLoaded", function() {{
-            const appBody = document.getElementById('app-body');
+            const video = document.getElementById('intro-video');
             const audio = document.getElementById('background-audio');
             const introText = document.getElementById('intro-text');
-            const tiles = document.querySelectorAll('.tile');
-            const tileVideos = document.querySelectorAll('.tile-face.front video');
-            
-            const numTilesPerRow = {TILES_PER_ROW}; 
-            const videoSource = isMobile()
-                ? 'data:video/mp4;base64,{video_mobile_base64}' 
-                : 'data:video/mp4;base64,{video_pc_base64}';
+            const isMobile = window.innerWidth <= 768;
 
-            function isMobile() {{
-                return window.innerWidth <= 768;
+            if (isMobile) {{
+                video.src = 'data:video/mp4;base64,{video_mobile_base64}';
+            }} else {{
+                video.src = 'data:video/mp4;base64,{video_pc_base64}';
             }}
-
-            // 1. Cấu hình nguồn Video và Audio
+            
             audio.src = 'data:audio/mp3;base64,{audio_base64}';
 
-            // 2. Thiết lập đồng bộ và vị trí cho từng thẻ <video>
-            tileVideos.forEach((videoElement, index) => {{
-                // Đặt nguồn video cho từng thẻ
-                videoElement.src = videoSource;
-
-                const col = index % numTilesPerRow;
-                const row = Math.floor(index / numTilesPerRow);
-                
-                // Tính toán vị trí dịch chuyển để chỉ hiển thị 1/100 màn hình
-                const transformX = -col * 100 + 'vw'; 
-                const transformY = -row * 100 + 'vh'; 
-
-                // Áp dụng dịch chuyển cho mỗi video (giữ video Fullscreen, nhưng cắt nó)
-                videoElement.style.transform = `translate(-${{col * 10}}%, -${{row * 10}}%)`; 
-            }});
-            
             const playMedia = () => {{
-                // Chạy tất cả các video cùng lúc
-                tileVideos.forEach(videoElement => {{
-                    videoElement.load();
-                    videoElement.play().catch(e => console.log("Video playback failed:", e));
-                }});
+                video.load();
+                video.play().catch(e => console.log("Video playback failed:", e));
                 
                 setTimeout(() => {{ introText.style.opacity = 1; }}, 500);
 
-                // Autoplay Audio (Cần tương tác người dùng nếu bị chặn)
                 audio.volume = 0.5; 
                 audio.play().catch(e => {{
                     document.body.addEventListener('click', () => {{
@@ -294,34 +150,27 @@ html_content = f"""
             
             playMedia();
 
-            // 3. Logic HIỆU ỨNG LẬT khi một video (tileVideos[0]) kết thúc
-            tileVideos[0].onended = () => {{
-                // Dừng tất cả các video và âm thanh
-                tileVideos.forEach(videoElement => videoElement.pause());
+            video.onended = () => {{
+                video.style.opacity = 0; 
                 audio.pause(); 
                 audio.currentTime = 0; 
-                introText.style.opacity = 0;
-                
-                // Kích hoạt hiệu ứng Lật
-                appBody.classList.add('page-flipped');
-                
-                setTimeout(() => {{
-                    document.getElementById('intro-tiles-container').style.display = 'none';
-                    document.body.style.overflow = 'auto'; 
-                    document.getElementById('main-content').style.position = 'static';
-                }}, 1500); 
+                introText.style.opacity = 0; 
             }};
-
-            // 4. Thiết lập độ trễ ngẫu nhiên cho hiệu ứng lật
-            tiles.forEach(tile => {{
-                const delay = Math.random() * 0.5; 
-                tile.style.transitionDelay = delay + 's';
-            }});
         }});
     </script>
 </body>
 </html>
 """
 
-# Hiển thị thành phần HTML
+# Hiển thị thành phần HTML (Dùng chiều cao tối thiểu để component tồn tại)
+# Quan trọng: Logic fullscreen được xử lý hoàn toàn bằng CSS và JS.
 st.components.v1.html(html_content, height=10, scrolling=False)
+
+
+# Nội dung chính của trang (Sử dụng CSS để đảm bảo nó nằm dưới lớp video/iframe)
+st.markdown("""
+<div style="padding: 20px; margin-top: 100vh; background-color: white; position: relative; z-index: 1;">
+    <h2>Chào mừng đến với Nội dung Chính của Trang!</h2>
+    <p>Đây là phần còn lại của trang web.</p>
+</div>
+""", unsafe_allow_html=True)
