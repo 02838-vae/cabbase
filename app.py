@@ -21,6 +21,7 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
+        # Xử lý lỗi nếu file media không tồn tại
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
 
@@ -137,14 +138,13 @@ iframe:first-of-type {{
     z-index: 20; 
     pointer-events: none; 
     
-    /* Sử dụng Flexbox để căn giữa các chữ cái */
     display: flex;
     justify-content: center;
-    overflow: hidden; /* Quan trọng để tránh tràn ra ngoài khi chữ cái di chuyển nhẹ */
+    overflow: hidden; 
 }}
 
 #main-title-container h1 {{
-    display: flex; /* Cần flexbox cho h1 để chứa các span chữ */
+    display: flex; 
     font-family: 'Playfair Display', serif; 
     font-size: 3.5vw; 
     margin: 0;
@@ -155,34 +155,30 @@ iframe:first-of-type {{
     white-space: nowrap; 
 }}
 
-/* Định nghĩa từng chữ cái */
 .main-title-char {{
-    display: inline-block; /* Mỗi chữ cái là một khối nội tuyến */
-    /* text-shadow ban đầu (khi không phát sáng) */
+    display: inline-block; 
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); 
-    transition: text-shadow 0.3s ease-in-out; /* Chuyển động mượt mà */
+    transition: text-shadow 0.3s ease-in-out; 
 }}
 
-/* Keyframes cho hiệu ứng phát sáng */
 @keyframes glow {{
     0% {{ 
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7), 
-                     0 0 0px rgba(255, 255, 200, 0); /* Không có glow */
+                     0 0 0px rgba(255, 255, 200, 0); 
     }}
     50% {{ 
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7), 
-                     0 0 15px rgba(255, 255, 200, 0.8), /* Glow mạnh hơn */
+                     0 0 15px rgba(255, 255, 200, 0.8), 
                      0 0 25px rgba(255, 255, 150, 0.6);
     }}
     100% {{ 
         text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7), 
-                     0 0 0px rgba(255, 255, 200, 0); /* Quay về không glow */
+                     0 0 0px rgba(255, 255, 200, 0); 
     }}
 }}
 
-/* Class được thêm bằng JS để kích hoạt animation */
 .main-title-char.glowing {{
-    animation: glow 1.5s forwards; /* 1.5s cho mỗi lần phát sáng */
+    animation: glow 1.5s forwards; 
 }}
 
 
@@ -199,10 +195,9 @@ iframe:first-of-type {{
         white-space: nowrap; 
     }}
     .main-title-char {{
-        /* Đảm bảo hiệu ứng vẫn hoạt động trên mobile */
         text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7); 
     }}
-    @keyframes glow {{ /* Điều chỉnh glow cho mobile nếu cần */
+    @keyframes glow {{ 
         0% {{ 
             text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7), 
                          0 0 0px rgba(255, 255, 200, 0); 
@@ -227,7 +222,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (FONT SACRAMENTO & HIỆU ỨNG CHỮ THẢ) ---
 
-# JavaScript (Giữ nguyên logic)
+# JavaScript ĐÃ CHỈNH SỬA: Thêm code hiển thị tiêu đề chính vào initRevealEffect
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
@@ -238,7 +233,16 @@ js_callback_video = f"""
     
     function initRevealEffect() {{
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
-        if (!revealGrid) return;
+        const mainTitle = window.parent.document.getElementById('main-title-container');
+
+        if (!revealGrid) {{
+            // TRƯỜNG HỢP: Reveal Grid không tồn tại, hiển thị tiêu đề ngay
+            if (mainTitle) {{
+                 mainTitle.style.opacity = 1;
+                 mainTitle.style.transform = 'translate(-50%, 0) scale(1)';
+            }}
+            return;
+        }}
 
         const cells = revealGrid.querySelectorAll('.grid-cell');
         const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
@@ -251,12 +255,11 @@ js_callback_video = f"""
         
         setTimeout(() => {{
              revealGrid.remove();
-             // mainTitle sẽ được xử lý riêng bằng JS của trang chính
-             // const mainTitle = window.parent.document.getElementById('main-title-container');
-             // if (mainTitle) {{
-             //     mainTitle.style.opacity = 1;
-             //     mainTitle.style.transform = 'translate(-50%, 0) scale(1)';
-             // }}
+             // SỬA LỖI TẠI ĐÂY: Đảm bảo tiêu đề được hiển thị
+             if (mainTitle) {{
+                 mainTitle.style.opacity = 1;
+                 mainTitle.style.transform = 'translate(-50%, 0) scale(1)';
+             }}
         }}, shuffledCells.length * 10 + 1000);
     }}
 
@@ -444,25 +447,19 @@ main_title_chars_html = ''.join([
 # JavaScript cho hiệu ứng phát sáng lặp lại
 js_glow_effect = f"""
 <script>
-    // Hàm này sẽ được gọi khi video kết thúc và trang chính được hiển thị
     function startMainTitleGlow() {{
-        const mainTitleContainer = window.parent.document.getElementById('main-title-container');
+        const mainTitleContainer = document.getElementById('main-title-container');
         if (mainTitleContainer) {{
-            // Hiện tiêu đề chính ngay lập tức sau khi reveal effect kết thúc
-            mainTitleContainer.style.opacity = 1;
-            mainTitleContainer.style.transform = 'translate(-50%, 0) scale(1)';
-            
             const chars = mainTitleContainer.querySelectorAll('.main-title-char');
             let currentIndex = 0;
             const delay = 100; // Độ trễ giữa mỗi chữ (ms)
-            const animationDuration = 1500; // Tổng thời gian animation của mỗi chữ (ms)
 
             function animateChar() {{
                 if (chars.length === 0) return;
 
                 const currentChar = chars[currentIndex];
                 
-                // Đảm bảo loại bỏ animation cũ trước khi thêm mới để kích hoạt lại
+                // Reset và kích hoạt animation
                 currentChar.classList.remove('glowing'); 
                 void currentChar.offsetWidth; // Force reflow (reset animation)
                 currentChar.classList.add('glowing');
@@ -471,7 +468,7 @@ js_glow_effect = f"""
                 setTimeout(animateChar, delay);
             }}
 
-            // Bắt đầu animation sau một khoảng thời gian ngắn sau khi tiêu đề hiện ra
+            // Bắt đầu animation
             setTimeout(() => {{
                 animateChar();
             }}, 500); 
@@ -486,15 +483,15 @@ js_glow_effect = f"""
         }}
     }});
 
-    // Nếu trang được tải lại mà không qua video (ví dụ: F5),
-    // kiểm tra nếu video đã được đánh dấu là kết thúc trong session state của Streamlit
-    // Hoặc nếu video iframe không còn hiển thị, thì bắt đầu glow ngay
+    // Nếu trang được tải lại trực tiếp (ví dụ: F5), bắt đầu glow ngay
     document.addEventListener("DOMContentLoaded", function() {{
-        const mainTitleContainer = window.parent.document.getElementById('main-title-container');
-        const videoIframe = window.parent.document.querySelector('iframe:first-of-type');
-        // Check if video has already vanished (meaning it finished)
-        if (videoIframe && videoIframe.classList.contains('video-finished')) {{
-            startMainTitleGlow();
+        const mainTitleContainer = document.getElementById('main-title-container');
+        // Kiểm tra nếu class 'main-content-revealed' đã được thêm vào body/stApp (tức là đã qua intro)
+        if (document.querySelector('.stApp').classList.contains('main-content-revealed')) {{
+             // Đảm bảo tiêu đề đã hiện trước khi bắt đầu glow
+             if (mainTitleContainer.style.opacity === '1') {{
+                startMainTitleGlow();
+             }}
         }}
     }});
 
