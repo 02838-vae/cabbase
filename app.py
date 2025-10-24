@@ -185,10 +185,10 @@ def intro_screen(is_mobile=False):
 
             // Bỏ chế độ muted cho video và phát âm thanh SFX
             vid.muted = false;
-            vid.play().catch(()=>{}); 
+            vid.play().catch(()=>{{}}); /* <-- Đã sửa lỗi: Thêm thêm cặp ngoặc nhọn */
             audio.volume = 1.0;
             audio.currentTime = 0;
-            audio.play().catch(()=>{}); 
+            audio.play().catch(()=>{{}}); /* <-- Đã sửa lỗi: Thêm thêm cặp ngoặc nhọn */
 
             document.body.classList.add('active-audio');
         }}
@@ -203,7 +203,7 @@ def intro_screen(is_mobile=False):
         // Kích hoạt âm thanh khi người dùng click/tap bất kỳ đâu
         document.addEventListener('click', () => {{
             handleAudioActivation();
-        }}, {{once:true}});
+        }}, {{once:true}}); /* <-- Đã sửa lỗi: Thêm thêm cặp ngoặc nhọn */
 
         // Kết thúc khi video kết thúc hoặc sau timeout 9 giây
         vid.addEventListener('ended', finishIntro);
