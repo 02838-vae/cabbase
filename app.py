@@ -1,8 +1,8 @@
 import streamlit as st
 import base64
 from user_agents import parse
-from streamlit_javascript import st_javascript
 import streamlit.components.v1 as components
+from streamlit_javascript import st_javascript
 
 # ==== FILES ====
 VIDEO_PC = "airplane.mp4"
@@ -33,7 +33,6 @@ def intro_screen(is_mobile=False):
     hide_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
 
-    # Đọc video + âm thanh
     with open(video_file, "rb") as v:
         video_b64 = base64.b64encode(v.read()).decode()
     try:
@@ -71,13 +70,12 @@ def intro_screen(is_mobile=False):
         const video = document.getElementById("intro");
         const audio = document.getElementById("sfx");
 
-        // Khi kết thúc intro -> đánh dấu vào localStorage
+        // Khi video kết thúc -> gửi tín hiệu lên Streamlit
         video.addEventListener("ended", () => {{
-            localStorage.setItem("intro_done", "true");
-            window.location.reload();
+            window.parent.postMessage({{ type: "intro_done" }}, "*");
         }});
 
-        // Cho phép bật tiếng khi người dùng click
+        // Cho phép bật tiếng khi click
         document.addEventListener("click", () => {{
             video.muted = false;
             if (audio) audio.play().catch(()=>{{}});
@@ -122,15 +120,34 @@ def main_page(is_mobile=False):
 # ==== LUỒNG CHÍNH ====
 hide_ui()
 
+# Phát hiện thiết bị
 if "is_mobile" not in st.session_state:
     ua = st_javascript("navigator.userAgent || ''")
     st.session_state.is_mobile = not parse(ua).is_pc if ua else False
     st.experimental_rerun()
 
-# Kiểm tra xem intro đã xem chưa (dùng localStorage)
-intro_done = st_javascript("localStorage.getItem('intro_done') === 'true'")
+# Kiểm tra trạng thái intro_done trong session
+if "intro_done" not in st.session_state:
+    st.session_state.intro_done = False
 
-if intro_done:
-    main_page(st.session_state.is_mobile)
-else:
+# Nếu chưa xem intro
+if not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
+
+    # Đoạn JS này nghe tín hiệu postMessage từ iframe
+    js_signal = st_javascript("""
+    new Promise((resolve) => {
+        window.addEventListener("message", (e) => {
+            if (e.data?.type === "intro_done") {
+                resolve(true);
+            }
+        });
+    });
+    """)
+
+    # Khi nhận tín hiệu, cập nhật state và rerun
+    if js_signal:
+        st.session_state.intro_done = True
+        st.experimental_rerun()
+else:
+    main_page(st.session_state.is_mobile)
