@@ -21,7 +21,6 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
-        # Xử lý lỗi nếu file media không tồn tại
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
 
@@ -39,7 +38,6 @@ except FileNotFoundError as e:
 
 
 # --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
-# Đảm bảo font được tải sớm nhất
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Stay+Strong&display=swap" rel="stylesheet">
@@ -50,13 +48,11 @@ st.markdown(font_links, unsafe_allow_html=True)
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
 hide_streamlit_style = f"""
 <style>
-/* Đặt lại @import trong khối style để tăng khả năng tải trên PC */
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Stay+Strong&display=swap');
 
 /* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
 
-/* ... (Các CSS cấu hình container giữ nguyên) ... */
 .main {{
     padding: 0;
     margin: 0;
@@ -68,7 +64,6 @@ div.block-container {{
     max-width: 100% !important;
 }}
 
-/* IFRAME VIDEO INTRO */
 iframe:first-of-type {{
     transition: opacity 1s ease-out, visibility 1s ease-out;
     opacity: 1;
@@ -81,7 +76,6 @@ iframe:first-of-type {{
     z-index: 1000;
 }}
 
-/* Class để ẩn iframe (được thêm bằng JS) */
 .video-finished iframe:first-of-type {{
     opacity: 0;
     visibility: hidden;
@@ -89,13 +83,11 @@ iframe:first-of-type {{
     height: 1px !important; 
 }}
 
-/* Định nghĩa nền full-screen cho main content */
 .stApp {{
     --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
 }}
 
-/* CSS cho hiệu ứng Reveal (Giữ nguyên) */
 .reveal-grid {{
     position: fixed;
     top: 0;
@@ -115,20 +107,15 @@ iframe:first-of-type {{
     transition: opacity 0.5s ease-out;
 }}
 
-/* Class được thêm vào .stApp sau khi video kết thúc */
 .main-content-revealed {{
-    /* Đặt nền cho toàn bộ ứng dụng */
     background-image: var(--main-bg-url-pc);
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
-    
-    /* GIỮ NGUYÊN PHONG CÁCH HOÀI CỔ */
     filter: sepia(30%) grayscale(10%) brightness(95%); 
     transition: filter 2s ease-out; 
 }}
 
-/* Điều chỉnh cho Mobile (Giữ nguyên) */
 @media (max-width: 768px) {{
     .main-content-revealed {{
         background-image: var(--main-bg-url-mobile);
@@ -139,7 +126,7 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === TIÊU ĐỀ TRANG CHÍNH (FONT STAY STRONG & THU NHỎ SIZE) === */
+/* === TIÊU ĐỀ TRANG CHÍNH (FONT STAY STRONG & SIZE) === */
 #main-title-container {{
     position: fixed;
     top: 5vh; 
@@ -151,12 +138,8 @@ iframe:first-of-type {{
     pointer-events: none; 
 }}
 
-/* Đặt kích thước và FONT cho tiêu đề chính (H1) */
 #main-title-container h1 {{
-    /* FONT STAY STRONG */
     font-family: 'Stay Strong', cursive; 
-    
-    /* GIẢM KÍCH THƯỚC TRÊN PC: 5vw -> 3.5vw */
     font-size: 3.5vw; 
     margin: 0;
     font-weight: 400; 
@@ -165,10 +148,8 @@ iframe:first-of-type {{
     text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);
 }}
 
-/* Kích thước Mobile */
 @media (max-width: 768px) {{
     #main-title-container h1 {{
-        /* GIẢM KÍCH THƯỚC TRÊN MOBILE: 10vw -> 7vw */
         font-size: 7vw; 
     }}
 }}
@@ -179,9 +160,9 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (FONT SACRAMENTO & THU NHỎ SIZE) ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (HIỆU ỨNG CHỮ THẢ) ---
 
-# JavaScript (Giữ nguyên logic)
+# JavaScript ĐÃ CHỈNH SỬA
 js_callback = f"""
 <script>
     function sendBackToStreamlit() {{
@@ -215,7 +196,7 @@ js_callback = f"""
     document.addEventListener("DOMContentLoaded", function() {{
         const video = document.getElementById('intro-video');
         const audio = document.getElementById('background-audio');
-        const introText = document.getElementById('intro-text');
+        const introTextContainer = document.getElementById('intro-text-container'); // Container mới
         const isMobile = window.innerWidth <= 768;
 
         if (isMobile) {{
@@ -230,9 +211,12 @@ js_callback = f"""
             video.load();
             video.play().catch(e => console.log("Video playback failed:", e));
                 
-            setTimeout(() => {{ 
-                introText.classList.add('text-shown'); 
-            }}, 500);
+            // Kích hoạt hiệu ứng chữ thả
+            const chars = introTextContainer.querySelectorAll('.intro-char');
+            chars.forEach((char, index) => {{
+                char.style.animationDelay = `${{index * 0.1}}s`; // Độ trễ 0.1s cho mỗi chữ cái
+                char.classList.add('char-shown'); 
+            }});
 
             audio.volume = 0.5;
             audio.loop = true; 
@@ -249,8 +233,8 @@ js_callback = f"""
             video.style.opacity = 0;
             audio.pause();
             audio.currentTime = 0;
-            introText.classList.remove('text-shown');
-            introText.style.opacity = 0;
+            // Ẩn toàn bộ container chứa chữ
+            introTextContainer.style.opacity = 0; 
             
             sendBackToStreamlit(); 
         }};
@@ -263,7 +247,7 @@ js_callback = f"""
 </script>
 """
 
-# Mã HTML/CSS cho Video (Cập nhật Font Sacramento & Thu nhỏ Size)
+# Mã HTML/CSS cho Video ĐÃ CHỈNH SỬA
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -288,16 +272,14 @@ html_content_modified = f"""
             transition: opacity 1s; 
         }}
 
-        /* === TIÊU ĐỀ INTRO (FONT SACRAMENTO & THU NHỎ SIZE) === */
-        #intro-text {{
+        /* === TIÊU ĐỀ INTRO (FONT SACRAMENTO & HIỆU ỨNG CHỮ THẢ) === */
+        #intro-text-container {{ /* Container mới cho hiệu ứng chữ thả */
             position: fixed;
             top: 5vh;
             width: 100%;
             text-align: center;
             color: #FFD700; 
-            
-            /* GIẢM KÍCH THƯỚC TRÊN PC: 4.5vw -> 3vw */
-            font-size: 3vw; 
+            font-size: 3vw; /* Kích thước PC */
             
             font-family: 'Sacramento', cursive; 
             font-weight: 400; 
@@ -305,22 +287,40 @@ html_content_modified = f"""
             text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8); 
             z-index: 100;
             pointer-events: none;
-
-            /* HIỆU ỨNG BLUR-IN */
-            opacity: 0; 
-            filter: blur(10px);
-            transition: opacity 1.5s ease-out, filter 1.5s ease-out; 
+            display: flex; /* Dùng flexbox để căn giữa các chữ cái */
+            justify-content: center;
+            opacity: 1; /* Ban đầu hiện, chữ cái sẽ bị ẩn */
         }}
         
-        #intro-text.text-shown {{
-            opacity: 1;
-            filter: blur(0); 
+        .intro-char {{
+            display: inline-block; /* Mỗi chữ cái là một block riêng */
+            opacity: 0;
+            transform: translateY(-50px); /* Bắt đầu từ trên cao */
+            animation-fill-mode: forwards; /* Giữ trạng thái cuối animation */
+            animation-duration: 0.8s; /* Thời gian animation của mỗi chữ */
+            animation-timing-function: ease-out; /* Dịu dần */
+        }}
+
+        /* Keyframes cho hiệu ứng thả từng chữ */
+        @keyframes charDropIn {{
+            from {{
+                opacity: 0;
+                transform: translateY(-50px);
+            }}
+            to {{
+                opacity: 1;
+                transform: translateY(0);
+            }}
+        }}
+
+        /* Class để kích hoạt animation */
+        .intro-char.char-shown {{
+            animation-name: charDropIn;
         }}
 
         @media (max-width: 768px) {{
-            #intro-text {{
-                /* GIẢM KÍCH THƯỚC TRÊN MOBILE: 10vw -> 6vw */
-                font-size: 6vw; 
+            #intro-text-container {{
+                font-size: 6vw; /* Kích thước Mobile */
             }}
         }}
         
@@ -328,7 +328,7 @@ html_content_modified = f"""
 </head>
 <body>
 
-    <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+    <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
     
     <video id="intro-video" muted playsinline></video>
     
@@ -338,6 +338,20 @@ html_content_modified = f"""
 </body>
 </html>
 """
+
+# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
+intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
+# Chia từng chữ cái và bọc vào thẻ span với class "intro-char"
+# Nếu là dấu cách, giữ nguyên để không bị co lại
+intro_chars_html = ''.join([
+    f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>' 
+    for char in intro_title
+])
+# Thay thế chuỗi tiêu đề cũ bằng các span đã chia nhỏ
+html_content_modified = html_content_modified.replace(
+    "<div id=\"intro-text-container\">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>",
+    f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
+)
 
 # Hiển thị thành phần HTML (video)
 st.components.v1.html(html_content_modified, height=10, scrolling=False)
