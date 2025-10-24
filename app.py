@@ -68,12 +68,72 @@ div.block-container {{
     max-width: 100% !important;
 }}
 
-/* Giữ nguyên CSS Video Intro và Reveal Grid... */
+iframe:first-of-type {{
+    transition: opacity 1s ease-out, visibility 1s ease-out;
+    opacity: 1;
+    visibility: visible;
+    width: 100vw !important;
+    height: 100vh !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}}
+
+.video-finished iframe:first-of-type {{
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    height: 1px !important; 
+}}
+
+.stApp {{
+    --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
+    --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
+}}
+
+.reveal-grid {{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: grid;
+    grid-template-columns: repeat(20, 1fr); 
+    grid-template-rows: repeat(12, 1fr);
+    z-index: 500; 
+    pointer-events: none; 
+}}
+
+.grid-cell {{
+    background-color: white; 
+    opacity: 1;
+    transition: opacity 0.5s ease-out;
+}}
+
+.main-content-revealed {{
+    background-image: var(--main-bg-url-pc);
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed;
+    filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%); 
+    transition: filter 2s ease-out; 
+}}
+
+@media (max-width: 768px) {{
+    .main-content-revealed {{
+        background-image: var(--main-bg-url-mobile);
+    }}
+    .reveal-grid {{
+        grid-template-columns: repeat(10, 1fr);
+        grid-template-rows: repeat(20, 1fr);
+    }}
+}}
 
 /* Keyframes cho hiệu ứng chữ chạy đơn (từ phải sang trái, lặp lại) */
 @keyframes scrollText {{
-    0% {{ transform: translate(100vw, 0); }} 
-    100% {{ transform: translate(-100%, 0); }} 
+    0% {{ transform: translate(100vw, 0); }} /* Bắt đầu từ ngoài cùng bên phải */
+    100% {{ transform: translate(-100%, 0); }} /* Chạy sang trái (độ rộng của chữ) */
 }}
 
 /* Keyframes cho hiệu ứng Đổi Màu Gradient */
@@ -188,7 +248,6 @@ div.block-container {{
 
 
 @media (max-width: 768px) {{
-    /* Giữ nguyên CSS Mobile tiêu đề... */
     #main-title-container h1 {{
         font-size: 6.5vw; 
         animation-duration: 8s; 
@@ -213,7 +272,7 @@ div.block-container {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (ĐÃ KIỂM TRA TÍNH TOÀN VẸN) ---
 
 # JavaScript ĐÃ SỬA: Thêm class 'player-visible' để hiển thị Music Player
 js_callback_video = f"""
@@ -241,8 +300,6 @@ js_callback_video = f"""
         }}
 
         if (!revealGrid) {{ return; }}
-        // ... (Giữ nguyên logic Reveal Grid)
-        // ...
         
         const cells = revealGrid.querySelectorAll('.grid-cell');
         const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
@@ -311,7 +368,106 @@ js_callback_video = f"""
 </script>
 """
 
-# ... (Giữ nguyên HTML/CSS/JavaScript cho Video Intro) ...
+# Mã HTML/CSS cho Video 
+html_content_modified = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        html, body {{
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }}
+        
+        #intro-video {{
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -100;
+            transition: opacity 1s; 
+        }}
+
+        /* === TIÊU ĐỀ INTRO (FONT SACRAMENTO - Chữ Ký) === */
+        #intro-text-container {{ 
+            position: fixed;
+            top: 5vh;
+            width: 100%;
+            text-align: center;
+            color: #FFD700; 
+            font-size: 3vw; 
+            
+            font-family: 'Sacramento', cursive; 
+            font-weight: 400; 
+            
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8); 
+            z-index: 100;
+            pointer-events: none;
+            display: flex; 
+            justify-content: center;
+            opacity: 1; 
+        }}
+        
+        .intro-char {{
+            display: inline-block; 
+            opacity: 0;
+            transform: translateY(-50px); 
+            animation-fill-mode: forwards; 
+            animation-duration: 0.8s; 
+            animation-timing-function: ease-out; 
+        }}
+
+        @keyframes charDropIn {{
+            from {{
+                opacity: 0;
+                transform: translateY(-50px);
+            }}
+            to {{
+                opacity: 1;
+                transform: translateY(0);
+            }}
+        }}
+
+        .intro-char.char-shown {{
+            animation-name: charDropIn;
+        }}
+
+        @media (max-width: 768px) {{
+            #intro-text-container {{
+                font-size: 6vw; 
+            }}
+        }}
+        
+    </style>
+</head>
+<body>
+
+    <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+    
+    <video id="intro-video" muted playsinline></video>
+    
+    <audio id="background-audio"></audio>
+
+    {js_callback_video}
+</body>
+</html>
+"""
+
+# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
+intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
+intro_chars_html = ''.join([
+    f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>' 
+    for char in intro_title
+])
+html_content_modified = html_content_modified.replace(
+    "<div id=\"intro-text-container\">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>",
+    f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
+)
 
 # Hiển thị thành phần HTML (video)
 st.components.v1.html(html_content_modified, height=10, scrolling=False)
