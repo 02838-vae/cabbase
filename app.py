@@ -18,6 +18,7 @@ BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 
 # THỜI GIAN CHUYỂN TRANG (tính bằng milliseconds - 8.5 giây)
+# Đảm bảo thời gian này dài hơn thời lượng video
 INTRO_DURATION_MS = 8500 
 
 st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
@@ -41,7 +42,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO (ĐÃ TỐI ƯU HÓA CHUYỂN TRANG) ==========
+# ========== MÀN HÌNH INTRO (ĐÃ SỬA LỖI BUỘC RELOAD) ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
@@ -119,19 +120,17 @@ def intro_screen(is_mobile=False):
         let finished = false;
 
         function finishIntro() {{
-            if (finished) return; // Đảm bảo chỉ chạy một lần
+            if (finished) return; 
             finished = true;
 
             vid.pause();
             audio.pause();
             
-            // Ép buộc Streamlit Rerender bằng cách thay đổi URL của trang cha
-            const url = new URL(window.parent.location.href);
-            url.searchParams.set('intro_done', 'true'); 
-            window.parent.location.href = url.toString(); 
+            // THAY ĐỔI MẠNH MẼ: Gửi thông điệp cho Python
+            window.parent.postMessage({{ type: "intro_done_reload" }}, "*");
         }}
         
-        // CƠ CHẾ PLAY VIDEO VÀ AUDIO MẠNH HƠN
+        // CƠ CHẾ PLAY VIDEO VÀ AUDIO
         function startMedia() {{
             vid.play().catch(e => console.log('Video Autoplay bị chặn:', e));
             audio.play().catch(e => console.log('Audio Autoplay bị chặn:', e));
@@ -143,12 +142,11 @@ def intro_screen(is_mobile=False):
         
         // Xử lý click để vượt qua giới hạn Autoplay
         document.addEventListener('click', () => {{
-            vid.muted = false; // Bỏ mute khi click
+            vid.muted = false; 
             startMedia(); 
         }}, {{once:true}});
 
-        // === THAY ĐỔI MẠNH HƠN: CHỈ DÙNG TIMEOUT ===
-        // KHÔNG DÙNG vid.addEventListener('ended', finishIntro) NỮA
+        // Chỉ dùng TIMEOUT đáng tin cậy
         setTimeout(finishIntro, {INTRO_DURATION_MS}); 
 
         </script>
@@ -233,7 +231,7 @@ def main_page(is_mobile=False):
 
 
 # =========================================================================
-# ========== LUỒNG CHÍNH ==========
+# ========== LUỒNG CHÍNH (ĐÃ THÊM LOGIC ĐỂ NHẬN DIỆN LẦN CHẠY SAU RELOAD) ==========
 # =========================================================================
 
 hide_streamlit_ui()
@@ -251,17 +249,45 @@ if "is_mobile" not in st.session_state:
         st.stop()
 
 
+# === THAY ĐỔI MẠNH MẼ: KIỂM TRA SESSION STATE TRƯỚC ===
+# Nếu ứng dụng vừa chạy lại (do reload) VÀ session state không có cờ intro_done, 
+# đặt cờ này thành False để ứng dụng luôn bắt đầu bằng màn hình intro lần đầu.
+
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
+    # Dùng cờ phụ để kiểm soát việc tải lại trang
+    if "first_run" not in st.session_state:
+        st.session_state.first_run = True
+    else:
+        # Nếu ứng dụng đã từng chạy và không có intro_done, đặt nó là True.
+        # Điều này giúp ứng dụng không hiển thị lại intro sau khi người dùng tự reload.
+        st.session_state.intro_done = True 
+
 
 if not st.session_state.intro_done:
     
-    # Bắt tham số 'intro_done' từ URL.
-    if st.query_params.get('intro_done') == 'true':
+    # === NHẬN THÔNG ĐIỆP TỪ JS VÀ BUỘC RELOAD ===
+    # Thêm một custom component để lắng nghe thông điệp postMessage từ iframe
+    components.html("""
+    <script>
+    window.addEventListener("message", (event) => {
+        if (event.data.type === "intro_done_reload") {
+            // Thiết lập cờ session state trong Python (thông qua query params)
+            const url = new URL(window.parent.location.href);
+            url.searchParams.set('intro_completed', '1'); 
+            window.parent.location.href = url.toString();
+        }
+    });
+    </script>
+    """, height=0, width=0)
+
+    # Bắt tham số 'intro_completed' từ URL.
+    if st.query_params.get('intro_completed') == '1':
+        # Đây là lần rerender sau khi JS đã kết thúc video.
         st.session_state.intro_done = True
         
-        # Xóa tham số và rerender ngay lập tức để chuyển trang.
-        del st.query_params['intro_done']
+        # Xóa tham số và rerender ngay lập tức để chuyển trang
+        del st.query_params['intro_completed']
         st.rerun()
     
     # Nếu không phải trạng thái chuyển, hiển thị màn hình intro
