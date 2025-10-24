@@ -554,7 +554,8 @@ music_player_html_js = f"""
         window.parent.playerInitialized = false;
 
         window.parent.updatePlayerState = function() {{
-            window.parent.trackInfo.textContent = `🎵 ${window.parent.trackNames[window.parent.currentTrackIndex]}`;
+            // *** ĐÃ SỬA LỖI NAMEERROR BẰNG CÁCH NỐI CHUỖI ***
+            window.parent.trackInfo.textContent = '🎵 ' + window.parent.trackNames[window.parent.currentTrackIndex];
             
             if (window.parent.isPlaying) {{
                 window.parent.playPauseButton.classList.add('playing');
@@ -575,7 +576,6 @@ music_player_html_js = f"""
                 window.parent.isPlaying = true;
                 window.parent.updatePlayerState();
             }}).catch(e => {{
-                // Lỗi Autoplay (thường xảy ra ở lần click đầu tiên)
                 console.warn("Autoplay prevented or player not ready:", e);
                 window.parent.isPlaying = false; 
                 window.parent.updatePlayerState();
@@ -587,7 +587,6 @@ music_player_html_js = f"""
                 window.parent.audio.pause();
                 window.parent.isPlaying = false;
             }} else {{
-                // Khởi tạo track đầu tiên nếu chưa được khởi tạo
                 if (!window.parent.playerInitialized) {{
                     window.parent.loadTrack(window.parent.currentTrackIndex);
                     window.parent.playerInitialized = true;
@@ -606,7 +605,6 @@ music_player_html_js = f"""
         }};
 
         window.parent.prevTrack = function() {{
-            // Sử dụng phép toán modulo để vòng lặp ngược
             window.parent.currentTrackIndex = (window.parent.currentTrackIndex - 1 + window.parent.playlist.length) % window.parent.playlist.length;
             window.parent.loadTrack(window.parent.currentTrackIndex);
             if (window.parent.isPlaying) {{
@@ -621,9 +619,8 @@ music_player_html_js = f"""
         window.parent.loadTrack(window.parent.currentTrackIndex);
     }}
 
-    // Kích hoạt player khi người dùng click (do giới hạn Autoplay của trình duyệt)
+    // Kích hoạt player khi người dùng click
     window.parent.document.body.addEventListener('click', () => {{
-        // Chỉ kích hoạt nếu video intro đã xong và player chưa được khởi tạo đầy đủ (đã có click)
         if (window.parent.document.querySelector('.stApp').classList.contains('video-finished') && !window.parent.playerInitialized) {{
             window.parent.playerInitialized = true;
             window.parent.loadTrack(window.parent.currentTrackIndex);
