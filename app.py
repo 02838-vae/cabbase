@@ -126,14 +126,21 @@ iframe:first-of-type {{
     }}
 }}
 
-/* Keyframes cho hiệu ứng chữ chạy liên tục */
-@keyframes scrollContinuous {{
-    0% {{ transform: translate(0, 0); }} 
-    /* Dịch chuyển bằng 50% tổng chiều rộng (bao gồm chữ + khoảng trống) */
-    100% {{ transform: translate(-50%, 0); }} 
+/* Keyframes cho hiệu ứng chữ chạy đơn (từ phải sang trái, lặp lại) */
+@keyframes scrollText {{
+    0% {{ transform: translate(100vw, 0); }} /* Bắt đầu từ ngoài cùng bên phải */
+    100% {{ transform: translate(-100%, 0); }} /* Chạy sang trái (độ rộng của chữ) */
 }}
 
-/* === TIÊU ĐỀ TRANG CHÍNH (CHỮ CHẠY LIÊN TỤC CÓ KHOẢNG TRỐNG) === */
+/* Keyframes cho hiệu ứng Đổi Màu Gradient */
+@keyframes colorShift {{
+    0% {{ background-position: 0% 50%; }}
+    50% {{ background-position: 100% 50%; }}
+    100% {{ background-position: 0% 50%; }}
+}}
+
+
+/* === TIÊU ĐỀ TRANG CHÍNH (ĐƠN, CHẠY VÀ ĐỔI MÀU) === */
 #main-title-container {{
     position: fixed;
     top: 5vh; 
@@ -155,23 +162,24 @@ iframe:first-of-type {{
     font-weight: 900; 
     font-feature-settings: "lnum" 1; 
     letter-spacing: 5px; 
-    color: #F0F0F0; 
     white-space: nowrap; 
     
-    display: flex; 
-    width: fit-content; 
-    
-    animation: scrollContinuous 25s linear infinite; /* Điều chỉnh thời gian chạy chậm lại */
-    
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); 
-}}
+    display: inline-block; 
 
-/* Bọc các bản sao văn bản để dễ dàng điều chỉnh */
-.scroll-text-wrapper {{
-    display: flex; 
-    /* Có thể thêm padding/margin nếu cần thêm khoảng trống bên trong wrapper */
+    /* 1. Hiệu ứng chữ chạy - Tăng tốc độ */
+    animation: scrollText 15s linear infinite; /* Giảm từ 25s xuống 15s */
+    
+    /* 2. Hiệu ứng đổi màu */
+    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3); /* Cầu vồng */
+    background-size: 400% 400%; /* Cần kích thước lớn để tạo hiệu ứng chuyển màu mượt */
+    -webkit-background-clip: text; /* Clip màu nền theo hình dạng chữ */
+    -webkit-text-fill-color: transparent; /* Ẩn màu chữ gốc */
+    color: transparent; /* Dành cho các trình duyệt khác */
+    animation: colorShift 10s ease infinite, scrollText 15s linear infinite; /* Áp dụng đồng thời 2 animation */
+    
+    /* Thiết lập bóng đổ cổ điển */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Giảm độ đậm của bóng để màu sắc nổi bật */
 }}
-
 
 @media (max-width: 768px) {{
     #main-title-container {{
@@ -182,11 +190,7 @@ iframe:first-of-type {{
     
     #main-title-container h1 {{
         font-size: 6.5vw; 
-        font-weight: 900; 
-        font-feature-settings: "lnum" 1; 
-        white-space: nowrap; 
-        animation-duration: 15s; /* Chạy nhanh hơn trên mobile */
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7); 
+        animation-duration: 8s; /* Tăng tốc độ trên mobile */
     }}
 }}
 </style>
@@ -198,6 +202,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (GIỮ NGUYÊN) ---
 
+# JavaScript (GIỮ NGUYÊN)
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
@@ -281,7 +286,7 @@ js_callback_video = f"""
 </script>
 """
 
-# Mã HTML/CSS cho Video (Font Sacramento)
+# Mã HTML/CSS cho Video (GIỮ NGUYÊN)
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -401,15 +406,14 @@ reveal_grid_html = f"""
 st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
 
-# --- NỘI DUNG CHÍNH (ĐÃ THÊM KHOẢNG TRỐNG) ---
+# --- NỘI DUNG CHÍNH (TIÊU ĐỀ ĐƠN, ĐỔI MÀU) ---
 
-# Khoảng trắng lớn (sử dụng 20 ký tự &nbsp; không ngắt)
-separator = "&nbsp;" * 20 
-main_title_text_repeated = f"TỔ BẢO DƯỠNG SỐ 1{separator}" * 2 
+# Tiêu đề đơn
+main_title_text = "TỔ BẢO DƯỠNG SỐ 1" 
 
 # Nhúng tiêu đề
 st.markdown(f"""
 <div id="main-title-container">
-    <h1>{main_title_text_repeated}</h1>
+    <h1>{main_title_text}</h1>
 </div>
 """, unsafe_allow_html=True)
