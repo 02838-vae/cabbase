@@ -24,7 +24,7 @@ try:
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
-    bg_pc_base64 = get_base64_encoded_file("cabbage.jpg")  # Tên file nền PC
+    bg_pc_base64 = get_base64_encoded_file("cabbase.jpg")  # Tên file nền PC
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg") # Tên file nền Mobile
 except FileNotFoundError as e:
     st.error(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
@@ -337,7 +337,7 @@ if not st.session_state.video_ended:
 st.markdown("""
 <div style="padding: 20px; color: black; position: relative; z-index: 10;">
     <h1>Chào mừng đến với Nội dung Chính của Trang!</h1>
-    <p>Nền của trang đã được thay thế bằng hình ảnh **cabbage.jpg** (hoặc **mobile.jpg**).</p>
+    <p>Nền của trang đã được thay thế bằng hình ảnh **cabbase.jpg** (hoặc **mobile.jpg**).</p>
     <p>Hiệu ứng ô vuông đã lật mở để bạn nhìn thấy nội dung này.</p>
     <p>Bạn có thể cuộn xuống và tương tác với các thành phần Streamlit khác.</p>
 </div>
