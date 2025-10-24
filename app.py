@@ -108,12 +108,14 @@ iframe:first-of-type {{
     transition: opacity 0.5s ease-out;
 }}
 
+/* ĐIỀU CHỈNH: BACKGROUND NGẢ VÀNG MẠNH HƠN */
 .main-content-revealed {{
     background-image: var(--main-bg-url-pc);
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
-    filter: sepia(30%) grayscale(10%) brightness(95%); 
+    /* Tăng sepia, điều chỉnh các giá trị khác để trông cũ hơn */
+    filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%); 
     transition: filter 2s ease-out; 
 }}
 
@@ -127,7 +129,7 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === TIÊU ĐỀ TRANG CHÍNH (FONT PLAYFAIR DISPLAY) === */
+/* === TIÊU ĐỀ TRANG CHÍNH (FONT PLAYFAIR DISPLAY VÀ HIỆU ỨNG CHỮ KHẮC NỔI) === */
 #main-title-container {{
     position: fixed;
     top: 5vh; 
@@ -143,14 +145,17 @@ iframe:first-of-type {{
     font-family: 'Playfair Display', serif; 
     font-size: 3.5vw; 
     margin: 0;
-    
-    /* ĐIỀU CHỈNH: Đặt độ đậm tối đa và tính năng số */
     font-weight: 900; 
-    font-feature-settings: "lnum" 1; /* Force Lining Numbers (chiều cao bằng chữ) */
-    
+    font-feature-settings: "lnum" 1; 
     letter-spacing: 5px; 
-    color: white; 
-    text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);
+    color: #F0F0F0; /* Màu chữ sáng hơn làm nổi bật hiệu ứng */
+    
+    /* HIỆU ỨNG CHỮ KHẮC NỔI (EMBOSSED/CARVED TEXT) */
+    text-shadow: 
+        -1px -1px 0 rgba(255, 255, 255, 0.4), /* Highlight trên cùng bên trái */
+        1px 1px 0 rgba(0, 0, 0, 0.8),         /* Shadow dưới cùng bên phải */
+        2px 2px 5px rgba(0, 0, 0, 0.5);        /* Bóng đổ mềm hơn */
+    
     white-space: nowrap; 
 }}
 
@@ -163,8 +168,9 @@ iframe:first-of-type {{
     #main-title-container h1 {{
         font-size: 6.5vw; 
         font-weight: 900; 
-        font-feature-settings: "lnum" 1; /* Áp dụng luôn cho mobile */
+        font-feature-settings: "lnum" 1; 
         white-space: nowrap; 
+        /* Hiệu ứng chữ khắc nổi vẫn áp dụng cho mobile */
     }}
 }}
 </style>
@@ -261,7 +267,7 @@ js_callback = f"""
 
 # Mã HTML/CSS cho Video (Font Sacramento)
 html_content_modified = f"""
-<!DOCTYPE html>
+<!DOCTYPE Html>
 <html>
 <head>
     <style>
@@ -349,7 +355,7 @@ html_content_modified = f"""
 </html>
 """
 
-# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả (GIỮ NGUYÊN)
+# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
 intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
     f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>' 
