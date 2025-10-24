@@ -37,9 +37,8 @@ def hide_streamlit_ui():
     </style>
     """, unsafe_allow_html=True)
 
----
 
-# ========== MÀN HÌNH INTRO ĐÃ SỬA LỖI CÚ PHÁP ==========
+# ========== MÀN HÌNH INTRO ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
@@ -58,7 +57,6 @@ def intro_screen(is_mobile=False):
         st.error(f"Lỗi: Không tìm thấy file tài nguyên. Vui lòng kiểm tra: {e.filename}")
         st.stop()
     
-    # BẮT ĐẦU CHUỖI F-STRING ĐA DÒNG
     intro_html = f"""
     <html>
     <head>
@@ -155,12 +153,11 @@ def intro_screen(is_mobile=False):
         </script>
     </body>
     </html>
-    """ # <-- Đóng chuỗi f-string ở đây
+    """ 
     components.html(intro_html, height=800, scrolling=False)
 
----
 
-# ========== TRANG CHÍNH (Giữ nguyên) ==========
+# ========== TRANG CHÍNH ==========
 
 def main_page(is_mobile=False):
     hide_streamlit_ui()
@@ -232,7 +229,6 @@ def main_page(is_mobile=False):
     <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
     """, unsafe_allow_html=True)
 
----
 
 # ========== LUỒNG CHÍNH ==========
 
