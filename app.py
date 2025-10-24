@@ -140,9 +140,9 @@ iframe:first-of-type {{
 
 /* Đặt kích thước và FONT cho tiêu đề chính (H1) */
 #main-title-container h1 {{
-    font-size: 4vw; /* Kích thước PC (GIỮ NGUYÊN) */
+    font-size: 3vw; /* Kích thước PC (GIỮ NGUYÊN) */
     margin: 0;
-    font-weight: 900; 
+    font-weight: 600; 
     letter-spacing: 5px;
     /* CHỈ ĐỊNH FONT SANG SANS-SERIF PHỔ BIẾN CHO CẢ PC VÀ MOBILE */
     font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
