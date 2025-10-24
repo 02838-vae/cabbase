@@ -1,96 +1,290 @@
 import streamlit as st
 import base64
+import time
 from streamlit_javascript import st_javascript
+from user_agents import parse
 import streamlit.components.v1 as components
 
+
+# ========== CẤU HÌNH VÀ TÀI NGUYÊN ==========
+
+# File video và âm thanh intro
 VIDEO_PC = "airplane.mp4"
 VIDEO_MOBILE = "mobile.mp4"
 SFX = "plane_fly.mp3"
+
+# File ảnh nền của trang chính (sẽ hiện ra sau khi ghép lại)
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 
+# THỜI GIAN VIDEO VÀ CHUYỂN TIẾP
+INTRO_DURATION_MS = 8500        # Tổng thời gian video chạy trước khi bắt đầu fade (8.5 giây)
+FADE_DURATION_MS = 300          # Thời gian fade-out (300ms)
+
 st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 
-if "intro_done" not in st.session_state:
-    st.session_state.intro_done = False
-if "is_mobile" not in st.session_state:
-    st.session_state.is_mobile = False
+# ========== ẨN UI STREAMLIT ==========
 
+def hide_streamlit_ui():
+    """Ẩn thanh Streamlit UI và loại bỏ padding mặc định."""
+    st.markdown("""
+    <style>
+    [data-testid="stToolbar"], header, footer, iframe[title*="keyboard"], [tabindex="0"][aria-live] {
+        display: none !important;
+    }
+    .stApp, .main, .block-container {
+        padding: 0 !important;
+        margin: 0 !important;
+        width: 100vw !important;
+        height: 100vh !important;
+        overflow: hidden !important;
+    }
+    </style>
+    """, unsafe_allow_html=True)
+
+
+# ========== MÀN HÌNH INTRO (ĐÃ THÊM FADE-OUT MƯỢT MÀ) ==========
 def intro_screen(is_mobile=False):
+    hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
+    bg_file = BG_MOBILE if is_mobile else BG_PC
+    
+    # ... (Đọc file và mã hóa Base64) ...
     try:
         with open(video_file, "rb") as f:
             video_b64 = base64.b64encode(f.read()).decode()
-        with open(SFX, "rb") as f:
-            audio_b64 = base64.b64encode(f.read()).decode()
+        with open(SFX, "rb") as a:
+            audio_b64 = base64.b64encode(a.read()).decode()
+        with open(bg_file, "rb") as b:
+            bg_b64 = base64.b64encode(b.read()).decode() # Dùng cho Preload
+            
     except FileNotFoundError as e:
-        st.error(f"Lỗi file: {e.filename}")
+        st.error(f"Lỗi: Không tìm thấy file tài nguyên. Vui lòng kiểm tra: {e.filename}")
         st.stop()
+    
+    intro_html = f"""
+    <html>
+    <head>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+        <link href='https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap' rel='stylesheet'>
+        <style>
+        /* CSS chính */
+        html, body {{ margin: 0; padding: 0; overflow: hidden; background: black; height: 100%; }}
+        video {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }}
+        audio {{ display: none; }}
+        
+        #intro-text {{ /* ... CSS Text giữ nguyên ... */
+            position: absolute; top: 8%; left: 50%; transform: translate(-50%, 0); width: 90vw; text-align: center; color: #f8f4e3;
+            font-size: clamp(22px, 6vw, 60px); font-weight: bold; font-family: 'Playfair Display', serif;
+            background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
+            background-size: 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            text-shadow: 0 0 15px rgba(255,255,230,0.4); animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards;
+            line-height: 1.2; word-wrap: break-word; z-index: 10;
+        }}
+        @keyframes lightSweep {{ 0% {{ background-position: 200% 0%; }} 100% {{ background-position: -200% 0%; }} }}
+        @keyframes fadeInOut {{ 0% {{ opacity: 0; }} 20% {{ opacity: 1; }} 80% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}
 
-    # Escape tất cả {} trong JS bằng {{ }}
-    html = f"""
-    <video id="intro-video" autoplay muted playsinline
-        style="position:fixed; top:0; left:0; width:100vw; height:100vh; object-fit:cover; z-index:10;">
-        <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
-    </video>
-    <audio id="intro-audio" preload="auto">
-        <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
-    </audio>
-    <script>
-    const vid = document.getElementById('intro-video');
-    const audio = document.getElementById('intro-audio');
+        /* Lớp phủ Fade-out */
+        #black-overlay {{
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: black; 
+            z-index: 200; 
+            opacity: 0;
+            transition: opacity {FADE_DURATION_MS}ms ease-in-out; 
+            pointer-events: none; 
+        }}
+        /* Lớp đen ban đầu */
+        #black-fade {{
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 100; 
+            transition: opacity 1s ease-in-out; opacity: 1;
+        }}
+        /* Thẻ preload background (Ẩn) */
+        #preload-bg {{
+            position: absolute; width: 1px; height: 1px; opacity: 0;
+            background-image: url("data:image/jpeg;base64,{bg_b64}"); 
+            background-size: cover;
+        }}
+        </style>
+    </head>
+    <body>
+        <video id="intro-video" muted playsinline webkit-playsinline>
+            <source src="data:video/mp4;base64,{video_b64}" type="video/mp4">
+        </video>
+        <audio id="intro-audio" preload="auto">
+            <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
+        </audio>
+        <div id="intro-text">KHÁM PHÁ THẾ GIỚI<br>CÙNG CHÚNG TÔI</div> 
+        <div id="black-overlay"></div> 
+        <div id="black-fade"></div> 
+        <div id="preload-bg"></div> 
 
-    vid.play().catch(()=>{{}});
-    audio.play().catch(()=>{{}});
+        <script>
+        const vid = document.getElementById('intro-video');
+        const audio = document.getElementById('intro-audio');
+        const blackFade = document.getElementById('black-fade');
+        const blackOverlay = document.getElementById('black-overlay'); 
+        let finished = false;
 
-    vid.addEventListener('ended', ()=>{{ window.parent.postMessage({{type:'intro_done'}}, '*'); }});
+        function startTransition() {{
+            if (finished) return; 
+            finished = true;
 
-    document.addEventListener('click', ()=>{
-        vid.muted = false; vid.play();
-        audio.play().catch(()=>{{}});
-    }}, {{once:true}});
-    </script>
-    """
-    components.html(html, height=900, scrolling=False)
+            vid.pause();
+            audio.pause();
+            
+            // 1. Kích hoạt FADE-OUT SANG MÀU ĐEN
+            blackOverlay.style.opacity = 1;
+            blackOverlay.style.pointerEvents = 'auto'; 
+
+            // 2. Kích hoạt GIAO TIẾP STREAMLIT sau khi fade-out hoàn tất
+            setTimeout(() => {{
+                // Dùng postMessage để giao tiếp an toàn với Streamlit
+                window.parent.postMessage({{ type: 'intro_done_final' }}, '*'); 
+            }}, {FADE_DURATION_MS});
+        }}
+        
+        function startMedia() {{
+            vid.play().catch(e => console.log('Video Autoplay bị chặn:', e));
+            audio.play().catch(e => console.log('Audio Autoplay bị chặn:', e));
+            blackFade.style.opacity = 0;
+            audio.volume = 1.0;
+        }}
+
+        vid.addEventListener('canplay', startMedia);
+        
+        document.addEventListener('click', () => {{
+            vid.muted = false; 
+            startMedia(); 
+        }}, {{once:true}});
+
+        // Chỉ dùng TIMEOUT đáng tin cậy để kích hoạt fade
+        setTimeout(startTransition, {INTRO_DURATION_MS}); 
+
+        </script>
+    </body>
+    </html>
+    """ 
+    # Đặt chiều cao lớn để đảm bảo chiếm hết màn hình ban đầu
+    components.html(intro_html, height=800, scrolling=False) 
+
+
+# ========== TRANG CHÍNH ==========
 
 def main_page(is_mobile=False):
-    bg_file = BG_MOBILE if is_mobile else BG_PC
+    hide_streamlit_ui()
+    bg = BG_MOBILE if is_mobile else BG_PC
     try:
-        with open(bg_file, "rb") as f:
+        with open(bg, "rb") as f:
             bg_b64 = base64.b64encode(f.read()).decode()
     except FileNotFoundError as e:
-        st.error(f"Lỗi file: {e.filename}")
+        st.error(f"Lỗi: Không tìm thấy file tài nguyên: {e.filename}")
         st.stop()
+
 
     st.markdown(f"""
     <style>
+    /* CSS trang chính */
     html, body, .stApp {{
-        height:100vh; width:100vw;
-        margin:0; padding:0;
-        background: url('data:image/jpeg;base64,{bg_b64}') no-repeat center center fixed;
-        background-size: cover;
+        height: 100vh !important;
+        background: 
+            linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
+            url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
+        background-size: cover !important;
+        overflow: hidden !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        position: relative;
+        filter: brightness(1.05) contrast(1.1) saturate(1.05);
+        animation: fadeInBg 0.3s ease-in-out forwards; 
+    }}
+    /* ... (CSS còn lại giữ nguyên) ... */
+    @keyframes fadeInBg {{
+        from {{ opacity: 0; }}
+        to {{ opacity: 1; }}
     }}
     .welcome {{
-        position:absolute; top:10%; width:100%; text-align:center;
-        font-size:clamp(30px,5vw,65px); color:white;
-        font-family:'Playfair Display', serif; text-shadow:0 0 20px black;
+        position: absolute;
+        top: 8%;
+        width: 100%;
+        text-align: center;
+        font-size: clamp(30px, 5vw, 65px);
+        color: #fff5d7;
+        font-family: 'Playfair Display', serif;
+        text-shadow: 0 0 18px rgba(0,0,0,0.65), 0 0 30px rgba(255,255,180,0.25);
+        background: linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%);
+        background-size: 200%;
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        animation: textLight 10s linear infinite, fadeIn 1s ease-in-out forwards; 
+        letter-spacing: 2px;
+        z-index: 3;
+    }}
+    @keyframes textLight {{
+        0% {{ background-position: 200% 0%; }}
+        100% {{ background-position: -200% 0%; }}
+    }}
+    @keyframes fadeIn {{
+        from {{ opacity: 0; transform: scale(0.97); }}
+        to {{ opacity: 1; transform: scale(1); }}
     }}
     </style>
+
+
     <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
     """, unsafe_allow_html=True)
 
-# Main logic
-if st.session_state.intro_done:
-    main_page(st.session_state.is_mobile)
-else:
+
+# =========================================================================
+# ========== LUỒNG CHÍNH VÀ GIAO TIẾP STREAMLIT ==========
+# =========================================================================
+
+hide_streamlit_ui()
+
+# 1. Kiểm tra thiết bị (Giữ nguyên)
+if "is_mobile" not in st.session_state:
+    ua_string = st_javascript("window.navigator.userAgent;")
+    if ua_string:
+        ua = parse(ua_string)
+        st.session_state.is_mobile = not ua.is_pc
+        st.rerun() 
+    else:
+        st.info("Đang xác định thiết bị...")
+        time.sleep(1) 
+        st.stop()
+
+
+if "intro_done" not in st.session_state:
+    st.session_state.intro_done = False
+
+
+if not st.session_state.intro_done:
+    
+    # 2. Hiển thị màn hình intro
     intro_screen(st.session_state.is_mobile)
-    done = st_javascript("""
-    new Promise((resolve) => {{
-        window.addEventListener("message", (event) => {{
-            if (event.data.type === "intro_done") {{ resolve(true); }}
-        }});
-    }});
-    """)
-    if done:
+    
+    # 3. Component lắng nghe tin nhắn (KHÔNG DÙNG KEY)
+    # Streamlit sẽ tạo một khóa nội bộ cho component này.
+    result = components.html("""
+    <script>
+    // Chỉ thêm sự kiện lắng nghe một lần để tránh lỗi
+    if (!window.introListenerAdded) {
+        window.addEventListener("message", (event) => {
+            // Kiểm tra tin nhắn chính xác từ iframe video
+            if (event.data.type === 'intro_done_final') {
+                // Gửi giá trị True về Streamlit
+                Streamlit.setComponentValue(true);
+            }
+        });
+        window.introListenerAdded = true;
+    }
+    </script>
+    """, height=0, width=0) # Đã loại bỏ key để tránh lỗi TypeError
+    
+    # 4. Kiểm tra kết quả giao tiếp
+    if result is True:
+        # Khi tin nhắn được nhận thành công (sau fade-out 300ms)
         st.session_state.intro_done = True
-        main_page(st.session_state.is_mobile)
+        st.rerun()
+
+else:
+    # 5. Hiển thị trang chính
+    main_page(st.session_state.is_mobile)
