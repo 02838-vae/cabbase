@@ -3,7 +3,7 @@ import base64
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
-    page_title="Khám phá cùng chúng tôi",
+    page_title="Tổ Bảo Dưỡng Số 1", # Đổi tiêu đề tab
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -30,8 +30,9 @@ try:
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
-    # Đã đổi tên file ảnh nền PC thành cabbase.jpg theo yêu cầu
-    bg_pc_base64 = get_base64_encoded_file("cabbase.jpg")
+    
+    # ĐÃ SỬA: Đảm bảo tên file là CABBASE.JPG (đúng theo yêu cầu)
+    bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
 except FileNotFoundError as e:
     st.error(e)
@@ -101,8 +102,8 @@ iframe:first-of-type {{
 }}
 
 .grid-cell {{
-    /* Áp dụng nền từ body chính để tính toán vị trí, nhưng ở đây ta chỉ cần màu trắng/nền chung */
-    background-color: white; /* Ban đầu là màu trắng/màu che phủ */
+    /* Sử dụng màu trắng để che phủ ban đầu */
+    background-color: white; 
     opacity: 1;
     transition: opacity 0.5s ease-out;
 }}
@@ -125,6 +126,18 @@ iframe:first-of-type {{
         grid-template-columns: repeat(10, 1fr);
         grid-template-rows: repeat(20, 1fr);
     }}
+}}
+
+/* Căn giữa tiêu đề chính trên nền */
+#main-title-container {{
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%; /* Chiếm phần lớn màn hình */
+    text-align: center;
+    z-index: 20; /* Trên nền và dưới iframe video */
+    pointer-events: none; /* Không chặn tương tác nếu có */
 }}
 </style>
 """
@@ -158,8 +171,6 @@ js_callback = f"""
 
         shuffledCells.forEach((cell, index) => {{
             setTimeout(() => {{
-                // Thay đổi background-color của ô vuông thành màu nền của Streamlit
-                // Hoặc đơn giản là ẩn nó đi
                 cell.style.opacity = 0; 
             }}, index * 10); // Khoảng thời gian giữa các ô (10ms)
         }});
@@ -167,6 +178,12 @@ js_callback = f"""
         // Sau khi hiệu ứng kết thúc, loại bỏ lưới
         setTimeout(() => {{
              revealGrid.remove();
+             // **HIỆU ỨNG THÊM: Hiện tiêu đề chính sau khi Reveal xong**
+             const mainTitle = window.parent.document.getElementById('main-title-container');
+             if (mainTitle) {{
+                 mainTitle.style.opacity = 1;
+                 mainTitle.style.transform = 'translate(-50%, -50%) scale(1)';
+             }}
         }}, shuffledCells.length * 10 + 1000); // Đợi 1 giây sau khi ô cuối cùng ẩn
     }}
 
@@ -191,9 +208,8 @@ js_callback = f"""
             setTimeout(() => {{ introText.style.opacity = 1; }}, 500);
 
             audio.volume = 0.5;
-            audio.loop = true; // Lặp lại âm thanh nếu cần
+            audio.loop = true; 
             audio.play().catch(e => {{
-                // Cần tương tác người dùng để Play Audio/Video trên nhiều trình duyệt
                 document.body.addEventListener('click', () => {{
                     audio.play().catch(err => console.error("Audio playback error on click:", err));
                 }}, {{ once: true }});
@@ -288,7 +304,7 @@ html_content_modified = f"""
 st.components.v1.html(html_content_modified, height=10, scrolling=False)
 
 
-# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
+# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH (CHỈ TIÊU ĐỀ) ---
 
 # Tạo Lưới Reveal (20x12 = 240 ô)
 grid_cells_html = ""
@@ -300,20 +316,17 @@ reveal_grid_html = f"""
     {grid_cells_html}
 </div>
 """
-# Lưới này phải được đặt trước nội dung chính và Streamlit sẽ hiển thị nó
-# Nó bị ẩn đi bằng CSS/JS sau khi video kết thúc.
 st.markdown(reveal_grid_html, unsafe_allow_html=True)
     
 
-# Nội dung chính của trang (Phần này sẽ hiện ra sau khi lưới bị ẩn)
+# Nội dung chính của trang (CHỈ CÓ TIÊU ĐỀ)
 st.markdown("""
-<div style="padding: 20px; color: black; position: relative; z-index: 10;">
-    <h1>Chào mừng đến với Nội dung Chính của Trang!</h1>
-    <p>Nền của trang đã được thay thế bằng hình ảnh **cabbase.jpg** (hoặc **mobile.jpg**).</p>
-    <p>Hiệu ứng ô vuông đã lật mở để bạn nhìn thấy nội dung này.</p>
-    <p>Bạn có thể cuộn xuống và tương tác với các thành phần Streamlit khác.</p>
+<div id="main-title-container" style="color: white; opacity: 0; transition: opacity 2s, transform 1s; transform: translate(-50%, -50%) scale(0.9); text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);">
+    <h1 style="font-size: 6vw; margin: 0; font-weight: 900; letter-spacing: 5px;">TỔ BẢO DƯỠNG SỐ 1</h1>
+    <h2 style="font-size: 2vw; margin: 10px 0 0 0; font-weight: 300;">MỞ RA MỘT CHẶNG ĐƯỜNG MỚI</h2>
 </div>
 """, unsafe_allow_html=True)
 
-st.slider("Thanh trượt Streamlit", 0, 100)
-st.button("Nút ấn")
+# Xóa bỏ các thành phần Streamlit mặc định khác (thanh trượt, nút ấn)
+# st.slider("Thanh trượt Streamlit", 0, 100) # Đã xóa
+# st.button("Nút ấn") # Đã xóa
