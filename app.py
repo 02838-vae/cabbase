@@ -12,11 +12,14 @@ VIDEO_MOBILE = "mobile.mp4"
 SFX = "plane_fly.mp3"
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
+SHUTTER_PC = "airplane_shutter.jpg"
+SHUTTER_MOBILE = "mobile_shutter.jpg"
 
 st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
+
 GRID_SIZE = 8
 SHATTER_DURATION = 1.8
-BLACKOUT_DELAY = 0.2
+BLACKOUT_DELAY = 0.3
 
 
 # ========== ẨN GIAO DIỆN STREAMLIT ==========
@@ -44,13 +47,16 @@ def intro_screen(is_mobile=False):
 
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
     bg_file = BG_MOBILE if is_mobile else BG_PC
-    
+    shutter_file = SHUTTER_MOBILE if is_mobile else SHUTTER_PC
+
     with open(video_file, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
     with open(SFX, "rb") as a:
         audio_b64 = base64.b64encode(a.read()).decode()
     with open(bg_file, "rb") as b:
         bg_b64 = base64.b64encode(b.read()).decode()
+    with open(shutter_file, "rb") as s:
+        shutter_b64 = base64.b64encode(s.read()).decode()
 
     shards_html = "".join([f"<div class='shard' id='shard-{i}'></div>" for i in range(GRID_SIZE * GRID_SIZE)])
     js_shatter_duration = SHATTER_DURATION * 1000
@@ -103,9 +109,9 @@ def intro_screen(is_mobile=False):
         }}
         .shard {{
             position: relative;
-            background-image: url("data:image/jpeg;base64,{bg_b64}");
+            background-image: url("data:image/jpeg;base64,{shutter_b64}");
             background-size: 100vw 100vh;
-            transition: transform {SHATTER_DURATION}s cubic-bezier(0.68, -0.55, 0.27, 1.55),
+            transition: transform {SHATTER_DURATION}s cubic-bezier(0.68,-0.55,0.27,1.55),
                         opacity 1.2s ease-in-out;
             opacity: 1;
         }}
@@ -141,35 +147,31 @@ def intro_screen(is_mobile=False):
         const shatterOverlay = document.getElementById('shatter-overlay');
         const shards = document.querySelectorAll('.shard');
         const blackFade = document.getElementById('black-fade');
-
         let ended = false;
 
-        let initialTransforms = [];
+        let transforms = [];
         shards.forEach((shard, i) => {{
             const row = Math.floor(i / GRID_SIZE);
             const col = i % GRID_SIZE;
             shard.style.backgroundPosition = `calc(-${{col}} * 100vw / ${{GRID_SIZE}}) calc(-${{row}} * 100vh / ${{GRID_SIZE}})`;
-            const randX = (Math.random() - 0.5) * 200;
-            const randY = (Math.random() - 0.5) * 200;
-            const randR = (Math.random() - 0.5) * 360;
-            const delay = Math.random() * 0.5;
-            initialTransforms.push({{randX, randY, randR, delay}});
+            const rx = (Math.random() - 0.5) * 200;
+            const ry = (Math.random() - 0.5) * 200;
+            const rr = (Math.random() - 0.5) * 360;
+            const d = Math.random() * 0.5;
+            transforms.push({{rx, ry, rr, d}});
         }});
 
         function finishIntro() {{
             if (ended) return;
             ended = true;
-
-            // Hiệu ứng tan vỡ
             shatterOverlay.style.opacity = 1;
             shards.forEach((shard, i) => {{
-                const t = initialTransforms[i];
-                shard.style.transform = `translate(${{t.randX}}vw, ${{t.randY}}vh) rotate(${{t.randR}}deg) scale(0.1)`;
-                shard.style.transitionDelay = t.delay + 's';
+                const t = transforms[i];
+                shard.style.transform = `translate(${{t.rx}}vw, ${{t.ry}}vh) rotate(${{t.rr}}deg) scale(0.1)`;
+                shard.style.transitionDelay = t.d + 's';
                 shard.style.opacity = 0;
             }});
 
-            // Sau khi tan vỡ: fade-in background chính & tiêu đề
             setTimeout(() => {{
                 const fadeBg = document.createElement('div');
                 fadeBg.style.position = 'absolute';
@@ -200,7 +202,6 @@ def intro_screen(is_mobile=False):
                 title.style.zIndex = '55';
                 document.body.appendChild(title);
 
-                // Fade-in mượt
                 setTimeout(() => {{
                     fadeBg.style.opacity = 1;
                     title.style.opacity = 1;
