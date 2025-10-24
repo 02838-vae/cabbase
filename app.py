@@ -126,24 +126,26 @@ iframe:first-of-type {{
     }}
 }}
 
-/* Keyframes cho hiệu ứng chữ chạy */
-@keyframes scrollText {{
-    0% {{ transform: translate(100vw, 0); }} /* Bắt đầu từ ngoài cùng bên phải */
-    100% {{ transform: translate(-100%, 0); }} /* Chạy sang trái (độ rộng của chữ) */
+/* Keyframes cho hiệu ứng chữ chạy liên tục */
+@keyframes scrollContinuous {{
+    /* Bắt đầu từ vị trí 0, chữ thứ hai nằm ngay sau chữ thứ nhất */
+    0% {{ transform: translate(0, 0); }} 
+    /* Di chuyển bằng đúng chiều dài của một tiêu đề (50% của tổng chiều dài) */
+    100% {{ transform: translate(-50%, 0); }} 
 }}
 
-/* === TIÊU ĐỀ TRANG CHÍNH (CHỮ CHẠY) === */
+/* === TIÊU ĐỀ TRANG CHÍNH (CHỮ CHẠY LIÊN TỤC) === */
 #main-title-container {{
     position: fixed;
     top: 5vh; 
-    left: 0; /* Đặt lại left: 0 để tiêu đề có thể di chuyển ra khỏi khung nhìn */
+    left: 0; 
     width: 100%; 
-    height: 10vh; /* Cần chiều cao rõ ràng cho container */
-    overflow: hidden; /* Cắt phần chữ thừa ra khỏi khung nhìn */
+    height: 10vh; 
+    overflow: hidden; 
     z-index: 20; 
     pointer-events: none; 
     
-    opacity: 0; /* Vẫn ẩn ban đầu */
+    opacity: 0; 
     transition: opacity 2s;
 }}
 
@@ -157,19 +159,28 @@ iframe:first-of-type {{
     color: #F0F0F0; 
     white-space: nowrap; 
     
+    /* Thiết lập cho chữ chạy */
+    display: flex; /* Dùng flex để hai bản sao nằm cạnh nhau */
+    width: fit-content; /* Quan trọng: Cho phép h1 có chiều rộng bằng nội dung */
+    
     /* Áp dụng Animation chữ chạy */
-    display: inline-block; /* Quan trọng để animation hoạt động */
-    animation: scrollText 30s linear infinite; /* 30 giây cho một vòng, lặp lại */
+    animation: scrollContinuous 20s linear infinite; /* Điều chỉnh thời gian chạy */
     
     /* Thiết lập bóng đổ cổ điển */
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); 
 }}
 
+/* Bọc các bản sao văn bản để dễ dàng điều chỉnh */
+.scroll-text-wrapper {{
+    /* Dùng flex để đảm bảo cả hai bản sao nằm ngang hàng */
+    display: flex; 
+}}
+
+
 @media (max-width: 768px) {{
-    /* GIỮ: Đảm bảo chỉ 1 hàng, nhưng không căn giữa tuyệt đối */
     #main-title-container {{
         height: 8vh;
-        width: 100%; /* Giữ 100% để animation có đủ không gian */
+        width: 100%; 
         left: 0;
     }}
     
@@ -178,7 +189,7 @@ iframe:first-of-type {{
         font-weight: 900; 
         font-feature-settings: "lnum" 1; 
         white-space: nowrap; 
-        animation-duration: 20s; /* Chạy nhanh hơn trên mobile */
+        animation-duration: 12s; /* Chạy nhanh hơn trên mobile */
         text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7); 
     }}
 }}
@@ -191,7 +202,6 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (GIỮ NGUYÊN) ---
 
-# JavaScript ĐÃ CHỈNH SỬA: Loại bỏ postMessage không cần thiết
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
@@ -203,9 +213,7 @@ js_callback_video = f"""
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
         const mainTitle = window.parent.document.getElementById('main-title-container');
 
-        // Bắt đầu hiển thị tiêu đề chính ngay (opacity)
         if (mainTitle) {{
-             // ĐÃ LOẠI BỎ transform translate để phù hợp với animation chữ chạy
              mainTitle.style.opacity = 1; 
         }}
 
@@ -397,11 +405,14 @@ reveal_grid_html = f"""
 st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
 
-# --- NỘI DUNG CHÍNH (ĐÃ ĐƠN GIẢN HÓA CHO CHỮ CHẠY) ---
+# --- NỘI DUNG CHÍNH (ĐÃ LẶP LẠI CHUỖI VĂN BẢN) ---
 
-# Nhúng tiêu đề (không cần JS phức tạp nữa)
+# Chuỗi văn bản được lặp lại 2 lần để tạo hiệu ứng liên tục
+main_title_text_repeated = "TỔ BẢO DƯỠNG SỐ 1 *** " * 2 
+
+# Nhúng tiêu đề
 st.markdown(f"""
 <div id="main-title-container">
-    <h1>TỔ BẢO DƯỠNG SỐ 1</h1>
+    <h1>{main_title_text_repeated}</h1>
 </div>
 """, unsafe_allow_html=True)
