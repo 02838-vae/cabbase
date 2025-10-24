@@ -21,7 +21,6 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
-        # Xử lý lỗi nếu file media không tồn tại
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
 
@@ -186,6 +185,8 @@ iframe:first-of-type {{
     #main-title-container {{
         width: 95%; 
         left: 50%;
+        /* Đảm bảo căn giữa tuyệt đối trên Mobile */
+        justify-content: center; 
     }}
     
     #main-title-container h1 {{
@@ -228,7 +229,7 @@ js_callback_video = f"""
     function sendBackToStreamlit() {{
         window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
         initRevealEffect();
-        window.parent.postMessage({{ type: 'video_ended' }}, '*'); // Báo cho Streamlit biết video đã kết thúc
+        window.parent.postMessage({{ type: 'video_ended' }}, '*'); 
     }}
     
     function initRevealEffect() {{
@@ -236,7 +237,6 @@ js_callback_video = f"""
         const mainTitle = window.parent.document.getElementById('main-title-container');
 
         if (!revealGrid) {{
-            // TRƯỜNG HỢP: Reveal Grid không tồn tại, hiển thị tiêu đề ngay
             if (mainTitle) {{
                  mainTitle.style.opacity = 1;
                  mainTitle.style.transform = 'translate(-50%, 0) scale(1)';
@@ -255,7 +255,6 @@ js_callback_video = f"""
         
         setTimeout(() => {{
              revealGrid.remove();
-             // SỬA LỖI TẠI ĐÂY: Đảm bảo tiêu đề được hiển thị
              if (mainTitle) {{
                  mainTitle.style.opacity = 1;
                  mainTitle.style.transform = 'translate(-50%, 0) scale(1)';
@@ -444,54 +443,56 @@ main_title_chars_html = ''.join([
     for char in main_title_text
 ])
 
-# JavaScript cho hiệu ứng phát sáng lặp lại
+# JavaScript cho hiệu ứng phát sáng lặp lại (ĐÃ SỬA LỖI)
 js_glow_effect = f"""
 <script>
     function startMainTitleGlow() {{
         const mainTitleContainer = document.getElementById('main-title-container');
-        if (mainTitleContainer) {{
-            const chars = mainTitleContainer.querySelectorAll('.main-title-char');
-            let currentIndex = 0;
-            const delay = 100; // Độ trễ giữa mỗi chữ (ms)
+        if (!mainTitleContainer) return;
+        
+        const chars = mainTitleContainer.querySelectorAll('.main-title-char');
+        if (chars.length === 0) return;
+        
+        let currentIndex = 0;
+        const delay = 100; // Độ trễ giữa mỗi chữ (ms)
+        const animationDuration = 1500; // Tổng thời gian animation của mỗi chữ (ms)
 
-            function animateChar() {{
-                if (chars.length === 0) return;
-
-                const currentChar = chars[currentIndex];
-                
-                // Reset và kích hoạt animation
-                currentChar.classList.remove('glowing'); 
-                void currentChar.offsetWidth; // Force reflow (reset animation)
+        function animateChar() {{
+            const currentChar = chars[currentIndex];
+            
+            // Xóa animation cũ
+            currentChar.classList.remove('glowing'); 
+            // Dùng requestAnimationFrame để force reflow và reset animation mượt hơn void offsetWidth
+            requestAnimationFrame(() => {{
                 currentChar.classList.add('glowing');
+            }});
 
-                currentIndex = (currentIndex + 1) % chars.length;
-                setTimeout(animateChar, delay);
-            }}
-
-            // Bắt đầu animation
-            setTimeout(() => {{
-                animateChar();
-            }}, 500); 
+            // Thiết lập timer cho chữ cái tiếp theo
+            currentIndex = (currentIndex + 1) % chars.length;
+            setTimeout(animateChar, delay);
         }}
+
+        // Bắt đầu animation
+        setTimeout(() => {{
+            animateChar();
+        }}, 500); 
     }}
 
     // Lắng nghe sự kiện từ iframe con (video) để biết khi nào video kết thúc
     window.addEventListener('message', (event) => {{
         if (event.data && event.data.type === 'video_ended') {{
-            // Khi video kết thúc, bắt đầu hiệu ứng glow cho tiêu đề chính
-            startMainTitleGlow();
+            // Đợi một chút để tiêu đề chính hiện ra hoàn toàn
+            setTimeout(startMainTitleGlow, 1200); 
         }}
     }});
 
     // Nếu trang được tải lại trực tiếp (ví dụ: F5), bắt đầu glow ngay
     document.addEventListener("DOMContentLoaded", function() {{
-        const mainTitleContainer = document.getElementById('main-title-container');
-        // Kiểm tra nếu class 'main-content-revealed' đã được thêm vào body/stApp (tức là đã qua intro)
-        if (document.querySelector('.stApp').classList.contains('main-content-revealed')) {{
-             // Đảm bảo tiêu đề đã hiện trước khi bắt đầu glow
-             if (mainTitleContainer.style.opacity === '1') {{
-                startMainTitleGlow();
-             }}
+        const stApp = document.querySelector('.stApp');
+        // Kiểm tra nếu class 'main-content-revealed' đã được thêm vào (tức là đã qua intro)
+        if (stApp && stApp.classList.contains('main-content-revealed')) {{
+             // Đợi một chút để đảm bảo DOM đã sẵn sàng và tiêu đề đã hiện
+             setTimeout(startMainTitleGlow, 1500);
         }}
     }});
 
