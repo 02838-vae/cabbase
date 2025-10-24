@@ -9,7 +9,6 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError:
-        # Trả về chuỗi rỗng nếu không tìm thấy file
         return "" 
 
 # --- CẤU HÌNH VÀ MÃ HÓA MEDIA ---
@@ -27,8 +26,8 @@ try:
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
     
-    # Mã hóa hình nền để nhúng vào CSS (Quan trọng)
-    cabbage_base64 = get_base64_encoded_file("cabbase.jpg")
+    # Mã hóa hình nền
+    cabbage_base64 = get_base64_encoded_file("cabbage.jpg")
     mobile_bg_base64 = get_base64_encoded_file("mobile.jpg")
     
     # Kiểm tra xem có đủ file cần thiết không
@@ -37,7 +36,7 @@ try:
         if not video_pc_base64: missing_files.append("airplane.mp4")
         if not video_mobile_base64: missing_files.append("mobile.mp4")
         if not audio_base64: missing_files.append("plane_fly.mp3")
-        if not cabbage_base64: missing_files.append("cabbase.jpg")
+        if not cabbage_base64: missing_files.append("cabbage.jpg")
         if not mobile_bg_base64: missing_files.append("mobile.jpg")
         st.error(f"Lỗi: Không tìm thấy (hoặc file rỗng) các file sau: {', '.join(missing_files)}. Vui lòng kiểm tra lại đường dẫn.")
         st.stop()
@@ -47,9 +46,9 @@ except Exception as e:
     st.stop()
 
 
-# --- CSS CHUNG CHO STREAMLIT (NHÚNG ẢNH NỀN) ---
+# --- CSS CHUNG CHO STREAMLIT (NHÚNG ẢNH NỀN VÀ HIỆU ỨNG CHUYỂN TRANG) ---
 
-# SỬA LỖI KEYERROR: Sử dụng placeholder {tên_biến} để format
+# SỬ DỤNG F-STRING ĐỂ NHÚNG BASE64 CỦA ẢNH NỀN VÀO CSS
 hide_streamlit_style = f"""
 <style>
 /* Ẩn các thành phần mặc định của Streamlit */
@@ -61,8 +60,8 @@ header {{visibility: hidden;}}
 .main {{
     padding: 0;
     margin: 0;
-    background-color: transparent; /* Quan trọng để nhìn xuyên qua */
-    transition: opacity 1s ease-in; /* Thêm transition cho độ mượt khi fade-in */
+    background-color: transparent;
+    transition: opacity 1s ease-in; /* Transition cho nội dung chính */
 }}
 
 /* Đảm bảo khu vực nội dung được căn chỉnh sát lề */
@@ -101,13 +100,12 @@ iframe {{
 
 
 /* --- CSS CHO NỘI DUNG CHÍNH (NỀN CỐ ĐỊNH) --- */
-/* Thêm nền cố định cho toàn bộ ứng dụng Streamlit */
 .stApp {{
     /* Đặt nền mặc định cho PC */
     background-image: url('data:image/jpeg;base64,{cabbage_base64}') !important; 
     background-size: cover !important;
     background-position: center center !important;
-    background-attachment: fixed !important; 
+    background-attachment: fixed !important; /* Quan trọng */
 }}
 
 @media (max-width: 768px) {{
@@ -149,17 +147,16 @@ html_content = f"""
             height: 100%;
             object-fit: cover;
             z-index: -100;
-            /* Thêm transition cho hiệu ứng phóng to mượt mà */
             transition: transform 1.5s cubic-bezier(0.5, 0.0, 0.5, 1.0), opacity 1.5s ease-out;
         }}
         
-        /* Class khi video kết thúc (Hiệu ứng Codepen) */
+        /* Hiệu ứng phóng to và làm mờ */
         #intro-video.fadeout {{
-            transform: scale(1.1); /* Phóng to 10% */
-            opacity: 0; /* Làm mờ */
+            transform: scale(1.1);
+            opacity: 0;
         }}
 
-        /* CSS cho dòng chữ cố định (Giữ nguyên) */
+        /* CSS cho dòng chữ cố định */
         #intro-text {{
             position: fixed;
             top: 5vh; 
@@ -180,6 +177,50 @@ html_content = f"""
                 font-size: 8vw;
             }}
         }}
+
+        /* --- CSS MỚI: NÚT BẮT ĐẦU --- */
+        #start-button {{
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            z-index: 1000; 
+            opacity: 1;
+            transition: opacity 0.5s ease-out;
+        }}
+        #start-button.hidden {{
+            opacity: 0;
+            pointer-events: none;
+        }}
+        #start-button h1 {{
+            font-size: 5vw;
+            margin-bottom: 20px;
+        }}
+        #start-button button {{
+            padding: 15px 30px;
+            font-size: 1.5vw;
+            background-color: #33aaff;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }}
+        #start-button button:hover {{
+            background-color: #0077cc;
+        }}
+        @media (max-width: 768px) {{
+            #start-button h1 {{ font-size: 10vw; }}
+            #start-button button {{ font-size: 4vw; }}
+        }}
         
     </style>
 </head>
@@ -191,37 +232,46 @@ html_content = f"""
     
     <audio id="background-audio"></audio>
 
+    <div id="start-button">
+        <h1>Sẵn sàng Khám phá?</h1>
+        <button id="start-media">BẮT ĐẦU</button>
+    </div>
+
     <script>
         document.addEventListener("DOMContentLoaded", function() {{
             const video = document.getElementById('intro-video');
             const audio = document.getElementById('background-audio');
             const introText = document.getElementById('intro-text');
+            const startButton = document.getElementById('start-button');
+            const startMediaButton = document.getElementById('start-media');
             const isMobile = window.innerWidth <= 768;
 
+            // Thiết lập nguồn video/audio
             if (isMobile) {{
                 video.src = 'data:video/mp4;base64,{video_mobile_base64}';
             }} else {{
                 video.src = 'data:video/mp4;base64,{video_pc_base64}';
             }}
-            
             audio.src = 'data:audio/mp3;base64,{audio_base64}';
-
-            const playMedia = () => {{
-                video.load();
-                video.play().catch(e => console.log("Video playback failed:", e));
-                
-                setTimeout(() => {{ introText.style.opacity = 1; }}, 500);
-
-                audio.volume = 0.5; 
-                audio.play().catch(e => {{
-                    // Yêu cầu tương tác của người dùng để bật audio trên trình duyệt
-                    document.body.addEventListener('click', () => {{
-                        audio.play().catch(err => console.error("Audio playback error on click:", err));
-                    }}, {{ once: true }});
-                }});
-            }};
             
-            playMedia();
+            // --- LOGIC MỚI: CHỜ CLICK TỪ NGƯỜI DÙNG ---
+            startMediaButton.addEventListener('click', () => {{
+                // Tương tác người dùng đã xảy ra, giờ có thể play
+                video.load();
+                video.play().then(() => {{
+                    // Video đang chạy
+                    startButton.classList.add('hidden');
+                    setTimeout(() => {{ introText.style.opacity = 1; }}, 500);
+                    
+                    audio.volume = 0.5;
+                    audio.play().catch(e => console.error("Audio playback failed after user interaction:", e));
+
+                }}).catch(e => {{
+                    console.error("Video playback failed after user click:", e);
+                    startButton.classList.add('hidden');
+                    setTimeout(() => {{ introText.style.opacity = 1; }}, 500);
+                }});
+            }}, {{ once: true }});
 
             // --- LOGIC CHUYỂN TRANG KHI VIDEO KẾT THÚC ---
             video.onended = () => {{
@@ -233,7 +283,7 @@ html_content = f"""
                 audio.currentTime = 0; 
                 introText.style.opacity = 0;
                 
-                // 3. Kích hoạt chuyển trang chính (Gửi lệnh cho Streamlit parent window)
+                // 3. Kích hoạt chuyển trang chính trong Streamlit parent window
                 parent.document.querySelector('.stApp').classList.add('fade-out-overlay');
             }};
         }});
@@ -242,32 +292,30 @@ html_content = f"""
 </html>
 """
 
-# Hiển thị thành phần HTML (Dùng chiều cao tối thiểu để component tồn tại)
+# Hiển thị thành phần HTML
 st.components.v1.html(html_content, height=10, scrolling=False)
 
 
-# --- NỘI DUNG CHÍNH CỦA TRANG ---
-
-# Dùng margin-top: 100vh để nội dung này nằm dưới lớp video overlay ban đầu
+# --- NỘI DUNG CHÍNH CỦA TRANG (HIỆN RA SAU HIỆU ỨNG) ---
 st.markdown("""
 <div style="
     padding: 20px; 
-    margin-top: 100vh; 
+    margin-top: 100vh; /* Đẩy nội dung xuống dưới lớp video overlay */
     background-color: rgba(255, 255, 255, 0.8); /* Nền hơi trong suốt để nhìn thấy ảnh nền cố định */
     position: relative; 
     z-index: 10;
-    min-height: 100vh;
+    min-height: 100vh; /* Đảm bảo trang chính có chiều cao tối thiểu */
 ">
     <h1 style="color: black;">👋 Chào mừng đến với Trang Chính!</h1>
     <p style="color: black;">Hiệu ứng chuyển trang mượt mà đã hoàn tất.</p>
-    <p style="color: black;">Hình nền (cabbase.jpg / mobile.jpg) được cố định và trang này có thể cuộn được.</p>
+    <p style="color: black;">Đây là nội dung chính của trang web. Ảnh nền là **cabbage.jpg** (hoặc mobile.jpg) cố định.</p>
     
     <div style="
         margin: 50px 0;
         padding: 20px;
         background-color: rgba(0, 0, 0, 0.1);
         border-radius: 10px;
-        height: 800px; /* Nội dung giả để tạo thanh cuộn */
+        height: 800px; 
         display: flex;
         align-items: center;
         justify-content: center;
