@@ -3,12 +3,12 @@ import base64
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
-    page_title="Tổ Bảo Dưỡng Số 1", # Đổi tiêu đề tab
+    page_title="Tổ Bảo Dưỡng Số 1",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# Khởi tạo session state (Không dùng trong logic chính, chỉ để giữ cấu trúc)
+# Khởi tạo session state
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
@@ -21,7 +21,6 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
-        # Tái raise lỗi để hàm try/except bên ngoài xử lý
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
 
@@ -31,7 +30,7 @@ try:
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
     
-    # ĐÃ SỬA: Đảm bảo tên file là CABBASE.JPG (đúng theo yêu cầu)
+    # ĐÃ SỬA: Đảm bảo tên file là CABBASE.JPG
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
 except FileNotFoundError as e:
@@ -94,7 +93,6 @@ iframe:first-of-type {{
     width: 100vw;
     height: 100vh;
     display: grid;
-    /* Tùy chỉnh số lượng ô vuông */
     grid-template-columns: repeat(20, 1fr); 
     grid-template-rows: repeat(12, 1fr);
     z-index: 500; 
@@ -102,7 +100,6 @@ iframe:first-of-type {{
 }}
 
 .grid-cell {{
-    /* Sử dụng màu trắng để che phủ ban đầu */
     background-color: white; 
     opacity: 1;
     transition: opacity 0.5s ease-out;
@@ -110,11 +107,10 @@ iframe:first-of-type {{
 
 /* Class được thêm vào .stApp sau khi video kết thúc */
 .main-content-revealed {{
-    /* Đặt nền cho toàn bộ ứng dụng */
     background-image: var(--main-bg-url-pc);
     background-size: cover;
     background-position: center;
-    background-attachment: fixed; /* Giữ nền cố định khi cuộn */
+    background-attachment: fixed;
 }}
 
 /* Điều chỉnh cho Mobile */
@@ -131,13 +127,14 @@ iframe:first-of-type {{
 /* Căn giữa tiêu đề chính trên nền */
 #main-title-container {{
     position: fixed;
-    top: 50%;
+    /* THAY ĐỔI LỚN: Đặt top thấp và xóa transform Y */
+    top: 5%; 
     left: 50%;
-    transform: translate(-50%, -50%);
-    width: 90%; /* Chiếm phần lớn màn hình */
+    transform: translate(-50%, 0); /* Chỉ căn giữa theo chiều ngang */
+    width: 90%; 
     text-align: center;
-    z-index: 20; /* Trên nền và dưới iframe video */
-    pointer-events: none; /* Không chặn tương tác nếu có */
+    z-index: 20;
+    pointer-events: none;
 }}
 </style>
 """
@@ -148,15 +145,11 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
-# JavaScript để thông báo cho Streamlit khi video kết thúc
-# SỬA LỖI F-STRING: NHÂN ĐÔI DẤU NGOẶC NHỌN {} TRONG KHỐI JAVASCRIPT
+# JavaScript: Thay đổi transform trong initRevealEffect để phù hợp với top: 5%
 js_callback = f"""
 <script>
     function sendBackToStreamlit() {{
-        // **BƯỚC 1: Kích hoạt nền và ẩn video**
         window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
-        
-        // **BƯỚC 2: Kích hoạt Hiệu ứng Reveal**
         initRevealEffect();
     }}
     
@@ -165,26 +158,23 @@ js_callback = f"""
         if (!revealGrid) return;
 
         const cells = revealGrid.querySelectorAll('.grid-cell');
-        
-        // Tạo một mảng ngẫu nhiên các ô
         const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
 
         shuffledCells.forEach((cell, index) => {{
             setTimeout(() => {{
                 cell.style.opacity = 0; 
-            }}, index * 10); // Khoảng thời gian giữa các ô (10ms)
+            }}, index * 10);
         }});
         
-        // Sau khi hiệu ứng kết thúc, loại bỏ lưới
         setTimeout(() => {{
              revealGrid.remove();
-             // **HIỆU ỨNG THÊM: Hiện tiêu đề chính sau khi Reveal xong**
              const mainTitle = window.parent.document.getElementById('main-title-container');
              if (mainTitle) {{
                  mainTitle.style.opacity = 1;
-                 mainTitle.style.transform = 'translate(-50%, -50%) scale(1)';
+                 // THAY ĐỔI LỚN: Điều chỉnh transform
+                 mainTitle.style.transform = 'translate(-50%, 0) scale(1)'; 
              }}
-        }}, shuffledCells.length * 10 + 1000); // Đợi 1 giây sau khi ô cuối cùng ẩn
+        }}, shuffledCells.length * 10 + 1000);
     }}
 
     document.addEventListener("DOMContentLoaded", function() {{
@@ -218,7 +208,6 @@ js_callback = f"""
             
         playMedia();
         
-        // Event khi video kết thúc
         video.onended = () => {{
             video.style.opacity = 0;
             audio.pause();
@@ -228,7 +217,6 @@ js_callback = f"""
             sendBackToStreamlit(); 
         }};
 
-        // Cần đảm bảo video luôn sẵn sàng nếu trình duyệt chặn autoplay
         document.body.addEventListener('click', () => {{
              video.play().catch(e => {{}});
              audio.play().catch(e => {{}});
@@ -243,7 +231,6 @@ html_content_modified = f"""
 <html>
 <head>
     <style>
-        /* SỬA LỖI F-STRING */
         html, body {{
             margin: 0;
             padding: 0;
@@ -321,12 +308,8 @@ st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
 # Nội dung chính của trang (CHỈ CÓ TIÊU ĐỀ)
 st.markdown("""
-<div id="main-title-container" style="color: white; opacity: 0; transition: opacity 2s, transform 1s; transform: translate(-50%, -50%) scale(0.9); text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);">
+<div id="main-title-container" style="color: white; opacity: 0; transition: opacity 2s, transform 1s; transform: translate(-50%, 0) scale(0.9); text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);">
     <h1 style="font-size: 6vw; margin: 0; font-weight: 900; letter-spacing: 5px;">TỔ BẢO DƯỠNG SỐ 1</h1>
     <h2 style="font-size: 2vw; margin: 10px 0 0 0; font-weight: 300;">MỞ RA MỘT CHẶNG ĐƯỜNG MỚI</h2>
 </div>
 """, unsafe_allow_html=True)
-
-# Xóa bỏ các thành phần Streamlit mặc định khác (thanh trượt, nút ấn)
-# st.slider("Thanh trượt Streamlit", 0, 100) # Đã xóa
-# st.button("Nút ấn") # Đã xóa
