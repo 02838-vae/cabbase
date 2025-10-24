@@ -30,7 +30,7 @@ try:
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
     
-    # ĐÃ SỬA: Đảm bảo tên file là CABBASE.JPG
+    # ĐẢM BẢO TÊN FILE LÀ CABBASE.JPG
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
 except FileNotFoundError as e:
@@ -42,21 +42,10 @@ except FileNotFoundError as e:
 # SỬA LỖI F-STRING: NHÂN ĐÔI DẤU NGOẶC NHỌN {} TRONG KHỐI CSS
 hide_streamlit_style = f"""
 <style>
-/* Ẩn các thành phần mặc định của Streamlit */
+/* Reset Streamlit UI */
 #MainMenu, footer, header {{visibility: hidden;}}
-
-/* Đảm bảo Main Content Container chiếm toàn bộ không gian và không có padding */
-.main {{
-    padding: 0;
-    margin: 0;
-}}
-
-/* Đảm bảo khu vực nội dung được căn chỉnh sát lề */
-div.block-container {{
-    padding: 0;
-    margin: 0;
-    max-width: 100% !important;
-}}
+.main {{padding: 0; margin: 0;}}
+div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
 
 /* IFRAME VIDEO INTRO */
 iframe:first-of-type {{
@@ -70,8 +59,6 @@ iframe:first-of-type {{
     left: 0;
     z-index: 1000;
 }}
-
-/* Class để ẩn iframe (được thêm bằng JS) */
 .video-finished iframe:first-of-type {{
     opacity: 0;
     visibility: hidden;
@@ -79,147 +66,121 @@ iframe:first-of-type {{
     height: 1px !important; 
 }}
 
-/* Định nghĩa nền full-screen cho main content */
+/* Nền Trang Chính */
 .stApp {{
     --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
 }}
-
-/* CSS cho hiệu ứng Reveal */
 .reveal-grid {{
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    display: grid;
-    grid-template-columns: repeat(20, 1fr); 
-    grid-template-rows: repeat(12, 1fr);
-    z-index: 500; 
-    pointer-events: none; 
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    display: grid; grid-template-columns: repeat(20, 1fr); 
+    grid-template-rows: repeat(12, 1fr); z-index: 500; pointer-events: none; 
 }}
-
-.grid-cell {{
-    background-color: white; 
-    opacity: 1;
-    transition: opacity 0.5s ease-out;
-}}
-
-/* Class được thêm vào .stApp sau khi video kết thúc */
+.grid-cell {{background-color: white; opacity: 1; transition: opacity 0.5s ease-out;}}
 .main-content-revealed {{
     background-image: var(--main-bg-url-pc);
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
+    background-size: cover; background-position: center; background-attachment: fixed;
 }}
 
-/* Căn giữa tiêu đề chính trên nền */
-#main-title-container {{
-    position: fixed;
-    top: 5%; 
-    left: 50%;
-    transform: translate(-50%, 0); 
-    width: 90%; 
-    text-align: center;
-    z-index: 20;
-    pointer-events: none;
-    line-height: 1.2; /* Tinh chỉnh khoảng cách dòng */
+
+/* --- HIỆU ỨNG ÁNH SÁNG VÀ TIÊU ĐỀ --- */
+
+/* Keyframes cho hiệu ứng ánh sáng ngang (PC & Intro) */
+@keyframes shine-horizontal {{
+    0% {{ background-position: -150% 0; }}
+    100% {{ background-position: 250% 0; }}
 }}
 
-/* CSS cho Tiêu đề Chính (PC) */
-#main-title-container h1 {{
-    font-size: 5vw; /* PC: Nhỏ hơn 6vw */
-    margin: 0;
-    font-weight: 900;
-    letter-spacing: 5px;
-    color: transparent; /* Quan trọng cho hiệu ứng ánh sáng */
-    background: linear-gradient(90deg, #f0e68c, #ffffff, #f0e68c); /* Màu nền cho hiệu ứng ánh sáng */
-    background-size: 80% 100%; /* Kích thước gradient, sẽ di chuyển */
-    background-repeat: no-repeat;
-    -webkit-background-clip: text; /* Chỉ hiển thị nền trên chữ */
-    background-clip: text;
-    animation: shine 5s infinite linear; /* Hiệu ứng ánh sáng */
-    text-shadow: 
-        1px 1px 2px rgba(0,0,0,0.5), /* Lớp bóng đổ gần */
-        2px 2px 3px rgba(0,0,0,0.4), /* Lớp bóng đổ trung bình */
-        3px 3px 5px rgba(0,0,0,0.3); /* Lớp bóng đổ xa, tạo chiều sâu */
+/* Keyframes cho hiệu ứng ánh sáng nghiêng (Mobile) */
+@keyframes shine-diagonal {{
+    0% {{ background-position: -200% 0; }}
+    100% {{ background-position: 300% 0; }}
 }}
 
-#main-title-container h2 {{
-    font-size: 1.8vw; /* PC: Kích thước phù hợp */
-    margin: 10px 0 0 0;
-    font-weight: 300;
-    color: #e0e0e0; /* Màu chữ phụ */
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
-}}
 
-/* CSS cho tiêu đề video intro */
+/* 1. TIÊU ĐỀ TRÊN VIDEO (INTRO TEXT) */
 #intro-text {{
-    position: fixed;
-    top: 5vh;
-    width: 100%;
-    text-align: center;
-    /* THAY ĐỔI: Màu sắc và hiệu ứng cho intro-text */
+    position: fixed; top: 5vh; width: 100%; text-align: center;
+    /* Áp dụng hiệu ứng ánh sáng mới */
     color: transparent; 
-    background: linear-gradient(90deg, #ffd700, #ffffff, #ffd700); /* Màu gradient */
-    background-size: 80% 100%;
+    background: linear-gradient(45deg, #ffd700, #ffffff, #ffd700); /* Gradient nghiêng màu vàng */
+    background-size: 200% 100%; /* Tăng kích thước cho ánh sáng nghiêng */
     background-repeat: no-repeat;
     -webkit-background-clip: text;
     background-clip: text;
-    animation: shine-intro 4s infinite linear; /* Animation riêng cho intro */
-    font-size: 3vw;
+    animation: shine-diagonal 4s infinite linear; /* Dùng hiệu ứng nghiêng */
+    
+    font-size: 4vw; /* Tăng kích thước cho cả PC và Mobile */
     font-weight: bold;
     text-shadow: 
         1px 1px 2px rgba(0,0,0,0.5),
         2px 2px 3px rgba(0,0,0,0.4),
         3px 3px 5px rgba(0,0,0,0.3);
-    z-index: 100;
-    pointer-events: none;
-    opacity: 0;
-    transition: opacity 1s;
+    z-index: 100; pointer-events: none; opacity: 0; transition: opacity 1s;
 }}
 
-/* Keyframes cho hiệu ứng ánh sáng */
-@keyframes shine {{
-    0% {{ background-position: -50% 0; }}
-    100% {{ background-position: 150% 0; }}
+
+/* 2. TIÊU ĐỀ TRANG CHÍNH */
+#main-title-container {{
+    position: fixed; top: 5%; left: 50%;
+    transform: translate(-50%, 0); 
+    width: 90%; text-align: center;
+    z-index: 20; pointer-events: none;
+    line-height: 1.2;
 }}
 
-@keyframes shine-intro {{
-    0% {{ background-position: -50% 0; }}
-    100% {{ background-position: 150% 0; }}
+/* PC: Tiêu đề H1 (Tổ bảo dưỡng số 1) - Ánh sáng ngang */
+#main-title-container h1 {{
+    font-size: 5vw; 
+    margin: 0; font-weight: 900; letter-spacing: 5px;
+    color: transparent; 
+    background: linear-gradient(90deg, #f0e68c, #ffffff, #f0e68c); /* Ánh sáng ngang */
+    background-size: 150% 100%; /* Kích thước rộng hơn để ánh sáng rõ hơn */
+    background-repeat: no-repeat;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: shine-horizontal 5s infinite linear; /* Dùng hiệu ứng ngang */
+    text-shadow: 
+        1px 1px 2px rgba(0,0,0,0.5), 2px 2px 3px rgba(0,0,0,0.4), 3px 3px 5px rgba(0,0,0,0.3);
 }}
 
-/* Điều chỉnh cho Mobile */
+/* PC: Tiêu đề H2 (Mở ra một chặng đường mới) */
+#main-title-container h2 {{
+    font-size: 1.8vw; 
+    margin: 10px 0 0 0; font-weight: 300;
+    color: #e0e0e0;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
+}}
+
+
+/* 3. ĐIỀU CHỈNH CHO MOBILE */
 @media (max-width: 768px) {{
     .main-content-revealed {{
         background-image: var(--main-bg-url-mobile);
     }}
     .reveal-grid {{
-        grid-template-columns: repeat(10, 1fr);
-        grid-template-rows: repeat(20, 1fr);
+        grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(20, 1fr);
     }}
-
-    /* Tiêu đề chính trên Mobile */
+    
+    /* Mobile: Tiêu đề H1 (Tổ bảo dưỡng số 1) - Ánh sáng nghiêng */
     #main-title-container h1 {{
-        font-size: 10vw; /* Mobile: Kích thước lớn hơn */
+        font-size: 10vw; 
         letter-spacing: 3px;
-        text-shadow: 
-            1px 1px 1px rgba(0,0,0,0.5), 
-            2px 2px 2px rgba(0,0,0,0.4);
+        background: linear-gradient(45deg, #ffd700, #ffffff, #ffd700); /* Ánh sáng nghiêng */
+        background-size: 200% 100%; 
+        animation: shine-diagonal 5s infinite linear; /* Dùng hiệu ứng nghiêng */
+        text-shadow: 1px 1px 1px rgba(0,0,0,0.5), 2px 2px 2px rgba(0,0,0,0.4);
     }}
 
+    /* Mobile: Tiêu đề H2 (Mở ra một chặng đường mới) - Gần hơn */
     #main-title-container h2 {{
-        font-size: 4vw; /* Mobile: Kích thước lớn hơn */
-        margin: 5px 0 0 0; /* Mobile: Khoảng cách gần hơn 5px */
+        font-size: 4vw; 
+        margin: 5px 0 0 0; 
         text-shadow: 1px 1px 1px rgba(0,0,0,0.6);
     }}
     
     #intro-text {{
-        font-size: 8vw;
-        text-shadow: 
-            1px 1px 1px rgba(0,0,0,0.5),
-            2px 2px 2px rgba(0,0,0,0.4);
+        font-size: 8vw; /* Kích thước lớn hơn trên mobile */
     }}
 }}
 </style>
@@ -231,7 +192,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
-# JavaScript: Thay đổi transform trong initRevealEffect để phù hợp với top: 5%
+# JavaScript (Không thay đổi logic)
 js_callback = f"""
 <script>
     function sendBackToStreamlit() {{
@@ -317,41 +278,13 @@ html_content_modified = f"""
 <head>
     <style>
         html, body {{
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
+            margin: 0; padding: 0; overflow: hidden; height: 100vh; width: 100vw;
         }}
-        
         #intro-video {{
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            z-index: -100;
-            transition: opacity 1s; 
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            object-fit: cover; z-index: -100; transition: opacity 1s; 
         }}
-
-        /* CSS cho dòng chữ cố định (đã được tinh chỉnh hiệu ứng) */
-        #intro-text {{
-            position: fixed;
-            top: 5vh;
-            width: 100%;
-            text-align: center;
-            /* Các hiệu ứng đã được đưa lên hide_streamlit_style */
-            z-index: 100;
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 1s;
-        }}
-        
-        @media (max-width: 768px) {{
-            /* font-size cho intro-text trên mobile đã được định nghĩa trong hide_streamlit_style */
-        }}
-        
+        /* CSS cho #intro-text đã được định nghĩa trong hide_streamlit_style */
     </style>
 </head>
 <body>
@@ -389,7 +322,7 @@ st.markdown(reveal_grid_html, unsafe_allow_html=True)
 # Nội dung chính của trang (CHỈ CÓ TIÊU ĐỀ)
 st.markdown("""
 <div id="main-title-container" style="color: white; opacity: 0; transition: opacity 2s, transform 1s; transform: translate(-50%, 0) scale(0.9); text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);">
-    <h1 class="main-title">TỔ BẢO DƯỠNG SỐ 1</h1>
-    <h2 class="sub-title">MỞ RA MỘT CHẶNG ĐƯỜNG MỚI</h2>
+    <h1>TỔ BẢO DƯỠNG SỐ 1</h1>
+    <h2>MỞ RA MỘT CHẶNG ĐƯỜNG MỚI</h2>
 </div>
 """, unsafe_allow_html=True)
