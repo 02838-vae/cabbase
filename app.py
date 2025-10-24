@@ -3,12 +3,12 @@ import base64
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
-    page_title="Tổ Bảo Dưỡng Số 1", # Đổi tiêu đề tab
+    page_title="Tổ Bảo Dưỡng Số 1",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# Khởi tạo session state (Không dùng trong logic chính, chỉ để giữ cấu trúc)
+# Khởi tạo session state
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
@@ -21,13 +21,11 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
-        # Tái raise lỗi để hàm try/except bên ngoài xử lý
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
 
-# Mã hóa các file media
+# Mã hóa các file media (Giữ nguyên)
 try:
-    # LƯU Ý: Đảm bảo các file này tồn tại trong cùng thư mục với script Streamlit
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
@@ -39,8 +37,7 @@ except FileNotFoundError as e:
     st.stop()
 
 
-# --- CSS ĐỂ ÉP STREAMLIT MAIN CONTAINER & IFRAME FULLSCREEN/ẨN IFRAME ---
-# CSS chính cho Streamlit App (Không thay đổi)
+# --- CSS ĐỂ ÉP STREAMLIT MAIN CONTAINER & IFRAME FULLSCREEN/ẨN IFRAME (Giữ nguyên) ---
 hide_streamlit_style = f"""
 <style>
 /* Ẩn các thành phần mặc định của Streamlit */
@@ -148,7 +145,8 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
-# JavaScript để thông báo cho Streamlit khi video kết thúc (Không thay đổi)
+# JavaScript để thông báo cho Streamlit khi video kết thúc
+# CẬP NHẬT: Thêm class `text-shown` để kích hoạt hiệu ứng blur-in trong CSS
 js_callback = f"""
 <script>
     function sendBackToStreamlit() {{
@@ -204,7 +202,10 @@ js_callback = f"""
             video.load();
             video.play().catch(e => console.log("Video playback failed:", e));
                 
-            setTimeout(() => {{ introText.style.opacity = 1; }}, 500);
+            // Kích hoạt hiệu ứng của chữ sau 0.5s
+            setTimeout(() => {{ 
+                introText.classList.add('text-shown'); 
+            }}, 500);
 
             audio.volume = 0.5;
             audio.loop = true; 
@@ -222,6 +223,7 @@ js_callback = f"""
             video.style.opacity = 0;
             audio.pause();
             audio.currentTime = 0;
+            introText.classList.remove('text-shown'); // Ẩn chữ đi
             introText.style.opacity = 0;
             
             sendBackToStreamlit(); 
@@ -236,7 +238,7 @@ js_callback = f"""
 </script>
 """
 
-# Mã HTML/CSS cho Video ĐÃ CHỈNH SỬA
+# Mã HTML/CSS cho Video (Đã Chỉnh Sửa Font Size và Hiệu Ứng)
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -264,23 +266,35 @@ html_content_modified = f"""
         /* === PHẦN ĐÃ CHỈNH SỬA CHO TIÊU ĐỀ INTRO === */
         #intro-text {{
             position: fixed;
-            top: 5vh; /* ĐẶT TRÊN CÙNG */
+            top: 5vh;
             width: 100%;
-            text-align: center; /* CANH GIỮA */
-            color: #FFD700; /* MÀU VÀNG GOLD DỄ NHÌN */
-            font-size: 4vw; /* SIZE LỚN HƠN CHO PC */
-            font-weight: 900; /* ĐỘ ĐẬM */
-            /* BÓNG NỀN DỄ NHÌN HƠN */
+            text-align: center;
+            color: #FFD700; 
+            
+            /* THU NHỎ SIZE CHỮ: 3.2vw (trước là 4vw) */
+            font-size: 3.2vw; 
+            
+            font-weight: 900; 
             text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8); 
             z-index: 100;
             pointer-events: none;
-            opacity: 0;
-            transition: opacity 1s;
+            
+            /* HIỆU ỨNG BLUR-IN: Ban đầu mờ và ẩn */
+            opacity: 0; 
+            filter: blur(10px);
+            transition: opacity 1.5s ease-out, filter 1.5s ease-out; 
         }}
         
+        /* Class được thêm bằng JS để kích hoạt hiệu ứng */
+        #intro-text.text-shown {{
+            opacity: 1;
+            filter: blur(0); /* Hiện rõ chữ */
+        }}
+
         @media (max-width: 768px) {{
             #intro-text {{
-                font-size: 10vw; /* SIZE LỚN HƠN CHO MOBILE */
+                /* THU NHỎ SIZE CHỮ CHO MOBILE: 8vw (trước là 10vw) */
+                font-size: 8vw; 
             }}
         }}
         /* =========================================== */
@@ -304,7 +318,7 @@ html_content_modified = f"""
 st.components.v1.html(html_content_modified, height=10, scrolling=False)
 
 
-# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH (CHỈ TIÊU ĐỀ) ---
+# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH (Giữ nguyên) ---
 
 # Tạo Lưới Reveal (20x12 = 240 ô)
 grid_cells_html = ""
@@ -319,7 +333,7 @@ reveal_grid_html = f"""
 st.markdown(reveal_grid_html, unsafe_allow_html=True)
     
 
-# Nội dung chính của trang (TIÊU ĐỀ LỚN HIỆN RA SAU INTRO)
+# Nội dung chính của trang 
 st.markdown("""
 <div id="main-title-container" style="color: white; opacity: 0; transition: opacity 2s, transform 1s; transform: translate(-50%, -50%) scale(0.9); text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);">
     <h1 style="font-size: 6vw; margin: 0; font-weight: 900; letter-spacing: 5px;">TỔ BẢO DƯỠNG SỐ 1</h1>
