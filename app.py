@@ -40,8 +40,8 @@ except FileNotFoundError as e:
 # --- CSS ĐỂ ÉP STREAMLIT MAIN CONTAINER & IFRAME FULLSCREEN/ẨN IFRAME ---
 hide_streamlit_style = f"""
 <style>
-/* 1. THÊM GOOGLE FONT IMPORT CHO FONT INTRO (MONTSERRAT) */
-@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@900&display=swap');
+/* 1. THÊM GOOGLE FONT IMPORT CHO FONT INTRO (MONTSERRAT VÀ GREAT VIBES) */
+@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@900&display=swap');
 
 /* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
@@ -114,7 +114,7 @@ iframe:first-of-type {{
     background-position: center;
     background-attachment: fixed;
     
-    /* 2. HIỆU ỨNG FILTER: Sepia và giảm độ bão hòa để trông cũ kỹ */
+    /* HIỆU ỨNG FILTER: Sepia và giảm độ bão hòa để trông cũ kỹ */
     filter: sepia(30%) grayscale(10%) brightness(95%); 
     transition: filter 2s ease-out; 
 }}
@@ -130,7 +130,7 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === CHỈNH SỬA CHO TIÊU ĐỀ TRANG CHÍNH (ĐẶT LẠI FONT GỐC) === */
+/* === TIÊU ĐỀ TRANG CHÍNH (GIỮ NGUYÊN FONT CŨ VÀ VỊ TRÍ) === */
 #main-title-container {{
     position: fixed;
     top: 5vh; 
@@ -148,9 +148,7 @@ iframe:first-of-type {{
     margin: 0;
     font-weight: 900; 
     letter-spacing: 5px;
-    /* KHÔNG DÙNG FONT ĐẶC BIỆT, SỬ DỤNG FONT SANS-SERIF HỆ THỐNG PHỔ BIẾN */
     font-family: Arial, sans-serif; 
-    /* ĐẶT MÀU TRẮNG GỐC VÀ BÓNG MỀM */
     color: white; 
     text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);
 }}
@@ -161,9 +159,6 @@ iframe:first-of-type {{
         font-size: 8vw; 
     }}
 }}
-
-/* LOẠI BỎ HIỆU ỨNG HẠT NHIỄU (GRAIN OVERLAY) */
-/* Lớp phủ Grain/Noise không còn được sử dụng */
 </style>
 """
 
@@ -171,9 +166,9 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Giữ Font Montserrat) ---
+# --- MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Cập nhật Font bay bổng) ---
 
-# JavaScript (Giữ nguyên logic Blur-in)
+# JavaScript (Giữ nguyên logic)
 js_callback = f"""
 <script>
     function sendBackToStreamlit() {{
@@ -255,7 +250,7 @@ js_callback = f"""
 </script>
 """
 
-# Mã HTML/CSS cho Video (Giữ Font Montserrat)
+# Mã HTML/CSS cho Video (Cập nhật Font bay bổng)
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -280,7 +275,7 @@ html_content_modified = f"""
             transition: opacity 1s; 
         }}
 
-        /* Tiêu đề Intro (Sử dụng Font 'Montserrat' cho rõ ràng hơn trong intro) */
+        /* === TIÊU ĐỀ INTRO ĐÃ CHỈNH SỬA === */
         #intro-text {{
             position: fixed;
             top: 5vh;
@@ -288,11 +283,15 @@ html_content_modified = f"""
             text-align: center;
             color: #FFD700; 
             font-size: 3.5vw; 
-            font-weight: 900; 
+            
+            /* FONT BAY BỔNG */
+            font-family: 'Great Vibes', cursive; 
+            /* GIẢM ĐỘ ĐẬM */
+            font-weight: 400; 
+            
             text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8); 
             z-index: 100;
             pointer-events: none;
-            font-family: 'Montserrat', sans-serif; 
 
             /* HIỆU ỨNG BLUR-IN */
             opacity: 0; 
@@ -344,10 +343,8 @@ reveal_grid_html = f"""
 """
 st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
-# Lớp phủ Grain/Noise đã được loại bỏ
 
-
-# Nội dung chính của trang (Giữ nguyên kích thước 5vw)
+# Nội dung chính của trang 
 st.markdown("""
 <div id="main-title-container" style="color: white; opacity: 0; transition: opacity 2s, transform 1s; transform: translate(-50%, 0) scale(0.9); text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);">
     <h1>TỔ BẢO DƯỠNG SỐ 1</h1>
