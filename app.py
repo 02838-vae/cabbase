@@ -61,8 +61,6 @@ def intro_screen(is_mobile=False):
         st.stop()
     
     shards_html = "".join([f"<div class='shard' id='shard-{i}'></div>" for i in range(GRID_SIZE * GRID_SIZE)])
-
-        intro_html = f"""
     <html>
     <head>
         <meta name='viewport' content='width=device-width, initial-scale=1.0'>
