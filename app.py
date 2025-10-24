@@ -60,6 +60,7 @@ def intro_screen(is_mobile=False):
 
     shards_html = "".join([f"<div class='shard' id='shard-{i}'></div>" for i in range(GRID_SIZE * GRID_SIZE)])
 
+    # HTML và JS
     intro_html = f"""
     <html>
     <head>
@@ -128,34 +129,34 @@ def intro_screen(is_mobile=False):
         const blackFade = document.getElementById('black-fade');
         let ended = false;
 
-        shards.forEach((s,i)=>{{
+        shards.forEach((s,i)=>{
             const row=Math.floor(i/GRID_SIZE);
             const col=i%GRID_SIZE;
-            s.style.backgroundPosition=`calc(-$${{col}} * 100vw / $${{GRID_SIZE}}) calc(-$${{row}} * 100vh / $${{GRID_SIZE}})`;
-        }});
+            s.style.backgroundPosition=`calc(-${{col}} * 100vw / ${{GRID_SIZE}}) calc(-${{row}} * 100vh / ${{GRID_SIZE}})`;
+        });
 
         function startAudio() {{
             sfx.volume=1;
-            sfx.play().catch(()=>{{}});
+            sfx.play().catch(()=>{});
         }}
 
         function finishIntro(){{
             if(ended)return; ended=true;
 
             overlay.style.opacity=1;
-            shards.forEach(s=>{{
+            shards.forEach(s=>{
                 const tx=(Math.random()-0.5)*200;
                 const ty=(Math.random()-0.5)*200;
                 const tr=(Math.random()-0.5)*360;
                 const d=Math.random()*0.4;
                 s.style.transitionDelay=d+'s';
-                s.style.transform=`translate($${{tx}}vw,$${{ty}}vh) rotate($${{tr}}deg) scale(0.1)`;
+                s.style.transform=`translate(${tx}vw,${ty}vh) rotate(${tr}deg) scale(0.1)`;
                 s.style.opacity=0;
-            }});
+            });
 
             setTimeout(()=>{{ blackFade.style.opacity=1; }}, SHATTER_DURATION);
 
-            setTimeout(()=>{{
+            setTimeout(()=>{
                 const bg=document.createElement('div');
                 bg.style.position='absolute';
                 bg.style.top='0'; bg.style.left='0';
@@ -164,7 +165,7 @@ def intro_screen(is_mobile=False):
                 bg.style.backgroundSize='cover';
                 bg.style.backgroundPosition='center';
                 bg.style.opacity='0';
-                bg.style.transition=`opacity $${{MAIN_FADE_IN_DURATION}}ms ease-in-out`;
+                bg.style.transition=`opacity ${{MAIN_FADE_IN_DURATION}}ms ease-in-out`;
                 bg.style.zIndex='50';
                 document.body.appendChild(bg);
 
@@ -175,21 +176,21 @@ def intro_screen(is_mobile=False):
                     color:'#fff5d7',fontFamily:"'Playfair Display',serif",
                     fontSize:'clamp(30px,5vw,65px)',
                     textShadow:'0 0 18px rgba(0,0,0,0.65)',
-                    opacity:'0',transition:`opacity $${{MAIN_FADE_IN_DURATION}}ms ease-in-out 0.5s`,
+                    opacity:'0',transition:`opacity ${{MAIN_FADE_IN_DURATION}}ms ease-in-out 0.5s`,
                     zIndex:'55'
                 }});
                 document.body.appendChild(title);
 
-                setTimeout(()=>{{
+                setTimeout(()=>{
                     bg.style.opacity=1;
                     title.style.opacity=1;
                     blackFade.style.opacity=0;
-                }},100);
-            }}, SHATTER_DURATION+FADE_TO_BLACK_DELAY+200);
+                },100);
+            }, SHATTER_DURATION+FADE_TO_BLACK_DELAY+200);
         }}
 
         vid.addEventListener('canplay',()=>{
-            vid.play().catch(()=>{{}});
+            vid.play().catch(()=>{});
             startAudio();
             blackFade.style.opacity=0;
         });
