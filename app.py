@@ -27,6 +27,7 @@ def intro_screen(is_mobile=False):
         st.error(f"Lỗi file: {e.filename}")
         st.stop()
 
+    # Escape tất cả {} trong JS bằng {{ }}
     html = f"""
     <video id="intro-video" autoplay muted playsinline
         style="position:fixed; top:0; left:0; width:100vw; height:100vh; object-fit:cover; z-index:10;">
