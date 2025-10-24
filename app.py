@@ -1,19 +1,25 @@
 import streamlit as st
 import base64
+import time
 from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
 # ========== CẤU HÌNH VÀ TÀI NGUYÊN ==========
+
+# File video và âm thanh intro
 VIDEO_PC = "airplane.mp4"
 VIDEO_MOBILE = "mobile.mp4"
 SFX = "plane_fly.mp3"
+
+# File ảnh nền của trang chính
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 
 st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 
 # ========== ẨN UI STREAMLIT ==========
+
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -30,6 +36,7 @@ def hide_streamlit_ui():
     </style>
     """, unsafe_allow_html=True)
 
+
 # ========== MÀN HÌNH INTRO ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
@@ -41,8 +48,10 @@ def intro_screen(is_mobile=False):
             video_b64 = base64.b64encode(f.read()).decode()
         with open(SFX, "rb") as a:
             audio_b64 = base64.b64encode(a.read()).decode()
+        # Đọc file ảnh nền trang chính để dùng trong hiệu ứng reveal
         with open(bg_file, "rb") as b:
             bg_b64 = base64.b64encode(b.read()).decode()
+            
     except FileNotFoundError as e:
         st.error(f"Lỗi: Không tìm thấy file tài nguyên. Vui lòng kiểm tra: {e.filename}")
         st.stop()
@@ -52,11 +61,19 @@ def intro_screen(is_mobile=False):
     <head>
         <meta name='viewport' content='width=device-width, initial-scale=1.0'>
         <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap');
         html, body {{
             margin: 0; padding: 0;
             overflow: hidden;
             background: black;
             height: 100%;
+        }}
+        /* Lớp nền chính để lộ ra */
+        #main-bg {{
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            background: url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed;
+            background-size: cover;
+            opacity: 0; /* Ẩn ban đầu */
         }}
         video {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
@@ -77,66 +94,102 @@ def intro_screen(is_mobile=False):
         }}
         @keyframes lightSweep {{ 0% {{ background-position: 200% 0%; }} 100% {{ background-position: -200% 0%; }} }}
         @keyframes fadeInOut {{ 0% {{ opacity: 0; }} 20% {{ opacity: 1; }} 80% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}
-        #black-fade {{
+
+        /* Lớp phủ Reveal */
+        #reveal-overlay {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: black; opacity: 1; z-index: 40;
-            transition: opacity 1s ease-in-out; pointer-events: none;
+            background: black; 
+            z-index: 50;
+            transform: scale(1); /* Bắt đầu với kích thước đầy đủ */
+            opacity: 1;
+            transition: transform 1.2s cubic-bezier(0.65, 0.05, 0.36, 1), opacity 0.5s ease; 
+            pointer-events: none;
         }}
+        .reveal-active #reveal-overlay {{
+            transform: scale(0); /* Kết thúc với kích thước bằng 0 */
+            border-radius: 50%;
+            opacity: 0;
+        }}
+        /* Ẩn video khi hiệu ứng reveal bắt đầu */
+        .reveal-active video {{
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }}
+
         </style>
     </head>
     <body>
+        <div id='main-bg'></div>
         <video id='introVid' autoplay muted playsinline>
             <source src='data:video/mp4;base64,{video_b64}' type='video/mp4'>
         </video>
-        <audio id='flySfx'>
-            <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
-        </audio>
+        <audio id='flySfx'> <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'></audio>
         <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-        <div id='black-fade'></div>
+
+        <div id='reveal-overlay'></div>
 
         <script>
         const vid = document.getElementById('introVid');
         const audio = document.getElementById('flySfx');
-        const blackFade = document.getElementById('black-fade');
+        const revealOverlay = document.getElementById('reveal-overlay');
+        const mainBg = document.getElementById('main-bg');
         let ended = false;
 
         function finishIntro() {{
             if (ended) return;
             ended = true;
-            blackFade.style.opacity = 1;
+            
+            // 1. Dừng video/audio và ẩn text
+            vid.pause();
+            audio.pause();
+            document.getElementById('intro-text').style.opacity = 0;
+            
+            // 2. Hiện nền trang chính
+            mainBg.style.opacity = 1;
+
+            // 3. Kích hoạt hiệu ứng reveal (thu nhỏ lớp phủ đen)
+            document.body.classList.add('reveal-active');
+            
+            // 4. Gửi thông báo đến Streamlit sau khi hiệu ứng kết thúc (1.5s > 1.2s của CSS transition)
             setTimeout(() => {{
                 window.parent.postMessage({{type: 'intro_done'}}, '*');
-            }}, 1000);
+            }}, 1500); // Đợi 1.5 giây để hiệu ứng reveal hoàn tất
         }}
 
+        // Logic play video/audio
         vid.addEventListener('canplay', () => {{
             vid.play().catch(() => console.log('Autoplay bị chặn'));
-            blackFade.style.opacity = 0; 
         }});
         vid.addEventListener('play', () => {{
             audio.volume = 1.0;
             audio.currentTime = 0;
             audio.play().catch(() => console.log('Autoplay âm thanh bị chặn'));
         }});
-
+        // Cho phép người dùng click để bật âm thanh và kích hoạt video
         document.addEventListener('click', () => {{
-            vid.muted = false;
-            vid.play();
-            audio.volume = 1.0;
-            audio.currentTime = 0;
-            audio.play().catch(()=>{{}}); 
-            blackFade.style.opacity = 0; 
+            if (!document.body.classList.contains('reveal-active')) {{
+                vid.muted = false;
+                vid.play();
+                audio.volume = 1.0;
+                audio.currentTime = 0;
+                audio.play().catch(()=>{{}});
+            }}
         }}, {{once:true}});
 
+        // Kết thúc khi video kết thúc hoặc sau timeout
         vid.addEventListener('ended', finishIntro);
-        setTimeout(finishIntro, 9000); 
+        setTimeout(finishIntro, 9000); // Dự phòng nếu video bị lỗi hoặc lâu
+
         </script>
     </body>
     </html>
     """
-    components.html(intro_html, height=800, scrolling=False)
+    # Chiều cao iframe cần lớn hơn để Streamlit không cuộn
+    components.html(intro_html, height=1000, scrolling=False)
+
 
 # ========== TRANG CHÍNH ==========
+
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -161,6 +214,15 @@ def main_page(is_mobile=False):
         position: relative;
         filter: brightness(1.05) contrast(1.1) saturate(1.05);
         animation: fadeInBg 0.5s ease-in-out forwards; 
+    }}
+    .stApp::after {{
+        content: "";
+        position: absolute;
+        top: 0; left: 0;
+        width: 100%; height: 100%;
+        background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
+        opacity: 0.09;
+        mix-blend-mode: multiply;
     }}
     @keyframes fadeInBg {{
         from {{ opacity: 0; }}
@@ -196,38 +258,71 @@ def main_page(is_mobile=False):
     <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
     """, unsafe_allow_html=True)
 
+
 # ========== LUỒNG CHÍNH ==========
+
 hide_streamlit_ui()
 
-# Detect thiết bị
+# Khởi tạo session state cho is_mobile (giữ nguyên)
 if "is_mobile" not in st.session_state:
     ua_string = st_javascript("window.navigator.userAgent;")
     if ua_string:
         ua = parse(ua_string)
         st.session_state.is_mobile = not ua.is_pc
-        st.rerun()
+        st.rerun() 
     else:
         st.info("Đang xác định thiết bị...")
+        time.sleep(1) 
         st.stop()
 
-# State intro_done
+# Khởi tạo session state cho intro_done
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
 if not st.session_state.intro_done:
+    # HIỂN THỊ MÀN HÌNH INTRO
     intro_screen(st.session_state.is_mobile)
-
-    # JS nhận message và set state intro_done
+    
+    # Lắng nghe thông điệp 'intro_done' từ iframe
+    # Thay vì reload trang, chỉ cần cập nhật session state và rerun
     st.markdown("""
     <script>
     window.addEventListener("message", (event) => {
         if (event.data.type === "intro_done") {
-            fetch("/?set_intro_done=true").then(()=>console.log("Intro done flag set"));
+            // Sử dụng Streamlit URL params để chuyển trạng thái an toàn
+            // Tuy nhiên, cách đơn giản nhất là gửi thông tin qua Streamlit API/rerun
+            // Vì không thể trực tiếp thay đổi session state từ JS, ta sẽ dùng một trick nhỏ:
+            // Dùng st.empty().markdown để "chờ" (không cần thiết vì st.html đã block)
+            // Thay thế bằng st.experimental_rerun() nếu bạn dùng Streamlit 1.24+ và không muốn chờ time.sleep
+            // Trong trường hợp này, ta sẽ dùng st.session_state và st.rerun() trong Python
+            window.parent.postMessage({type: 'manual_rerun'}, '*'); // Gửi tín hiệu để kích hoạt rerun
         }
     });
     </script>
     """, unsafe_allow_html=True)
+    
+    # ⚠️ Quan trọng: Do `components.html` block luồng, chúng ta cần dùng một logic để "chờ"
+    # Cách tốt hơn là dùng một biến trung gian trong JS và check bằng st_javascript
+    # Nhưng vì giới hạn của Streamlit, ta dùng `time.sleep` lớn và kiểm tra trạng thái
+    
+    # Khi nhận được thông điệp 'intro_done' (dưới dạng manual_rerun), ta sẽ cập nhật state.
+    # Tuy nhiên, cách tối ưu nhất trong Streamlit cho hiệu ứng này là dùng `st.experimental_set_query_params`
+    
+    # Tạm thời dùng biến session state để kiểm soát
+    if st_javascript('window.location.search.includes("intro_completed=true")'):
+        st.session_state.intro_done = True
+        st.rerun()
+    
+    # Nếu chưa hoàn tất, dùng một `st.empty` để chờ tín hiệu từ JS
+    placeholder = st.empty()
+    if not st.session_state.intro_done:
+        with placeholder.container():
+             st.info("Đang chiếu Intro... Vui lòng chờ.")
+             time.sleep(15) # Thời gian chờ tối đa cho intro
+             st.session_state.intro_done = True
+             st.rerun()
+             
 
-    st.stop()
 else:
+    # HIỂN THỊ TRANG CHÍNH
     main_page(st.session_state.is_mobile)
