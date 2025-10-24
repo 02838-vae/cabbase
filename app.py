@@ -8,52 +8,58 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Khởi tạo session state để kiểm soát trạng thái video
+# Khởi tạo session state (Không dùng trong logic chính, chỉ để giữ cấu trúc)
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
 # --- CÁC HÀM TIỆN ÍCH ---
 
 def get_base64_encoded_file(file_path):
-    with open(file_path, "rb") as f:
-        data = f.read()
-    return base64.b64encode(data).decode("utf-8")
+    """Đọc file và trả về Base64 encoded string."""
+    try:
+        with open(file_path, "rb") as f:
+            data = f.read()
+        return base64.b64encode(data).decode("utf-8")
+    except FileNotFoundError as e:
+        # Tái raise lỗi để hàm try/except bên ngoài xử lý
+        raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
+
 
 # Mã hóa các file media
 try:
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
-    bg_pc_base64 = get_base64_encoded_file("cabbase.jpg")  # Tên file nền PC
-    bg_mobile_base64 = get_base64_encoded_file("mobile.jpg") # Tên file nền Mobile
+    # Đã đổi tên file ảnh nền PC thành cabbase.jpg theo yêu cầu
+    bg_pc_base64 = get_base64_encoded_file("cabbase.jpg")
+    bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
 except FileNotFoundError as e:
-    st.error(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
+    st.error(e)
     st.stop()
 
 
 # --- CSS ĐỂ ÉP STREAMLIT MAIN CONTAINER & IFRAME FULLSCREEN/ẨN IFRAME ---
-# CSS cho trang Streamlit chính
-hide_streamlit_style = """
+# SỬA LỖI F-STRING: NHÂN ĐÔI DẤU NGOẶC NHỌN {} TRONG KHỐI CSS
+hide_streamlit_style = f"""
 <style>
 /* Ẩn các thành phần mặc định của Streamlit */
-#MainMenu, footer, header {visibility: hidden;}
+#MainMenu, footer, header {{visibility: hidden;}}
 
 /* Đảm bảo Main Content Container chiếm toàn bộ không gian và không có padding */
-.main {
+.main {{
     padding: 0;
     margin: 0;
-}
+}}
 
 /* Đảm bảo khu vực nội dung được căn chỉnh sát lề */
-div.block-container {
+div.block-container {{
     padding: 0;
     margin: 0;
     max-width: 100% !important;
-}
+}}
 
-/* Ẩn iframe khi st.session_state.video_ended là True */
-/* Giả sử component được đặt đầu tiên, ta tìm iframe đầu tiên */
-iframe:first-of-type {
+/* IFRAME VIDEO INTRO */
+iframe:first-of-type {{
     transition: opacity 1s ease-out, visibility 1s ease-out;
     opacity: 1;
     visibility: visible;
@@ -63,25 +69,24 @@ iframe:first-of-type {
     top: 0;
     left: 0;
     z-index: 1000;
-}
+}}
 
-/* Class để ẩn iframe */
-.video-finished iframe:first-of-type {
+/* Class để ẩn iframe (được thêm bằng JS) */
+.video-finished iframe:first-of-type {{
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    height: 1px !important; /* Thay đổi kích thước để giải phóng không gian */
-}
+    height: 1px !important; 
+}}
 
 /* Định nghĩa nền full-screen cho main content */
-.stApp {
-    /* Sử dụng biến CSS để lưu trữ URL nền */
+.stApp {{
     --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
-}
+}}
 
 /* CSS cho hiệu ứng Reveal */
-.reveal-grid {
+.reveal-grid {{
     position: fixed;
     top: 0;
     left: 0;
@@ -91,79 +96,56 @@ iframe:first-of-type {
     /* Tùy chỉnh số lượng ô vuông */
     grid-template-columns: repeat(20, 1fr); 
     grid-template-rows: repeat(12, 1fr);
-    z-index: 500; /* Dưới iframe (1000), trên nội dung chính */
-    pointer-events: none; /* Cho phép tương tác với nội dung bên dưới */
-}
+    z-index: 500; 
+    pointer-events: none; 
+}}
 
-.grid-cell {
-    background-size: cover;
-    background-position: center;
+.grid-cell {{
+    /* Áp dụng nền từ body chính để tính toán vị trí, nhưng ở đây ta chỉ cần màu trắng/nền chung */
+    background-color: white; /* Ban đầu là màu trắng/màu che phủ */
     opacity: 1;
     transition: opacity 0.5s ease-out;
-}
+}}
 
-/* Class để kích hoạt ẩn/reveal */
-.main-content-revealed {
+/* Class được thêm vào .stApp sau khi video kết thúc */
+.main-content-revealed {{
     /* Đặt nền cho toàn bộ ứng dụng */
     background-image: var(--main-bg-url-pc);
     background-size: cover;
     background-position: center;
-    transition: background-image 0s; /* Không chuyển đổi nền */
-}
+    background-attachment: fixed; /* Giữ nền cố định khi cuộn */
+}}
 
 /* Điều chỉnh cho Mobile */
-@media (max-width: 768px) {
-    .main-content-revealed {
+@media (max-width: 768px) {{
+    .main-content-revealed {{
         background-image: var(--main-bg-url-mobile);
-    }
-    .reveal-grid {
+    }}
+    .reveal-grid {{
         grid-template-columns: repeat(10, 1fr);
         grid-template-rows: repeat(20, 1fr);
-    }
-}
+    }}
+}}
 </style>
 """
 
-# Thêm class để ẩn iframe nếu video đã kết thúc
-if st.session_state.video_ended:
-    st.markdown(f'<div class="video-finished">{hide_streamlit_style}</div>', unsafe_allow_html=True)
-else:
-    st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+# Thêm CSS vào trang chính
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
 # --- MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
 # JavaScript để thông báo cho Streamlit khi video kết thúc
+# SỬA LỖI F-STRING: NHÂN ĐÔI DẤU NGOẶC NHỌN {} TRONG KHỐI JAVASCRIPT
 js_callback = f"""
 <script>
     function sendBackToStreamlit() {{
-        // Gửi tín hiệu trở lại Streamlit
-        var xhr = new XMLHttpRequest();
-        // Giả sử Streamlit đang chạy trên cùng domain và cổng
-        // Phương pháp này không trực tiếp, nhưng thường dùng trong môi trường tùy chỉnh
-        // Cách tốt nhất là dùng component riêng, nhưng ta dùng cách 'refresh' bằng session_state
-        // Để đơn giản, ta sẽ chỉ dùng logic của video_ended trong JS để áp dụng CSS
-        console.log("Video Ended. Signaling Streamlit.");
-        // Gửi post message, Streamlit không lắng nghe mặc định
-        // Chúng ta sẽ dựa vào việc áp dụng class 'video-finished' trên element Streamlit chính
-        // và reload trang (hoặc dùng Custom Streamlit Component)
-        
-        // Vì Streamlit không có API callback đơn giản cho JS trong st.html,
-        // ta sẽ reload trang để kích hoạt st.session_state.video_ended = True 
-        // Đây là cách "cồng kềnh" nhất, nhưng hoạt động.
-        // Cần một nút ấn hoặc sử dụng window.location.reload() sau một độ trễ
-        // TỐT HƠN: Thay đổi nội dung của một div và sau đó thay đổi session_state bằng form
-        
-        // GIẢI PHÁP TỐT NHẤT CHO TRƯỜNG HỢP NÀY:
-        // Cập nhật lại HTML với một form, kích hoạt submit để thay đổi session_state
-        // HOẶC: Chấp nhận rằng chỉ có CSS thay đổi sau khi video kết thúc.
-        
-        // **ÁP DỤNG CSS:** Thêm class vào body chính của Streamlit
+        // **BƯỚC 1: Kích hoạt nền và ẩn video**
         window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
         
-        // Kích hoạt Hiệu ứng Reveal
+        // **BƯỚC 2: Kích hoạt Hiệu ứng Reveal**
         initRevealEffect();
-    }
+    }}
     
     function initRevealEffect() {{
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
@@ -171,38 +153,26 @@ js_callback = f"""
 
         const cells = revealGrid.querySelectorAll('.grid-cell');
         
-        // Hiệu ứng lật mở ngẫu nhiên
+        // Tạo một mảng ngẫu nhiên các ô
         const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
 
         shuffledCells.forEach((cell, index) => {{
             setTimeout(() => {{
-                cell.style.opacity = 0; // Ẩn ô vuông
-            }}, index * 20); // Khoảng thời gian giữa các ô, vd: 20ms
+                // Thay đổi background-color của ô vuông thành màu nền của Streamlit
+                // Hoặc đơn giản là ẩn nó đi
+                cell.style.opacity = 0; 
+            }}, index * 10); // Khoảng thời gian giữa các ô (10ms)
         }});
         
         // Sau khi hiệu ứng kết thúc, loại bỏ lưới
         setTimeout(() => {{
              revealGrid.remove();
-        }}, shuffledCells.length * 20 + 1000); // 1 giây sau khi ô cuối cùng ẩn
-    }
+        }}, shuffledCells.length * 10 + 1000); // Đợi 1 giây sau khi ô cuối cùng ẩn
+    }}
 
     document.addEventListener("DOMContentLoaded", function() {{
         const video = document.getElementById('intro-video');
         const audio = document.getElementById('background-audio');
-        // ... (phần code video playback giữ nguyên) ...
-
-        video.onended = () => {{
-            video.style.opacity = 0;
-            audio.pause();
-            audio.currentTime = 0;
-            document.getElementById('intro-text').style.opacity = 0;
-            
-            // **THAY ĐỔI LỚN:** GỌI HÀM GỬI TÍN HIỆU/ÁP DỤNG CSS TỪ PARENT FRAME
-            sendBackToStreamlit(); 
-        }};
-        
-        // (Phần setup video/audio/playMedia giữ nguyên)
-        // ...
         const introText = document.getElementById('intro-text');
         const isMobile = window.innerWidth <= 768;
 
@@ -221,7 +191,9 @@ js_callback = f"""
             setTimeout(() => {{ introText.style.opacity = 1; }}, 500);
 
             audio.volume = 0.5;
+            audio.loop = true; // Lặp lại âm thanh nếu cần
             audio.play().catch(e => {{
+                // Cần tương tác người dùng để Play Audio/Video trên nhiều trình duyệt
                 document.body.addEventListener('click', () => {{
                     audio.play().catch(err => console.error("Audio playback error on click:", err));
                 }}, {{ once: true }});
@@ -230,6 +202,16 @@ js_callback = f"""
             
         playMedia();
         
+        // Event khi video kết thúc
+        video.onended = () => {{
+            video.style.opacity = 0;
+            audio.pause();
+            audio.currentTime = 0;
+            introText.style.opacity = 0;
+            
+            sendBackToStreamlit(); 
+        }};
+
         // Cần đảm bảo video luôn sẵn sàng nếu trình duyệt chặn autoplay
         document.body.addEventListener('click', () => {{
              video.play().catch(e => {{}});
@@ -238,13 +220,14 @@ js_callback = f"""
     }});
 </script>
 """
-# Thay thế phần <script> trong html_content
+
+# Mã HTML/CSS cho Video
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
 <head>
     <style>
-        /* SỬA LỖI 2: CSS TRONG IFRAME */
+        /* SỬA LỖI F-STRING */
         html, body {{
             margin: 0;
             padding: 0;
@@ -261,10 +244,10 @@ html_content_modified = f"""
             height: 100%;
             object-fit: cover;
             z-index: -100;
-            transition: opacity 1s; /* Thêm transition để video mờ dần */
+            transition: opacity 1s; 
         }}
 
-        /* CSS cho dòng chữ cố định (Giữ nguyên) */
+        /* CSS cho dòng chữ cố định */
         #intro-text {{
             position: fixed;
             top: 5vh;
@@ -307,33 +290,22 @@ st.components.v1.html(html_content_modified, height=10, scrolling=False)
 
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
 
-# Hiệu ứng Reveal Grid: Tạo các ô vuông che phủ
-# Chúng ta sẽ sử dụng Streamlit markdown để inject HTML/CSS cho lưới
-if not st.session_state.video_ended:
-    # Lấy thông tin nền thích hợp cho từng ô (Data URI là quá dài, ta dùng CSS background-image
-    # đã khai báo trong hide_streamlit_style)
-    
-    # Tạo số lượng ô phù hợp (20x12 = 240 ô)
-    grid_cells_html = ""
-    for i in range(240): 
-        # Cần tính toán background-position cho từng ô để tạo thành hình ảnh lớn
-        # Cần JavaScript phức tạp để tính toán chính xác trong từng ô
-        # Đơn giản hóa: Dùng cùng 1 ô, và JS sẽ thay đổi opacity
-        grid_cells_html += f'<div class="grid-cell"></div>'
+# Tạo Lưới Reveal (20x12 = 240 ô)
+grid_cells_html = ""
+for i in range(240): 
+    grid_cells_html += f'<div class="grid-cell"></div>'
 
-    # Tạo Lưới
-    reveal_grid_html = f"""
-    <div class="reveal-grid">
-        {grid_cells_html}
-    </div>
-    """
-    st.markdown(reveal_grid_html, unsafe_allow_html=True)
+reveal_grid_html = f"""
+<div class="reveal-grid">
+    {grid_cells_html}
+</div>
+"""
+# Lưới này phải được đặt trước nội dung chính và Streamlit sẽ hiển thị nó
+# Nó bị ẩn đi bằng CSS/JS sau khi video kết thúc.
+st.markdown(reveal_grid_html, unsafe_allow_html=True)
     
-    # Do st.session_state không thay đổi khi video kết thúc (vì nó nằm trong iframe JS),
-    # ta cần một cơ chế khác. Việc dùng JS để thêm class 'main-content-revealed' 
-    # và 'video-finished' vào body chính là cách giải quyết tốt nhất.
 
-# Nội dung chính của trang
+# Nội dung chính của trang (Phần này sẽ hiện ra sau khi lưới bị ẩn)
 st.markdown("""
 <div style="padding: 20px; color: black; position: relative; z-index: 10;">
     <h1>Chào mừng đến với Nội dung Chính của Trang!</h1>
