@@ -34,7 +34,7 @@ except FileNotFoundError as e:
     st.error(e)
     st.stop()
 
-# --- CSS ĐỂ ÉP STREAMLIT MAIN CONTAINER & IFRAME FULLSCREEN/ẨN IFRAME ---
+# --- CSS ---
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@700;900&family=Raleway:wght@600;800&display=swap');
@@ -42,7 +42,7 @@ hide_streamlit_style = f"""
 /* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
 
-/* Đảm bảo Main Content Container chiếm toàn bộ không gian và không có padding */
+/* Main Container */
 .main {{ padding: 0; margin: 0; }}
 div.block-container {{ padding: 0; margin: 0; max-width: 100% !important; }}
 
@@ -65,13 +65,13 @@ iframe:first-of-type {{
     height: 1px !important; 
 }}
 
-/* Nền full-screen cho main content */
+/* Nền full-screen */
 .stApp {{
     --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
 }}
 
-/* CSS Reveal Grid */
+/* Reveal Grid */
 .reveal-grid {{
     position: fixed;
     top: 0;
@@ -130,8 +130,31 @@ iframe:first-of-type {{
 @media (max-width: 768px) {{
     #main-title-container h1 {{ font-size: 8vw; }}
 }}
+
+/* === TIÊU ĐỀ VIDEO INTRO === */
+#intro-text {{
+    position: fixed; top:5vh; width:100%; text-align:center;
+    color:#FFD700; font-size:3.5vw; font-weight:900; z-index:100;
+    pointer-events:none; font-family:'Montserrat',sans-serif;
+    text-shadow:4px 4px 12px rgba(0,0,0,0.85);
+    opacity:0; filter:blur(20px); transform:scale(1.2);
+    transition:opacity 1.8s ease-out, filter 1.8s ease-out, transform 1.8s ease-out, text-shadow 1.5s ease-in-out;
+    animation: glow 2s ease-in-out infinite alternate;
+}}
+#intro-text.text-shown {{
+    opacity:1;
+    filter:blur(0);
+    transform:scale(1);
+}}
+@keyframes glow {{
+    0% {{ text-shadow: 0 0 5px #FFD700, 0 0 10px #FFD700, 0 0 20px #FFA500; }}
+    50% {{ text-shadow: 0 0 10px #FFD700, 0 0 20px #FFA500, 0 0 30px #FFFF00; }}
+    100% {{ text-shadow: 0 0 5px #FFD700, 0 0 10px #FFD700, 0 0 20px #FFA500; }}
+}}
+@media (max-width:768px){{ #intro-text{{ font-size:7vw; }} }}
 </style>
 """
+
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- HTML/JS VIDEO INTRO ---
@@ -150,7 +173,8 @@ function initRevealEffect() {{
     shuffledCells.forEach((cell,index) => {{
         setTimeout(() => {{ cell.style.opacity = 0; }}, index*10);
     }});
-    setTimeout(() => {{ revealGrid.remove();
+    setTimeout(() => {{
+        revealGrid.remove();
         const mainTitle = window.parent.document.getElementById('main-title-container');
         if(mainTitle) {{
             mainTitle.style.opacity=1;
@@ -172,14 +196,19 @@ document.addEventListener("DOMContentLoaded", function() {{
     const playMedia = ()=>{{
         video.load(); video.play().catch(e=>console.log(e));
         setTimeout(()=>{{ introText.classList.add('text-shown'); }},500);
-        audio.volume=0.5; audio.loop=true; audio.play().catch(e=>{{ document.body.addEventListener('click',()=>{{audio.play().catch(err=>console.error(err));}},{{once:true}}); }});
+        audio.volume=0.5; audio.loop=true;
+        audio.play().catch(e=>{{
+            document.body.addEventListener('click',()=>{{ audio.play().catch(err=>console.error(err)); }},{{once:true}});
+        }});
     }};
     playMedia();
-    video.onended=()=>{{
-        video.style.opacity=0; audio.pause(); audio.currentTime=0;
-        introText.classList.remove('text-shown'); introText.style.opacity=0;
+    video.onended=()=>{
+        video.style.opacity=0;
+        audio.pause(); audio.currentTime=0;
+        introText.classList.remove('text-shown');
+        introText.style.opacity=0;
         sendBackToStreamlit();
-    }};
+    };
 }});
 </script>
 """
@@ -188,22 +217,6 @@ html_content_modified = f"""
 <!DOCTYPE html>
 <html>
 <head>
-<style>
-html,body {{ margin:0; padding:0; overflow:hidden; height:100vh; width:100vw; }}
-#intro-video {{
-    position:absolute; top:0; left:0; width:100%; height:100%;
-    object-fit:cover; z-index:-100; transition:opacity 1s;
-}}
-#intro-text {{
-    position: fixed; top:5vh; width:100%; text-align:center;
-    color:#FFD700; font-size:3.5vw; font-weight:900; z-index:100;
-    pointer-events:none; font-family:'Montserrat',sans-serif;
-    text-shadow:3px 3px 6px rgba(0,0,0,0.8);
-    opacity:0; filter:blur(10px); transition:opacity 1.5s, filter 1.5s;
-}}
-#intro-text.text-shown {{ opacity:1; filter:blur(0); }}
-@media (max-width:768px){{ #intro-text{{ font-size:7vw; }} }}
-</style>
 </head>
 <body>
 <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
@@ -213,6 +226,7 @@ html,body {{ margin:0; padding:0; overflow:hidden; height:100vh; width:100vw; }}
 </body>
 </html>
 """
+
 st.components.v1.html(html_content_modified, height=10, scrolling=False)
 
 # --- Reveal Grid ---
