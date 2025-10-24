@@ -38,14 +38,20 @@ except FileNotFoundError as e:
     st.stop()
 
 
-# --- CSS ĐỂ ÉP STREAMLIT MAIN CONTAINER & IFRAME FULLSCREEN/ẨN IFRAME ---
+# --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
+
+# Nhúng Font Sacramento và Stay Strong bằng thẻ <link> để đảm bảo tải trên PC
+font_links = """
+<link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Stay+Strong&display=swap" rel="stylesheet">
+"""
+# Đặt các thẻ link này vào đầu trang
+st.markdown(font_links, unsafe_allow_html=True)
+
+
+# --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
 hide_streamlit_style = f"""
 <style>
-/* 1. THÊM GOOGLE FONT IMPORT CHO FONT MỚI: Sacramento (Intro) và Stay Strong (Main Title) */
-@import url('https://fonts.googleapis.com/css2?family=Sacramento&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Stay+Strong&display=swap');
-
-
 /* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
 
@@ -170,7 +176,7 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Cập nhật Font Sacramento) ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (FONT SACRAMENTO) ---
 
 # JavaScript (Giữ nguyên logic)
 js_callback = f"""
@@ -279,16 +285,16 @@ html_content_modified = f"""
             transition: opacity 1s; 
         }}
 
-        /* === TIÊU ĐỀ INTRO ĐÃ CHỈNH SỬA (FONT SACRAMENTO) === */
+        /* === TIÊU ĐỀ INTRO (FONT SACRAMENTO) === */
         #intro-text {{
             position: fixed;
             top: 5vh;
             width: 100%;
             text-align: center;
             color: #FFD700; 
-            font-size: 4.5vw; /* Tăng kích thước để font chữ ký dễ nhìn hơn */
+            font-size: 4.5vw; 
             
-            /* FONT CHỮ KÝ THAY THẾ CHO MRATTOOS SIGNATURE */
+            /* SỬ DỤNG FONT ĐÃ NHÚNG TRÊN CONTAINER CHÍNH */
             font-family: 'Sacramento', cursive; 
             font-weight: 400; 
             
@@ -309,7 +315,7 @@ html_content_modified = f"""
 
         @media (max-width: 768px) {{
             #intro-text {{
-                font-size: 10vw; /* Tăng kích thước trên Mobile */
+                font-size: 10vw; 
             }}
         }}
         
