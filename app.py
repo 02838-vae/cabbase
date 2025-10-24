@@ -5,7 +5,6 @@ from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
-
 # ========== CẤU HÌNH VÀ TÀI NGUYÊN ==========
 
 # File video và âm thanh intro
@@ -27,17 +26,19 @@ st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 GLASS_ROWS = 10
 GLASS_COLS = 10
 BREAK_DURATION = 1.5  # Thời gian hiệu ứng vỡ kính (giây)
-REVEAL_GRID = 8  # Lưới để reveal trang chính (8x8)
-REVEAL_DURATION = 3.5  # Thời gian reveal trang chính (giây)
+REVEAL_GRID = 8       # Lưới để reveal trang chính (8x8)
+REVEAL_DURATION = 3.5 # Thời gian reveal trang chính (giây)
 
 # ========== ẨN UI STREAMLIT ==========
 
 def hide_streamlit_ui():
     st.markdown("""
     <style>
+    /* Ẩn các thành phần mặc định của Streamlit */
     [data-testid="stToolbar"], header, footer, iframe[title*="keyboard"], [tabindex="0"][aria-live] {
         display: none !important;
     }
+    /* Đảm bảo ứng dụng chiếm toàn màn hình */
     .stApp, .main, .block-container {
         padding: 0 !important;
         margin: 0 !important;
@@ -57,6 +58,7 @@ def intro_screen(is_mobile=False):
     bg_file = BG_MOBILE if is_mobile else BG_PC
     
     try:
+        # Đọc và mã hóa các tệp tài nguyên
         with open(video_file, "rb") as f:
             video_b64 = base64.b64encode(f.read()).decode()
         with open(SFX, "rb") as a:
@@ -69,13 +71,18 @@ def intro_screen(is_mobile=False):
     except FileNotFoundError as e:
         st.error(f"Lỗi: Không tìm thấy file tài nguyên. Vui lòng kiểm tra: {e.filename}")
         st.stop()
+    
+    # Lấy chiều cao của cửa sổ để component chiếm toàn bộ màn hình
+    window_height = st_javascript("window.innerHeight", key="intro_height_js")
+    if not isinstance(window_height, (int, float)) or window_height < 100:
+        window_height = 800 # Giá trị dự phòng
 
     intro_html = f"""
     <!DOCTYPE html>
     <html>
     <head>
         <meta charset="UTF-8">
-        <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
         <style>
         * {{
@@ -98,19 +105,6 @@ def intro_screen(is_mobile=False):
             width: 100%;
             height: 100%;
             background: #000;
-        }}
-        
-        /* Debug info */
-        #debug {{
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            background: rgba(255,255,255,0.8);
-            padding: 10px;
-            font-family: monospace;
-            font-size: 12px;
-            z-index: 9999;
-            max-width: 300px;
         }}
         
         /* Background trang chính */
@@ -147,6 +141,7 @@ def intro_screen(is_mobile=False):
             left: 0;
             right: 0;
             bottom: 0;
+            /* Đổi URL nền thành base64 hoặc URL tĩnh an toàn nếu có thể */
             background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
             opacity: 0.09;
             mix-blend-mode: multiply;
@@ -164,7 +159,6 @@ def intro_screen(is_mobile=False):
             height: 100%;
             object-fit: cover;
             z-index: 1;
-            background: #000;
         }}
         
         audio {{ display: none; }}
@@ -271,12 +265,10 @@ def intro_screen(is_mobile=False):
         </style>
     </head>
     <body>
-        <div id="debug">Đang tải video...</div>
-        
         <div id="container">
             <div id="main-page-bg"></div>
             
-            <video id='introVid' muted playsinline webkit-playsinline>
+            <video id='introVid' autoplay muted playsinline>
                 <source src='data:video/mp4;base64,{video_b64}' type='video/mp4'>
             </video>
             
@@ -307,15 +299,8 @@ def intro_screen(is_mobile=False):
         const introText = document.getElementById('intro-text');
         const mainText = document.getElementById('main-text');
         const mainBg = document.getElementById('main-page-bg');
-        const debugDiv = document.getElementById('debug');
         let ended = false;
-        let debugLog = [];
-
-        function log(msg) {{
-            console.log(msg);
-            debugLog.push(msg);
-            debugDiv.innerHTML = debugLog.slice(-10).join('<br>');
-        }}
+        let hasInteracted = false;
 
         function createBrokenPieces() {{
             const pieceWidth = 100 / GLASS_COLS;
@@ -373,7 +358,6 @@ def intro_screen(is_mobile=False):
         }}
 
         function revealMainPage() {{
-            log('Starting reveal...');
             const tiles = document.querySelectorAll('.reveal-tile');
             const centerRow = Math.floor(REVEAL_GRID / 2);
             const centerCol = Math.floor(REVEAL_GRID / 2);
@@ -401,8 +385,6 @@ def intro_screen(is_mobile=False):
                         if (index === tiles.length - 1) {{
                             setTimeout(() => {{
                                 revealOverlay.style.display = 'none';
-                                debugDiv.style.display = 'none';
-                                log('Reveal complete!');
                             }}, 100);
                         }}
                     }}
@@ -413,7 +395,10 @@ def intro_screen(is_mobile=False):
         function finishIntro() {{
             if (ended) return;
             ended = true;
-            log('Finishing intro...');
+            
+            // Dừng audio
+            audio.pause(); 
+            audio.currentTime = 0;
             
             vid.style.opacity = 0;
             introText.style.display = 'none';
@@ -428,104 +413,99 @@ def intro_screen(is_mobile=False):
                 revealMainPage();
             }}, BREAK_DURATION * 1000 + 200);
             
+            // Gửi tin nhắn lên Streamlit sau khi hiệu ứng kết thúc
+            const total_duration = BREAK_DURATION * 1000 + REVEAL_DURATION * 1000 + 500;
             setTimeout(() => {{
                 window.parent.postMessage({{type: 'intro_done'}}, '*');
-            }}, BREAK_DURATION * 1000 + REVEAL_DURATION * 1000 + 500);
+            }}, total_duration);
         }}
+
+        function handleInteraction() {{
+            if (!hasInteracted) {{
+                hasInteracted = true;
+                vid.muted = false; // Bỏ mute video
+                audio.volume = 1.0;
+                
+                // Thử play lại video (nếu bị chặn trước đó) và audio
+                const playVidPromise = vid.play();
+                if (playVidPromise) {{
+                    playVidPromise.catch(e => console.log('Video play failed after interaction:', e));
+                }}
+                
+                const playAudioPromise = audio.play();
+                if (playAudioPromise) {{
+                    playAudioPromise.catch(e => console.log('Audio play failed after interaction:', e));
+                }}
+            }}
+        }}
+
 
         createBrokenPieces();
         createRevealGrid();
 
-        log('Video element created');
-        log('ReadyState: ' + vid.readyState);
-
-        // Event listeners cho debug
-        vid.addEventListener('loadstart', () => log('loadstart'));
-        vid.addEventListener('loadedmetadata', () => log('loadedmetadata'));
-        vid.addEventListener('loadeddata', () => log('loadeddata'));
-        vid.addEventListener('canplay', () => log('canplay'));
-        vid.addEventListener('canplaythrough', () => log('canplaythrough'));
-        vid.addEventListener('playing', () => log('playing'));
-        vid.addEventListener('pause', () => log('pause'));
-        vid.addEventListener('error', (e) => log('ERROR: ' + e.message));
-        vid.addEventListener('stalled', () => log('stalled'));
-        vid.addEventListener('waiting', () => log('waiting'));
-
-        // Thử play ngay
-        setTimeout(() => {{
-            log('Attempting autoplay...');
-            vid.play().then(() => {{
-                log('✓ Video playing!');
-                audio.currentTime = 0;
-                audio.volume = 1.0;
-                audio.play().catch(e => log('Audio error: ' + e.message));
-            }}).catch(e => {{
-                log('✗ Autoplay failed: ' + e.message);
-                log('Click màn hình để play!');
-            }});
-        }}, 100);
-
-        // Click để play
-        let clicked = false;
-        document.addEventListener('click', function() {{
-            if (!clicked) {{
-                clicked = true;
-                log('User clicked!');
-                vid.muted = false;
-                vid.play().then(() => {{
-                    log('✓ Playing after click');
-                    audio.currentTime = 0;
-                    audio.volume = 1.0;
-                    audio.play();
-                }}).catch(e => log('Play error: ' + e.message));
-            }}
-        }});
-
-        // Touch cho mobile
-        document.addEventListener('touchstart', function() {{
-            if (!clicked) {{
-                clicked = true;
-                log('User touched!');
-                vid.muted = false;
-                vid.play().then(() => {{
-                    log('✓ Playing after touch');
-                    audio.currentTime = 0;
-                    audio.volume = 1.0;
-                    audio.play();
-                }}).catch(e => log('Play error: ' + e.message));
+        // Xử lý Autoplay ban đầu (muted) và lỗi nếu bị chặn
+        vid.addEventListener('canplaythrough', function() {{
+            const playAttempt = vid.play();
+            if (playAttempt !== undefined) {{
+                playAttempt.then(_ => {{
+                    // Autoplay thành công (muted)
+                    console.log('Video playing (muted).');
+                    audio.play().catch(e => console.log('Audio blocked (autoplay):', e));
+                }}).catch(error => {{
+                    // Autoplay bị chặn. Cần tương tác người dùng.
+                    console.log('Autoplay blocked, waiting for interaction.');
+                }});
             }}
         }}, {{once: true}});
-
+        
+        // Gắn sự kiện tương tác để play/unmute
+        document.addEventListener('click', handleInteraction, {{once: true}});
+        document.addEventListener('touchstart', handleInteraction, {{once: true}});
+        
+        // Kết thúc intro khi video kết thúc
         vid.addEventListener('ended', finishIntro);
-        setTimeout(finishIntro, 9000);
+        
+        // Cơ chế dừng dự phòng sau 9 giây (phòng trường hợp video không báo cáo 'ended')
+        setTimeout(finishIntro, 9000); 
 
         </script>
     </body>
     </html>
     """
-    components.html(intro_html, height=800, scrolling=False)
+    # Sử dụng chiều cao đã lấy từ JS để iframe chiếm trọn
+    components.html(intro_html, height=window_height, scrolling=False)
 
 
 # ========== TRANG CHÍNH ==========
 
 def main_page(is_mobile=False):
     hide_streamlit_ui()
-    st.markdown("""
+    st.markdown(f"""
     <style>
-    html, body, .stApp {
+    /* ... CSS cho trang chính nếu cần ... */
+    html, body, .stApp {{
         background: black;
         height: 100vh;
-    }
+    }}
     </style>
     """, unsafe_allow_html=True)
 
-
+    # Hiển thị nội dung trang chính ở đây
+    st.markdown(f"""
+    <div style="color: white; text-align: center; padding-top: 20%;">
+        <h1>Chào mừng đến với Trang Chính!</h1>
+        <p>Phiên bản: {'Mobile' if is_mobile else 'PC'}</p>
+        <button onclick="window.parent.location.reload()">Chạy lại Intro</button>
+    </div>
+    """, unsafe_allow_html=True)
+    
 # ========== LUỒNG CHÍNH ==========
 
 hide_streamlit_ui()
 
+# 1. Xác định thiết bị
 if "is_mobile" not in st.session_state:
-    ua_string = st_javascript("window.navigator.userAgent;")
+    ua_string = st_javascript("window.navigator.userAgent;", key="ua_key")
     if ua_string:
         ua = parse(ua_string)
         st.session_state.is_mobile = not ua.is_pc
@@ -535,17 +515,38 @@ if "is_mobile" not in st.session_state:
         time.sleep(1) 
         st.stop()
 
+# 2. Quản lý trạng thái Intro
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
-intro_screen(st.session_state.is_mobile)
+# 3. Hiển thị Intro hoặc Trang Chính
+if not st.session_state.intro_done:
+    # Hiển thị màn hình Intro
+    intro_screen(st.session_state.is_mobile)
+    
+    # Lắng nghe message từ component HTML để chuyển sang trang chính
+    st.markdown("""
+    <script>
+    window.addEventListener("message", (event) => {
+        if (event.data.type === "intro_done" && window.parent.location) {
+            // Gửi một tin nhắn đến Streamlit để kích hoạt rerunning
+            // Đây là cách duy nhất để cập nhật session_state từ component
+            fetch('/?intro_finished=true').then(() => {
+                // Tự động reload để kích hoạt luồng Streamlit chạy lại
+                window.parent.location.reload(); 
+            });
+        }
+    });
+    </script>
+    """, unsafe_allow_html=True)
+    
+    # Kiểm tra URL params để bắt sự kiện intro_done
+    if st.experimental_get_query_params().get("intro_finished") == ["true"]:
+        st.session_state.intro_done = True
+        # Xóa param để tránh lặp vô tận
+        st.experimental_set_query_params(intro_finished=None)
+        st.rerun()
 
-st.markdown("""
-<script>
-window.addEventListener("message", (event) => {
-    if (event.data.type === "intro_done") {
-        console.log('Intro completed!');
-    }
-});
-</script>
-""", unsafe_allow_html=True)
+else:
+    # Hiển thị trang chính
+    main_page(st.session_state.is_mobile)
