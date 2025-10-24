@@ -39,19 +39,20 @@ except FileNotFoundError as e:
 
 
 # --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
-
-# Nhúng Font Sacramento và Stay Strong bằng thẻ <link> để đảm bảo tải trên PC
+# Đảm bảo font được tải sớm nhất
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Stay+Strong&display=swap" rel="stylesheet">
 """
-# Đặt các thẻ link này vào đầu trang
 st.markdown(font_links, unsafe_allow_html=True)
 
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
 hide_streamlit_style = f"""
 <style>
+/* Đặt lại @import trong khối style để tăng khả năng tải trên PC */
+@import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Stay+Strong&display=swap');
+
 /* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
 
@@ -138,7 +139,7 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === TIÊU ĐỀ TRANG CHÍNH (FONT STAY STRONG) === */
+/* === TIÊU ĐỀ TRANG CHÍNH (FONT STAY STRONG & THU NHỎ SIZE) === */
 #main-title-container {{
     position: fixed;
     top: 5vh; 
@@ -155,7 +156,8 @@ iframe:first-of-type {{
     /* FONT STAY STRONG */
     font-family: 'Stay Strong', cursive; 
     
-    font-size: 5vw; 
+    /* GIẢM KÍCH THƯỚC TRÊN PC: 5vw -> 3.5vw */
+    font-size: 3.5vw; 
     margin: 0;
     font-weight: 400; 
     letter-spacing: 2px; 
@@ -163,10 +165,11 @@ iframe:first-of-type {{
     text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);
 }}
 
-/* Kích thước Mobile (Giữ nguyên) */
+/* Kích thước Mobile */
 @media (max-width: 768px) {{
     #main-title-container h1 {{
-        font-size: 10vw; 
+        /* GIẢM KÍCH THƯỚC TRÊN MOBILE: 10vw -> 7vw */
+        font-size: 7vw; 
     }}
 }}
 </style>
@@ -176,7 +179,7 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (FONT SACRAMENTO) ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (FONT SACRAMENTO & THU NHỎ SIZE) ---
 
 # JavaScript (Giữ nguyên logic)
 js_callback = f"""
@@ -260,7 +263,7 @@ js_callback = f"""
 </script>
 """
 
-# Mã HTML/CSS cho Video (Cập nhật Font Sacramento)
+# Mã HTML/CSS cho Video (Cập nhật Font Sacramento & Thu nhỏ Size)
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -285,16 +288,17 @@ html_content_modified = f"""
             transition: opacity 1s; 
         }}
 
-        /* === TIÊU ĐỀ INTRO (FONT SACRAMENTO) === */
+        /* === TIÊU ĐỀ INTRO (FONT SACRAMENTO & THU NHỎ SIZE) === */
         #intro-text {{
             position: fixed;
             top: 5vh;
             width: 100%;
             text-align: center;
             color: #FFD700; 
-            font-size: 4.5vw; 
             
-            /* SỬ DỤNG FONT ĐÃ NHÚNG TRÊN CONTAINER CHÍNH */
+            /* GIẢM KÍCH THƯỚC TRÊN PC: 4.5vw -> 3vw */
+            font-size: 3vw; 
+            
             font-family: 'Sacramento', cursive; 
             font-weight: 400; 
             
@@ -315,7 +319,8 @@ html_content_modified = f"""
 
         @media (max-width: 768px) {{
             #intro-text {{
-                font-size: 10vw; 
+                /* GIẢM KÍCH THƯỚC TRÊN MOBILE: 10vw -> 6vw */
+                font-size: 6vw; 
             }}
         }}
         
