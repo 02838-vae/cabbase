@@ -48,7 +48,7 @@ try:
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
     
-    # Mã hóa các file hình nền MỚI (Đã xác nhận là cabbase.jpg)
+    # SỬA LỖI TÊN FILE: Đã sử dụng "cabbase.jpg"
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
     
@@ -60,15 +60,14 @@ except FileNotFoundError as e:
 # Số lượng ô vuông (tiles) cho hiệu ứng lật (10x10 = 100 ô)
 NUM_TILES = 100
 TILES_PER_ROW = 10
+TILE_SIZE_PERCENT = 100 / TILES_PER_ROW # 10.0%
+BACKGROUND_SIZE_PERCENT = TILES_PER_ROW * 100 # 1000%
 
 # Tạo HTML cho 100 ô vuông
-tiles_html = ""
-for i in range(NUM_TILES):
-    # Mỗi ô vuông sẽ chứa video intro (được cắt bằng CSS)
-    tiles_html += f'<div class="tile"></div>'
+tiles_html = "".join([f'<div class="tile"></div>' for _ in range(NUM_TILES)])
 
 
-# --- MÃ HTML/CSS/JavaScript ĐÃ THÊM HIỆU ỨNG LẬT TRANG (PAGE FLIP) ---
+# --- MÃ HTML/CSS/JavaScript ĐÃ SỬA LỖI TÊN FILE BACKGROUND ---
 
 html_content = f"""
 <!DOCTYPE html>
@@ -82,7 +81,7 @@ html_content = f"""
             overflow: hidden; 
             height: 100vh; 
             width: 100vw;
-            perspective: 1000px; /* Cần thiết cho hiệu ứng 3D flip */
+            perspective: 1000px; 
         }}
         
         /* ---------------------------------------------------- */
@@ -97,21 +96,25 @@ html_content = f"""
             z-index: 2000;
             display: flex;
             flex-wrap: wrap;
-            pointer-events: none; /* Không chặn click */
+            pointer-events: none;
         }}
 
         /* Mỗi mảnh (tile) là một phần của hiệu ứng lật */
         .tile {{
-            width: {100 / TILES_PER_ROW}vw; /* 100/10 = 10vw */
-            height: {100 / TILES_PER_ROW}vh; /* 100/10 = 10vh */
+            width: {TILE_SIZE_PERCENT}vw; 
+            height: {TILE_SIZE_PERCENT}vh; 
             position: relative;
-            transform-style: preserve-3d; /* Rất quan trọng cho 3D */
-            transition: transform 0.8s ease-in-out; /* Thời gian lật của mỗi ô */
+            transform-style: preserve-3d; 
+            transition: transform 0.8s ease-in-out; 
             cursor: pointer;
-            pointer-events: all; /* Cho phép JS điều khiển */
+            pointer-events: all; 
+            
+            background-size: {BACKGROUND_SIZE_PERCENT}%; /* Kích thước tổng thể 1000% */
+            background-position: var(--tile-bg-x) var(--tile-bg-y);
+            background-repeat: no-repeat;
         }}
 
-        /* Nội dung mặt trước của mỗi ô (Video Intro) */
+        /* Sử dụng pseudo-element cho mặt trước 3D */
         .tile::before {{
             content: "";
             position: absolute;
@@ -120,16 +123,12 @@ html_content = f"""
             width: 100%;
             height: 100%;
             background-color: black;
-            backface-visibility: hidden; /* Ẩn mặt trước khi lật */
-            
-            /* Dùng background-image thay vì video, JS sẽ fill bằng video */
-            background-size: cover;
-            background-position: center;
+            backface-visibility: hidden; 
         }}
-
+        
         /* Hiệu ứng lật đã kích hoạt */
         .page-flipped .tile {{
-            transform: rotateY(180deg); /* Lật 180 độ */
+            transform: rotateY(180deg); 
         }}
         
         /* ---------------------------------------------------- */
@@ -141,7 +140,7 @@ html_content = f"""
             left: 0;
             width: 100%;
             height: 100%;
-            z-index: 1000; /* Dưới lớp tiles */
+            z-index: 1000; 
             background-size: cover;
             background-position: center;
             display: flex;
@@ -152,9 +151,8 @@ html_content = f"""
             padding: 20px;
             box-sizing: border-box;
             overflow-y: auto; 
-            /* Thêm hiệu ứng mờ dần khi hiện ra */
             opacity: 0;
-            transition: opacity 1s ease-in 1s; /* Bắt đầu mờ sau 1s lật */
+            transition: opacity 1s ease-in 1s; 
         }}
         .page-flipped #main-content {{
             opacity: 1;
@@ -165,7 +163,6 @@ html_content = f"""
         /* 3. ĐIỀU CHỈNH CHUNG */
         /* ---------------------------------------------------- */
 
-        /* CSS cho dòng chữ cố định (Di chuyển lên trên lớp tiles) */
         #intro-text {{
             position: fixed;
             top: 5vh; 
@@ -175,7 +172,7 @@ html_content = f"""
             font-size: 3vw; 
             font-weight: bold;
             text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9); 
-            z-index: 3000; /* Cao hơn cả tiles */
+            z-index: 3000; 
             pointer-events: none;
             opacity: 0; 
             transition: opacity 1s; 
@@ -192,6 +189,7 @@ html_content = f"""
 
         @media (min-width: 769px) {{
             #main-content {{
+                /* ĐÃ SỬA LỖI: Dùng cabbase.jpg */
                 background-image: url('data:image/jpeg;base64,{bg_pc_base64}');
             }}
         }}
@@ -222,65 +220,52 @@ html_content = f"""
     <script>
         document.addEventListener("DOMContentLoaded", function() {{
             const appBody = document.getElementById('app-body');
-            const tilesContainer = document.getElementById('intro-tiles-container');
             const hiddenVideo = document.getElementById('intro-video-hidden');
             const audio = document.getElementById('background-audio');
             const introText = document.getElementById('intro-text');
-            const isMobile = window.innerWidth <= 768;
             const tiles = document.querySelectorAll('.tile');
             
             const numTilesPerRow = {TILES_PER_ROW}; 
-            const videoSource = isMobile 
+            
+            function isMobile() {{
+                return window.innerWidth <= 768;
+            }}
+            
+            const videoSource = isMobile()
                 ? 'data:video/mp4;base64,{video_mobile_base64}' 
                 : 'data:video/mp4;base64,{video_pc_base64}';
 
-            // 1. Cấu hình nguồn Video (Chỉ cần set cho video ẩn)
+            // 1. Cấu hình nguồn Video và Audio
             hiddenVideo.src = videoSource;
             audio.src = 'data:audio/mp3;base64,{audio_base64}';
 
             // 2. Thiết lập background cho từng mảnh (tile)
             tiles.forEach((tile, index) => {{
-                // Tính toán vị trí background cho mỗi tile để cắt video thành 100 mảnh
                 const col = index % numTilesPerRow;
                 const row = Math.floor(index / numTilesPerRow);
                 
-                const backgroundPosX = -col * 100 + '%'; // 0%, -100%, -200%...
-                const backgroundPosY = -row * 100 + '%'; // 0%, -100%, -200%...
+                const backgroundPosX = -col * 100 + '%'; 
+                const backgroundPosY = -row * 100 + '%';
 
                 tile.style.setProperty('--tile-bg-x', backgroundPosX);
                 tile.style.setProperty('--tile-bg-y', backgroundPosY);
                 
                 // Set background là video intro
-                tile.style.setProperty('background-image', 'url(' + videoSource + ')'); 
+                tile.style.backgroundImage = 'url(' + videoSource + ')'; 
 
                 // Thiết lập độ trễ ngẫu nhiên cho hiệu ứng lật
-                const delay = Math.random() * 0.5; // Độ trễ tối đa 0.5s
+                const delay = Math.random() * 0.5; 
                 tile.style.transitionDelay = delay + 's';
             }});
             
-            // Cần cập nhật lại CSS để áp dụng background-image cho :before
-            // Do phức tạp của việc sử dụng ::before, ta sẽ dùng background-image trực tiếp trên .tile
-            const styleElement = document.createElement('style');
-            styleElement.innerHTML = `
-                .tile {{
-                    background-size: {numTilesPerRow * 100}%; /* Kích thước tổng thể 1000% (10x) */
-                    background-position: var(--tile-bg-x) var(--tile-bg-y);
-                    background-repeat: no-repeat;
-                }}
-            `;
-            document.head.appendChild(styleElement);
-
-
             const playMedia = () => {{
-                // Chạy video ẩn (chỉ để đồng bộ âm thanh và lấy sự kiện onended)
                 hiddenVideo.load();
-                hiddenVideo.play().catch(e => console.log("Video playback failed:", e));
+                hiddenVideo.play().catch(e => console.log("Hidden Video playback failed:", e));
                 
                 setTimeout(() => {{ introText.style.opacity = 1; }}, 500);
 
                 audio.volume = 0.5; 
                 audio.play().catch(e => {{
-                    // Yêu cầu tương tác người dùng nếu autoplay bị chặn
                     document.body.addEventListener('click', () => {{
                         audio.play().catch(err => console.error("Audio playback error on click:", err));
                     }}, {{ once: true }});
@@ -295,13 +280,11 @@ html_content = f"""
                 audio.currentTime = 0; 
                 introText.style.opacity = 0;
                 
-                // Kích hoạt hiệu ứng Lật: Thêm class 'page-flipped' vào body
                 appBody.classList.add('page-flipped');
                 
-                // Tùy chọn: Xóa intro-tiles-container sau khi chuyển cảnh hoàn tất (~1.5s)
                 setTimeout(() => {{
-                    tilesContainer.style.display = 'none';
-                    // Đảm bảo main content có thể cuộn (vì body đang là overflow: hidden)
+                    document.getElementById('intro-tiles-container').style.display = 'none';
+                    // Cho phép cuộn trang chính
                     document.body.style.overflow = 'auto'; 
                     document.getElementById('main-content').style.position = 'static';
                 }}, 1500); 
