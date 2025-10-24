@@ -21,6 +21,7 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
+        # Xử lý lỗi nếu file media không tồn tại
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
 
@@ -40,21 +41,20 @@ except FileNotFoundError as e:
 # --- CSS ĐỂ ÉP STREAMLIT MAIN CONTAINER & IFRAME FULLSCREEN/ẨN IFRAME ---
 hide_streamlit_style = f"""
 <style>
-/* 1. THÊM GOOGLE FONT IMPORT CHO FONT MỚI: Lobster (Intro) và Stay Strong (Main Title) */
-@import url('https://fonts.googleapis.com/css2?family=Lobster&display=swap');
+/* 1. THÊM GOOGLE FONT IMPORT CHO FONT MỚI: Sacramento (Intro) và Stay Strong (Main Title) */
+@import url('https://fonts.googleapis.com/css2?family=Sacramento&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Stay+Strong&display=swap');
 
 
 /* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
 
-/* Đảm bảo Main Content Container chiếm toàn bộ không gian và không có padding */
+/* ... (Các CSS cấu hình container giữ nguyên) ... */
 .main {{
     padding: 0;
     margin: 0;
 }}
 
-/* Đảm bảo khu vực nội dung được căn chỉnh sát lề */
 div.block-container {{
     padding: 0;
     margin: 0;
@@ -88,7 +88,7 @@ iframe:first-of-type {{
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
 }}
 
-/* CSS cho hiệu ứng Reveal */
+/* CSS cho hiệu ứng Reveal (Giữ nguyên) */
 .reveal-grid {{
     position: fixed;
     top: 0;
@@ -121,7 +121,7 @@ iframe:first-of-type {{
     transition: filter 2s ease-out; 
 }}
 
-/* Điều chỉnh cho Mobile */
+/* Điều chỉnh cho Mobile (Giữ nguyên) */
 @media (max-width: 768px) {{
     .main-content-revealed {{
         background-image: var(--main-bg-url-mobile);
@@ -149,18 +149,18 @@ iframe:first-of-type {{
     /* FONT STAY STRONG */
     font-family: 'Stay Strong', cursive; 
     
-    font-size: 4vw; 
+    font-size: 5vw; 
     margin: 0;
-    font-weight: 400; /* Font thư pháp thường không cần font-weight cao */
-    letter-spacing: 2px; /* Giảm letter-spacing để phù hợp với font script/thư pháp */
+    font-weight: 400; 
+    letter-spacing: 2px; 
     color: white; 
     text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);
 }}
 
-/* Giữ nguyên kích thước trên Mobile */
+/* Kích thước Mobile (Giữ nguyên) */
 @media (max-width: 768px) {{
     #main-title-container h1 {{
-        font-size: 10vw; /* TĂNG SIZE TRÊN MOBILE ĐỂ FONT THƯ PHÁP DỄ ĐỌC HƠN */
+        font-size: 10vw; 
     }}
 }}
 </style>
@@ -170,7 +170,7 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Cập nhật Font Lobster) ---
+# --- MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Cập nhật Font Sacramento) ---
 
 # JavaScript (Giữ nguyên logic)
 js_callback = f"""
@@ -254,7 +254,7 @@ js_callback = f"""
 </script>
 """
 
-# Mã HTML/CSS cho Video (Cập nhật Font Lobster)
+# Mã HTML/CSS cho Video (Cập nhật Font Sacramento)
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -279,18 +279,17 @@ html_content_modified = f"""
             transition: opacity 1s; 
         }}
 
-        /* === TIÊU ĐỀ INTRO ĐÃ CHỈNH SỬA (FONT LOBSTER) === */
+        /* === TIÊU ĐỀ INTRO ĐÃ CHỈNH SỬA (FONT SACRAMENTO) === */
         #intro-text {{
             position: fixed;
             top: 5vh;
             width: 100%;
             text-align: center;
             color: #FFD700; 
-            font-size: 3.5vw; 
+            font-size: 4.5vw; /* Tăng kích thước để font chữ ký dễ nhìn hơn */
             
-            /* FONT LOBSTER */
-            font-family: 'Lobster', cursive; 
-            /* Lobster có độ đậm cố định */
+            /* FONT CHỮ KÝ THAY THẾ CHO MRATTOOS SIGNATURE */
+            font-family: 'Sacramento', cursive; 
             font-weight: 400; 
             
             text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8); 
@@ -310,7 +309,7 @@ html_content_modified = f"""
 
         @media (max-width: 768px) {{
             #intro-text {{
-                font-size: 7vw; 
+                font-size: 10vw; /* Tăng kích thước trên Mobile */
             }}
         }}
         
