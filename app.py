@@ -38,7 +38,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO ==========
+# ========== MÀN HÌNH INTRO (ĐÃ GỘP JS VÀO HTML) ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
@@ -57,6 +57,7 @@ def intro_screen(is_mobile=False):
         st.error(f"Lỗi: Không tìm thấy file tài nguyên. Vui lòng kiểm tra: {e.filename}")
         st.stop()
     
+    # *** ĐÃ GỘP LOGIC CHUYỂN TRANG VÀO JS TRONG components.html ***
     intro_html = f"""
     <html>
     <head>
@@ -113,13 +114,19 @@ def intro_screen(is_mobile=False):
         const vid = document.getElementById('intro-video');
         const audio = document.getElementById('intro-audio');
         const blackFade = document.getElementById('black-fade');
-        
+        let finished = false;
+
         function finishIntro() {{
+            if (finished) return;
+            finished = true;
+
             vid.pause();
             audio.pause();
             
-            // Gửi thông điệp đến Streamlit (KHÔNG RELOAD TRANG!)
-            window.parent.postMessage({{ type: "intro_done" }}, "*"); 
+            // === LOGIC CHUYỂN TRANG NGAY LẬP TỨC ===
+            const url = new URL(window.parent.location.href);
+            url.searchParams.set('intro_done', 'true'); 
+            window.parent.location.href = url.toString(); // Kích hoạt Python rerender
         }}
 
         // Logic play video/audio
@@ -143,9 +150,10 @@ def intro_screen(is_mobile=False):
             blackFade.style.opacity = 0;
         }}, {{once:true}});
 
+        // Kích hoạt chuyển trang khi video kết thúc
         vid.addEventListener('ended', finishIntro);
         
-        // Fallback: Chuyển sau 9 giây
+        // Fallback: Chuyển sau 9 giây nếu sự kiện 'ended' không hoạt động
         setTimeout(finishIntro, 9000); 
 
         </script>
@@ -155,7 +163,7 @@ def intro_screen(is_mobile=False):
     components.html(intro_html, height=800, scrolling=False)
 
 
-# ========== TRANG CHÍNH ==========
+# ========== TRANG CHÍNH (Giữ nguyên) ==========
 
 def main_page(is_mobile=False):
     hide_streamlit_ui()
@@ -230,7 +238,7 @@ def main_page(is_mobile=False):
 
 
 # =========================================================================
-# ========== LUỒNG CHÍNH (ĐÃ CẬP NHẬT st.query_params) ==========
+# ========== LUỒNG CHÍNH (ĐÃ DỌN DẸP LOGIC CHUYỂN TRANG) ==========
 # =========================================================================
 
 hide_streamlit_ui()
@@ -252,31 +260,20 @@ if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
 if not st.session_state.intro_done:
-    intro_screen(st.session_state.is_mobile)
     
-    # === CẬP NHẬT: Dùng st.query_params trong Python ===
-    # Kiểm tra nếu tham số 'intro_done' được đặt trong URL (do JS thêm vào)
+    # === THAY ĐỔI QUAN TRỌNG: CHỈ GỌI intro_screen() NẾU CẦN ===
+    
+    # Bắt tham số 'intro_done' từ URL.
     if st.query_params.get('intro_done') == 'true':
         st.session_state.intro_done = True
         
-        # CẬP NHẬT: Dùng del st.query_params['intro_done'] để xóa tham số
+        # Xóa tham số và rerender ngay lập tức để chuyển trang.
         del st.query_params['intro_done']
-        
         st.rerun()
     
-    # JavaScript vẫn sử dụng URLSearchParams để thay đổi URL và kích hoạt luồng Python
-    st.markdown("""
-    <script>
-    window.addEventListener("message", (event) => {
-        if (event.data.type === "intro_done") {
-            // Thay đổi URL để Streamlit nhận biết và rerender (nhanh hơn reload)
-            const url = new URL(window.parent.location.href);
-            url.searchParams.set('intro_done', 'true'); 
-            window.parent.location.href = url.toString();
-        }
-    });
-    </script>
-    """, unsafe_allow_html=True)
+    # Nếu không phải trạng thái chuyển, hiển thị màn hình intro
+    else:
+        intro_screen(st.session_state.is_mobile)
 
 else:
     main_page(st.session_state.is_mobile)
