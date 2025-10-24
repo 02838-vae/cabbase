@@ -48,6 +48,7 @@ def hide_streamlit_ui():
     </style>
     """, unsafe_allow_html=True)
 
+# ------------------------------------------------------------------
 
 # ========== MÀN HÌNH INTRO CÓ HIỆU ỨNG KÍNH VỠ ==========
 def intro_screen(is_mobile=False):
@@ -178,9 +179,11 @@ def intro_screen(is_mobile=False):
 
         <script>
         const GRID_SIZE = {GRID_SIZE};
-        const SHATTER_DURATION = {js_shatter_duration};
-        const RECONSTRUCT_DURATION = {js_reconstruct_duration};
-        const BLACKOUT_DELAY = {js_blackout_delay};
+        const SHATTER_DURATION_MS = {js_shatter_duration};
+        const RECONSTRUCT_DURATION_MS = {js_reconstruct_duration};
+        const BLACKOUT_DELAY_MS = {js_blackout_delay};
+        const SHATTER_DURATION_S = {SHATTER_DURATION};
+        const RECONSTRUCT_DURATION_S = {RECONSTRUCT_DURATION};
 
         const vid = document.getElementById('introVid');
         const audio = document.getElementById('flySfx');
@@ -191,7 +194,7 @@ def intro_screen(is_mobile=False):
         let ended = false;
         let initialTransforms = []; 
 
-        shards.forEach((shard, index) => {
+        shards.forEach((shard, index) => {{
             const row = Math.floor(index / GRID_SIZE);
             const col = index % GRID_SIZE;
             
@@ -206,10 +209,10 @@ def intro_screen(is_mobile=False):
             const delay = Math.random() * 0.4; // Delay ngắn hơn
             const scale = Math.random() * 0.2 + 0.05; // Giảm kích thước xuống rất nhỏ (0.05-0.25)
 
-            initialTransforms.push({randX, randY, randZ, randR, delay, scale});
-        });
+            initialTransforms.push({{randX, randY, randZ, randR, delay, scale}});
+        }});
 
-        function finishIntro() {
+        function finishIntro() {{
             if (ended) return;
             ended = true;
             
@@ -218,69 +221,69 @@ def intro_screen(is_mobile=False):
             staticFrame.style.opacity = 1; 
             
             // BƯỚC 1: Bắt đầu Tan Vỡ (Shatter)
-            setTimeout(() => { 
+            setTimeout(() => {{ 
                 blackFade.style.opacity = 0; 
                 shatterOverlay.style.opacity = 1; 
                 staticFrame.style.opacity = 0; 
                 
                 shatterOverlay.classList.remove('reconstructing');
                 shatterOverlay.classList.add('shattering');
-                shards.forEach((shard, index) => {
+                shards.forEach((shard, index) => {{
                     const t = initialTransforms[index];
                     // Áp dụng transform 3D: translate Z, X, Y và xoay
-                    shard.style.transform = `translate3d(${t.randX}vw, ${t.randY}vh, ${t.randZ}px) rotate(${t.randR}deg) scale(${t.scale})`;
+                    shard.style.transform = `translate3d(${{t.randX}}vw, ${{t.randY}}vh, ${{t.randZ}}px) rotate(${{t.randR}}deg) scale(${{t.scale}})`;
                     shard.style.transitionDelay = t.delay + 's';
                     shard.style.opacity = 0; 
-                });
-            }, 10);
+                }});
+            }}, 10);
             
             // BƯỚC 2: Màn Hình Đen (Blackout)
-            setTimeout(() => {
+            setTimeout(() => {{
                 shatterOverlay.style.opacity = 0; 
                 blackFade.style.opacity = 1; 
-            }, SHATTER_DURATION * 1000); 
+            }}, SHATTER_DURATION_MS); 
 
             // BƯỚC 3: Ghép Lại (Reconstruction) - Bắt đầu sau khi màn đen kết thúc
-            setTimeout(() => {
+            setTimeout(() => {{
                 shatterOverlay.style.opacity = 1; 
                 blackFade.style.opacity = 0; 
                 
                 shatterOverlay.classList.remove('shattering');
                 shatterOverlay.classList.add('reconstructing'); 
                 
-                shards.forEach((shard, index) => {
+                shards.forEach((shard, index) => {{
                     // Áp dụng lại transition delay để đồng bộ hóa việc ghép lại
-                    shard.style.transitionDelay = (RECONSTRUCT_DURATION - initialTransforms[index].delay) + 's';
-                });
+                    shard.style.transitionDelay = (RECONSTRUCT_DURATION_S - initialTransforms[index].delay) + 's';
+                }});
 
                 // BƯỚC 4: Thông báo hoàn thành - Tải lại trang NGAY LẬP TỨC
-                setTimeout(() => {
-                    window.parent.postMessage({type: 'intro_done'}, '*');
-                }, RECONSTRUCT_DURATION * 1000 + 10); 
+                setTimeout(() => {{
+                    window.parent.postMessage({{type: 'intro_done'}}, '*');
+                }}, RECONSTRUCT_DURATION_MS + 10); 
 
-            }, SHATTER_DURATION * 1000 + BLACKOUT_DELAY * 1000); 
+            }}, SHATTER_DURATION_MS + BLACKOUT_DELAY_MS); 
 
-        }
+        }}
 
         // Logic play video/audio
-        vid.addEventListener('canplay', () => {
+        vid.addEventListener('canplay', () => {{
             vid.play().catch(() => console.log('Autoplay bị chặn'));
             blackFade.style.opacity = 0; 
-        });
-        vid.addEventListener('play', () => {
+        }});
+        vid.addEventListener('play', () => {{
             audio.volume = 1.0;
             audio.currentTime = 0;
             audio.play().catch(() => console.log('Autoplay âm thanh bị chặn'));
-        });
+        }});
         // Cho phép click để kích hoạt audio nếu bị chặn
-        document.addEventListener('click', () => {
+        document.addEventListener('click', () => {{
             vid.muted = false;
             vid.play();
             audio.volume = 1.0;
             audio.currentTime = 0;
-            audio.play().catch(()=>{}); 
+            audio.play().catch(()=>{{}}); 
             blackFade.style.opacity = 0; 
-        }, {once:true});
+        }}, {{once:true}});
 
         vid.addEventListener('ended', finishIntro);
         setTimeout(finishIntro, 9000); // Dự phòng nếu video bị lỗi không gọi 'ended'
@@ -293,6 +296,7 @@ def intro_screen(is_mobile=False):
     """
     components.html(intro_html, height=800, scrolling=False)
 
+# ------------------------------------------------------------------
 
 # ========== TRANG CHÍNH ==========
 
@@ -367,6 +371,7 @@ def main_page(is_mobile=False):
     <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
     """, unsafe_allow_html=True)
 
+# ------------------------------------------------------------------
 
 # ========== LUỒNG CHÍNH ==========
 
