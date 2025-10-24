@@ -38,7 +38,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO ==========
+# ========== MÀN HÌNH INTRO ĐÃ CẬP NHẬT TEXT ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
@@ -79,9 +79,9 @@ def intro_screen(is_mobile=False):
         audio {{ display: none; }}
         #intro-text {{
             position: absolute; 
-            top: 8%; /* <--- ĐIỀU CHỈNH: Đặt 8% từ trên xuống */
+            top: 8%; /* Đặt 8% từ trên xuống */
             left: 50%; 
-            transform: translate(-50%, 0); /* <--- ĐIỀU CHỈNH: Chỉ dịch 50% theo chiều ngang */
+            transform: translate(-50%, 0); /* Chỉ dịch 50% theo chiều ngang */
             width: 90vw; text-align: center; color: #f8f4e3;
             font-size: clamp(22px, 6vw, 60px); font-weight: bold; font-family: 'Playfair Display', serif;
             background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
@@ -108,7 +108,7 @@ def intro_screen(is_mobile=False):
             <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
         </audio>
         <div id="static-frame"></div>
-        <div id="intro-text">CABBASE<br>MAINTENANCE<br>SQUAD 1</div>
+        <div id="intro-text">KHÁM PHÁ THẾ GIỚI<br>CÙNG CHÚNG TÔI</div> 
         <div id="black-fade"></div>
 
         <script>
@@ -157,7 +157,7 @@ def intro_screen(is_mobile=False):
     components.html(intro_html, height=800, scrolling=False)
 
 
-# ========== TRANG CHÍNH ==========
+# ========== TRANG CHÍNH (Giữ nguyên tiêu đề "TỔ BẢO DƯỠNG SỐ 1") ==========
 
 def main_page(is_mobile=False):
     hide_streamlit_ui()
