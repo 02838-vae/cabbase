@@ -13,11 +13,20 @@ VIDEO_PC = "airplane.mp4"
 VIDEO_MOBILE = "mobile.mp4"
 SFX = "plane_fly.mp3"
 
+# File ảnh cho hiệu ứng broken glass (ảnh frame cuối video)
+BROKEN_IMAGE_PC = "airplane_shutter.jpg"
+BROKEN_IMAGE_MOBILE = "mobile_shutter.jpg"
+
 # File ảnh nền của trang chính
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 
 st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
+
+# Cấu hình hiệu ứng broken glass
+GLASS_ROWS = 10
+GLASS_COLS = 10
+BREAK_DURATION = 1.5  # Thời gian hiệu ứng vỡ kính (giây)
 
 # ========== ẨN UI STREAMLIT ==========
 
@@ -38,10 +47,11 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO ==========
+# ========== MÀN HÌNH INTRO VỚI HIỆU ỨNG BROKEN GLASS ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
+    broken_image = BROKEN_IMAGE_MOBILE if is_mobile else BROKEN_IMAGE_PC
     bg_file = BG_MOBILE if is_mobile else BG_PC
     
     try:
@@ -49,6 +59,8 @@ def intro_screen(is_mobile=False):
             video_b64 = base64.b64encode(f.read()).decode()
         with open(SFX, "rb") as a:
             audio_b64 = base64.b64encode(a.read()).decode()
+        with open(broken_image, "rb") as bi:
+            broken_b64 = base64.b64encode(bi.read()).decode()
         with open(bg_file, "rb") as b:
             bg_b64 = base64.b64encode(b.read()).decode()
             
@@ -60,6 +72,7 @@ def intro_screen(is_mobile=False):
     <html>
     <head>
         <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
         <style>
         html, body {{
             margin: 0; padding: 0;
@@ -68,10 +81,14 @@ def intro_screen(is_mobile=False):
             height: 100%;
         }}
         #pre-load-bg {{ display: none; background-image: url("data:image/jpeg;base64,{bg_b64}"); }}
+        
         video {{
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
+            object-fit: cover; z-index: 1;
         }}
+        
         audio {{ display: none; }}
+        
         #intro-text {{
             position: absolute; 
             top: 8%;
@@ -85,8 +102,39 @@ def intro_screen(is_mobile=False):
             animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards;
             line-height: 1.2; word-wrap: break-word; z-index: 10;
         }}
-        @keyframes lightSweep {{ 0% {{ background-position: 200% 0%; }} 100% {{ background-position: -200% 0%; }} }}
-        @keyframes fadeInOut {{ 0% {{ opacity: 0; }} 20% {{ opacity: 1; }} 80% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}
+        
+        @keyframes lightSweep {{ 
+            0% {{ background-position: 200% 0%; }} 
+            100% {{ background-position: -200% 0%; }} 
+        }}
+        
+        @keyframes fadeInOut {{ 
+            0% {{ opacity: 0; }} 
+            20% {{ opacity: 1; }} 
+            80% {{ opacity: 1; }} 
+            100% {{ opacity: 0; }} 
+        }}
+
+        /* Broken Glass Container */
+        #broken-glass-container {{
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            opacity: 0;
+            z-index: 5;
+            pointer-events: none;
+        }}
+        
+        #broken-glass-container.active {{
+            opacity: 1;
+        }}
+        
+        .broken-piece {{
+            position: absolute;
+            background-image: url("data:image/jpeg;base64,{broken_b64}");
+            background-size: 100vw 100vh;
+            overflow: hidden;
+        }}
 
         #black-fade {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
@@ -98,42 +146,118 @@ def intro_screen(is_mobile=False):
     </head>
     <body>
         <div id="pre-load-bg"></div>
+        
         <video id='introVid' autoplay muted playsinline>
             <source src='data:video/mp4;base64,{video_b64}' type='video/mp4'>
         </video>
-        <audio id='flySfx'> <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'></audio>
+        
+        <audio id='flySfx'> 
+            <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
+        </audio>
+        
         <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
 
+        <div id='broken-glass-container'></div>
+        
         <div id='black-fade'></div>
 
         <script>
+        const ROWS = {GLASS_ROWS};
+        const COLS = {GLASS_COLS};
+        const BREAK_DURATION = {BREAK_DURATION};
+        
         const vid = document.getElementById('introVid');
         const audio = document.getElementById('flySfx');
         const blackFade = document.getElementById('black-fade');
+        const glassContainer = document.getElementById('broken-glass-container');
         let ended = false;
+
+        // Tạo các mảnh vỡ
+        function createBrokenPieces() {{
+            const pieceWidth = 100 / COLS;
+            const pieceHeight = 100 / ROWS;
+            
+            for (let row = 0; row < ROWS; row++) {{
+                for (let col = 0; col < COLS; col++) {{
+                    const piece = document.createElement('div');
+                    piece.className = 'broken-piece';
+                    
+                    piece.style.left = (col * pieceWidth) + '%';
+                    piece.style.top = (row * pieceHeight) + '%';
+                    piece.style.width = pieceWidth + '%';
+                    piece.style.height = pieceHeight + '%';
+                    
+                    piece.style.backgroundPosition = 
+                        (-col * (100 / COLS)) + '% ' + 
+                        (-row * (100 / ROWS)) + '%';
+                    
+                    glassContainer.appendChild(piece);
+                }}
+            }}
+        }}
+
+        function breakGlass() {{
+            const pieces = document.querySelectorAll('.broken-piece');
+            
+            pieces.forEach((piece, i) => {{
+                const angle = Math.random() * 360;
+                const distance = 100 + Math.random() * 500;
+                const x = Math.cos(angle * Math.PI / 180) * distance;
+                const y = Math.sin(angle * Math.PI / 180) * distance;
+                const rotation = Math.random() * 720 - 360;
+                const delay = Math.random() * 0.3;
+                
+                gsap.to(piece, {{
+                    x: x,
+                    y: y,
+                    rotation: rotation,
+                    opacity: 0,
+                    duration: BREAK_DURATION,
+                    delay: delay,
+                    ease: "power2.out"
+                }});
+            }});
+        }}
 
         function finishIntro() {{
             if (ended) return;
             ended = true;
             
-            // Fade to black và reload trang
-            blackFade.style.opacity = 1;
+            // Ẩn video, hiện ảnh tĩnh với broken glass effect
+            vid.style.opacity = 0;
+            glassContainer.classList.add('active');
             
+            // Bắt đầu hiệu ứng vỡ kính
+            setTimeout(() => {{
+                breakGlass();
+            }}, 100);
+            
+            // Fade to black sau khi vỡ xong
+            setTimeout(() => {{
+                blackFade.style.opacity = 1;
+            }}, BREAK_DURATION * 1000 + 300);
+            
+            // Reload trang
             setTimeout(() => {{
                 window.parent.postMessage({{type: 'intro_done'}}, '*');
-            }}, 1000);
+            }}, BREAK_DURATION * 1000 + 1300);
         }}
+
+        // Khởi tạo các mảnh vỡ
+        createBrokenPieces();
 
         // Logic play video/audio
         vid.addEventListener('canplay', () => {{
             vid.play().catch(() => console.log('Autoplay bị chặn'));
             blackFade.style.opacity = 0; 
         }});
+        
         vid.addEventListener('play', () => {{
             audio.volume = 1.0;
             audio.currentTime = 0;
             audio.play().catch(() => console.log('Autoplay âm thanh bị chặn'));
         }});
+        
         document.addEventListener('click', () => {{
             vid.muted = false;
             vid.play();
