@@ -1,18 +1,44 @@
 import streamlit as st
 import base64
 
-# Cấu hình trang như trước
+# Cấu hình trang (Tắt menu mặc định)
 st.set_page_config(
     page_title="Khám phá cùng chúng tôi",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
+# --- SỬA LỖI 1: CSS ĐỂ ÉP STREAMLIT MAIN CONTAINER VÀ IFRAME FULLSCREEN ---
+# Áp dụng CSS cho trang Streamlit chính
 hide_streamlit_style = """
 <style>
+/* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
 header {visibility: hidden;}
+
+/* Đảm bảo Main Content Container chiếm toàn bộ không gian */
+.main {
+    padding: 0; /* Xóa padding mặc định */
+    margin: 0;
+}
+
+/* Đảm bảo khu vực nội dung được căn chỉnh sát lề */
+div.block-container {
+    padding: 0;
+    margin: 0;
+    max-width: 100% !important;
+}
+
+/* Ép iframe của component chiếm toàn bộ chiều cao/rộng */
+iframe {
+    width: 100vw !important;
+    height: 100vh !important;
+    position: fixed; /* Đặt cố định để chiếm toàn bộ viewport */
+    top: 0;
+    left: 0;
+    z-index: 1000; /* Đảm bảo nó che phủ mọi thứ */
+}
 </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -23,7 +49,7 @@ def get_base64_encoded_file(file_path):
         data = f.read()
     return base64.b64encode(data).decode("utf-8")
 
-# Mã hóa các file media
+# Mã hóa các file media (Giữ nguyên)
 try:
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
@@ -33,35 +59,35 @@ except FileNotFoundError as e:
     st.stop()
 
 
-# --- MÃ HTML/CSS/JavaScript ĐÃ SỬA LỖI FULLSCREEN VÀ AUDIO LOOP ---
+# --- MÃ HTML/CSS/JavaScript ĐÃ TỐI ƯU HÓA FULLSCREEN TRONG IFRAME ---
 
 html_content = f"""
 <!DOCTYPE html>
 <html>
 <head>
     <style>
-        /* SỬA LỖI 1: Đảm bảo iframe và body chiếm toàn bộ không gian */
-        /* Đây là phần CSS trong iframe của Streamlit */
+        /* SỬA LỖI 2: CSS TRONG IFRAME */
+        /* Đảm bảo html và body trong iframe chiếm 100% viewport */
         html, body {{
             margin: 0; 
             padding: 0; 
-            overflow: hidden; /* Quan trọng để tránh thanh cuộn */
-            height: 100%; /* Đảm bảo body chiếm 100% chiều cao */
-            width: 100%;  /* Đảm bảo body chiếm 100% chiều rộng */
+            overflow: hidden; 
+            height: 100vh; 
+            width: 100vw;
         }}
         
         /* CSS cho video fullscreen */
         #intro-video {{
-            position: fixed;
+            position: absolute; /* Dùng absolute vì body đã là 100vh/100vw */
             top: 0;
             left: 0;
-            width: 100vw;   /* Chiếm 100% chiều rộng viewport */
-            height: 100vh;  /* Chiếm 100% chiều cao viewport */
-            object-fit: cover; /* Quan trọng: Đảm bảo video che phủ toàn bộ, cắt bớt nếu cần */
+            width: 100%;   /* Chiếm 100% chiều rộng của body (100vw) */
+            height: 100%;  /* Chiếm 100% chiều cao của body (100vh) */
+            object-fit: cover; /* Đảm bảo video che phủ toàn bộ, không bị giãn méo */
             z-index: -100;
         }}
 
-        /* CSS cho dòng chữ cố định */
+        /* CSS cho dòng chữ cố định (Giữ nguyên) */
         #intro-text {{
             position: fixed;
             top: 5vh; 
@@ -100,14 +126,12 @@ html_content = f"""
             const introText = document.getElementById('intro-text');
             const isMobile = window.innerWidth <= 768;
 
-            // Cấu hình nguồn Video
             if (isMobile) {{
                 video.src = 'data:video/mp4;base64,{video_mobile_base64}';
             }} else {{
                 video.src = 'data:video/mp4;base64,{video_pc_base64}';
             }}
             
-            // Cấu hình nguồn Audio
             audio.src = 'data:audio/mp3;base64,{audio_base64}';
 
             const playMedia = () => {{
@@ -116,12 +140,8 @@ html_content = f"""
                 
                 setTimeout(() => {{ introText.style.opacity = 1; }}, 500);
 
-                // Thử bật âm thanh (sẽ thất bại nếu không có tương tác)
                 audio.volume = 0.5; 
                 audio.play().catch(e => {{
-                    console.log("Audio auto-play blocked. Waiting for user interaction.");
-                    
-                    // Thử phát lại audio khi người dùng tương tác với trang
                     document.body.addEventListener('click', () => {{
                         audio.play().catch(err => console.error("Audio playback error on click:", err));
                     }}, {{ once: true }});
@@ -130,17 +150,11 @@ html_content = f"""
             
             playMedia();
 
-            // SỬA LỖI 3: Dừng âm thanh khi video kết thúc
             video.onended = () => {{
-                video.style.opacity = 0; // Tùy chọn: Làm mờ hoặc ẩn video
-                audio.pause(); // Dừng âm thanh
-                audio.currentTime = 0; // Tua về đầu (tùy chọn)
-                introText.style.opacity = 0; // Ẩn chữ
-                
-                // Tùy chọn: Gửi tin nhắn đến Streamlit để hiển thị nội dung chính
-                // Streamlit.setComponentValue('video_ended', true); 
-                
-                console.log("Video intro đã kết thúc. Âm thanh đã dừng.");
+                video.style.opacity = 0; 
+                audio.pause(); 
+                audio.currentTime = 0; 
+                introText.style.opacity = 0; 
             }};
         }});
     </script>
@@ -148,14 +162,14 @@ html_content = f"""
 </html>
 """
 
-# Hiển thị thành phần HTML
-# Đặt height=1000 là đủ vì logic fullscreen được xử lý trong CSS (100vh)
-st.components.v1.html(html_content, height=1000, scrolling=False)
+# Hiển thị thành phần HTML (Dùng chiều cao tối thiểu để component tồn tại)
+# Quan trọng: Logic fullscreen được xử lý hoàn toàn bằng CSS và JS.
+st.components.v1.html(html_content, height=10, scrolling=False)
 
 
-# Nội dung chính của trang (giữ nguyên, nằm phía dưới lớp video)
+# Nội dung chính của trang (Sử dụng CSS để đảm bảo nó nằm dưới lớp video/iframe)
 st.markdown("""
-<div style="padding: 20px; margin-top: 100vh; background-color: white;">
+<div style="padding: 20px; margin-top: 100vh; background-color: white; position: relative; z-index: 1;">
     <h2>Chào mừng đến với Nội dung Chính của Trang!</h2>
     <p>Đây là phần còn lại của trang web.</p>
 </div>
