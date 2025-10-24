@@ -320,9 +320,9 @@ st.components.v1.html(html_content_modified, height=10, scrolling=False)
 
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH (Giữ nguyên) ---
 
-# Tạo Lưới Reveal (30x18 = 540 ô)
+# Tạo Lưới Reveal (20x12 = 240 ô)
 grid_cells_html = ""
-for i in range(540): 
+for i in range(240): 
     grid_cells_html += f'<div class="grid-cell"></div>'
 
 reveal_grid_html = f"""
@@ -336,7 +336,7 @@ st.markdown(reveal_grid_html, unsafe_allow_html=True)
 # Nội dung chính của trang 
 st.markdown("""
 <div id="main-title-container" style="color: white; opacity: 0; transition: opacity 2s, transform 1s; transform: translate(-50%, -50%) scale(0.9); text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);">
-    <h1 style="font-size: 5vw; margin: 0; font-weight: 900; letter-spacing: 5px;">TỔ BẢO DƯỠNG SỐ 1</h1>
+    <h1 style="font-size: 8vw; margin: 0; font-weight: 900; letter-spacing: 5px;">TỔ BẢO DƯỠNG SỐ 1</h1>
     <h2 style="font-size: 1.6vw; margin: 10px 0 0 0; font-weight: 300;">MỞ RA MỘT CHẶNG ĐƯỜNG MỚI</h2>
 </div>
 """, unsafe_allow_html=True)
