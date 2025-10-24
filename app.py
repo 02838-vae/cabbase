@@ -128,13 +128,12 @@ iframe:first-of-type {{
 
 /* Keyframes cho hiệu ứng chữ chạy liên tục */
 @keyframes scrollContinuous {{
-    /* Bắt đầu từ vị trí 0, chữ thứ hai nằm ngay sau chữ thứ nhất */
     0% {{ transform: translate(0, 0); }} 
-    /* Di chuyển bằng đúng chiều dài của một tiêu đề (50% của tổng chiều dài) */
+    /* Dịch chuyển bằng 50% tổng chiều rộng (bao gồm chữ + khoảng trống) */
     100% {{ transform: translate(-50%, 0); }} 
 }}
 
-/* === TIÊU ĐỀ TRANG CHÍNH (CHỮ CHẠY LIÊN TỤC) === */
+/* === TIÊU ĐỀ TRANG CHÍNH (CHỮ CHẠY LIÊN TỤC CÓ KHOẢNG TRỐNG) === */
 #main-title-container {{
     position: fixed;
     top: 5vh; 
@@ -159,21 +158,18 @@ iframe:first-of-type {{
     color: #F0F0F0; 
     white-space: nowrap; 
     
-    /* Thiết lập cho chữ chạy */
-    display: flex; /* Dùng flex để hai bản sao nằm cạnh nhau */
-    width: fit-content; /* Quan trọng: Cho phép h1 có chiều rộng bằng nội dung */
+    display: flex; 
+    width: fit-content; 
     
-    /* Áp dụng Animation chữ chạy */
-    animation: scrollContinuous 20s linear infinite; /* Điều chỉnh thời gian chạy */
+    animation: scrollContinuous 25s linear infinite; /* Điều chỉnh thời gian chạy chậm lại */
     
-    /* Thiết lập bóng đổ cổ điển */
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); 
 }}
 
 /* Bọc các bản sao văn bản để dễ dàng điều chỉnh */
 .scroll-text-wrapper {{
-    /* Dùng flex để đảm bảo cả hai bản sao nằm ngang hàng */
     display: flex; 
+    /* Có thể thêm padding/margin nếu cần thêm khoảng trống bên trong wrapper */
 }}
 
 
@@ -189,7 +185,7 @@ iframe:first-of-type {{
         font-weight: 900; 
         font-feature-settings: "lnum" 1; 
         white-space: nowrap; 
-        animation-duration: 12s; /* Chạy nhanh hơn trên mobile */
+        animation-duration: 15s; /* Chạy nhanh hơn trên mobile */
         text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7); 
     }}
 }}
@@ -405,10 +401,11 @@ reveal_grid_html = f"""
 st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
 
-# --- NỘI DUNG CHÍNH (ĐÃ LẶP LẠI CHUỖI VĂN BẢN) ---
+# --- NỘI DUNG CHÍNH (ĐÃ THÊM KHOẢNG TRỐNG) ---
 
-# Chuỗi văn bản được lặp lại 2 lần để tạo hiệu ứng liên tục
-main_title_text_repeated = "TỔ BẢO DƯỠNG SỐ 1 *** " * 2 
+# Khoảng trắng lớn (sử dụng 20 ký tự &nbsp; không ngắt)
+separator = "&nbsp;" * 20 
+main_title_text_repeated = f"TỔ BẢO DƯỠNG SỐ 1{separator}" * 2 
 
 # Nhúng tiêu đề
 st.markdown(f"""
