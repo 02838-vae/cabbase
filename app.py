@@ -5,9 +5,7 @@ from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
 
-
-# ========== CẤU HÌNH ==========
-
+# ===== CẤU HÌNH =====
 VIDEO_PC = "airplane.mp4"
 VIDEO_MOBILE = "mobile.mp4"
 SFX = "plane_fly.mp3"
@@ -16,9 +14,7 @@ BG_MOBILE = "mobile.jpg"
 
 st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 
-
-# ========== ẨN UI STREAMLIT ==========
-
+# ===== ẨN GIAO DIỆN STREAMLIT =====
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -36,13 +32,10 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO ==========
-
+# ===== MÀN HÌNH INTRO =====
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
-    bg_file = BG_MOBILE if is_mobile else BG_PC
-
     try:
         with open(video_file, "rb") as f:
             video_b64 = base64.b64encode(f.read()).decode()
@@ -64,25 +57,25 @@ def intro_screen(is_mobile=False):
             height: 100%;
         }}
         video {{
-            position: absolute; 
-            top: 0; left: 0; 
+            position: absolute;
+            top: 0; left: 0;
             width: 100%; height: 100%;
             object-fit: cover;
         }}
         #intro-text {{
-            position: absolute; 
+            position: absolute;
             top: 8%;
-            left: 50%; 
+            left: 50%;
             transform: translate(-50%, 0);
-            width: 90vw; 
-            text-align: center; 
+            width: 90vw;
+            text-align: center;
             color: #f8f4e3;
             font-size: clamp(22px, 6vw, 60px);
-            font-weight: bold; 
+            font-weight: bold;
             font-family: 'Playfair Display', serif;
             background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
             background-size: 200%;
-            -webkit-background-clip: text; 
+            -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             text-shadow: 0 0 15px rgba(255,255,230,0.4);
             animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards;
@@ -140,9 +133,18 @@ def intro_screen(is_mobile=False):
     """
     components.html(intro_html, height=800, scrolling=False)
 
+    # 👇 Thêm listener riêng biệt để Streamlit nhận message ngay lập tức
+    msg = st_javascript("""
+    new Promise((resolve) => {
+        window.addEventListener("message", (event) => {
+            if (event.data.type === "intro_done") resolve(true);
+        });
+    });
+    """)
+    return msg
 
-# ========== TRANG CHÍNH ==========
 
+# ===== TRANG CHÍNH =====
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -153,7 +155,7 @@ def main_page(is_mobile=False):
     <style>
     html, body, .stApp {{
         height: 100vh !important;
-        background: 
+        background:
             linear-gradient(to bottom, rgba(255, 235, 200, 0.25), rgba(90, 70, 50, 0.5)),
             url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
         background-size: cover !important;
@@ -191,8 +193,7 @@ def main_page(is_mobile=False):
     """, unsafe_allow_html=True)
 
 
-# ========== CHẠY APP ==========
-
+# ===== LUỒNG CHÍNH =====
 hide_streamlit_ui()
 
 if "is_mobile" not in st.session_state:
@@ -203,21 +204,10 @@ if "is_mobile" not in st.session_state:
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
-# Nhận thông điệp từ JS
-intro_message = st_javascript("""
-new Promise((resolve) => {
-    window.addEventListener("message", (event) => {
-        if (event.data.type === "intro_done") resolve(true);
-    });
-});
-""")
-
-if intro_message:
-    st.session_state.intro_done = True
-    st.rerun()
-
-# Hiển thị intro hoặc main
 if not st.session_state.intro_done:
-    intro_screen(st.session_state.is_mobile)
+    msg = intro_screen(st.session_state.is_mobile)
+    if msg:
+        st.session_state.intro_done = True
+        st.rerun()
 else:
     main_page(st.session_state.is_mobile)
