@@ -272,7 +272,7 @@ html_content_modified = f"""
             color: #FFD700; 
             
             /* THU NHỎ SIZE CHỮ: 3.2vw (trước là 4vw) */
-            font-size: 3.2vw; 
+            font-size: 2.5vw; 
             
             font-weight: 900; 
             text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8); 
