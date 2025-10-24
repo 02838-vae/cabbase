@@ -113,6 +113,83 @@ iframe:first-of-type {{
     background-attachment: fixed;
 }}
 
+/* Căn giữa tiêu đề chính trên nền */
+#main-title-container {{
+    position: fixed;
+    top: 5%; 
+    left: 50%;
+    transform: translate(-50%, 0); 
+    width: 90%; 
+    text-align: center;
+    z-index: 20;
+    pointer-events: none;
+    line-height: 1.2; /* Tinh chỉnh khoảng cách dòng */
+}}
+
+/* CSS cho Tiêu đề Chính (PC) */
+#main-title-container h1 {{
+    font-size: 5vw; /* PC: Nhỏ hơn 6vw */
+    margin: 0;
+    font-weight: 900;
+    letter-spacing: 5px;
+    color: transparent; /* Quan trọng cho hiệu ứng ánh sáng */
+    background: linear-gradient(90deg, #f0e68c, #ffffff, #f0e68c); /* Màu nền cho hiệu ứng ánh sáng */
+    background-size: 80% 100%; /* Kích thước gradient, sẽ di chuyển */
+    background-repeat: no-repeat;
+    -webkit-background-clip: text; /* Chỉ hiển thị nền trên chữ */
+    background-clip: text;
+    animation: shine 5s infinite linear; /* Hiệu ứng ánh sáng */
+    text-shadow: 
+        1px 1px 2px rgba(0,0,0,0.5), /* Lớp bóng đổ gần */
+        2px 2px 3px rgba(0,0,0,0.4), /* Lớp bóng đổ trung bình */
+        3px 3px 5px rgba(0,0,0,0.3); /* Lớp bóng đổ xa, tạo chiều sâu */
+}}
+
+#main-title-container h2 {{
+    font-size: 1.8vw; /* PC: Kích thước phù hợp */
+    margin: 10px 0 0 0;
+    font-weight: 300;
+    color: #e0e0e0; /* Màu chữ phụ */
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
+}}
+
+/* CSS cho tiêu đề video intro */
+#intro-text {{
+    position: fixed;
+    top: 5vh;
+    width: 100%;
+    text-align: center;
+    /* THAY ĐỔI: Màu sắc và hiệu ứng cho intro-text */
+    color: transparent; 
+    background: linear-gradient(90deg, #ffd700, #ffffff, #ffd700); /* Màu gradient */
+    background-size: 80% 100%;
+    background-repeat: no-repeat;
+    -webkit-background-clip: text;
+    background-clip: text;
+    animation: shine-intro 4s infinite linear; /* Animation riêng cho intro */
+    font-size: 3vw;
+    font-weight: bold;
+    text-shadow: 
+        1px 1px 2px rgba(0,0,0,0.5),
+        2px 2px 3px rgba(0,0,0,0.4),
+        3px 3px 5px rgba(0,0,0,0.3);
+    z-index: 100;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 1s;
+}}
+
+/* Keyframes cho hiệu ứng ánh sáng */
+@keyframes shine {{
+    0% {{ background-position: -50% 0; }}
+    100% {{ background-position: 150% 0; }}
+}}
+
+@keyframes shine-intro {{
+    0% {{ background-position: -50% 0; }}
+    100% {{ background-position: 150% 0; }}
+}}
+
 /* Điều chỉnh cho Mobile */
 @media (max-width: 768px) {{
     .main-content-revealed {{
@@ -122,19 +199,28 @@ iframe:first-of-type {{
         grid-template-columns: repeat(10, 1fr);
         grid-template-rows: repeat(20, 1fr);
     }}
-}}
 
-/* Căn giữa tiêu đề chính trên nền */
-#main-title-container {{
-    position: fixed;
-    /* THAY ĐỔI LỚN: Đặt top thấp và xóa transform Y */
-    top: 5%; 
-    left: 50%;
-    transform: translate(-50%, 0); /* Chỉ căn giữa theo chiều ngang */
-    width: 90%; 
-    text-align: center;
-    z-index: 20;
-    pointer-events: none;
+    /* Tiêu đề chính trên Mobile */
+    #main-title-container h1 {{
+        font-size: 10vw; /* Mobile: Kích thước lớn hơn */
+        letter-spacing: 3px;
+        text-shadow: 
+            1px 1px 1px rgba(0,0,0,0.5), 
+            2px 2px 2px rgba(0,0,0,0.4);
+    }}
+
+    #main-title-container h2 {{
+        font-size: 4vw; /* Mobile: Kích thước lớn hơn */
+        margin: 5px 0 0 0; /* Mobile: Khoảng cách gần hơn 5px */
+        text-shadow: 1px 1px 1px rgba(0,0,0,0.6);
+    }}
+    
+    #intro-text {{
+        font-size: 8vw;
+        text-shadow: 
+            1px 1px 1px rgba(0,0,0,0.5),
+            2px 2px 2px rgba(0,0,0,0.4);
+    }}
 }}
 </style>
 """
@@ -171,7 +257,6 @@ js_callback = f"""
              const mainTitle = window.parent.document.getElementById('main-title-container');
              if (mainTitle) {{
                  mainTitle.style.opacity = 1;
-                 // THAY ĐỔI LỚN: Điều chỉnh transform
                  mainTitle.style.transform = 'translate(-50%, 0) scale(1)'; 
              }}
         }}, shuffledCells.length * 10 + 1000);
@@ -250,16 +335,13 @@ html_content_modified = f"""
             transition: opacity 1s; 
         }}
 
-        /* CSS cho dòng chữ cố định */
+        /* CSS cho dòng chữ cố định (đã được tinh chỉnh hiệu ứng) */
         #intro-text {{
             position: fixed;
             top: 5vh;
             width: 100%;
             text-align: center;
-            color: white;
-            font-size: 3vw;
-            font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+            /* Các hiệu ứng đã được đưa lên hide_streamlit_style */
             z-index: 100;
             pointer-events: none;
             opacity: 0;
@@ -267,9 +349,7 @@ html_content_modified = f"""
         }}
         
         @media (max-width: 768px) {{
-            #intro-text {{
-                font-size: 8vw;
-            }}
+            /* font-size cho intro-text trên mobile đã được định nghĩa trong hide_streamlit_style */
         }}
         
     </style>
@@ -309,7 +389,7 @@ st.markdown(reveal_grid_html, unsafe_allow_html=True)
 # Nội dung chính của trang (CHỈ CÓ TIÊU ĐỀ)
 st.markdown("""
 <div id="main-title-container" style="color: white; opacity: 0; transition: opacity 2s, transform 1s; transform: translate(-50%, 0) scale(0.9); text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);">
-    <h1 style="font-size: 6vw; margin: 0; font-weight: 900; letter-spacing: 5px;">TỔ BẢO DƯỠNG SỐ 1</h1>
-    <h2 style="font-size: 2vw; margin: 10px 0 0 0; font-weight: 300;">MỞ RA MỘT CHẶNG ĐƯỜNG MỚI</h2>
+    <h1 class="main-title">TỔ BẢO DƯỠNG SỐ 1</h1>
+    <h2 class="sub-title">MỞ RA MỘT CHẶNG ĐƯỜNG MỚI</h2>
 </div>
 """, unsafe_allow_html=True)
