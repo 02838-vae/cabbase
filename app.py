@@ -1,189 +1,328 @@
 import streamlit as st
 import base64
 
-# --- CẤU HÌNH ---
+# --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
-    page_title="Tổ Bảo Dưỡng Số 1",
+    page_title="Tổ Bảo Dưỡng Số 1", # Đổi tiêu đề tab
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
-# --- SESSION STATE ---
+# Khởi tạo session state (Không dùng trong logic chính, chỉ để giữ cấu trúc)
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
-# --- HÀM TIỆN ÍCH ---
+# --- CÁC HÀM TIỆN ÍCH ---
+
 def get_base64_encoded_file(file_path):
+    """Đọc file và trả về Base64 encoded string."""
     try:
         with open(file_path, "rb") as f:
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
-        raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra: {e.filename}")
+        # Tái raise lỗi để hàm try/except bên ngoài xử lý
+        raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
-# --- BASE64 MEDIA ---
+
+# Mã hóa các file media
 try:
+    # LƯU Ý: Đảm bảo các file này tồn tại trong cùng thư mục với script Streamlit
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
-    bg_pc_base64 = get_base64_encoded_file("cabbase.jpg")
+    
+    bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
 except FileNotFoundError as e:
     st.error(e)
     st.stop()
 
-# --- CSS CHUNG ---
-css_style = f"""
+
+# --- CSS ĐỂ ÉP STREAMLIT MAIN CONTAINER & IFRAME FULLSCREEN/ẨN IFRAME ---
+# CSS chính cho Streamlit App (Không thay đổi)
+hide_streamlit_style = f"""
 <style>
+/* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
-.main {{padding: 0; margin: 0;}}
-div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
+
+/* Đảm bảo Main Content Container chiếm toàn bộ không gian và không có padding */
+.main {{
+    padding: 0;
+    margin: 0;
+}}
+
+/* Đảm bảo khu vực nội dung được căn chỉnh sát lề */
+div.block-container {{
+    padding: 0;
+    margin: 0;
+    max-width: 100% !important;
+}}
+
+/* IFRAME VIDEO INTRO */
+iframe:first-of-type {{
+    transition: opacity 1s ease-out, visibility 1s ease-out;
+    opacity: 1;
+    visibility: visible;
+    width: 100vw !important;
+    height: 100vh !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}}
+
+/* Class để ẩn iframe (được thêm bằng JS) */
+.video-finished iframe:first-of-type {{
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    height: 1px !important; 
+}}
+
+/* Định nghĩa nền full-screen cho main content */
 .stApp {{
     --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
 }}
+
+/* CSS cho hiệu ứng Reveal */
 .reveal-grid {{
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    display: grid; grid-template-columns: repeat(20, 1fr); 
-    grid-template-rows: repeat(12, 1fr); z-index: 500; pointer-events: none; 
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: grid;
+    /* Tùy chỉnh số lượng ô vuông */
+    grid-template-columns: repeat(20, 1fr); 
+    grid-template-rows: repeat(12, 1fr);
+    z-index: 500; 
+    pointer-events: none; 
 }}
-.grid-cell {{background-color: white; opacity: 1; transition: opacity 0.5s ease-out;}}
+
+.grid-cell {{
+    /* Sử dụng màu trắng để che phủ ban đầu */
+    background-color: white; 
+    opacity: 1;
+    transition: opacity 0.5s ease-out;
+}}
+
+/* Class được thêm vào .stApp sau khi video kết thúc */
 .main-content-revealed {{
+    /* Đặt nền cho toàn bộ ứng dụng */
     background-image: var(--main-bg-url-pc);
-    background-size: cover; background-position: center; background-attachment: fixed;
+    background-size: cover;
+    background-position: center;
+    background-attachment: fixed; /* Giữ nền cố định khi cuộn */
 }}
-@keyframes shine-horizontal {{ 0% {{ background-position: -150% 0; }} 100% {{ background-position: 250% 0; }} }}
-@keyframes shine-diagonal {{ 0% {{ background-position: -200% 0; }} 100% {{ background-position: 300% 0; }} }}
-#intro-text {{
-    position: fixed; top: 5vh; width: 100%; text-align: center;
-    font-family: 'Poppins', sans-serif;
-    font-size: 5vw; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;
-    padding: 0.5em 1em; color: transparent;
-    background: linear-gradient(45deg, #ffd700, #ffffff, #ffd700);
-    -webkit-background-clip: text; background-clip: text;
-    mix-blend-mode: screen; animation: shine-diagonal 4s infinite linear;
-    text-shadow: 2px 2px 6px rgba(0,0,0,0.4);
-    z-index: 100; pointer-events: none; opacity: 0; transition: opacity 1s;
-}}
-#main-title-container {{
-    position: fixed; top: 5%; left: 50%;
-    transform: translate(-50%, 0) scale(0.9);
-    width: 90%; text-align: center;
-    z-index: 20; pointer-events: none;
-    color: white; opacity: 0;
-    transition: opacity 2s ease, transform 1s ease;
-}}
-#main-title-container h1 {{
-    font-family: 'Poppins', sans-serif; font-weight: 900;
-    font-size: 5vw; letter-spacing: 6px; text-transform: uppercase;
-    color: transparent;
-    background: linear-gradient(90deg, #f0e68c, #ffffff, #f0e68c);
-    -webkit-background-clip: text; background-clip: text;
-    animation: shine-horizontal 5s infinite linear;
-    text-shadow: 1px 1px 3px rgba(0,0,0,0.6);
-    position: relative;
-}}
-#main-title-container h1::after {{
-    content: attr(data-text);
-    position: absolute; left:0; top:0; width:100%; height:100%; color:#fff;
-    opacity:0.15; filter: blur(10px); z-index:-1;
-}}
-#main-title-container h2 {{
-    font-family: 'Poppins', sans-serif; font-weight: 300;
-    font-size: 1.8vw; color:#e0e0e0;
-    text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
-    margin-top: 10px;
-}}
+
+/* Điều chỉnh cho Mobile */
 @media (max-width: 768px) {{
-    .main-content-revealed {{ background-image: var(--main-bg-url-mobile); }}
-    .reveal-grid {{ grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(20, 1fr); }}
-    #main-title-container h1 {{ font-size: 10vw; letter-spacing: 3px; background: linear-gradient(45deg, #ffd700, #ffffff, #ffd700); animation: shine-diagonal 5s infinite linear; }}
-    #main-title-container h2 {{ font-size: 4vw; margin-top: 0.5em; }}
-    #intro-text {{ font-size: 8vw; }}
+    .main-content-revealed {{
+        background-image: var(--main-bg-url-mobile);
+    }}
+    .reveal-grid {{
+        grid-template-columns: repeat(10, 1fr);
+        grid-template-rows: repeat(20, 1fr);
+    }}
+}}
+
+/* Căn giữa tiêu đề chính trên nền */
+#main-title-container {{
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 90%; /* Chiếm phần lớn màn hình */
+    text-align: center;
+    z-index: 20; /* Trên nền và dưới iframe video */
+    pointer-events: none; /* Không chặn tương tác nếu có */
 }}
 </style>
 """
-st.markdown(css_style, unsafe_allow_html=True)
 
-# --- HTML + JS (KHÔNG F-STRING TRONG JS, chỉ chèn Base64) ---
-html_content = f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        html, body {{margin:0;padding:0;overflow:hidden;height:100vh;width:100vw;}}
-        #intro-video {{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:-100;transition:opacity 1s;}}
-    </style>
-</head>
-<body>
-    <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-    <video id="intro-video" muted playsinline></video>
-    <audio id="background-audio"></audio>
-    <script>
+# Thêm CSS vào trang chính
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+
+# --- MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
+
+# JavaScript để thông báo cho Streamlit khi video kết thúc (Không thay đổi)
+js_callback = f"""
+<script>
+    function sendBackToStreamlit() {{
+        // **BƯỚC 1: Kích hoạt nền và ẩn video**
+        window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
+        
+        // **BƯỚC 2: Kích hoạt Hiệu ứng Reveal**
+        initRevealEffect();
+    }}
+    
+    function initRevealEffect() {{
+        const revealGrid = window.parent.document.querySelector('.reveal-grid');
+        if (!revealGrid) return;
+
+        const cells = revealGrid.querySelectorAll('.grid-cell');
+        
+        // Tạo một mảng ngẫu nhiên các ô
+        const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
+
+        shuffledCells.forEach((cell, index) => {{
+            setTimeout(() => {{
+                cell.style.opacity = 0; 
+            }}, index * 10); // Khoảng thời gian giữa các ô (10ms)
+        }});
+        
+        // Sau khi hiệu ứng kết thúc, loại bỏ lưới
+        setTimeout(() => {{
+             revealGrid.remove();
+             // **HIỆU ỨNG THÊM: Hiện tiêu đề chính sau khi Reveal xong**
+             const mainTitle = window.parent.document.getElementById('main-title-container');
+             if (mainTitle) {{
+                 mainTitle.style.opacity = 1;
+                 mainTitle.style.transform = 'translate(-50%, -50%) scale(1)';
+             }}
+        }}, shuffledCells.length * 10 + 1000); // Đợi 1 giây sau khi ô cuối cùng ẩn
+    }}
+
+    document.addEventListener("DOMContentLoaded", function() {{
         const video = document.getElementById('intro-video');
         const audio = document.getElementById('background-audio');
         const introText = document.getElementById('intro-text');
         const isMobile = window.innerWidth <= 768;
 
-        video.src = isMobile ? "data:video/mp4;base64,{video_mobile_base64}" : "data:video/mp4;base64,{video_pc_base64}";
-        audio.src = "data:audio/mp3;base64,{audio_base64}";
-
-        function sendBackToStreamlit() {{
-            document.querySelector('.stApp').classList.add('video-finished','main-content-revealed');
-            initRevealEffect();
+        if (isMobile) {{
+            video.src = 'data:video/mp4;base64,{video_mobile_base64}';
+        }} else {{
+            video.src = 'data:video/mp4;base64,{video_pc_base64}';
         }}
+        
+        audio.src = 'data:audio/mp3;base64,{audio_base64}';
 
-        function initRevealEffect() {{
-            const revealGrid = document.querySelector('.reveal-grid');
-            if(!revealGrid) return;
-            const cells = revealGrid.querySelectorAll('.grid-cell');
-            const shuffled = Array.from(cells).sort(()=>Math.random()-0.5);
-            shuffled.forEach((c,i)=>setTimeout(()=>{{ c.style.opacity=0; }}, i*10));
-            setTimeout(()=>{{
-                revealGrid.remove();
-                const mainTitle = document.getElementById('main-title-container');
-                if(mainTitle){{
-                    mainTitle.style.opacity=1;
-                    mainTitle.style.transform='translate(-50%,0) scale(1)';
-                }}
-            }}, shuffled.length*10 + 1000);
-        }}
-
-        function playMedia() {{
+        const playMedia = () => {{
             video.load();
-            video.play().catch(e=>console.log(e));
-            setTimeout(()=>{{ introText.style.opacity=1; }},500);
-            audio.volume=0.5; audio.loop=true;
-            audio.play().catch(()=>{{
-                document.body.addEventListener('click',()=>{{ audio.play().catch(()=>{{}}); }}, {{once:true}});
+            video.play().catch(e => console.log("Video playback failed:", e));
+                
+            setTimeout(() => {{ introText.style.opacity = 1; }}, 500);
+
+            audio.volume = 0.5;
+            audio.loop = true; 
+            audio.play().catch(e => {{
+                document.body.addEventListener('click', () => {{
+                    audio.play().catch(err => console.error("Audio playback error on click:", err));
+                }}, {{ once: true }});
             }});
-        }}
-
+        }};
+            
         playMedia();
-
-        video.onended = ()=>{{
-            video.style.opacity=0; audio.pause(); audio.currentTime=0; introText.style.opacity=0;
-            sendBackToStreamlit();
+        
+        // Event khi video kết thúc
+        video.onended = () => {{
+            video.style.opacity = 0;
+            audio.pause();
+            audio.currentTime = 0;
+            introText.style.opacity = 0;
+            
+            sendBackToStreamlit(); 
         }};
 
-        document.body.addEventListener('click',()=>{{
-            video.play().catch(()=>{{}}); audio.play().catch(()=>{{}});
-        }}, {{once:true}});
-    </script>
+        // Cần đảm bảo video luôn sẵn sàng nếu trình duyệt chặn autoplay
+        document.body.addEventListener('click', () => {{
+             video.play().catch(e => {{}});
+             audio.play().catch(e => {{}});
+        }}, {{ once: true }});
+    }});
+</script>
+"""
+
+# Mã HTML/CSS cho Video ĐÃ CHỈNH SỬA
+html_content_modified = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        html, body {{
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }}
+        
+        #intro-video {{
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -100;
+            transition: opacity 1s; 
+        }}
+
+        /* === PHẦN ĐÃ CHỈNH SỬA CHO TIÊU ĐỀ INTRO === */
+        #intro-text {{
+            position: fixed;
+            top: 5vh; /* ĐẶT TRÊN CÙNG */
+            width: 100%;
+            text-align: center; /* CANH GIỮA */
+            color: #FFD700; /* MÀU VÀNG GOLD DỄ NHÌN */
+            font-size: 4vw; /* SIZE LỚN HƠN CHO PC */
+            font-weight: 900; /* ĐỘ ĐẬM */
+            /* BÓNG NỀN DỄ NHÌN HƠN */
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8); 
+            z-index: 100;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 1s;
+        }}
+        
+        @media (max-width: 768px) {{
+            #intro-text {{
+                font-size: 10vw; /* SIZE LỚN HƠN CHO MOBILE */
+            }}
+        }}
+        /* =========================================== */
+        
+    </style>
+</head>
+<body>
+
+    <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+    
+    <video id="intro-video" muted playsinline></video>
+    
+    <audio id="background-audio"></audio>
+
+    {js_callback}
 </body>
 </html>
 """
 
-st.components.v1.html(html_content, height=10, scrolling=False)
+# Hiển thị thành phần HTML (video)
+st.components.v1.html(html_content_modified, height=10, scrolling=False)
 
-# --- LƯỚI REVEAL ---
-grid_cells_html = "".join([f'<div class="grid-cell"></div>' for _ in range(240)])
-st.markdown(f'<div class="reveal-grid">{grid_cells_html}</div>', unsafe_allow_html=True)
 
-# --- TIÊU ĐỀ CHÍNH ---
+# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH (CHỈ TIÊU ĐỀ) ---
+
+# Tạo Lưới Reveal (20x12 = 240 ô)
+grid_cells_html = ""
+for i in range(240): 
+    grid_cells_html += f'<div class="grid-cell"></div>'
+
+reveal_grid_html = f"""
+<div class="reveal-grid">
+    {grid_cells_html}
+</div>
+"""
+st.markdown(reveal_grid_html, unsafe_allow_html=True)
+    
+
+# Nội dung chính của trang (TIÊU ĐỀ LỚN HIỆN RA SAU INTRO)
 st.markdown("""
-<div id="main-title-container">
-    <h1 data-text="TỔ BẢO DƯỠNG SỐ 1">TỔ BẢO DƯỠNG SỐ 1</h1>
-    <h2>MỞ RA MỘT CHẶNG ĐƯỜNG MỚI</h2>
+<div id="main-title-container" style="color: white; opacity: 0; transition: opacity 2s, transform 1s; transform: translate(-50%, -50%) scale(0.9); text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);">
+    <h1 style="font-size: 6vw; margin: 0; font-weight: 900; letter-spacing: 5px;">TỔ BẢO DƯỠNG SỐ 1</h1>
+    <h2 style="font-size: 2vw; margin: 10px 0 0 0; font-weight: 300;">MỞ RA MỘT CHẶNG ĐƯỜNG MỚI</h2>
 </div>
 """, unsafe_allow_html=True)
