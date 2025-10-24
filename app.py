@@ -75,7 +75,7 @@ def intro_screen(is_mobile=False):
     <html>
     <head>
         <meta charset="UTF-8">
-        <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0'>
         <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
         <style>
         * {{
@@ -98,6 +98,19 @@ def intro_screen(is_mobile=False):
             width: 100%;
             height: 100%;
             background: #000;
+        }}
+        
+        /* Debug info */
+        #debug {{
+            position: fixed;
+            top: 10px;
+            left: 10px;
+            background: rgba(255,255,255,0.8);
+            padding: 10px;
+            font-family: monospace;
+            font-size: 12px;
+            z-index: 9999;
+            max-width: 300px;
         }}
         
         /* Background trang chính */
@@ -151,6 +164,7 @@ def intro_screen(is_mobile=False):
             height: 100%;
             object-fit: cover;
             z-index: 1;
+            background: #000;
         }}
         
         audio {{ display: none; }}
@@ -257,10 +271,12 @@ def intro_screen(is_mobile=False):
         </style>
     </head>
     <body>
+        <div id="debug">Đang tải video...</div>
+        
         <div id="container">
             <div id="main-page-bg"></div>
             
-            <video id='introVid' autoplay muted playsinline>
+            <video id='introVid' muted playsinline webkit-playsinline>
                 <source src='data:video/mp4;base64,{video_b64}' type='video/mp4'>
             </video>
             
@@ -291,7 +307,15 @@ def intro_screen(is_mobile=False):
         const introText = document.getElementById('intro-text');
         const mainText = document.getElementById('main-text');
         const mainBg = document.getElementById('main-page-bg');
+        const debugDiv = document.getElementById('debug');
         let ended = false;
+        let debugLog = [];
+
+        function log(msg) {{
+            console.log(msg);
+            debugLog.push(msg);
+            debugDiv.innerHTML = debugLog.slice(-10).join('<br>');
+        }}
 
         function createBrokenPieces() {{
             const pieceWidth = 100 / GLASS_COLS;
@@ -349,6 +373,7 @@ def intro_screen(is_mobile=False):
         }}
 
         function revealMainPage() {{
+            log('Starting reveal...');
             const tiles = document.querySelectorAll('.reveal-tile');
             const centerRow = Math.floor(REVEAL_GRID / 2);
             const centerCol = Math.floor(REVEAL_GRID / 2);
@@ -376,6 +401,8 @@ def intro_screen(is_mobile=False):
                         if (index === tiles.length - 1) {{
                             setTimeout(() => {{
                                 revealOverlay.style.display = 'none';
+                                debugDiv.style.display = 'none';
+                                log('Reveal complete!');
                             }}, 100);
                         }}
                     }}
@@ -386,6 +413,7 @@ def intro_screen(is_mobile=False):
         function finishIntro() {{
             if (ended) return;
             ended = true;
+            log('Finishing intro...');
             
             vid.style.opacity = 0;
             introText.style.display = 'none';
@@ -408,38 +436,63 @@ def intro_screen(is_mobile=False):
         createBrokenPieces();
         createRevealGrid();
 
-        // Play video và audio
-        vid.addEventListener('canplaythrough', function() {{
-            vid.play().then(() => {{
-                console.log('Video playing');
-                audio.currentTime = 0;
-                audio.volume = 1.0;
-                audio.play().catch(e => console.log('Audio blocked:', e));
-            }}).catch(e => console.log('Video blocked:', e));
-        }});
+        log('Video element created');
+        log('ReadyState: ' + vid.readyState);
 
-        // Click để unmute
-        let hasInteracted = false;
-        document.addEventListener('click', function() {{
-            if (!hasInteracted) {{
-                hasInteracted = true;
-                vid.muted = false;
-                vid.play();
+        // Event listeners cho debug
+        vid.addEventListener('loadstart', () => log('loadstart'));
+        vid.addEventListener('loadedmetadata', () => log('loadedmetadata'));
+        vid.addEventListener('loadeddata', () => log('loadeddata'));
+        vid.addEventListener('canplay', () => log('canplay'));
+        vid.addEventListener('canplaythrough', () => log('canplaythrough'));
+        vid.addEventListener('playing', () => log('playing'));
+        vid.addEventListener('pause', () => log('pause'));
+        vid.addEventListener('error', (e) => log('ERROR: ' + e.message));
+        vid.addEventListener('stalled', () => log('stalled'));
+        vid.addEventListener('waiting', () => log('waiting'));
+
+        // Thử play ngay
+        setTimeout(() => {{
+            log('Attempting autoplay...');
+            vid.play().then(() => {{
+                log('✓ Video playing!');
                 audio.currentTime = 0;
                 audio.volume = 1.0;
-                audio.play();
+                audio.play().catch(e => log('Audio error: ' + e.message));
+            }}).catch(e => {{
+                log('✗ Autoplay failed: ' + e.message);
+                log('Click màn hình để play!');
+            }});
+        }}, 100);
+
+        // Click để play
+        let clicked = false;
+        document.addEventListener('click', function() {{
+            if (!clicked) {{
+                clicked = true;
+                log('User clicked!');
+                vid.muted = false;
+                vid.play().then(() => {{
+                    log('✓ Playing after click');
+                    audio.currentTime = 0;
+                    audio.volume = 1.0;
+                    audio.play();
+                }}).catch(e => log('Play error: ' + e.message));
             }}
-        }}, {{once: true}});
+        }});
 
         // Touch cho mobile
         document.addEventListener('touchstart', function() {{
-            if (!hasInteracted) {{
-                hasInteracted = true;
+            if (!clicked) {{
+                clicked = true;
+                log('User touched!');
                 vid.muted = false;
-                vid.play();
-                audio.currentTime = 0;
-                audio.volume = 1.0;
-                audio.play();
+                vid.play().then(() => {{
+                    log('✓ Playing after touch');
+                    audio.currentTime = 0;
+                    audio.volume = 1.0;
+                    audio.play();
+                }}).catch(e => log('Play error: ' + e.message));
             }}
         }}, {{once: true}});
 
