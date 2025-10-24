@@ -133,7 +133,6 @@ iframe:first-of-type {{
     top: 5vh; 
     left: 50%;
     transform: translate(-50%, 0); 
-    /* Tăng Width mặc định trên PC, nhưng quan trọng là tăng Width trên Mobile */
     width: 90%; 
     text-align: center;
     z-index: 20; 
@@ -144,27 +143,27 @@ iframe:first-of-type {{
     font-family: 'Playfair Display', serif; 
     font-size: 3.5vw; 
     margin: 0;
-    font-weight: 700; 
+    
+    /* ĐIỀU CHỈNH: Đặt độ đậm tối đa và tính năng số */
+    font-weight: 900; 
+    font-feature-settings: "lnum" 1; /* Force Lining Numbers (chiều cao bằng chữ) */
+    
     letter-spacing: 5px; 
     color: white; 
     text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);
-    
-    /* Đảm bảo chữ không bị ngắt dòng */
     white-space: nowrap; 
 }}
 
 @media (max-width: 768px) {{
     #main-title-container {{
-        /* MỞ RỘNG KHU VỰC CHỨA CHỮ ĐỂ CHỮ KHÔNG XUỐNG DÒNG */
-        width: 95%; /* Tăng từ 90% lên 95% */
+        width: 95%; 
         left: 50%;
     }}
     
     #main-title-container h1 {{
-        /* GIẢM FONT SIZE NHẸ HƠN NỮA: 7vw -> 6.5vw (Thử nghiệm) */
         font-size: 6.5vw; 
-        
-        /* Cần thiết lập white-space: nowrap; ở đây lần nữa để đảm bảo */
+        font-weight: 900; 
+        font-feature-settings: "lnum" 1; /* Áp dụng luôn cho mobile */
         white-space: nowrap; 
     }}
 }}
