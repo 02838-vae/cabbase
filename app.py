@@ -1,5 +1,6 @@
 import streamlit as st
 import base64
+import time
 import streamlit.components.v1 as components
 from user_agents import parse
 from streamlit_javascript import st_javascript
@@ -100,7 +101,7 @@ def intro_screen(is_mobile=False):
         ended = st_javascript("window.videoEnded || false")
         if ended:
             return True
-        st.sleep(0.1)  # kiểm tra mỗi 100ms (rất nhẹ)
+        time.sleep(0.1)  # <--- Dùng time.sleep() thay vì st.sleep()
 
 
 # ==== MAIN PAGE ====
@@ -137,7 +138,7 @@ def main_page(is_mobile=False):
     """, unsafe_allow_html=True)
 
 
-# ==== FLOW ====
+# ==== LUỒNG CHÍNH ====
 hide_ui()
 
 if "is_mobile" not in st.session_state:
