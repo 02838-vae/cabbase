@@ -126,24 +126,28 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === TIÊU ĐỀ TRANG CHÍNH (FONT PLAYFAIR DISPLAY & HIỆU ỨNG PHÁT SÁNG TỪNG CHỮ) === */
+/* Keyframes cho hiệu ứng chữ chạy */
+@keyframes scrollText {{
+    0% {{ transform: translate(100vw, 0); }} /* Bắt đầu từ ngoài cùng bên phải */
+    100% {{ transform: translate(-100%, 0); }} /* Chạy sang trái (độ rộng của chữ) */
+}}
+
+/* === TIÊU ĐỀ TRANG CHÍNH (CHỮ CHẠY) === */
 #main-title-container {{
     position: fixed;
     top: 5vh; 
-    left: 50%;
-    transform: translate(-50%, 0); 
-    width: 90%; 
-    text-align: center;
+    left: 0; /* Đặt lại left: 0 để tiêu đề có thể di chuyển ra khỏi khung nhìn */
+    width: 100%; 
+    height: 10vh; /* Cần chiều cao rõ ràng cho container */
+    overflow: hidden; /* Cắt phần chữ thừa ra khỏi khung nhìn */
     z-index: 20; 
     pointer-events: none; 
     
-    display: flex;
-    justify-content: center;
-    overflow: hidden; 
+    opacity: 0; /* Vẫn ẩn ban đầu */
+    transition: opacity 2s;
 }}
 
 #main-title-container h1 {{
-    display: flex; 
     font-family: 'Playfair Display', serif; 
     font-size: 3.5vw; 
     margin: 0;
@@ -152,41 +156,21 @@ iframe:first-of-type {{
     letter-spacing: 5px; 
     color: #F0F0F0; 
     white-space: nowrap; 
-}}
-
-.main-title-char {{
-    display: inline-block; 
+    
+    /* Áp dụng Animation chữ chạy */
+    display: inline-block; /* Quan trọng để animation hoạt động */
+    animation: scrollText 30s linear infinite; /* 30 giây cho một vòng, lặp lại */
+    
+    /* Thiết lập bóng đổ cổ điển */
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); 
-    transition: text-shadow 0.3s ease-in-out; 
 }}
-
-@keyframes glow {{
-    0% {{ 
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7), 
-                     0 0 0px rgba(255, 255, 200, 0); 
-    }}
-    50% {{ 
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7), 
-                     0 0 15px rgba(255, 255, 200, 0.8), 
-                     0 0 25px rgba(255, 255, 150, 0.6);
-    }}
-    100% {{ 
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7), 
-                     0 0 0px rgba(255, 255, 200, 0); 
-    }}
-}}
-
-.main-title-char.glowing {{
-    animation: glow 1.5s forwards; 
-}}
-
 
 @media (max-width: 768px) {{
+    /* GIỮ: Đảm bảo chỉ 1 hàng, nhưng không căn giữa tuyệt đối */
     #main-title-container {{
-        width: 95%; 
-        left: 50%;
-        /* Đảm bảo căn giữa tuyệt đối trên Mobile */
-        justify-content: center; 
+        height: 8vh;
+        width: 100%; /* Giữ 100% để animation có đủ không gian */
+        left: 0;
     }}
     
     #main-title-container h1 {{
@@ -194,24 +178,8 @@ iframe:first-of-type {{
         font-weight: 900; 
         font-feature-settings: "lnum" 1; 
         white-space: nowrap; 
-    }}
-    .main-title-char {{
+        animation-duration: 20s; /* Chạy nhanh hơn trên mobile */
         text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7); 
-    }}
-    @keyframes glow {{ 
-        0% {{ 
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7), 
-                         0 0 0px rgba(255, 255, 200, 0); 
-        }}
-        50% {{ 
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7), 
-                         0 0 10px rgba(255, 255, 200, 0.7), 
-                         0 0 20px rgba(255, 255, 150, 0.5);
-        }}
-        100% {{ 
-            text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7), 
-                         0 0 0px rgba(255, 255, 200, 0); 
-        }}
     }}
 }}
 </style>
@@ -221,28 +189,27 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (FONT SACRAMENTO & HIỆU ỨNG CHỮ THẢ) ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (GIỮ NGUYÊN) ---
 
-# JavaScript ĐÃ CHỈNH SỬA: Thêm code hiển thị tiêu đề chính vào initRevealEffect
+# JavaScript ĐÃ CHỈNH SỬA: Loại bỏ postMessage không cần thiết
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
         window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
         initRevealEffect();
-        window.parent.postMessage({{ type: 'video_ended' }}, '*'); 
     }}
     
     function initRevealEffect() {{
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
         const mainTitle = window.parent.document.getElementById('main-title-container');
 
-        if (!revealGrid) {{
-            if (mainTitle) {{
-                 mainTitle.style.opacity = 1;
-                 mainTitle.style.transform = 'translate(-50%, 0) scale(1)';
-            }}
-            return;
+        // Bắt đầu hiển thị tiêu đề chính ngay (opacity)
+        if (mainTitle) {{
+             // ĐÃ LOẠI BỎ transform translate để phù hợp với animation chữ chạy
+             mainTitle.style.opacity = 1; 
         }}
+
+        if (!revealGrid) {{ return; }}
 
         const cells = revealGrid.querySelectorAll('.grid-cell');
         const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
@@ -255,10 +222,6 @@ js_callback_video = f"""
         
         setTimeout(() => {{
              revealGrid.remove();
-             if (mainTitle) {{
-                 mainTitle.style.opacity = 1;
-                 mainTitle.style.transform = 'translate(-50%, 0) scale(1)';
-             }}
         }}, shuffledCells.length * 10 + 1000);
     }}
 
@@ -434,75 +397,11 @@ reveal_grid_html = f"""
 st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
 
-# --- NỘI DUNG CHÍNH VÀ JS CHO HIỆU ỨNG CHỮ PHÁT SÁNG ---
+# --- NỘI DUNG CHÍNH (ĐÃ ĐƠN GIẢN HÓA CHO CHỮ CHẠY) ---
 
-# Tiêu đề trang chính (Được bọc trong các span cho hiệu ứng)
-main_title_text = "TỔ BẢO DƯỠNG SỐ 1"
-main_title_chars_html = ''.join([
-    f'<span class="main-title-char">{char}</span>' if char != ' ' else '<span class="main-title-char">&nbsp;</span>' 
-    for char in main_title_text
-])
-
-# JavaScript cho hiệu ứng phát sáng lặp lại (ĐÃ SỬA LỖI)
-js_glow_effect = f"""
-<script>
-    function startMainTitleGlow() {{
-        const mainTitleContainer = document.getElementById('main-title-container');
-        if (!mainTitleContainer) return;
-        
-        const chars = mainTitleContainer.querySelectorAll('.main-title-char');
-        if (chars.length === 0) return;
-        
-        let currentIndex = 0;
-        const delay = 100; // Độ trễ giữa mỗi chữ (ms)
-        const animationDuration = 1500; // Tổng thời gian animation của mỗi chữ (ms)
-
-        function animateChar() {{
-            const currentChar = chars[currentIndex];
-            
-            // Xóa animation cũ
-            currentChar.classList.remove('glowing'); 
-            // Dùng requestAnimationFrame để force reflow và reset animation mượt hơn void offsetWidth
-            requestAnimationFrame(() => {{
-                currentChar.classList.add('glowing');
-            }});
-
-            // Thiết lập timer cho chữ cái tiếp theo
-            currentIndex = (currentIndex + 1) % chars.length;
-            setTimeout(animateChar, delay);
-        }}
-
-        // Bắt đầu animation
-        setTimeout(() => {{
-            animateChar();
-        }}, 500); 
-    }}
-
-    // Lắng nghe sự kiện từ iframe con (video) để biết khi nào video kết thúc
-    window.addEventListener('message', (event) => {{
-        if (event.data && event.data.type === 'video_ended') {{
-            // Đợi một chút để tiêu đề chính hiện ra hoàn toàn
-            setTimeout(startMainTitleGlow, 1200); 
-        }}
-    }});
-
-    // Nếu trang được tải lại trực tiếp (ví dụ: F5), bắt đầu glow ngay
-    document.addEventListener("DOMContentLoaded", function() {{
-        const stApp = document.querySelector('.stApp');
-        // Kiểm tra nếu class 'main-content-revealed' đã được thêm vào (tức là đã qua intro)
-        if (stApp && stApp.classList.contains('main-content-revealed')) {{
-             // Đợi một chút để đảm bảo DOM đã sẵn sàng và tiêu đề đã hiện
-             setTimeout(startMainTitleGlow, 1500);
-        }}
-    }});
-
-</script>
-"""
-
-# Nhúng tiêu đề và JavaScript vào Streamlit
+# Nhúng tiêu đề (không cần JS phức tạp nữa)
 st.markdown(f"""
-<div id="main-title-container" style="color: white; opacity: 0; transition: opacity 2s, transform 1s; transform: translate(-50%, 0) scale(0.9);">
-    <h1>{main_title_chars_html}</h1>
+<div id="main-title-container">
+    <h1>TỔ BẢO DƯỠNG SỐ 1</h1>
 </div>
-{js_glow_effect}
 """, unsafe_allow_html=True)
