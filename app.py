@@ -96,6 +96,16 @@ def intro_screen(is_mobile=False):
             z-index: 0;
         }}
         
+        #main-page-bg::after {{
+            content: "";
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
+            opacity: 0.09;
+            mix-blend-mode: multiply;
+        }}
+        
         video {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
             object-fit: cover; z-index: 1;
@@ -166,6 +176,31 @@ def intro_screen(is_mobile=False):
             background: black;
             opacity: 1;
         }}
+        
+        /* Text trang chính */
+        #main-text {{
+            position: absolute;
+            top: 8%;
+            width: 100%;
+            text-align: center;
+            font-size: clamp(30px, 5vw, 65px);
+            color: #fff5d7;
+            font-family: 'Playfair Display', serif;
+            text-shadow: 0 0 18px rgba(0,0,0,0.65), 0 0 30px rgba(255,255,180,0.25);
+            background: linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%);
+            background-size: 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: textLight 10s linear infinite;
+            letter-spacing: 2px;
+            z-index: 25;
+            opacity: 0;
+        }}
+        
+        @keyframes textLight {{
+            0% {{ background-position: 200% 0%; }}
+            100% {{ background-position: -200% 0%; }}
+        }}
 
         </style>
     </head>
@@ -173,11 +208,11 @@ def intro_screen(is_mobile=False):
         <!-- Background trang chính -->
         <div id="main-page-bg"></div>
         
-        <video id='introVid' autoplay muted playsinline>
+        <video id='introVid' autoplay muted playsinline preload="auto">
             <source src='data:video/mp4;base64,{video_b64}' type='video/mp4'>
         </video>
         
-        <audio id='flySfx'> 
+        <audio id='flySfx' preload="auto"> 
             <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
         </audio>
         
@@ -187,6 +222,9 @@ def intro_screen(is_mobile=False):
         
         <!-- Reveal overlay -->
         <div id='reveal-overlay'></div>
+        
+        <!-- Text trang chính -->
+        <div id='main-text'>TỔ BẢO DƯỠNG SỐ 1</div>
 
         <script>
         const GLASS_ROWS = {GLASS_ROWS};
@@ -199,6 +237,8 @@ def intro_screen(is_mobile=False):
         const audio = document.getElementById('flySfx');
         const glassContainer = document.getElementById('broken-glass-container');
         const revealOverlay = document.getElementById('reveal-overlay');
+        const introText = document.getElementById('intro-text');
+        const mainText = document.getElementById('main-text');
         let ended = false;
 
         // Tạo các mảnh vỡ
@@ -263,6 +303,13 @@ def intro_screen(is_mobile=False):
             const centerRow = Math.floor(REVEAL_GRID / 2);
             const centerCol = Math.floor(REVEAL_GRID / 2);
             
+            // Fade in text trang chính
+            gsap.to(mainText, {{
+                opacity: 1,
+                duration: 1,
+                ease: "power2.inOut"
+            }});
+            
             // Tính khoảng cách từ mỗi ô đến trung tâm
             tiles.forEach((tile, index) => {{
                 const row = Math.floor(index / REVEAL_GRID);
@@ -278,7 +325,15 @@ def intro_screen(is_mobile=False):
                     opacity: 0,
                     duration: 0.4,
                     delay: delay,
-                    ease: "power2.inOut"
+                    ease: "power2.inOut",
+                    onComplete: function() {{
+                        if (index === tiles.length - 1) {{
+                            // Ô cuối cùng biến mất - xóa overlay
+                            setTimeout(() => {{
+                                revealOverlay.style.display = 'none';
+                            }}, 100);
+                        }}
+                    }}
                 }});
             }});
         }}
@@ -287,8 +342,9 @@ def intro_screen(is_mobile=False):
             if (ended) return;
             ended = true;
             
-            // Ẩn video, hiện ảnh tĩnh với broken glass effect
+            // Ẩn video và intro text, hiện ảnh tĩnh với broken glass effect
             vid.style.opacity = 0;
+            introText.style.display = 'none';
             glassContainer.classList.add('active');
             
             // Bắt đầu hiệu ứng vỡ kính
@@ -302,7 +358,7 @@ def intro_screen(is_mobile=False):
                 revealMainPage();
             }}, BREAK_DURATION * 1000 + 200);
             
-            // Reload trang sau khi reveal hoàn tất
+            // Sau khi reveal hoàn tất, thông báo cho Streamlit (nhưng không reload)
             setTimeout(() => {{
                 window.parent.postMessage({{type: 'intro_done'}}, '*');
             }}, BREAK_DURATION * 1000 + REVEAL_DURATION * 1000 + 500);
@@ -312,17 +368,27 @@ def intro_screen(is_mobile=False):
         createBrokenPieces();
         createRevealGrid();
 
-        // Logic play video/audio
-        vid.addEventListener('canplay', () => {{
-            vid.play().catch(() => console.log('Autoplay bị chặn'));
+        // Đảm bảo video được load
+        vid.load();
+
+        // Logic play video/audio - SỬA LẠI
+        vid.addEventListener('loadeddata', () => {{
+            console.log('Video loaded');
+            vid.play().catch(err => {{
+                console.log('Autoplay blocked:', err);
+            }});
         }});
         
         vid.addEventListener('play', () => {{
+            console.log('Video playing');
             audio.volume = 1.0;
             audio.currentTime = 0;
-            audio.play().catch(() => console.log('Autoplay âm thanh bị chặn'));
+            audio.play().catch(err => {{
+                console.log('Audio blocked:', err);
+            }});
         }});
         
+        // Click để unmute
         document.addEventListener('click', () => {{
             vid.muted = false;
             vid.play();
@@ -341,78 +407,22 @@ def intro_screen(is_mobile=False):
     components.html(intro_html, height=800, scrolling=False)
 
 
-# ========== TRANG CHÍNH ==========
+# ========== TRANG CHÍNH - ĐƠN GIẢN HÓA ==========
 
 def main_page(is_mobile=False):
     hide_streamlit_ui()
-    bg = BG_MOBILE if is_mobile else BG_PC
-    try:
-        with open(bg, "rb") as f:
-            bg_b64 = base64.b64encode(f.read()).decode()
-    except FileNotFoundError as e:
-        st.error(f"Lỗi: Không tìm thấy file tài nguyên: {e.filename}")
-        st.stop()
-
-    st.markdown(f"""
+    # Trang này sẽ không bao giờ hiển thị vì intro_screen đã chứa tất cả
+    st.markdown("""
     <style>
-    html, body, .stApp {{
-        height: 100vh !important;
-        background: 
-            linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
-            url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
-        background-size: cover !important;
-        overflow: hidden !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        position: relative;
-        filter: brightness(1.05) contrast(1.1) saturate(1.05);
-        animation: fadeInBg 0.5s ease-in-out forwards; 
-    }}
-    .stApp::after {{
-        content: "";
-        position: absolute;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
-        opacity: 0.09;
-        mix-blend-mode: multiply;
-    }}
-    @keyframes fadeInBg {{
-        from {{ opacity: 0; }}
-        to {{ opacity: 1; }}
-    }}
-    .welcome {{
-        position: absolute;
-        top: 8%;
-        width: 100%;
-        text-align: center;
-        font-size: clamp(30px, 5vw, 65px);
-        color: #fff5d7;
-        font-family: 'Playfair Display', serif;
-        text-shadow: 0 0 18px rgba(0,0,0,0.65), 0 0 30px rgba(255,255,180,0.25);
-        background: linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%);
-        background-size: 200%;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: textLight 10s linear infinite, fadeIn 1s ease-in-out forwards; 
-        letter-spacing: 2px;
-        z-index: 3;
-    }}
-    @keyframes textLight {{
-        0% {{ background-position: 200% 0%; }}
-        100% {{ background-position: -200% 0%; }}
-    }}
-    @keyframes fadeIn {{
-        from {{ opacity: 0; transform: scale(0.97); }}
-        to {{ opacity: 1; transform: scale(1); }}
-    }}
+    html, body, .stApp {
+        background: black;
+        height: 100vh;
+    }
     </style>
-
-    <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
     """, unsafe_allow_html=True)
 
 
-# ========== LUỒNG CHÍNH ==========
+# ========== LUỒNG CHÍNH - ĐƠN GIẢN HÓA ==========
 
 hide_streamlit_ui()
 
@@ -430,22 +440,21 @@ if "is_mobile" not in st.session_state:
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
-if not st.session_state.intro_done:
-    intro_screen(st.session_state.is_mobile)
-    
-    st.markdown("""
-    <script>
-    window.addEventListener("message", (event) => {
-        if (event.data.type === "intro_done") {
-            window.parent.location.reload(); 
-        }
-    });
-    </script>
-    """, unsafe_allow_html=True)
+# Luôn hiển thị intro screen - nó sẽ tự chuyển sang trang chính
+intro_screen(st.session_state.is_mobile)
 
-    time.sleep(15) 
-    st.session_state.intro_done = True
-    st.rerun()
-
-else:
-    main_page(st.session_state.is_mobile)
+# Lắng nghe message từ intro
+st.markdown("""
+<script>
+window.addEventListener("message", (event) => {
+    if (event.data.type === "intro_done") {
+        // Đánh dấu intro đã xong nhưng KHÔNG reload
+        fetch(window.location.href, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({intro_done: true})
+        });
+    }
+});
+</script>
+""", unsafe_allow_html=True)
