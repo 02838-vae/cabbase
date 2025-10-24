@@ -38,7 +38,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO (ĐÃ SỬA LOGIC CHUYỂN TRANG) ==========
+# ========== MÀN HÌNH INTRO ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
@@ -155,7 +155,7 @@ def intro_screen(is_mobile=False):
     components.html(intro_html, height=800, scrolling=False)
 
 
-# ========== TRANG CHÍNH (Giữ nguyên) ==========
+# ========== TRANG CHÍNH ==========
 
 def main_page(is_mobile=False):
     hide_streamlit_ui()
@@ -229,7 +229,9 @@ def main_page(is_mobile=False):
     """, unsafe_allow_html=True)
 
 
-# ========== LUỒNG CHÍNH (ĐÃ SỬA LOGIC CHUYỂN TRANG) ==========
+# =========================================================================
+# ========== LUỒNG CHÍNH (ĐÃ CẬP NHẬT st.query_params) ==========
+# =========================================================================
 
 hide_streamlit_ui()
 
@@ -252,33 +254,29 @@ if "intro_done" not in st.session_state:
 if not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
     
-    # === THAY ĐỔI QUAN TRỌNG: Thiết lập cờ và rerender ngay lập tức ===
+    # === CẬP NHẬT: Dùng st.query_params trong Python ===
+    # Kiểm tra nếu tham số 'intro_done' được đặt trong URL (do JS thêm vào)
+    if st.query_params.get('intro_done') == 'true':
+        st.session_state.intro_done = True
+        
+        # CẬP NHẬT: Dùng del st.query_params['intro_done'] để xóa tham số
+        del st.query_params['intro_done']
+        
+        st.rerun()
+    
+    # JavaScript vẫn sử dụng URLSearchParams để thay đổi URL và kích hoạt luồng Python
     st.markdown("""
     <script>
     window.addEventListener("message", (event) => {
         if (event.data.type === "intro_done") {
-            // Gửi lại thông điệp cho Streamlit để xử lý trong Python
-            // Chúng ta không dùng window.parent.location.reload() nữa!
-            // Thay vào đó, chúng ta sẽ thiết lập cờ và rerender trong Python.
+            // Thay đổi URL để Streamlit nhận biết và rerender (nhanh hơn reload)
             const url = new URL(window.parent.location.href);
-            url.searchParams.set('intro_done', 'true'); // Dùng tham số URL để giao tiếp
+            url.searchParams.set('intro_done', 'true'); 
             window.parent.location.href = url.toString();
         }
     });
     </script>
     """, unsafe_allow_html=True)
-
-    # === THAY ĐỔI QUAN TRỌNG: BẮT THAM SỐ URL VÀ RERUN ===
-    # Nếu URL có tham số 'intro_done=true', tức là JS đã kết thúc
-    if st.experimental_get_query_params().get('intro_done') == ['true']:
-        st.session_state.intro_done = True
-        # Xóa tham số URL để tránh vòng lặp
-        st.experimental_set_query_params(intro_done=None) 
-        st.rerun()
-    
-    # === THAY ĐỔI QUAN TRỌNG: LOẠI BỎ time.sleep(15) ===
-    # Chỉ gọi st.rerun() nếu cờ đã được set.
-    # Không dùng time.sleep cứng nhắc nữa.
 
 else:
     main_page(st.session_state.is_mobile)
