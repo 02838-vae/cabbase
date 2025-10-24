@@ -39,7 +39,6 @@ except FileNotFoundError as e:
 
 
 # --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
-# ĐÃ ĐỔI: Stay Strong -> Playfair Display
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
@@ -50,7 +49,6 @@ st.markdown(font_links, unsafe_allow_html=True)
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
 hide_streamlit_style = f"""
 <style>
-/* Đặt lại @import để tăng khả năng tải font */
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 
 /* Ẩn các thành phần mặc định của Streamlit */
@@ -135,6 +133,7 @@ iframe:first-of-type {{
     top: 5vh; 
     left: 50%;
     transform: translate(-50%, 0); 
+    /* Tăng Width mặc định trên PC, nhưng quan trọng là tăng Width trên Mobile */
     width: 90%; 
     text-align: center;
     z-index: 20; 
@@ -142,20 +141,31 @@ iframe:first-of-type {{
 }}
 
 #main-title-container h1 {{
-    /* FONT SERIF CỔ ĐIỂN: PLAYFAIR DISPLAY */
     font-family: 'Playfair Display', serif; 
-    
     font-size: 3.5vw; 
     margin: 0;
-    font-weight: 700; /* Tăng độ đậm để font Serif nổi bật hơn */
-    letter-spacing: 5px; /* Tăng khoảng cách chữ cho cảm giác sang trọng, trang trọng */
+    font-weight: 700; 
+    letter-spacing: 5px; 
     color: white; 
     text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);
+    
+    /* Đảm bảo chữ không bị ngắt dòng */
+    white-space: nowrap; 
 }}
 
 @media (max-width: 768px) {{
+    #main-title-container {{
+        /* MỞ RỘNG KHU VỰC CHỨA CHỮ ĐỂ CHỮ KHÔNG XUỐNG DÒNG */
+        width: 95%; /* Tăng từ 90% lên 95% */
+        left: 50%;
+    }}
+    
     #main-title-container h1 {{
-        font-size: 7vw; 
+        /* GIẢM FONT SIZE NHẸ HƠN NỮA: 7vw -> 6.5vw (Thử nghiệm) */
+        font-size: 6.5vw; 
+        
+        /* Cần thiết lập white-space: nowrap; ở đây lần nữa để đảm bảo */
+        white-space: nowrap; 
     }}
 }}
 </style>
@@ -284,7 +294,6 @@ html_content_modified = f"""
             color: #FFD700; 
             font-size: 3vw; 
             
-            /* GIỮ FONT SACRAMENTO */
             font-family: 'Sacramento', cursive; 
             font-weight: 400; 
             
