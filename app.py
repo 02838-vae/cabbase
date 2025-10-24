@@ -11,14 +11,12 @@ st.set_page_config(
 # --- HÀM TIỆN ÍCH ---
 def get_base64_encoded_file(file_path):
     with open(file_path, "rb") as f:
-        data = f.read()
-    return base64.b64encode(data).decode("utf-8")
+        return base64.b64encode(f.read()).decode("utf-8")
 
 # --- MÃ HÓA MEDIA ---
 try:
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
-    audio_base64 = get_base64_encoded_file("plane_fly.mp3")
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg")
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
 except FileNotFoundError as e:
@@ -36,9 +34,7 @@ st.markdown("""
 st.markdown(f"""
 <style>
 #MainMenu, footer, header {{visibility: hidden;}}
-.main, div.block-container {{
-    padding: 0; margin: 0; max-width: 100% !important;
-}}
+.main, div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
 .stApp {{
     --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
@@ -52,12 +48,9 @@ st.markdown(f"""
     transition: filter 2s ease-out;
 }}
 @media (max-width: 768px) {{
-    .main-content-revealed {{
-        background-image: var(--main-bg-url-mobile);
-    }}
+    .main-content-revealed {{background-image: var(--main-bg-url-mobile);}}
 }}
-
-/* === TIÊU ĐỀ === */
+/* --- TIÊU ĐỀ CHÍNH --- */
 #main-title-container {{
     position: fixed;
     top: 5vh;
@@ -86,21 +79,17 @@ st.markdown(f"""
 </style>
 """, unsafe_allow_html=True)
 
-# --- HTML VIDEO INTRO (GIỮ NGUYÊN) ---
+# --- VIDEO INTRO (SỬA CHIỀU CAO + BỎ AUTOPLAY CHẶN) ---
 html_intro = f"""
-<video id="intro-video" muted playsinline></video>
-<audio id="background-audio"></audio>
+<video id="intro-video" muted playsinline style="width:100%;height:100vh;object-fit:cover;position:fixed;top:0;left:0;z-index:-1;"></video>
 <script>
 document.addEventListener("DOMContentLoaded", () => {{
     const video = document.getElementById('intro-video');
-    const audio = document.getElementById('background-audio');
     const isMobile = window.innerWidth <= 768;
     video.src = isMobile ? 'data:video/mp4;base64,{video_mobile_base64}' : 'data:video/mp4;base64,{video_pc_base64}';
-    audio.src = 'data:audio/mp3;base64,{audio_base64}';
-    video.play();
-    audio.loop = true;
-    audio.volume = 0.5;
-    audio.play();
+    video.play().catch(()=>{{
+        document.body.addEventListener('click',()=>video.play(),{{once:true}});
+    }});
     video.onended = () => {{
         document.querySelector('.stApp').classList.add('main-content-revealed');
         document.getElementById('main-title-container').style.opacity = 1;
@@ -108,7 +97,7 @@ document.addEventListener("DOMContentLoaded", () => {{
 }});
 </script>
 """
-st.components.v1.html(html_intro, height=10, scrolling=False)
+st.components.v1.html(html_intro, height=600, scrolling=False)
 
 # --- TIÊU ĐỀ CHÍNH ---
 st.markdown("""
@@ -117,7 +106,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- MUSIC PLAYER DƯỚI TIÊU ĐỀ ---
+# --- MUSIC PLAYER GỌN ---
 music_files = [f"background{i}.mp3" for i in range(1, 7)]
 encoded_musics = []
 for file in music_files:
@@ -133,70 +122,35 @@ music_player_html = f"""
     top: 16vh;
     left: 50%;
     transform: translateX(-50%);
-    width: 300px;
-    background: rgba(20,20,20,0.7);
-    border-radius: 20px;
+    background: rgba(30,30,30,0.7);
+    border-radius: 30px;
     box-shadow: 0 4px 15px rgba(0,0,0,0.3);
-    padding: 15px;
-    text-align: center;
-    color: white;
-    z-index: 50;
-    font-family: 'Playfair Display', serif;
-}}
-.album-art {{
-    width: 80px;
-    height: 80px;
-    border-radius: 50%;
-    object-fit: cover;
-    margin-bottom: 10px;
-    border: 2px solid rgba(255,255,255,0.5);
-    animation: spin 10s linear infinite;
-}}
-@keyframes spin {{
-    from {{ transform: rotate(0deg); }}
-    to {{ transform: rotate(360deg); }}
-}}
-.controls {{
+    padding: 10px 25px;
     display: flex;
-    justify-content: center;
     align-items: center;
+    justify-content: center;
     gap: 20px;
+    color: white;
+    font-size: 1.5rem;
+    z-index: 100;
 }}
-.controls button {{
+.music-btn {{
     background: none;
     border: none;
     color: white;
-    font-size: 1.4rem;
     cursor: pointer;
     transition: transform 0.2s, color 0.2s;
 }}
-.controls button:hover {{
+.music-btn:hover {{
     transform: scale(1.2);
     color: #ffcc00;
-}}
-#progress-container {{
-    width: 100%;
-    height: 5px;
-    background: rgba(255,255,255,0.3);
-    border-radius: 5px;
-    overflow: hidden;
-    margin-top: 10px;
-}}
-#progress {{
-    height: 100%;
-    width: 0%;
-    background: linear-gradient(90deg,#ff4b1f,#ff9068);
 }}
 </style>
 
 <div id="music-player">
-    <img src="https://cdn-icons-png.flaticon.com/512/727/727240.png" class="album-art" id="album-art">
-    <div class="controls">
-        <button id="prev"><i class="fa-solid fa-backward"></i></button>
-        <button id="playpause"><i class="fa-solid fa-play"></i></button>
-        <button id="next"><i class="fa-solid fa-forward"></i></button>
-    </div>
-    <div id="progress-container"><div id="progress"></div></div>
+    <button class="music-btn" id="prev"><i class="fa-solid fa-backward"></i></button>
+    <button class="music-btn" id="playpause"><i class="fa-solid fa-play"></i></button>
+    <button class="music-btn" id="next"><i class="fa-solid fa-forward"></i></button>
 </div>
 
 <script>
@@ -204,36 +158,34 @@ const tracks = {encoded_musics};
 let current = 0;
 let audio = new Audio("data:audio/mp3;base64," + tracks[current]);
 let playing = false;
-const playBtn = document.getElementById("playpause");
-const progressBar = document.getElementById("progress");
 
 function playMusic() {{
-    audio.play();
+    audio.play().catch(()=>{{
+        document.body.addEventListener('click',()=>audio.play(),{{once:true}});
+    }});
     playing = true;
-    playBtn.innerHTML = '<i class="fa-solid fa-pause"></i>';
+    document.getElementById("playpause").innerHTML = '<i class="fa-solid fa-pause"></i>';
 }}
 function pauseMusic() {{
     audio.pause();
     playing = false;
-    playBtn.innerHTML = '<i class="fa-solid fa-play"></i>';
+    document.getElementById("playpause").innerHTML = '<i class="fa-solid fa-play"></i>';
 }}
 function nextTrack() {{
     current = (current + 1) % tracks.length;
-    audio.src = "data:audio/mp3;base64," + tracks[current];
+    audio.pause();
+    audio = new Audio("data:audio/mp3;base64," + tracks[current]);
     if (playing) playMusic();
 }}
 function prevTrack() {{
     current = (current - 1 + tracks.length) % tracks.length;
-    audio.src = "data:audio/mp3;base64," + tracks[current];
+    audio.pause();
+    audio = new Audio("data:audio/mp3;base64," + tracks[current]);
     if (playing) playMusic();
 }}
-playBtn.addEventListener("click", () => {{ playing ? pauseMusic() : playMusic(); }});
+document.getElementById("playpause").addEventListener("click", ()=>{{ playing ? pauseMusic() : playMusic(); }});
 document.getElementById("next").addEventListener("click", nextTrack);
 document.getElementById("prev").addEventListener("click", prevTrack);
-audio.addEventListener("timeupdate", () => {{
-    const progress = (audio.currentTime / audio.duration) * 100;
-    progressBar.style.width = progress + "%";
-}});
 </script>
 """
 st.markdown(music_player_html, unsafe_allow_html=True)
