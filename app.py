@@ -70,61 +70,99 @@ def intro_screen(is_mobile=False):
         st.error(f"Lỗi: Không tìm thấy file tài nguyên. Vui lòng kiểm tra: {e.filename}")
         st.stop()
 
+    # Thêm timestamp để bypass cache
+    cache_buster = int(time.time())
+
     intro_html = f"""
     <html>
     <head>
-        <meta name='viewport' content='width=device-width, initial-scale=1.0'>
+        <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'>
+        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+        <meta http-equiv="Pragma" content="no-cache">
+        <meta http-equiv="Expires" content="0">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
         <style>
-        html, body {{
-            margin: 0; padding: 0;
-            overflow: hidden;
-            background: black;
-            height: 100%;
+        * {{
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }}
         
-        /* Background trang chính - đặt ở layer dưới cùng */
+        html, body {{
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: black;
+            position: fixed;
+            top: 0;
+            left: 0;
+        }}
+        
+        /* Background trang chính - FULL SCREEN */
         #main-page-bg {{
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
             background: 
                 linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
                 url("data:image/jpeg;base64,{bg_b64}") no-repeat center center;
             background-size: cover;
+            background-position: center center;
             filter: brightness(1.05) contrast(1.1) saturate(1.05);
             z-index: 0;
+            opacity: 0;
+        }}
+        
+        #main-page-bg.visible {{
+            opacity: 1;
         }}
         
         #main-page-bg::after {{
             content: "";
             position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
             opacity: 0.09;
             mix-blend-mode: multiply;
         }}
         
         video {{
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
-            object-fit: cover; z-index: 1;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            object-fit: cover;
+            z-index: 1;
         }}
         
         audio {{ display: none; }}
         
         #intro-text {{
-            position: absolute; 
+            position: fixed;
             top: 8%;
-            left: 50%; 
+            left: 50%;
             transform: translate(-50%, 0);
-            width: 90vw; text-align: center; color: #f8f4e3;
-            font-size: clamp(22px, 6vw, 60px); font-weight: bold; font-family: 'Playfair Display', serif;
+            width: 90vw;
+            text-align: center;
+            color: #f8f4e3;
+            font-size: clamp(22px, 6vw, 60px);
+            font-weight: bold;
+            font-family: 'Playfair Display', serif;
             background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
-            background-size: 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+            background-size: 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
             text-shadow: 0 0 15px rgba(255,255,230,0.4);
             animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards;
-            line-height: 1.2; word-wrap: break-word; z-index: 10;
+            line-height: 1.2;
+            word-wrap: break-word;
+            z-index: 10;
         }}
         
         @keyframes lightSweep {{ 
@@ -141,9 +179,11 @@ def intro_screen(is_mobile=False):
 
         /* Broken Glass Container */
         #broken-glass-container {{
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
             opacity: 0;
             z-index: 5;
             pointer-events: none;
@@ -157,14 +197,17 @@ def intro_screen(is_mobile=False):
             position: absolute;
             background-image: url("data:image/jpeg;base64,{broken_b64}");
             background-size: 100vw 100vh;
+            background-position: center;
             overflow: hidden;
         }}
 
         /* Reveal Grid Overlay */
         #reveal-overlay {{
-            position: absolute;
-            top: 0; left: 0;
-            width: 100%; height: 100%;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
             display: grid;
             grid-template-columns: repeat({REVEAL_GRID}, 1fr);
             grid-template-rows: repeat({REVEAL_GRID}, 1fr);
@@ -175,13 +218,17 @@ def intro_screen(is_mobile=False):
         .reveal-tile {{
             background: black;
             opacity: 1;
+            width: 100%;
+            height: 100%;
         }}
         
         /* Text trang chính */
         #main-text {{
-            position: absolute;
+            position: fixed;
             top: 8%;
-            width: 100%;
+            left: 50%;
+            transform: translate(-50%, 0);
+            width: 90vw;
             text-align: center;
             font-size: clamp(30px, 5vw, 65px);
             color: #fff5d7;
@@ -208,12 +255,12 @@ def intro_screen(is_mobile=False):
         <!-- Background trang chính -->
         <div id="main-page-bg"></div>
         
-        <video id='introVid' autoplay muted playsinline preload="auto">
-            <source src='data:video/mp4;base64,{video_b64}' type='video/mp4'>
+        <video id='introVid' muted playsinline webkit-playsinline preload="auto">
+            <source src='data:video/mp4;base64,{video_b64}?v={cache_buster}' type='video/mp4'>
         </video>
         
         <audio id='flySfx' preload="auto"> 
-            <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
+            <source src='data:audio/mp3;base64,{audio_b64}?v={cache_buster}' type='audio/mp3'>
         </audio>
         
         <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
@@ -239,7 +286,18 @@ def intro_screen(is_mobile=False):
         const revealOverlay = document.getElementById('reveal-overlay');
         const introText = document.getElementById('intro-text');
         const mainText = document.getElementById('main-text');
+        const mainBg = document.getElementById('main-page-bg');
         let ended = false;
+        let videoStarted = false;
+
+        // Xóa cache khi load
+        if ('caches' in window) {{
+            caches.keys().then(names => {{
+                names.forEach(name => {{
+                    caches.delete(name);
+                }});
+            }});
+        }}
 
         // Tạo các mảnh vỡ
         function createBrokenPieces() {{
@@ -303,6 +361,9 @@ def intro_screen(is_mobile=False):
             const centerRow = Math.floor(REVEAL_GRID / 2);
             const centerCol = Math.floor(REVEAL_GRID / 2);
             
+            // Hiện background trang chính
+            mainBg.classList.add('visible');
+            
             // Fade in text trang chính
             gsap.to(mainText, {{
                 opacity: 1,
@@ -342,6 +403,8 @@ def intro_screen(is_mobile=False):
             if (ended) return;
             ended = true;
             
+            console.log('Finishing intro...');
+            
             // Ẩn video và intro text, hiện ảnh tĩnh với broken glass effect
             vid.style.opacity = 0;
             introText.style.display = 'none';
@@ -358,7 +421,7 @@ def intro_screen(is_mobile=False):
                 revealMainPage();
             }}, BREAK_DURATION * 1000 + 200);
             
-            // Sau khi reveal hoàn tất, thông báo cho Streamlit (nhưng không reload)
+            // Sau khi reveal hoàn tất, thông báo cho Streamlit
             setTimeout(() => {{
                 window.parent.postMessage({{type: 'intro_done'}}, '*');
             }}, BREAK_DURATION * 1000 + REVEAL_DURATION * 1000 + 500);
@@ -368,37 +431,74 @@ def intro_screen(is_mobile=False):
         createBrokenPieces();
         createRevealGrid();
 
-        // Đảm bảo video được load
-        vid.load();
+        // Force play video - CÁCH MỚI
+        function tryPlayVideo() {{
+            if (videoStarted) return;
+            
+            console.log('Attempting to play video...');
+            const playPromise = vid.play();
+            
+            if (playPromise !== undefined) {{
+                playPromise.then(() => {{
+                    console.log('Video playing successfully');
+                    videoStarted = true;
+                    
+                    // Play audio cùng lúc
+                    audio.currentTime = 0;
+                    audio.volume = 1.0;
+                    audio.play().catch(err => console.log('Audio play failed:', err));
+                }}).catch(err => {{
+                    console.log('Video play failed:', err);
+                    // Retry sau 100ms
+                    setTimeout(tryPlayVideo, 100);
+                }});
+            }}
+        }}
 
-        // Logic play video/audio - SỬA LẠI
+        // Multiple triggers để đảm bảo video chạy
+        vid.addEventListener('loadedmetadata', () => {{
+            console.log('Video metadata loaded');
+            tryPlayVideo();
+        }});
+
+        vid.addEventListener('canplay', () => {{
+            console.log('Video can play');
+            tryPlayVideo();
+        }});
+
         vid.addEventListener('loadeddata', () => {{
-            console.log('Video loaded');
-            vid.play().catch(err => {{
-                console.log('Autoplay blocked:', err);
-            }});
+            console.log('Video data loaded');
+            tryPlayVideo();
         }});
+
+        // Force load
+        vid.load();
         
-        vid.addEventListener('play', () => {{
-            console.log('Video playing');
-            audio.volume = 1.0;
-            audio.currentTime = 0;
-            audio.play().catch(err => {{
-                console.log('Audio blocked:', err);
-            }});
-        }});
+        // Backup: Try play after 500ms
+        setTimeout(tryPlayVideo, 500);
         
-        // Click để unmute
-        document.addEventListener('click', () => {{
+        // Click/Touch để unmute và force play
+        const userInteract = () => {{
+            console.log('User interaction detected');
             vid.muted = false;
-            vid.play();
+            tryPlayVideo();
             audio.volume = 1.0;
             audio.currentTime = 0;
-            audio.play().catch(()=>{{}}); 
-        }}, {{once:true}});
+            audio.play().catch(() => {{}});
+        }};
+        
+        document.addEventListener('click', userInteract, {{once: true}});
+        document.addEventListener('touchstart', userInteract, {{once: true}});
 
         vid.addEventListener('ended', finishIntro);
-        setTimeout(finishIntro, 9000); 
+        
+        // Backup timeout
+        setTimeout(() => {{
+            if (!ended) {{
+                console.log('Timeout trigger');
+                finishIntro();
+            }}
+        }}, 9000);
 
         </script>
     </body>
@@ -411,7 +511,6 @@ def intro_screen(is_mobile=False):
 
 def main_page(is_mobile=False):
     hide_streamlit_ui()
-    # Trang này sẽ không bao giờ hiển thị vì intro_screen đã chứa tất cả
     st.markdown("""
     <style>
     html, body, .stApp {
@@ -422,7 +521,7 @@ def main_page(is_mobile=False):
     """, unsafe_allow_html=True)
 
 
-# ========== LUỒNG CHÍNH - ĐƠN GIẢN HÓA ==========
+# ========== LUỒNG CHÍNH ==========
 
 hide_streamlit_ui()
 
@@ -440,7 +539,7 @@ if "is_mobile" not in st.session_state:
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
-# Luôn hiển thị intro screen - nó sẽ tự chuyển sang trang chính
+# Luôn hiển thị intro screen
 intro_screen(st.session_state.is_mobile)
 
 # Lắng nghe message từ intro
@@ -448,12 +547,7 @@ st.markdown("""
 <script>
 window.addEventListener("message", (event) => {
     if (event.data.type === "intro_done") {
-        // Đánh dấu intro đã xong nhưng KHÔNG reload
-        fetch(window.location.href, {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({intro_done: true})
-        });
+        console.log('Intro completed!');
     }
 });
 </script>
