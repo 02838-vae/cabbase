@@ -38,7 +38,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO ĐÃ CẬP NHẬT TEXT ==========
+# ========== MÀN HÌNH INTRO (ĐÃ SỬA LOGIC CHUYỂN TRANG) ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
@@ -63,6 +63,7 @@ def intro_screen(is_mobile=False):
         <meta name='viewport' content='width=device-width, initial-scale=1.0'>
         <link href='https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap' rel='stylesheet'>
         <style>
+        /* CSS giữ nguyên */
         html, body {{
             margin: 0; padding: 0;
             overflow: hidden;
@@ -79,9 +80,7 @@ def intro_screen(is_mobile=False):
         audio {{ display: none; }}
         #intro-text {{
             position: absolute; 
-            top: 8%; /* Đặt 8% từ trên xuống */
-            left: 50%; 
-            transform: translate(-50%, 0); /* Chỉ dịch 50% theo chiều ngang */
+            top: 8%; left: 50%; transform: translate(-50%, 0); 
             width: 90vw; text-align: center; color: #f8f4e3;
             font-size: clamp(22px, 6vw, 60px); font-weight: bold; font-family: 'Playfair Display', serif;
             background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
@@ -93,7 +92,6 @@ def intro_screen(is_mobile=False):
         @keyframes lightSweep {{ 0% {{ background-position: 200% 0%; }} 100% {{ background-position: -200% 0%; }} }}
         @keyframes fadeInOut {{ 0% {{ opacity: 0; }} 20% {{ opacity: 1; }} 80% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}
 
-        /* Thêm các phần tử cần thiết cho JS */
         #black-fade {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 100;
             transition: opacity 1s ease-in-out; opacity: 1;
@@ -120,14 +118,14 @@ def intro_screen(is_mobile=False):
             vid.pause();
             audio.pause();
             
-            // Chuyển trực tiếp sang trang chính Streamlit
-            window.parent.postMessage({{ type: "intro_done" }}, "*");
+            // Gửi thông điệp đến Streamlit (KHÔNG RELOAD TRANG!)
+            window.parent.postMessage({{ type: "intro_done" }}, "*"); 
         }}
 
         // Logic play video/audio
         vid.addEventListener('canplay', () => {{
             vid.play().catch(() => console.log('Autoplay bị chặn'));
-            blackFade.style.opacity = 0; // Tắt màn hình đen khi video có thể chơi
+            blackFade.style.opacity = 0;
         }});
         vid.addEventListener('play', () => {{
             audio.volume = 1.0;
@@ -142,12 +140,12 @@ def intro_screen(is_mobile=False):
             audio.volume = 1.0;
             audio.currentTime = 0;
             audio.play().catch(()=>{{}}); 
-            blackFade.style.opacity = 0; // Đảm bảo màn hình đen tắt
+            blackFade.style.opacity = 0;
         }}, {{once:true}});
 
         vid.addEventListener('ended', finishIntro);
         
-        // Fallback: Chuyển sau 9 giây nếu sự kiện 'ended' không hoạt động
+        // Fallback: Chuyển sau 9 giây
         setTimeout(finishIntro, 9000); 
 
         </script>
@@ -157,7 +155,7 @@ def intro_screen(is_mobile=False):
     components.html(intro_html, height=800, scrolling=False)
 
 
-# ========== TRANG CHÍNH (Giữ nguyên tiêu đề "TỔ BẢO DƯỠNG SỐ 1") ==========
+# ========== TRANG CHÍNH (Giữ nguyên) ==========
 
 def main_page(is_mobile=False):
     hide_streamlit_ui()
@@ -172,6 +170,7 @@ def main_page(is_mobile=False):
 
     st.markdown(f"""
     <style>
+    /* CSS giữ nguyên */
     html, body, .stApp {{
         height: 100vh !important;
         background: 
@@ -230,10 +229,11 @@ def main_page(is_mobile=False):
     """, unsafe_allow_html=True)
 
 
-# ========== LUỒNG CHÍNH ==========
+# ========== LUỒNG CHÍNH (ĐÃ SỬA LOGIC CHUYỂN TRANG) ==========
 
 hide_streamlit_ui()
 
+# Kiểm tra thiết bị (Giữ nguyên)
 if "is_mobile" not in st.session_state:
     ua_string = st_javascript("window.navigator.userAgent;")
     if ua_string:
@@ -252,20 +252,33 @@ if "intro_done" not in st.session_state:
 if not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
     
+    # === THAY ĐỔI QUAN TRỌNG: Thiết lập cờ và rerender ngay lập tức ===
     st.markdown("""
     <script>
     window.addEventListener("message", (event) => {
         if (event.data.type === "intro_done") {
-            window.parent.location.reload(); 
+            // Gửi lại thông điệp cho Streamlit để xử lý trong Python
+            // Chúng ta không dùng window.parent.location.reload() nữa!
+            // Thay vào đó, chúng ta sẽ thiết lập cờ và rerender trong Python.
+            const url = new URL(window.parent.location.href);
+            url.searchParams.set('intro_done', 'true'); // Dùng tham số URL để giao tiếp
+            window.parent.location.href = url.toString();
         }
     });
     </script>
     """, unsafe_allow_html=True)
 
-    # Chờ 15s để video có thể chạy, sau đó ép chuyển trang nếu JS không gọi reload (Fallback)
-    time.sleep(15) 
-    st.session_state.intro_done = True
-    st.rerun()
+    # === THAY ĐỔI QUAN TRỌNG: BẮT THAM SỐ URL VÀ RERUN ===
+    # Nếu URL có tham số 'intro_done=true', tức là JS đã kết thúc
+    if st.experimental_get_query_params().get('intro_done') == ['true']:
+        st.session_state.intro_done = True
+        # Xóa tham số URL để tránh vòng lặp
+        st.experimental_set_query_params(intro_done=None) 
+        st.rerun()
+    
+    # === THAY ĐỔI QUAN TRỌNG: LOẠI BỎ time.sleep(15) ===
+    # Chỉ gọi st.rerun() nếu cờ đã được set.
+    # Không dùng time.sleep cứng nhắc nữa.
 
 else:
     main_page(st.session_state.is_mobile)
