@@ -140,7 +140,7 @@ iframe:first-of-type {{
 
 /* Đặt kích thước và FONT cho tiêu đề chính (H1) */
 #main-title-container h1 {{
-    font-size: 5vw; /* Kích thước PC (GIỮ NGUYÊN) */
+    font-size: 4vw; /* Kích thước PC (GIỮ NGUYÊN) */
     margin: 0;
     font-weight: 900; 
     letter-spacing: 5px;
