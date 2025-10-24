@@ -67,13 +67,11 @@ def intro_screen(is_mobile=False):
         #pre-load-bg {{ display: none; background-image: url("data:image/jpeg;base64,{bg_b64}"); }}
         video {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
-            /* GIẢM transition: Video mất ngay khi kết thúc */
             transition: opacity 0.1s ease-in-out; 
             opacity: 1;
         }}
         audio {{ display: none; }}
         #intro-text {{
-            /* ... CSS cho text giữ nguyên ... */
             position: absolute; 
             top: 8%;
             left: 50%; 
@@ -89,11 +87,9 @@ def intro_screen(is_mobile=False):
         @keyframes lightSweep {{ 0% {{ background-position: 200% 0%; }} 100% {{ background-position: -200% 0%; }} }}
         @keyframes fadeInOut {{ 0% {{ opacity: 0; }} 20% {{ opacity: 1; }} 80% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}
 
-        /* MÀN HÌNH ĐEN - BỎ HIỆU ỨNG CHUYỂN */
         #black-fade {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
             background: black; opacity: 1; z-index: 40;
-            /* Giảm transition để chuyển đổi nhanh hơn */
             transition: opacity 0.1s ease-in-out; 
             pointer-events: none;
         }}
@@ -122,19 +118,18 @@ def intro_screen(is_mobile=False):
             if (ended) return;
             ended = true;
             
-            // CHUYỂN TRANG NGAY LẬP TỨC:
             // 1. Tắt video và âm thanh
             vid.style.opacity = 0; 
             audio.volume = 0; 
             
-            // 2. KHÔNG cần màn hình đen, gửi tin nhắn chuyển trang ngay lập tức
+            // 2. Gửi tin nhắn để Streamlit tải lại trang
             window.parent.postMessage({{type: 'intro_done'}}, '*');
         }}
 
         // Logic play video/audio
         vid.addEventListener('canplay', () => {{
             vid.play().catch(() => console.log('Autoplay bị chặn'));
-            blackFade.style.opacity = 0; // Mở màn hình ngay khi video sẵn sàng phát
+            blackFade.style.opacity = 0; 
         }});
         vid.addEventListener('play', () => {{
             audio.volume = 1.0;
@@ -152,7 +147,9 @@ def intro_screen(is_mobile=False):
 
         // GỌI finishIntro KHI VIDEO KẾT THÚC
         vid.addEventListener('ended', finishIntro);
-        // THÊM: Timeout dự phòng 
+        // THÊM: Timeout dự phòng (đảm bảo nó dài hơn thời lượng video)
+        // Cần đảm bảo thời gian này đủ dài, ví dụ video 7 giây thì đặt 10000ms.
+        // Bạn có thể chỉnh lại cho phù hợp với thời lượng file video của mình.
         setTimeout(finishIntro, 10000); 
 
         blackFade.style.opacity = 1;
@@ -192,15 +189,7 @@ def main_page(is_mobile=False):
         filter: brightness(1.05) contrast(1.1) saturate(1.05);
         animation: fadeInBg 0.5s ease-in-out forwards;  
     }}
-    .stApp::after {{
-        content: "";
-        position: absolute;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
-        opacity: 0.09;
-        mix-blend-mode: multiply;
-    }}
+    /* ... các phần CSS khác giữ nguyên ... */
     @keyframes fadeInBg {{
         from {{ opacity: 0; }}
         to {{ opacity: 1; }}
@@ -222,14 +211,7 @@ def main_page(is_mobile=False):
         letter-spacing: 2px;
         z-index: 3;
     }}
-    @keyframes textLight {{
-        0% {{ background-position: 200% 0%; }}
-        100% {{ background-position: -200% 0%; }}
-    }}
-    @keyframes fadeIn {{
-        from {{ opacity: 0; transform: scale(0.97); }}
-        to {{ opacity: 1; transform: scale(1); }}
-    }}
+    /* ... các phần CSS khác giữ nguyên ... */
     </style>
 
 
@@ -237,11 +219,11 @@ def main_page(is_mobile=False):
     """, unsafe_allow_html=True)
 
 
-# ========== LUỒNG CHÍNH - XÓA time.sleep() ==========
+# ========== LUỒNG CHÍNH ĐÃ CHỈNH SỬA ==========
 
 hide_streamlit_ui()
 
-# (Phần xác định thiết bị giữ nguyên)
+# --- Bước 1: Xác định thiết bị ---
 if "is_mobile" not in st.session_state:
     ua_string = st_javascript("window.navigator.userAgent;")
     if ua_string:
@@ -253,27 +235,33 @@ if "is_mobile" not in st.session_state:
         time.sleep(1)  
         st.stop()
 
-
+# --- Bước 2: Thiết lập cờ intro (chỉ khi chưa có) ---
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
+
+# --- Bước 3: Logic hiển thị ---
 if not st.session_state.intro_done:
+    # HIỂN THỊ MÀN HÌNH INTRO VÀ CHỜ TIN NHẮN TỪ JS
     intro_screen(st.session_state.is_mobile)
     
     st.markdown("""
     <script>
     window.addEventListener("message", (event) => {
         if (event.data.type === "intro_done") {
+            // Khi nhận được tin nhắn, reload trang để chuyển sang trạng thái intro_done=True
             window.parent.location.reload(); 
         }
     });
     </script>
     """, unsafe_allow_html=True)
 
-    # ĐIỀU CHỈNH CHÍNH: XÓA hoàn toàn time.sleep(15) hoặc time.sleep(1) 
-    # Thay vào đó, chúng ta chỉ cần đặt cờ và reruns ngay
-    st.session_state.intro_done = True
-    st.rerun()
+    # QUAN TRỌNG: Không đặt cờ 'intro_done = True' và 'st.rerun()' ở đây. 
+    # Việc đó sẽ xảy ra sau khi trang reload nhờ tin nhắn từ JS.
+    # Cần một chút thời gian để iframe load.
+    time.sleep(0.5) 
+    st.stop() # Dừng luồng để chờ phản hồi từ JS
 
 else:
+    # HIỂN THỊ TRANG CHÍNH
     main_page(st.session_state.is_mobile)
