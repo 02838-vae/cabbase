@@ -8,8 +8,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- SỬA LỖI 1: CSS ĐỂ ÉP STREAMLIT MAIN CONTAINER VÀ IFRAME FULLSCREEN ---
-# Áp dụng CSS cho trang Streamlit chính
+# --- CSS ĐỂ ÉP STREAMLIT MAIN CONTAINER VÀ IFRAME FULLSCREEN ---
 hide_streamlit_style = """
 <style>
 /* Ẩn các thành phần mặc định của Streamlit */
@@ -21,6 +20,9 @@ header {visibility: hidden;}
 .main {
     padding: 0; /* Xóa padding mặc định */
     margin: 0;
+    /* Streamlit Main Content sẽ là nền cho trang chính */
+    background-color: transparent; /* Quan trọng để nhìn xuyên qua content wrapper */
+    transition: opacity 1s; /* Thêm transition cho độ mượt khi fade-in */
 }
 
 /* Đảm bảo khu vực nội dung được căn chỉnh sát lề */
@@ -39,52 +41,109 @@ iframe {
     left: 0;
     z-index: 1000; /* Đảm bảo nó che phủ mọi thứ */
 }
+
+/* Class để ẩn lớp phủ video sau khi chuyển tiếp */
+.stApp.fade-out-overlay > iframe {
+    /* Quan trọng: Dùng visibility thay vì display: none; để tránh giật */
+    visibility: hidden; 
+    opacity: 0;
+    transition: visibility 0s 1.5s, opacity 1.5s ease-in-out; /* Ẩn sau khi transition kết thúc */
+}
+
+/* Class để làm hiện nội dung chính của trang */
+.stApp.fade-out-overlay .main {
+    opacity: 1; /* Hiển thị nội dung chính */
+}
+
+/* Ẩn nội dung chính ban đầu */
+.stApp .main {
+    opacity: 0;
+}
+
+
+/* --- CSS CHO NỘI DUNG CHÍNH (NỀN CỐ ĐỊNH) --- */
+/* Thêm nền cố định cho toàn bộ ứng dụng Streamlit */
+.stApp {
+    /* Đặt nền mặc định cho PC, sẽ bị video che phủ lúc đầu */
+    background-image: url('data:image/jpeg;base64,{get_base64_encoded_file("cabbage.jpg")}') !important;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-attachment: fixed !important; /* Quan trọng: Đảm bảo nền cố định */
+}
+
+@media (max-width: 768px) {
+    .stApp {
+        /* Thay thế nền cho Mobile */
+        background-image: url('data:image/jpeg;base64,{get_base64_encoded_file("mobile.jpg")}') !important;
+    }
+}
+
 </style>
 """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
 
 def get_base64_encoded_file(file_path):
-    with open(file_path, "rb") as f:
-        data = f.read()
-    return base64.b64encode(data).decode("utf-8")
+    try:
+        with open(file_path, "rb") as f:
+            data = f.read()
+        return base64.b64encode(data).decode("utf-8")
+    except FileNotFoundError:
+        return "" # Trả về chuỗi rỗng nếu không tìm thấy, lỗi sẽ được xử lý ở phần st.error
 
-# Mã hóa các file media (Giữ nguyên)
+# Mã hóa các file media
 try:
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
+    
+    # Mã hóa hình nền để nhúng vào CSS (Quan trọng: Phải gọi ở đây)
+    cabbage_base64 = get_base64_encoded_file("cabbage.jpg")
+    mobile_bg_base64 = get_base64_encoded_file("mobile.jpg")
+    
 except FileNotFoundError as e:
-    st.error(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
+    st.error(f"Lỗi: Không tìm thấy file media hoặc hình nền. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
     st.stop()
 
+# Áp dụng CSS cho trang Streamlit chính (Đã bao gồm hình nền)
+# Phải dùng f-string vì cần nhúng base64 của ảnh nền vào CSS
+st.markdown(hide_streamlit_style.format(
+    get_base64_encoded_file=get_base64_encoded_file
+), unsafe_allow_html=True)
 
-# --- MÃ HTML/CSS/JavaScript ĐÃ TỐI ƯU HÓA FULLSCREEN TRONG IFRAME ---
+
+# --- MÃ HTML/CSS/JavaScript CHO VIDEO INTRO (TRONG IFRAME) ---
 
 html_content = f"""
 <!DOCTYPE html>
 <html>
 <head>
     <style>
-        /* SỬA LỖI 2: CSS TRONG IFRAME */
-        /* Đảm bảo html và body trong iframe chiếm 100% viewport */
+        /* CSS TRONG IFRAME */
         html, body {{
             margin: 0; 
             padding: 0; 
             overflow: hidden; 
             height: 100vh; 
             width: 100vw;
+            background: black; /* Đảm bảo nền đen nếu video load chậm */
         }}
         
         /* CSS cho video fullscreen */
         #intro-video {{
-            position: absolute; /* Dùng absolute vì body đã là 100vh/100vw */
+            position: absolute;
             top: 0;
             left: 0;
-            width: 100%;   /* Chiếm 100% chiều rộng của body (100vw) */
-            height: 100%;  /* Chiếm 100% chiều cao của body (100vh) */
-            object-fit: cover; /* Đảm bảo video che phủ toàn bộ, không bị giãn méo */
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
             z-index: -100;
+            /* Thêm transition cho hiệu ứng phóng to mượt mà */
+            transition: transform 1.5s cubic-bezier(0.5, 0.0, 0.5, 1.0), opacity 1s ease-out;
+        }}
+        
+        /* Class khi video kết thúc (Hiệu ứng Codepen) */
+        #intro-video.fadeout {{
+            transform: scale(1.1); /* Phóng to 10% */
+            opacity: 0; /* Làm mờ */
         }}
 
         /* CSS cho dòng chữ cố định (Giữ nguyên) */
@@ -150,11 +209,19 @@ html_content = f"""
             
             playMedia();
 
+            // --- LOGIC CHUYỂN TRANG MỚI ---
             video.onended = () => {{
-                video.style.opacity = 0; 
+                // 1. Áp dụng hiệu ứng phóng to/mờ cho video
+                video.classList.add('fadeout');
+                
+                // 2. Tắt nhạc
                 audio.pause(); 
                 audio.currentTime = 0; 
-                introText.style.opacity = 0; 
+                introText.style.opacity = 0;
+                
+                // 3. Kích hoạt chuyển trang chính (Áp dụng class vào body/root của Streamlit)
+                // Phải gửi thông điệp cho Streamlit parent window
+                parent.document.querySelector('.stApp').classList.add('fade-out-overlay');
             }};
         }});
     </script>
@@ -163,14 +230,24 @@ html_content = f"""
 """
 
 # Hiển thị thành phần HTML (Dùng chiều cao tối thiểu để component tồn tại)
-# Quan trọng: Logic fullscreen được xử lý hoàn toàn bằng CSS và JS.
 st.components.v1.html(html_content, height=10, scrolling=False)
 
 
-# Nội dung chính của trang (Sử dụng CSS để đảm bảo nó nằm dưới lớp video/iframe)
+# Nội dung chính của trang (Phải được đặt ở đây)
+# Dùng div có margin-top lớn để nội dung chính nằm dưới lớp video overlay ban đầu
 st.markdown("""
-<div style="padding: 20px; margin-top: 100vh; background-color: white; position: relative; z-index: 1;">
-    <h2>Chào mừng đến với Nội dung Chính của Trang!</h2>
-    <p>Đây là phần còn lại của trang web.</p>
+<div style="
+    padding: 20px; 
+    margin-top: 100vh; /* Đẩy nội dung xuống dưới 100% viewport */
+    background-color: rgba(255, 255, 255, 0.8); /* Nền hơi trong suốt để nhìn thấy ảnh nền */
+    position: relative; 
+    z-index: 10; /* Đảm bảo nội dung nằm trên lớp ảnh nền tĩnh */
+    min-height: 100vh; /* Đảm bảo trang chính có nội dung cuộn được */
+">
+    <h1 style="color: black;">Chào mừng đến với Nội dung Chính của Trang!</h1>
+    <p style="color: black;">Đây là phần còn lại của trang web, hiện ra sau khi video kết thúc.</p>
+    <br>
+    <p style="color: black;">Bạn có thể kéo xuống để xem nội dung khác.</p>
+    <div style="height: 1000px;"></div> <p style="color: black;">Kết thúc trang.</p>
 </div>
 """, unsafe_allow_html=True)
