@@ -272,7 +272,7 @@ html_content_modified = f"""
             color: #FFD700; 
             
             /* THU NHỎ SIZE CHỮ: 3.2vw (trước là 4vw) */
-            font-size: 2.5vw; 
+            font-size: 3.0vw; 
             
             font-weight: 900; 
             text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8); 
@@ -294,7 +294,7 @@ html_content_modified = f"""
         @media (max-width: 768px) {{
             #intro-text {{
                 /* THU NHỎ SIZE CHỮ CHO MOBILE: 8vw (trước là 10vw) */
-                font-size: 8vw; 
+                font-size: 5vw; 
             }}
         }}
         /* =========================================== */
