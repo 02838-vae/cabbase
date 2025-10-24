@@ -70,16 +70,12 @@ def intro_screen(is_mobile=False):
         st.error(f"Lỗi: Không tìm thấy file tài nguyên. Vui lòng kiểm tra: {e.filename}")
         st.stop()
 
-    # Thêm timestamp để bypass cache
-    cache_buster = int(time.time())
-
     intro_html = f"""
+    <!DOCTYPE html>
     <html>
     <head>
+        <meta charset="UTF-8">
         <meta name='viewport' content='width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no'>
-        <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-        <meta http-equiv="Pragma" content="no-cache">
-        <meta http-equiv="Expires" content="0">
         <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
         <style>
         * {{
@@ -89,34 +85,46 @@ def intro_screen(is_mobile=False):
         }}
         
         html, body {{
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
-            background: black;
-            position: fixed;
-            top: 0;
-            left: 0;
+            background: #000;
         }}
         
-        /* Background trang chính - FULL SCREEN */
-        #main-page-bg {{
-            position: fixed;
+        #container {{
+            position: absolute;
             top: 0;
             left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: 
-                linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
-                url("data:image/jpeg;base64,{bg_b64}") no-repeat center center;
+            width: 100%;
+            height: 100%;
+            background: #000;
+        }}
+        
+        /* Background trang chính */
+        #main-page-bg {{
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url("data:image/jpeg;base64,{bg_b64}");
             background-size: cover;
             background-position: center center;
-            filter: brightness(1.05) contrast(1.1) saturate(1.05);
+            background-repeat: no-repeat;
             z-index: 0;
             opacity: 0;
         }}
         
-        #main-page-bg.visible {{
-            opacity: 1;
+        #main-page-bg::before {{
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%);
         }}
         
         #main-page-bg::after {{
@@ -124,19 +132,23 @@ def intro_screen(is_mobile=False):
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
+            right: 0;
+            bottom: 0;
             background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
             opacity: 0.09;
             mix-blend-mode: multiply;
         }}
         
+        #main-page-bg.visible {{
+            opacity: 1;
+        }}
+        
         video {{
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             object-fit: cover;
             z-index: 1;
         }}
@@ -144,11 +156,11 @@ def intro_screen(is_mobile=False):
         audio {{ display: none; }}
         
         #intro-text {{
-            position: fixed;
+            position: absolute;
             top: 8%;
             left: 50%;
             transform: translate(-50%, 0);
-            width: 90vw;
+            width: 90%;
             text-align: center;
             color: #f8f4e3;
             font-size: clamp(22px, 6vw, 60px);
@@ -161,7 +173,6 @@ def intro_screen(is_mobile=False):
             text-shadow: 0 0 15px rgba(255,255,230,0.4);
             animation: lightSweep 6s linear infinite, fadeInOut 6s ease-in-out forwards;
             line-height: 1.2;
-            word-wrap: break-word;
             z-index: 10;
         }}
         
@@ -177,13 +188,12 @@ def intro_screen(is_mobile=False):
             100% {{ opacity: 0; }} 
         }}
 
-        /* Broken Glass Container */
         #broken-glass-container {{
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             opacity: 0;
             z-index: 5;
             pointer-events: none;
@@ -196,18 +206,16 @@ def intro_screen(is_mobile=False):
         .broken-piece {{
             position: absolute;
             background-image: url("data:image/jpeg;base64,{broken_b64}");
-            background-size: 100vw 100vh;
-            background-position: center;
+            background-size: 100% 100%;
             overflow: hidden;
         }}
 
-        /* Reveal Grid Overlay */
         #reveal-overlay {{
-            position: fixed;
+            position: absolute;
             top: 0;
             left: 0;
-            width: 100vw;
-            height: 100vh;
+            width: 100%;
+            height: 100%;
             display: grid;
             grid-template-columns: repeat({REVEAL_GRID}, 1fr);
             grid-template-rows: repeat({REVEAL_GRID}, 1fr);
@@ -216,19 +224,16 @@ def intro_screen(is_mobile=False):
         }}
         
         .reveal-tile {{
-            background: black;
+            background: #000;
             opacity: 1;
-            width: 100%;
-            height: 100%;
         }}
         
-        /* Text trang chính */
         #main-text {{
-            position: fixed;
+            position: absolute;
             top: 8%;
             left: 50%;
             transform: translate(-50%, 0);
-            width: 90vw;
+            width: 90%;
             text-align: center;
             font-size: clamp(30px, 5vw, 65px);
             color: #fff5d7;
@@ -252,26 +257,25 @@ def intro_screen(is_mobile=False):
         </style>
     </head>
     <body>
-        <!-- Background trang chính -->
-        <div id="main-page-bg"></div>
-        
-        <video id='introVid' muted playsinline webkit-playsinline preload="auto">
-            <source src='data:video/mp4;base64,{video_b64}?v={cache_buster}' type='video/mp4'>
-        </video>
-        
-        <audio id='flySfx' preload="auto"> 
-            <source src='data:audio/mp3;base64,{audio_b64}?v={cache_buster}' type='audio/mp3'>
-        </audio>
-        
-        <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+        <div id="container">
+            <div id="main-page-bg"></div>
+            
+            <video id='introVid' autoplay muted playsinline>
+                <source src='data:video/mp4;base64,{video_b64}' type='video/mp4'>
+            </video>
+            
+            <audio id='flySfx'> 
+                <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
+            </audio>
+            
+            <div id='intro-text'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
 
-        <div id='broken-glass-container'></div>
-        
-        <!-- Reveal overlay -->
-        <div id='reveal-overlay'></div>
-        
-        <!-- Text trang chính -->
-        <div id='main-text'>TỔ BẢO DƯỠNG SỐ 1</div>
+            <div id='broken-glass-container'></div>
+            
+            <div id='reveal-overlay'></div>
+            
+            <div id='main-text'>TỔ BẢO DƯỠNG SỐ 1</div>
+        </div>
 
         <script>
         const GLASS_ROWS = {GLASS_ROWS};
@@ -288,18 +292,7 @@ def intro_screen(is_mobile=False):
         const mainText = document.getElementById('main-text');
         const mainBg = document.getElementById('main-page-bg');
         let ended = false;
-        let videoStarted = false;
 
-        // Xóa cache khi load
-        if ('caches' in window) {{
-            caches.keys().then(names => {{
-                names.forEach(name => {{
-                    caches.delete(name);
-                }});
-            }});
-        }}
-
-        // Tạo các mảnh vỡ
         function createBrokenPieces() {{
             const pieceWidth = 100 / GLASS_COLS;
             const pieceHeight = 100 / GLASS_ROWS;
@@ -314,21 +307,20 @@ def intro_screen(is_mobile=False):
                     piece.style.width = pieceWidth + '%';
                     piece.style.height = pieceHeight + '%';
                     
-                    piece.style.backgroundPosition = 
-                        (-col * (100 / GLASS_COLS)) + '% ' + 
-                        (-row * (100 / GLASS_ROWS)) + '%';
+                    const bgX = -(col * pieceWidth);
+                    const bgY = -(row * pieceHeight);
+                    piece.style.backgroundPosition = bgX + '% ' + bgY + '%';
+                    piece.style.backgroundSize = (GLASS_COLS * 100) + '% ' + (GLASS_ROWS * 100) + '%';
                     
                     glassContainer.appendChild(piece);
                 }}
             }}
         }}
 
-        // Tạo lưới reveal
         function createRevealGrid() {{
             for (let i = 0; i < REVEAL_GRID * REVEAL_GRID; i++) {{
                 const tile = document.createElement('div');
                 tile.className = 'reveal-tile';
-                tile.dataset.index = i;
                 revealOverlay.appendChild(tile);
             }}
         }}
@@ -336,7 +328,7 @@ def intro_screen(is_mobile=False):
         function breakGlass() {{
             const pieces = document.querySelectorAll('.broken-piece');
             
-            pieces.forEach((piece, i) => {{
+            pieces.forEach((piece) => {{
                 const angle = Math.random() * 360;
                 const distance = 100 + Math.random() * 500;
                 const x = Math.cos(angle * Math.PI / 180) * distance;
@@ -361,25 +353,18 @@ def intro_screen(is_mobile=False):
             const centerRow = Math.floor(REVEAL_GRID / 2);
             const centerCol = Math.floor(REVEAL_GRID / 2);
             
-            // Hiện background trang chính
             mainBg.classList.add('visible');
             
-            // Fade in text trang chính
             gsap.to(mainText, {{
                 opacity: 1,
                 duration: 1,
                 ease: "power2.inOut"
             }});
             
-            // Tính khoảng cách từ mỗi ô đến trung tâm
             tiles.forEach((tile, index) => {{
                 const row = Math.floor(index / REVEAL_GRID);
                 const col = index % REVEAL_GRID;
-                
-                // Khoảng cách Manhattan từ trung tâm
                 const distanceFromCenter = Math.abs(row - centerRow) + Math.abs(col - centerCol);
-                
-                // Delay tăng dần từ trung tâm ra ngoài
                 const delay = distanceFromCenter * (REVEAL_DURATION / (REVEAL_GRID * 2));
                 
                 gsap.to(tile, {{
@@ -389,7 +374,6 @@ def intro_screen(is_mobile=False):
                     ease: "power2.inOut",
                     onComplete: function() {{
                         if (index === tiles.length - 1) {{
-                            // Ô cuối cùng biến mất - xóa overlay
                             setTimeout(() => {{
                                 revealOverlay.style.display = 'none';
                             }}, 100);
@@ -403,102 +387,64 @@ def intro_screen(is_mobile=False):
             if (ended) return;
             ended = true;
             
-            console.log('Finishing intro...');
-            
-            // Ẩn video và intro text, hiện ảnh tĩnh với broken glass effect
             vid.style.opacity = 0;
             introText.style.display = 'none';
             glassContainer.classList.add('active');
             
-            // Bắt đầu hiệu ứng vỡ kính
             setTimeout(() => {{
                 breakGlass();
             }}, 100);
             
-            // Sau khi vỡ xong, bắt đầu reveal trang chính
             setTimeout(() => {{
                 glassContainer.style.opacity = 0;
                 revealMainPage();
             }}, BREAK_DURATION * 1000 + 200);
             
-            // Sau khi reveal hoàn tất, thông báo cho Streamlit
             setTimeout(() => {{
                 window.parent.postMessage({{type: 'intro_done'}}, '*');
             }}, BREAK_DURATION * 1000 + REVEAL_DURATION * 1000 + 500);
         }}
 
-        // Khởi tạo
         createBrokenPieces();
         createRevealGrid();
 
-        // Force play video - CÁCH MỚI
-        function tryPlayVideo() {{
-            if (videoStarted) return;
-            
-            console.log('Attempting to play video...');
-            const playPromise = vid.play();
-            
-            if (playPromise !== undefined) {{
-                playPromise.then(() => {{
-                    console.log('Video playing successfully');
-                    videoStarted = true;
-                    
-                    // Play audio cùng lúc
-                    audio.currentTime = 0;
-                    audio.volume = 1.0;
-                    audio.play().catch(err => console.log('Audio play failed:', err));
-                }}).catch(err => {{
-                    console.log('Video play failed:', err);
-                    // Retry sau 100ms
-                    setTimeout(tryPlayVideo, 100);
-                }});
+        // Play video và audio
+        vid.addEventListener('canplaythrough', function() {{
+            vid.play().then(() => {{
+                console.log('Video playing');
+                audio.currentTime = 0;
+                audio.volume = 1.0;
+                audio.play().catch(e => console.log('Audio blocked:', e));
+            }}).catch(e => console.log('Video blocked:', e));
+        }});
+
+        // Click để unmute
+        let hasInteracted = false;
+        document.addEventListener('click', function() {{
+            if (!hasInteracted) {{
+                hasInteracted = true;
+                vid.muted = false;
+                vid.play();
+                audio.currentTime = 0;
+                audio.volume = 1.0;
+                audio.play();
             }}
-        }}
+        }}, {{once: true}});
 
-        // Multiple triggers để đảm bảo video chạy
-        vid.addEventListener('loadedmetadata', () => {{
-            console.log('Video metadata loaded');
-            tryPlayVideo();
-        }});
-
-        vid.addEventListener('canplay', () => {{
-            console.log('Video can play');
-            tryPlayVideo();
-        }});
-
-        vid.addEventListener('loadeddata', () => {{
-            console.log('Video data loaded');
-            tryPlayVideo();
-        }});
-
-        // Force load
-        vid.load();
-        
-        // Backup: Try play after 500ms
-        setTimeout(tryPlayVideo, 500);
-        
-        // Click/Touch để unmute và force play
-        const userInteract = () => {{
-            console.log('User interaction detected');
-            vid.muted = false;
-            tryPlayVideo();
-            audio.volume = 1.0;
-            audio.currentTime = 0;
-            audio.play().catch(() => {{}});
-        }};
-        
-        document.addEventListener('click', userInteract, {{once: true}});
-        document.addEventListener('touchstart', userInteract, {{once: true}});
+        // Touch cho mobile
+        document.addEventListener('touchstart', function() {{
+            if (!hasInteracted) {{
+                hasInteracted = true;
+                vid.muted = false;
+                vid.play();
+                audio.currentTime = 0;
+                audio.volume = 1.0;
+                audio.play();
+            }}
+        }}, {{once: true}});
 
         vid.addEventListener('ended', finishIntro);
-        
-        // Backup timeout
-        setTimeout(() => {{
-            if (!ended) {{
-                console.log('Timeout trigger');
-                finishIntro();
-            }}
-        }}, 9000);
+        setTimeout(finishIntro, 9000);
 
         </script>
     </body>
@@ -507,7 +453,7 @@ def intro_screen(is_mobile=False):
     components.html(intro_html, height=800, scrolling=False)
 
 
-# ========== TRANG CHÍNH - ĐƠN GIẢN HÓA ==========
+# ========== TRANG CHÍNH ==========
 
 def main_page(is_mobile=False):
     hide_streamlit_ui()
@@ -539,10 +485,8 @@ if "is_mobile" not in st.session_state:
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
-# Luôn hiển thị intro screen
 intro_screen(st.session_state.is_mobile)
 
-# Lắng nghe message từ intro
 st.markdown("""
 <script>
 window.addEventListener("message", (event) => {
