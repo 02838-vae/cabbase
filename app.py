@@ -8,26 +8,24 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Khởi tạo session state
+# --- SESSION STATE ---
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
 # --- HÀM TIỆN ÍCH ---
 def get_base64_encoded_file(file_path):
-    """Đọc file và trả về Base64 encoded string."""
     try:
         with open(file_path, "rb") as f:
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
-        raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
+        raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra: {e.filename}")
 
-# --- MÃ HÓA FILE MEDIA ---
+# --- BASE64 MEDIA ---
 try:
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
-    
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg")
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
 except FileNotFoundError as e:
@@ -35,20 +33,20 @@ except FileNotFoundError as e:
     st.stop()
 
 # --- CSS CHUNG ---
-hide_streamlit_style = f"""
+css_style = f"""
 <style>
-/* Reset UI Streamlit */
+/* Reset UI */
 #MainMenu, footer, header {{visibility: hidden;}}
 .main {{padding: 0; margin: 0;}}
 div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
 
-/* Nền Trang Chính */
+/* Background */
 .stApp {{
     --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
 }}
 
-/* Lưới reveal */
+/* Reveal grid */
 .reveal-grid {{
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
     display: grid; grid-template-columns: repeat(20, 1fr); 
@@ -70,7 +68,7 @@ div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
     100% {{ background-position: 300% 0; }}
 }}
 
-/* TIÊU ĐỀ VIDEO INTRO */
+/* Intro text */
 #intro-text {{
     position: fixed; top: 5vh; width: 100%; text-align: center;
     font-family: 'Poppins', sans-serif;
@@ -86,7 +84,7 @@ div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
     z-index: 100; pointer-events: none; opacity: 0; transition: opacity 1s;
 }}
 
-/* TIÊU ĐỀ CHÍNH */
+/* Main title */
 #main-title-container {{
     position: fixed; top: 5%; left: 50%;
     transform: translate(-50%, 0) scale(0.9);
@@ -118,7 +116,7 @@ div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
     margin-top: 10px;
 }}
 
-/* MOBILE */
+/* Mobile */
 @media (max-width: 768px) {{
     .main-content-revealed {{ background-image: var(--main-bg-url-mobile); }}
     .reveal-grid {{ grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(20, 1fr); }}
@@ -132,57 +130,71 @@ div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
 }}
 </style>
 """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+st.markdown(css_style, unsafe_allow_html=True)
 
-# --- HTML + JS VIDEO INTRO ---
+# --- JS CALLBACK FIXED { } ---
 js_callback = f"""
 <script>
-function sendBackToStreamlit(){{
+function sendBackToStreamlit(){{{{ 
     window.parent.document.querySelector('.stApp').classList.add('video-finished','main-content-revealed');
     initRevealEffect();
-}}
-function initRevealEffect(){{
+}}}}
+
+function initRevealEffect(){{{{ 
     const revealGrid = window.parent.document.querySelector('.reveal-grid');
     if(!revealGrid) return;
     const cells = revealGrid.querySelectorAll('.grid-cell');
     const shuffled = Array.from(cells).sort(()=>Math.random()-0.5);
-    shuffled.forEach((c,i)=>setTimeout(()=>{{c.style.opacity=0;}},i*10));
-    setTimeout(()=>{{
+    shuffled.forEach((c,i)=>setTimeout(()=>{{{{ c.style.opacity=0; }}}}, i*10));
+    setTimeout(()=>{{{{ 
         revealGrid.remove();
         const mainTitle = window.parent.document.getElementById('main-title-container');
         if(mainTitle){{
             mainTitle.style.opacity=1;
             mainTitle.style.transform='translate(-50%,0) scale(1)';
         }}
-    }}, shuffled.length*10 + 1000);
-}}
-document.addEventListener("DOMContentLoaded",function(){{
+    }}}}, shuffled.length*10 + 1000);
+}}}}
+
+document.addEventListener("DOMContentLoaded", function(){{{{ 
     const video = document.getElementById('intro-video');
     const audio = document.getElementById('background-audio');
     const introText = document.getElementById('intro-text');
     const isMobile = window.innerWidth <= 768;
+
     video.src = isMobile ? 'data:video/mp4;base64,{video_mobile_base64}' : 'data:video/mp4;base64,{video_pc_base64}';
     audio.src = 'data:audio/mp3;base64,{audio_base64}';
 
-    const playMedia = ()=>{{
-        video.load(); video.play().catch(e=>console.log("Video failed:",e));
-        setTimeout(()=>{{ introText.style.opacity=1; }},500);
-        audio.volume=0.5; audio.loop=true;
-        audio.play().catch(e=>{{
-            document.body.addEventListener('click',()=>{{audio.play().catch(()=>{});}},{{once:true}});
-        }});
-    }};
+    const playMedia = () => {{{{
+        video.load(); 
+        video.play().catch(e => console.log("Video failed:", e));
+        setTimeout(() => {{{{ introText.style.opacity = 1; }}}}, 500);
+        audio.volume = 0.5; 
+        audio.loop = true;
+        audio.play().catch(e => {{{{
+            document.body.addEventListener('click', () => {{{{ audio.play().catch(() => {{{}}}); }}}}, {{once:true}});
+        }}}});
+    }}}};
+
     playMedia();
 
-    video.onended = ()=>{{
-        video.style.opacity=0; audio.pause(); audio.currentTime=0; introText.style.opacity=0;
+    video.onended = () => {{{{
+        video.style.opacity = 0; 
+        audio.pause(); 
+        audio.currentTime = 0; 
+        introText.style.opacity = 0;
         sendBackToStreamlit();
-    }};
-    document.body.addEventListener('click',()=>{{video.play().catch(()=>{}); audio.play().catch(()=>{});}},{{once:true}});
-}});
+    }}}};
+
+    document.body.addEventListener('click', () => {{{{ 
+        video.play().catch(() => {{{}}}); 
+        audio.play().catch(() => {{{}}}); 
+    }}}}, {{once:true}});
+}}}});
 </script>
 """
 
+# --- HTML VIDEO + INTRO TEXT ---
 html_content = f"""
 <!DOCTYPE html>
 <html>
@@ -204,8 +216,7 @@ st.components.v1.html(html_content, height=10, scrolling=False)
 
 # --- LƯỚI REVEAL ---
 grid_cells_html = "".join([f'<div class="grid-cell"></div>' for i in range(240)])
-reveal_grid_html = f'<div class="reveal-grid">{grid_cells_html}</div>'
-st.markdown(reveal_grid_html, unsafe_allow_html=True)
+st.markdown(f'<div class="reveal-grid">{grid_cells_html}</div>', unsafe_allow_html=True)
 
 # --- TIÊU ĐỀ CHÍNH ---
 st.markdown("""
