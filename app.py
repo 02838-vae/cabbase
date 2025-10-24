@@ -1,7 +1,7 @@
 import streamlit as st
 import base64
-import glob
 import os
+import json
 import random
 
 # --- CẤU HÌNH BAN ĐẦU ---
@@ -37,16 +37,19 @@ def get_base64_audio_playlist(prefix="background", count=6):
         audio_files.append(filename)
 
     # Lọc những file có tồn tại và mã hóa chúng
+    found_count = 0
     for file_path in audio_files:
         if os.path.exists(file_path):
             try:
                 base64_audios[file_path] = get_base64_encoded_file(file_path)
+                found_count += 1
             except Exception as e:
                 st.warning(f"Không thể mã hóa file {file_path}: {e}")
         else:
-            st.warning(f"File nhạc {file_path} không được tìm thấy.")
+            # Chỉ cảnh báo nếu không tìm thấy
+            pass 
             
-    if not base64_audios:
+    if found_count == 0:
         raise FileNotFoundError("Không tìm thấy bất kỳ file nhạc background nào (ví dụ: background1.mp3).")
         
     return base64_audios
@@ -56,7 +59,7 @@ def get_base64_audio_playlist(prefix="background", count=6):
 try:
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
-    audio_base64 = get_base64_encoded_file("plane_fly.mp3") # Vẫn giữ audio này cho intro
+    audio_base64 = get_base64_encoded_file("plane_fly.mp3") 
     
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
@@ -64,9 +67,8 @@ try:
     # === THAY ĐỔI LỚN 1: MÃ HÓA DANH SÁCH MP3 PLAYLIST ===
     playlist_base64_dict = get_base64_audio_playlist(prefix="background", count=6)
     
-    # Chuyển dictionary Base64 sang JSON-like string để nhúng vào JS
-    # Định dạng: {"background1.mp3": "base64_data", ...}
-    playlist_json_str = str(playlist_base64_dict).replace("'", '"')
+    # Chuyển dictionary Base64 sang chuỗi JSON để nhúng vào JS
+    playlist_json_str = json.dumps(playlist_base64_dict)
 
 except FileNotFoundError as e:
     st.error(e)
@@ -84,6 +86,7 @@ st.markdown(font_links, unsafe_allow_html=True)
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
 
 # === THAY ĐỔI LỚN 2: THÊM CSS CHO MUSIC PLAYER VÀ KÍCH HOẠT NÓ SAU KHI INTRO KẾT THÚC ===
+# Sử dụng f-string, đảm bảo ngoặc nhọn CSS (ví dụ: {{visibility: hidden;}}) được nhân đôi
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -91,55 +94,19 @@ hide_streamlit_style = f"""
 /* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
 
-/* ... (Giữ nguyên các CSS khác) ... */
-
-/* Thêm Class để hiện Music Player sau khi intro kết thúc */
-.stApp.music-active #music-player-container {{
-    opacity: 1; /* Hiện Music Player */
-    pointer-events: auto; /* Cho phép tương tác */
-}}
-
-/* === MUSIC PLAYER STYLE === */
-#music-player-container {{
-    position: fixed;
-    top: 17vh; /* Đặt dưới tiêu đề chính (top 5vh + 10vh height + 2vh margin) */
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 20;
-    pointer-events: none; /* Ẩn ban đầu */
-    opacity: 0; 
-    transition: opacity 1s ease-in-out; 
-    background-color: rgba(255, 255, 255, 0.1); /* Nền mờ */
-    border-radius: 10px;
-    padding: 5px 15px;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
-}}
-
-#music-player {{
-    width: 250px; /* Kích thước nhỏ gọn */
-}}
-
-@media (max-width: 768px) {{
-    #music-player-container {{
-        top: 15vh; /* Điều chỉnh vị trí trên mobile */
-    }}
-    #music-player {{
-        width: 150px; /* Nhỏ hơn trên mobile */
-    }}
-}}
-
-/* ... (Giữ nguyên các CSS khác cho video, title, reveal grid) ... */
 
 .main {{
     padding: 0;
     margin: 0;
 }}
 
+
 div.block-container {{
     padding: 0;
     margin: 0;
     max-width: 100% !important;
 }}
+
 
 iframe:first-of-type {{
     transition: opacity 1s ease-out, visibility 1s ease-out;
@@ -213,8 +180,8 @@ iframe:first-of-type {{
 /* Keyframes cho hiệu ứng chữ chạy đơn (từ phải sang trái, lặp lại) */
 
 @keyframes scrollText {{
-    0% {{ transform: translate(100vw, 0); }} /* Bắt đầu từ ngoài cùng bên phải */
-    100% {{ transform: translate(-100%, 0); }} /* Chạy sang trái (độ rộng của chữ) */
+    0% {{ transform: translate(100vw, 0); }} 
+    100% {{ transform: translate(-100%, 0); }} 
 }}
 
 
@@ -225,7 +192,6 @@ iframe:first-of-type {{
     50% {{ background-position: 100% 50%; }}
     100% {{ background-position: 0% 50%; }}
 }}
-
 
 
 /* === TIÊU ĐỀ TRANG CHÍNH (ĐƠN, CHẠY VÀ ĐỔI MÀU) === */
@@ -258,18 +224,18 @@ iframe:first-of-type {{
 
 
     /* 1. Hiệu ứng chữ chạy - Tăng tốc độ */
-    animation: scrollText 15s linear infinite; /* Giảm từ 25s xuống 15s */
+    animation: scrollText 15s linear infinite; 
     
     /* 2. Hiệu ứng đổi màu */
-    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3); /* Cầu vồng */
-    background-size: 400% 400%; /* Cần kích thước lớn để tạo hiệu ứng chuyển màu mượt */
-    -webkit-background-clip: text; /* Clip màu nền theo hình dạng chữ */
-    -webkit-text-fill-color: transparent; /* Ẩn màu chữ gốc */
-    color: transparent; /* Dành cho các trình duyệt khác */
-    animation: colorShift 10s ease infinite, scrollText 15s linear infinite; /* Áp dụng đồng thời 2 animation */
+    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3); 
+    background-size: 400% 400%; 
+    -webkit-background-clip: text; 
+    -webkit-text-fill-color: transparent; 
+    color: transparent; 
+    animation: colorShift 10s ease infinite, scrollText 15s linear infinite; 
     
     /* Thiết lập bóng đổ cổ điển */
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Giảm độ đậm của bóng để màu sắc nổi bật */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
 }}
 
 
@@ -282,9 +248,44 @@ iframe:first-of-type {{
     
     #main-title-container h1 {{
         font-size: 6.5vw;  
-        animation-duration: 8s; /* Tăng tốc độ trên mobile */
+        animation-duration: 8s; 
     }}
 }}
+
+/* === MUSIC PLAYER STYLE === */
+#music-player-container {{
+    position: fixed;
+    top: 17vh; 
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    pointer-events: none; 
+    opacity: 0; 
+    transition: opacity 1s ease-in-out; 
+    background-color: rgba(0, 0, 0, 0.4); 
+    border-radius: 10px;
+    padding: 5px 15px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.5);
+}}
+
+.stApp.music-active #music-player-container {{
+    opacity: 1; /* Hiện Music Player */
+    pointer-events: auto; /* Cho phép tương tác */
+}}
+
+#music-player {{
+    width: 250px; 
+}}
+
+@media (max-width: 768px) {{
+    #music-player-container {{
+        top: 15vh; 
+    }}
+    #music-player {{
+        width: 150px; 
+    }}
+}}
+
 </style>
 """
 
@@ -292,14 +293,20 @@ iframe:first-of-type {{
 # Thêm CSS vào trang chính
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
+# Mã HTML cho Music Player (sẽ được nhúng vào nội dung chính)
+music_player_html = f"""
+<div id="music-player-container">
+    <audio id="music-player" controls preload="auto"></audio>
+</div>
+"""
 
-# === THAY ĐỔI LỚN 3: THÊM JAVASCRIPT CHO MUSIC PLAYER VÀ KÍCH HOẠT NÓ ===
+# === THAY ĐỔI LỚN 3: THÊM JAVASCRIPT CHO MUSIC PLAYER (ĐÃ SỬA LỖI NGOẶC NHỌN) ===
 js_music_player = f"""
 <script>
     // Playlist data
     const playlistData = {playlist_json_str};
     const audioFiles = Object.keys(playlistData);
-    let currentTrackIndex = -1; // -1 để track đầu tiên được chọn ngẫu nhiên
+    let currentTrackIndex = -1; 
 
     function getNextTrackIndex() {{
         // Chọn ngẫu nhiên track tiếp theo (không trùng với track hiện tại nếu có thể)
@@ -319,53 +326,46 @@ js_music_player = f"""
         const nextTrackName = audioFiles[currentTrackIndex];
         const base64Data = playlistData[nextTrackName];
         
-        // Thiết lập nguồn Base64 mới
+        // SỬA LỖI F-STRING: Dùng ${{...}} cho template literal JS
         audioPlayer.src = `data:audio/mp3;base64,${{base64Data}}`;
         
         audioPlayer.load();
         
-        // Tự động phát với logic phòng trường hợp autoplay bị chặn
-        audioPlayer.play().catch(e => {{
+        // Tự động phát
+        audioPlayer.play().catch(e => {{ // Dùng {{ và }}
             console.log("Music Player Autoplay blocked. Waiting for user interaction.", e);
-            // Có thể thêm thông báo hoặc icon Play/Pause tại đây
         }});
         
         console.log(`Playing: ${{nextTrackName}}`);
     }}
 
     // Thiết lập sự kiện khi track hiện tại kết thúc
-    document.addEventListener("DOMContentLoaded", function() {{
-        const audioPlayer = document.getElementById('music-player');
-        if (audioPlayer) {{
-            // Khi người dùng tương tác với trang, thử phát track đầu tiên
-            window.parent.document.body.addEventListener('click', () => {{
-                if (currentTrackIndex === -1) {{ // Chỉ gọi lần đầu
-                    playNextTrack();
-                }} else {{
-                    audioPlayer.play().catch(e => {{}});
-                }}
-            }}, {{ once: true }}); 
+    document.addEventListener("DOMContentLoaded", function() {{ // Dùng {{ và }}
+        const audioPlayer = window.parent.document.getElementById('music-player');
+        if (audioPlayer) {{ // Dùng {{ và }}
             
             // Lắng nghe sự kiện kết thúc track để chuyển bài
             audioPlayer.onended = playNextTrack;
-        }
+        }}
     }});
     
     // Hàm này sẽ được gọi sau khi video intro kết thúc
-    window.parent.initMusicPlayer = function() {{
+    window.parent.initMusicPlayer = function() {{ // Dùng {{ và }}
         window.parent.document.querySelector('.stApp').classList.add('music-active');
         playNextTrack(); // Bắt đầu chơi nhạc nền
     }}
+    
+    // Thêm listener vào body cho lần tương tác đầu tiên để khởi động âm thanh (khắc phục chính sách trình duyệt)
+    window.parent.document.body.addEventListener('click', () => {{ // Dùng {{ và }}
+        const audioPlayer = window.parent.document.getElementById('music-player');
+        if (audioPlayer && currentTrackIndex === -1) {{ // Dùng {{ và }}
+            playNextTrack();
+        }}
+    }}, {{ once: true }}); // Dùng {{ và }}
 </script>
 """
 
-# Mã HTML cho Music Player (sẽ được nhúng vào nội dung chính)
-music_player_html = f"""
-<div id="music-player-container">
-    <audio id="music-player" controls preload="auto"></audio>
-</div>
-"""
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Cập nhật gọi hàm Music Player) ---
+# --- PHẦN 4: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Cập nhật gọi hàm Music Player) ---
 
 
 # JavaScript (CẬP NHẬT: Thêm gọi hàm initMusicPlayer())
@@ -375,7 +375,7 @@ js_callback_video = f"""
         window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
         initRevealEffect();
         
-        // === THAY ĐỔI LỚN 4: GỌI HÀM KHỞI TẠO MUSIC PLAYER TẠI ĐÂY ===
+        // === GỌI HÀM KHỞI TẠO MUSIC PLAYER TẠI ĐÂY ===
         if (window.parent.initMusicPlayer) {{
             window.parent.initMusicPlayer();
         }}
