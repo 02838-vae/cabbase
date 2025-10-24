@@ -49,7 +49,7 @@ try:
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
     
     # Mã hóa các file hình nền MỚI
-    bg_pc_base64 = get_base64_encoded_file("cabbage.jpg") 
+    bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
     
 except FileNotFoundError as e:
