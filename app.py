@@ -37,7 +37,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO (CÓ FADE OUT) ==========
+# ========== MÀN HÌNH INTRO (FIXED) ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
@@ -66,10 +66,10 @@ def intro_screen(is_mobile=False):
         @keyframes lightSweep {{ 0% {{ background-position: 200% 0%; }} 100% {{ background-position: -200% 0%; }} }}
         @keyframes fadeInOut {{ 0% {{ opacity: 0; }} 20% {{ opacity: 1; }} 80% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}
         
-        /* ĐIỀU CHỈNH FADE-OUT: Màu nền chuyển từ trong suốt sang đen */
+        /* HIỆU ỨNG MỜ DẦN */
         #fade-overlay {{ 
             position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0, 0, 0, 0); /* Khởi đầu trong suốt */
+            background: rgba(0, 0, 0, 1); /* Bắt đầu đen */
             opacity: 1; z-index: 40;
             transition: background-color 1.0s ease-in-out; /* Thời gian mờ dần */
             pointer-events: none;
@@ -104,21 +104,24 @@ def intro_screen(is_mobile=False):
             audio.volume = 0; 
             
             // 2. Kích hoạt hiệu ứng mờ dần (Fade-out)
-            fadeOverlay.style.backgroundColor = 'rgba(0, 0, 0, 1)'; // Chuyển sang màu đen
+            fadeOverlay.style.backgroundColor = 'rgba(0, 0, 0, 1)'; 
 
-            // 3. Chuyển hướng sau khi hiệu ứng mờ dần hoàn tất (1000ms + 50ms dự phòng)
+            // 3. 🔥 CHUYỂN HƯỚNG MẠNH MẼ SAU KHI FADE OUT
             setTimeout(() => {{
+                // Lấy URL cơ sở và thêm tham số
                 const currentUrl = window.parent.location.href.split('#')[0];
                 const separator = currentUrl.includes('?') ? '&' : '?';
                 const newUrl = currentUrl.split('?')[0] + separator + 'intro_done_flag=true';
-                window.parent.location.href = newUrl;
+                
+                // Sử dụng replace() để chuyển hướng và không lưu vào lịch sử
+                window.parent.location.replace(newUrl); 
             }}, 1050); // Đợi 1.05 giây để fade out xong
         }}
 
         // Logic play video/audio
         vid.addEventListener('canplay', () => {{
             vid.play().catch(() => console.log('Autoplay bị chặn'));
-            // fadeOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0)'; // Đã đặt mặc định là 0
+            fadeOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0)'; // Mở màn hình
         }});
         vid.addEventListener('play', () => {{
             audio.volume = 1.0;
@@ -131,6 +134,7 @@ def intro_screen(is_mobile=False):
             audio.volume = 1.0;
             audio.currentTime = 0;
             audio.play().catch(()=>{{}}); 
+            fadeOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0)'; 
         }}, {{once:true}});
 
         // GỌI finishIntro KHI VIDEO KẾT THÚC
@@ -138,15 +142,7 @@ def intro_screen(is_mobile=False):
         // Timeout dự phòng
         setTimeout(finishIntro, 10000); 
 
-        // Ngay khi load, bắt đầu từ màu đen, sau đó CSS transition về trong suốt khi canplay
-        fadeOverlay.style.backgroundColor = 'rgba(0, 0, 0, 1)'; 
-
-        // Nếu video đã sẵn sàng, fade in (mở màn hình)
-        vid.addEventListener('canplay', () => {{
-            fadeOverlay.style.backgroundColor = 'rgba(0, 0, 0, 0)';
-        }});
-
-
+        // Khởi đầu video sẽ ẩn sau màn đen.
         </script>
     </body>
     </html>
@@ -154,7 +150,7 @@ def intro_screen(is_mobile=False):
     components.html(intro_html, height=800, scrolling=False)
 
 
-# ========== TRANG CHÍNH ==========
+# ========== TRANG CHÍNH (Giữ nguyên) ==========
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -178,7 +174,7 @@ def main_page(is_mobile=False):
     """, unsafe_allow_html=True)
 
 
-# ========== LUỒNG CHÍNH ĐIỀU KHIỂN TRẠNG THÁI ==========
+# ========== LUỒNG CHÍNH (FIXED) ==========
 
 hide_streamlit_ui()
 
@@ -206,23 +202,23 @@ if not st.session_state.intro_done:
     if query_params.get("intro_done_flag") == ["true"]:
         # Tải lại lần 1: Đã phát hiện video kết thúc qua tham số truy vấn
         
-        # 1. Đặt cờ vĩnh viễn
+        # 1. Đặt cờ vĩnh viễn (QUAN TRỌNG)
         st.session_state.intro_done = True
         
-        # 2. Yêu cầu trình duyệt chuyển hướng ngay lập tức đến URL sạch
+        # 2. 🔥 Yêu cầu trình duyệt chuyển hướng LẠI đến URL sạch
+        # Điều này đảm bảo trang chính load mà không có tham số, dứt điểm lỗi loop.
         st.markdown(
             """
             <script>
-            // Lấy URL cơ sở (không tham số truy vấn)
             const url = new URL(window.location.href);
             url.searchParams.delete('intro_done_flag');
-            // Sử dụng window.parent.location.replace để chuyển hướng và tránh back
+            // Dùng replace để đảm bảo URL sạch và tránh cache/lặp lại
             window.parent.location.replace(url.toString());
             </script>
             """, 
             unsafe_allow_html=True
         )
-        # Dừng luồng Streamlit, vì JS sẽ xử lý chuyển hướng (rerun)
+        # Dừng luồng Streamlit, vì JS đã xử lý chuyển hướng (rerun)
         st.stop() 
         
     else:
