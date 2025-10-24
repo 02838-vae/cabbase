@@ -28,7 +28,7 @@ try:
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
     
     # Mã hóa hình nền để nhúng vào CSS (Quan trọng)
-    cabbage_base64 = get_base64_encoded_file("cabbage.jpg")
+    cabbage_base64 = get_base64_encoded_file("cabbase.jpg")
     mobile_bg_base64 = get_base64_encoded_file("mobile.jpg")
     
     # Kiểm tra xem có đủ file cần thiết không
@@ -37,7 +37,7 @@ try:
         if not video_pc_base64: missing_files.append("airplane.mp4")
         if not video_mobile_base64: missing_files.append("mobile.mp4")
         if not audio_base64: missing_files.append("plane_fly.mp3")
-        if not cabbage_base64: missing_files.append("cabbage.jpg")
+        if not cabbage_base64: missing_files.append("cabbase.jpg")
         if not mobile_bg_base64: missing_files.append("mobile.jpg")
         st.error(f"Lỗi: Không tìm thấy (hoặc file rỗng) các file sau: {', '.join(missing_files)}. Vui lòng kiểm tra lại đường dẫn.")
         st.stop()
@@ -260,7 +260,7 @@ st.markdown("""
 ">
     <h1 style="color: black;">👋 Chào mừng đến với Trang Chính!</h1>
     <p style="color: black;">Hiệu ứng chuyển trang mượt mà đã hoàn tất.</p>
-    <p style="color: black;">Hình nền (cabbage.jpg / mobile.jpg) được cố định và trang này có thể cuộn được.</p>
+    <p style="color: black;">Hình nền (cabbase.jpg / mobile.jpg) được cố định và trang này có thể cuộn được.</p>
     
     <div style="
         margin: 50px 0;
