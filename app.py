@@ -40,8 +40,10 @@ except FileNotFoundError as e:
 # --- CSS ĐỂ ÉP STREAMLIT MAIN CONTAINER & IFRAME FULLSCREEN/ẨN IFRAME ---
 hide_streamlit_style = f"""
 <style>
-/* 1. THÊM GOOGLE FONT IMPORT CHO FONT INTRO (MONTSERRAT VÀ GREAT VIBES) */
-@import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Montserrat:wght@900&display=swap');
+/* 1. THÊM GOOGLE FONT IMPORT CHO FONT MỚI: Lobster (Intro) và Stay Strong (Main Title) */
+@import url('https://fonts.googleapis.com/css2?family=Lobster&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Stay+Strong&display=swap');
+
 
 /* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
@@ -114,7 +116,7 @@ iframe:first-of-type {{
     background-position: center;
     background-attachment: fixed;
     
-    /* HIỆU ỨNG FILTER: Sepia và giảm độ bão hòa để trông cũ kỹ */
+    /* GIỮ NGUYÊN PHONG CÁCH HOÀI CỔ */
     filter: sepia(30%) grayscale(10%) brightness(95%); 
     transition: filter 2s ease-out; 
 }}
@@ -130,7 +132,7 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === TIÊU ĐỀ TRANG CHÍNH (GIỮ NGUYÊN FONT CŨ VÀ VỊ TRÍ) === */
+/* === TIÊU ĐỀ TRANG CHÍNH (FONT STAY STRONG) === */
 #main-title-container {{
     position: fixed;
     top: 5vh; 
@@ -144,11 +146,13 @@ iframe:first-of-type {{
 
 /* Đặt kích thước và FONT cho tiêu đề chính (H1) */
 #main-title-container h1 {{
-    font-size: 5vw; 
+    /* FONT STAY STRONG */
+    font-family: 'Stay Strong', cursive; 
+    
+    font-size: 4vw; 
     margin: 0;
-    font-weight: 900; 
-    letter-spacing: 5px;
-    font-family: Arial, sans-serif; 
+    font-weight: 400; /* Font thư pháp thường không cần font-weight cao */
+    letter-spacing: 2px; /* Giảm letter-spacing để phù hợp với font script/thư pháp */
     color: white; 
     text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);
 }}
@@ -156,7 +160,7 @@ iframe:first-of-type {{
 /* Giữ nguyên kích thước trên Mobile */
 @media (max-width: 768px) {{
     #main-title-container h1 {{
-        font-size: 8vw; 
+        font-size: 10vw; /* TĂNG SIZE TRÊN MOBILE ĐỂ FONT THƯ PHÁP DỄ ĐỌC HƠN */
     }}
 }}
 </style>
@@ -166,7 +170,7 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Cập nhật Font bay bổng) ---
+# --- MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Cập nhật Font Lobster) ---
 
 # JavaScript (Giữ nguyên logic)
 js_callback = f"""
@@ -250,7 +254,7 @@ js_callback = f"""
 </script>
 """
 
-# Mã HTML/CSS cho Video (Cập nhật Font bay bổng)
+# Mã HTML/CSS cho Video (Cập nhật Font Lobster)
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -275,7 +279,7 @@ html_content_modified = f"""
             transition: opacity 1s; 
         }}
 
-        /* === TIÊU ĐỀ INTRO ĐÃ CHỈNH SỬA === */
+        /* === TIÊU ĐỀ INTRO ĐÃ CHỈNH SỬA (FONT LOBSTER) === */
         #intro-text {{
             position: fixed;
             top: 5vh;
@@ -284,9 +288,9 @@ html_content_modified = f"""
             color: #FFD700; 
             font-size: 3.5vw; 
             
-            /* FONT BAY BỔNG */
-            font-family: 'Great Vibes', cursive; 
-            /* GIẢM ĐỘ ĐẬM */
+            /* FONT LOBSTER */
+            font-family: 'Lobster', cursive; 
+            /* Lobster có độ đậm cố định */
             font-weight: 400; 
             
             text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8); 
