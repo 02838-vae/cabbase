@@ -3,7 +3,7 @@ import base64
 
 # Cấu hình trang (Tắt menu mặc định)
 st.set_page_config(
-    page_title="Khám phá cùng chúng tôi",
+    page_title="Tổ Bảo Dưỡng Số 1",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
@@ -48,7 +48,6 @@ try:
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
     
-    # SỬA LỖI TÊN FILE: Đã sử dụng "cabbase.jpg"
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
     
@@ -63,11 +62,21 @@ TILES_PER_ROW = 10
 TILE_SIZE_PERCENT = 100 / TILES_PER_ROW # 10.0%
 BACKGROUND_SIZE_PERCENT = TILES_PER_ROW * 100 # 1000%
 
-# Tạo HTML cho 100 ô vuông
-tiles_html = "".join([f'<div class="tile"></div>' for _ in range(NUM_TILES)])
+# Tạo HTML cho 100 ô vuông lật (mặt trước là video, mặt sau là màu đen)
+tiles_html = ""
+for i in range(NUM_TILES):
+    # Mỗi tile cần hai mặt (front và back) cho hiệu ứng lật 3D
+    tiles_html += f"""
+        <div class="tile">
+            <div class="tile-face front">
+                <video id="video-tile-{i}" muted playsinline></video>
+            </div>
+            <div class="tile-face back"></div>
+        </div>
+    """
 
 
-# --- MÃ HTML/CSS/JavaScript ĐÃ SỬA LỖI TÊN FILE BACKGROUND ---
+# --- MÃ HTML/CSS/JavaScript ĐÃ SỬA LỖI VIDEO PLAYBACK VÀ NỘI DUNG CHÍNH ---
 
 html_content = f"""
 <!DOCTYPE html>
@@ -85,7 +94,7 @@ html_content = f"""
         }}
         
         /* ---------------------------------------------------- */
-        /* 1. LỚP INTRO (Được thay bằng các mảnh lật) */
+        /* 1. LỚP INTRO (Mảnh lật) */
         /* ---------------------------------------------------- */
         #intro-tiles-container {{
             position: fixed;
@@ -96,7 +105,6 @@ html_content = f"""
             z-index: 2000;
             display: flex;
             flex-wrap: wrap;
-            pointer-events: none;
         }}
 
         /* Mỗi mảnh (tile) là một phần của hiệu ứng lật */
@@ -104,26 +112,34 @@ html_content = f"""
             width: {TILE_SIZE_PERCENT}vw; 
             height: {TILE_SIZE_PERCENT}vh; 
             position: relative;
-            transform-style: preserve-3d; 
+            transform-style: preserve-3d; /* Rất quan trọng cho 3D */
             transition: transform 0.8s ease-in-out; 
-            cursor: pointer;
             pointer-events: all; 
-            
-            background-size: {BACKGROUND_SIZE_PERCENT}%; /* Kích thước tổng thể 1000% */
-            background-position: var(--tile-bg-x) var(--tile-bg-y);
-            background-repeat: no-repeat;
+        }}
+        
+        /* Các mặt của ô lật */
+        .tile-face {{
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden; /* Ẩn mặt bị quay lưng lại */
         }}
 
-        /* Sử dụng pseudo-element cho mặt trước 3D */
-        .tile::before {{
-            content: "";
+        /* Mặt sau (Back) của ô lật */
+        .tile-face.back {{
+            background-color: black; /* Màu đen hoặc màu nền trang chính */
+            transform: rotateY(180deg); /* Mặt sau quay 180 độ */
+        }}
+
+        /* Video trong mỗi ô (đảm bảo nó lấp đầy ô và chỉ hiển thị 1/100) */
+        .tile-face.front video {{
             position: absolute;
             top: 0;
             left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: black;
-            backface-visibility: hidden; 
+            width: {BACKGROUND_SIZE_PERCENT}vw; /* 1000vw */
+            height: {BACKGROUND_SIZE_PERCENT}vh; /* 1000vh */
+            object-fit: cover;
+            /* Mỗi video sẽ được định vị bằng JS để hiển thị 1/100 màn hình */
         }}
         
         /* Hiệu ứng lật đã kích hoạt */
@@ -145,10 +161,10 @@ html_content = f"""
             background-position: center;
             display: flex;
             flex-direction: column;
-            justify-content: center;
+            justify-content: flex-start; /* Căn tiêu đề lên trên */
             align-items: center;
             color: white;
-            padding: 20px;
+            padding-top: 15vh; /* Khoảng cách từ trên xuống */
             box-sizing: border-box;
             overflow-y: auto; 
             opacity: 0;
@@ -157,12 +173,21 @@ html_content = f"""
         .page-flipped #main-content {{
             opacity: 1;
         }}
+        
+        /* Tiêu đề trang chính */
+        #main-content h1 {{
+            font-size: 5vw; 
+            font-weight: bold;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7); 
+            margin: 0;
+        }}
 
 
         /* ---------------------------------------------------- */
-        /* 3. ĐIỀU CHỈNH CHUNG */
+        /* 3. ĐIỀU CHỈNH CHUNG & MEDIA QUERIES */
         /* ---------------------------------------------------- */
 
+        /* DÒNG CHỮ INTRO */
         #intro-text {{
             position: fixed;
             top: 5vh; 
@@ -185,11 +210,13 @@ html_content = f"""
             #main-content {{
                 background-image: url('data:image/jpeg;base64,{bg_mobile_base64}');
             }}
+             #main-content h1 {{
+                font-size: 10vw; 
+            }}
         }}
 
         @media (min-width: 769px) {{
             #main-content {{
-                /* ĐÃ SỬA LỖI: Dùng cabbase.jpg */
                 background-image: url('data:image/jpeg;base64,{bg_pc_base64}');
             }}
         }}
@@ -199,15 +226,9 @@ html_content = f"""
 <body id="app-body">
     
     <div id="main-content">
-        <h1>TRANG CHỦ ĐÃ SẴN SÀNG!</h1>
-        <p>Chào mừng bạn đến với thế giới đầy cảm hứng của chúng tôi.</p>
-        <button style="padding: 10px 20px; margin-top: 20px; font-size: 1.2em; cursor: pointer; background-color: #007bff; color: white; border: none; border-radius: 5px;">Bắt đầu khám phá</button>
-        <div style="height: 1000px; padding: 20px; background: rgba(0,0,0,0.5); margin-top: 50px;">
-            <p>Phần cuộn (Scrollable content) của trang chính.</p>
-        </div>
+        <h1>TỔ BẢO DƯỠNG SỐ 1</h1>
     </div>
 
-    <video id="intro-video-hidden" muted playsinline style="display: none;"></video>
     <audio id="background-audio"></audio>
 
     <div id="intro-tiles-container">
@@ -220,50 +241,49 @@ html_content = f"""
     <script>
         document.addEventListener("DOMContentLoaded", function() {{
             const appBody = document.getElementById('app-body');
-            const hiddenVideo = document.getElementById('intro-video-hidden');
             const audio = document.getElementById('background-audio');
             const introText = document.getElementById('intro-text');
             const tiles = document.querySelectorAll('.tile');
+            const tileVideos = document.querySelectorAll('.tile-face.front video');
             
             const numTilesPerRow = {TILES_PER_ROW}; 
-            
-            function isMobile() {{
-                return window.innerWidth <= 768;
-            }}
-            
             const videoSource = isMobile()
                 ? 'data:video/mp4;base64,{video_mobile_base64}' 
                 : 'data:video/mp4;base64,{video_pc_base64}';
 
+            function isMobile() {{
+                return window.innerWidth <= 768;
+            }}
+
             // 1. Cấu hình nguồn Video và Audio
-            hiddenVideo.src = videoSource;
             audio.src = 'data:audio/mp3;base64,{audio_base64}';
 
-            // 2. Thiết lập background cho từng mảnh (tile)
-            tiles.forEach((tile, index) => {{
+            // 2. Thiết lập đồng bộ và vị trí cho từng thẻ <video>
+            tileVideos.forEach((videoElement, index) => {{
+                // Đặt nguồn video cho từng thẻ
+                videoElement.src = videoSource;
+
                 const col = index % numTilesPerRow;
                 const row = Math.floor(index / numTilesPerRow);
                 
-                const backgroundPosX = -col * 100 + '%'; 
-                const backgroundPosY = -row * 100 + '%';
+                // Tính toán vị trí dịch chuyển để chỉ hiển thị 1/100 màn hình
+                const transformX = -col * 100 + 'vw'; 
+                const transformY = -row * 100 + 'vh'; 
 
-                tile.style.setProperty('--tile-bg-x', backgroundPosX);
-                tile.style.setProperty('--tile-bg-y', backgroundPosY);
-                
-                // Set background là video intro
-                tile.style.backgroundImage = 'url(' + videoSource + ')'; 
-
-                // Thiết lập độ trễ ngẫu nhiên cho hiệu ứng lật
-                const delay = Math.random() * 0.5; 
-                tile.style.transitionDelay = delay + 's';
+                // Áp dụng dịch chuyển cho mỗi video (giữ video Fullscreen, nhưng cắt nó)
+                videoElement.style.transform = `translate(-${{col * 10}}%, -${{row * 10}}%)`; 
             }});
             
             const playMedia = () => {{
-                hiddenVideo.load();
-                hiddenVideo.play().catch(e => console.log("Hidden Video playback failed:", e));
+                // Chạy tất cả các video cùng lúc
+                tileVideos.forEach(videoElement => {{
+                    videoElement.load();
+                    videoElement.play().catch(e => console.log("Video playback failed:", e));
+                }});
                 
                 setTimeout(() => {{ introText.style.opacity = 1; }}, 500);
 
+                // Autoplay Audio (Cần tương tác người dùng nếu bị chặn)
                 audio.volume = 0.5; 
                 audio.play().catch(e => {{
                     document.body.addEventListener('click', () => {{
@@ -274,23 +294,29 @@ html_content = f"""
             
             playMedia();
 
-            // 3. Logic HIỆU ỨNG LẬT khi video kết thúc
-            hiddenVideo.onended = () => {{
+            // 3. Logic HIỆU ỨNG LẬT khi một video (tileVideos[0]) kết thúc
+            tileVideos[0].onended = () => {{
+                // Dừng tất cả các video và âm thanh
+                tileVideos.forEach(videoElement => videoElement.pause());
                 audio.pause(); 
                 audio.currentTime = 0; 
                 introText.style.opacity = 0;
                 
+                // Kích hoạt hiệu ứng Lật
                 appBody.classList.add('page-flipped');
                 
                 setTimeout(() => {{
                     document.getElementById('intro-tiles-container').style.display = 'none';
-                    // Cho phép cuộn trang chính
                     document.body.style.overflow = 'auto'; 
                     document.getElementById('main-content').style.position = 'static';
                 }}, 1500); 
-                
-                console.log("Video intro đã kết thúc. Đang kích hoạt hiệu ứng Lật trang.");
             }};
+
+            // 4. Thiết lập độ trễ ngẫu nhiên cho hiệu ứng lật
+            tiles.forEach(tile => {{
+                const delay = Math.random() * 0.5; 
+                tile.style.transitionDelay = delay + 's';
+            }});
         }});
     </script>
 </body>
