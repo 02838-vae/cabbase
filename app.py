@@ -10,8 +10,6 @@ import streamlit.components.v1 as components
 VIDEO_PC = "airplane.mp4"
 VIDEO_MOBILE = "mobile.mp4"
 SFX = "plane_fly.mp3"
-SHUTTER_PC = "airplane_shutter.jpg"
-SHUTTER_MOBILE = "mobile_shutter.jpg"
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 
@@ -34,6 +32,7 @@ def hide_streamlit_ui():
         width: 100vw !important;
         height: 100vh !important;
         overflow: hidden !important;
+        background: black;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -42,16 +41,14 @@ def hide_streamlit_ui():
 # ========== MÀN HÌNH INTRO ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
+
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
-    shutter_file = SHUTTER_MOBILE if is_mobile else SHUTTER_PC
     bg_file = BG_MOBILE if is_mobile else BG_PC
     
     with open(video_file, "rb") as f:
         video_b64 = base64.b64encode(f.read()).decode()
     with open(SFX, "rb") as a:
         audio_b64 = base64.b64encode(a.read()).decode()
-    with open(shutter_file, "rb") as s:
-        shutter_b64 = base64.b64encode(s.read()).decode()
     with open(bg_file, "rb") as b:
         bg_b64 = base64.b64encode(b.read()).decode()
 
@@ -71,20 +68,22 @@ def intro_screen(is_mobile=False):
             height: 100%;
         }}
         video {{
-            position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%; object-fit: cover;
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            object-fit: cover;
             z-index: 1;
         }}
         #introText {{
             position: absolute;
-            top: 8%;
+            top: 10%;
             width: 100%;
             text-align: center;
             color: #fff5d7;
             font-family: 'Playfair Display', serif;
-            font-size: clamp(30px, 5vw, 65px);
+            font-size: clamp(24px, 4.5vw, 60px);
             text-shadow: 0 0 18px rgba(0,0,0,0.65);
-            z-index: 5;
+            z-index: 3;
             opacity: 0;
             animation: fadeInText 2s ease-in-out 1s forwards;
         }}
@@ -92,36 +91,31 @@ def intro_screen(is_mobile=False):
             from {{ opacity: 0; transform: scale(0.97); }}
             to {{ opacity: 1; transform: scale(1); }}
         }}
-        #static-frame {{
-            position: absolute; top: 0; left: 0;
-            width: 100%; height: 100%;
-            background-image: url("data:image/jpeg;base64,{shutter_b64}");
-            background-size: cover;
-            opacity: 0;
-            z-index: 10;
-            transition: opacity 0.2s linear;
-        }}
         #shatter-overlay {{
-            position: absolute; top: 0; left: 0;
+            position: absolute;
+            top: 0; left: 0;
             width: 100%; height: 100%;
             display: grid;
             grid-template-columns: repeat({GRID_SIZE}, 1fr);
             grid-template-rows: repeat({GRID_SIZE}, 1fr);
+            z-index: 5;
             opacity: 0;
-            pointer-events: none;
-            z-index: 15;
         }}
         .shard {{
             position: relative;
-            background-image: url("data:image/jpeg;base64,{shutter_b64}");
+            background-image: url("data:image/jpeg;base64,{bg_b64}");
             background-size: 100vw 100vh;
-            transition: transform {SHATTER_DURATION}s cubic-bezier(0.68, -0.55, 0.27, 1.55), opacity 1.2s ease-in-out;
+            transition: transform {SHATTER_DURATION}s cubic-bezier(0.68, -0.55, 0.27, 1.55),
+                        opacity 1.2s ease-in-out;
             opacity: 1;
         }}
         #black-fade {{
-            position: absolute; top: 0; left: 0;
+            position: absolute;
+            top: 0; left: 0;
             width: 100%; height: 100%;
-            background: black; opacity: 1; z-index: 20;
+            background: black;
+            opacity: 1;
+            z-index: 10;
             transition: opacity 1s ease-in-out;
         }}
     </style>
@@ -130,8 +124,7 @@ def intro_screen(is_mobile=False):
         <video id='introVid' autoplay muted playsinline>
             <source src='data:video/mp4;base64,{video_b64}' type='video/mp4'>
         </video>
-        <div id='introText'>TỔ BẢO DƯỠNG SỐ 1</div>
-        <div id='static-frame'></div>
+        <div id='introText'>KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
         <audio id='flySfx'>
             <source src='data:audio/mp3;base64,{audio_b64}' type='audio/mp3'>
         </audio>
@@ -142,12 +135,13 @@ def intro_screen(is_mobile=False):
         const GRID_SIZE = {GRID_SIZE};
         const SHATTER_DURATION = {js_shatter_duration};
         const BLACKOUT_DELAY = {js_blackout_delay};
+
         const vid = document.getElementById('introVid');
         const audio = document.getElementById('flySfx');
-        const staticFrame = document.getElementById('static-frame');
         const shatterOverlay = document.getElementById('shatter-overlay');
         const shards = document.querySelectorAll('.shard');
         const blackFade = document.getElementById('black-fade');
+
         let ended = false;
 
         let initialTransforms = [];
@@ -166,9 +160,8 @@ def intro_screen(is_mobile=False):
             if (ended) return;
             ended = true;
 
-            staticFrame.style.opacity = 1;
+            // Hiệu ứng tan vỡ
             shatterOverlay.style.opacity = 1;
-
             shards.forEach((shard, i) => {{
                 const t = initialTransforms[i];
                 shard.style.transform = `translate(${{t.randX}}vw, ${{t.randY}}vh) rotate(${{t.randR}}deg) scale(0.1)`;
@@ -176,7 +169,7 @@ def intro_screen(is_mobile=False):
                 shard.style.opacity = 0;
             }});
 
-            // Fade-in nền + chữ mới sau tan vỡ
+            // Sau khi tan vỡ: fade-in background chính & tiêu đề
             setTimeout(() => {{
                 const fadeBg = document.createElement('div');
                 fadeBg.style.position = 'absolute';
@@ -188,7 +181,7 @@ def intro_screen(is_mobile=False):
                 fadeBg.style.backgroundSize = 'cover';
                 fadeBg.style.backgroundPosition = 'center';
                 fadeBg.style.opacity = '0';
-                fadeBg.style.transition = 'opacity 2s ease-in-out';
+                fadeBg.style.transition = 'opacity 2.5s ease-in-out';
                 fadeBg.style.zIndex = '50';
                 document.body.appendChild(fadeBg);
 
@@ -203,15 +196,16 @@ def intro_screen(is_mobile=False):
                 title.style.fontSize = 'clamp(30px, 5vw, 65px)';
                 title.style.textShadow = '0 0 18px rgba(0,0,0,0.65)';
                 title.style.opacity = '0';
-                title.style.transition = 'opacity 2s ease-in-out';
+                title.style.transition = 'opacity 2.5s ease-in-out 0.5s';
                 title.style.zIndex = '55';
                 document.body.appendChild(title);
 
+                // Fade-in mượt
                 setTimeout(() => {{
                     fadeBg.style.opacity = 1;
                     title.style.opacity = 1;
                     blackFade.style.opacity = 0;
-                }}, 200);
+                }}, 300);
             }}, SHATTER_DURATION + BLACKOUT_DELAY);
         }}
 
@@ -225,6 +219,7 @@ def intro_screen(is_mobile=False):
     </body>
     </html>
     """
+
     components.html(intro_html, height=800, scrolling=False)
 
 
