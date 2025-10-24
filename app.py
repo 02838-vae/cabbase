@@ -26,6 +26,7 @@ def get_base64_encoded_file(file_path):
 
 # Mã hóa các file media (Giữ nguyên)
 try:
+    # LƯU Ý: Đảm bảo các file này tồn tại trong cùng thư mục với script Streamlit
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
@@ -37,7 +38,7 @@ except FileNotFoundError as e:
     st.stop()
 
 
-# --- CSS ĐỂ ÉP STREAMLIT MAIN CONTAINER & IFRAME FULLSCREEN/ẨN IFRAME (Giữ nguyên) ---
+# --- CSS ĐỂ ÉP STREAMLIT MAIN CONTAINER & IFRAME FULLSCREEN/ẨN IFRAME ---
 hide_streamlit_style = f"""
 <style>
 /* Ẩn các thành phần mặc định của Streamlit */
@@ -145,8 +146,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
-# JavaScript để thông báo cho Streamlit khi video kết thúc
-# CẬP NHẬT: Thêm class `text-shown` để kích hoạt hiệu ứng blur-in trong CSS
+# JavaScript (Giữ nguyên logic Blur-in)
 js_callback = f"""
 <script>
     function sendBackToStreamlit() {{
@@ -238,7 +238,7 @@ js_callback = f"""
 </script>
 """
 
-# Mã HTML/CSS cho Video (Đã Chỉnh Sửa Font Size và Hiệu Ứng)
+# Mã HTML/CSS cho Video (Đã Chỉnh Kích Thước Vừa Phải và Blur-in)
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -263,7 +263,7 @@ html_content_modified = f"""
             transition: opacity 1s; 
         }}
 
-        /* === PHẦN ĐÃ CHỈNH SỬA CHO TIÊU ĐỀ INTRO === */
+        /* === CHỈNH SỬA TIÊU ĐỀ INTRO === */
         #intro-text {{
             position: fixed;
             top: 5vh;
@@ -271,15 +271,15 @@ html_content_modified = f"""
             text-align: center;
             color: #FFD700; 
             
-            /* THU NHỎ SIZE CHỮ: 3.2vw (trước là 4vw) */
-            : 3.0vw; 
+            /* KÍCH THƯỚC VỪA PHẢI: 3.5vw */
+            font-size: 3.5vw; 
             
             font-weight: 900; 
             text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8); 
             z-index: 100;
             pointer-events: none;
             
-            /* HIỆU ỨNG BLUR-IN: Ban đầu mờ và ẩn */
+            /* HIỆU ỨNG BLUR-IN */
             opacity: 0; 
             filter: blur(10px);
             transition: opacity 1.5s ease-out, filter 1.5s ease-out; 
@@ -288,13 +288,13 @@ html_content_modified = f"""
         /* Class được thêm bằng JS để kích hoạt hiệu ứng */
         #intro-text.text-shown {{
             opacity: 1;
-            filter: blur(0); /* Hiện rõ chữ */
+            filter: blur(0); 
         }}
 
         @media (max-width: 768px) {{
             #intro-text {{
-                /* THU NHỎ SIZE CHỮ CHO MOBILE: 8vw (trước là 10vw) */
-                : 5vw; 
+                /* KÍCH THƯỚC VỪA PHẢI CHO MOBILE: 7vw */
+                font-size: 7vw; 
             }}
         }}
         /* =========================================== */
@@ -318,7 +318,7 @@ html_content_modified = f"""
 st.components.v1.html(html_content_modified, height=10, scrolling=False)
 
 
-# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH (Giữ nguyên) ---
+# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
 
 # Tạo Lưới Reveal (20x12 = 240 ô)
 grid_cells_html = ""
@@ -333,10 +333,9 @@ reveal_grid_html = f"""
 st.markdown(reveal_grid_html, unsafe_allow_html=True)
     
 
-# Nội dung chính của trang 
+# Nội dung chính của trang (ĐÃ CHỈNH SỬA KÍCH THƯỚC VÀ XÓA TIÊU ĐỀ PHỤ)
 st.markdown("""
 <div id="main-title-container" style="color: white; opacity: 0; transition: opacity 2s, transform 1s; transform: translate(-50%, -50%) scale(0.9); text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.9);">
-    <h1 style="font-size: 8vw; margin: 0; font-weight: 900; letter-spacing: 5px;">TỔ BẢO DƯỠNG SỐ 1</h1>
-    <h2 style="font-size: 1.6vw; margin: 10px 0 0 0; font-weight: 300;">MỞ RA MỘT CHẶNG ĐƯỜNG MỚI</h2>
-</div>
+    <h1 style="font-size: 5vw; margin: 0; font-weight: 900; letter-spacing: 5px;">TỔ BẢO DƯỠNG SỐ 1</h1>
+    </div>
 """, unsafe_allow_html=True)
