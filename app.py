@@ -1,7 +1,7 @@
 import streamlit as st
 import base64
 
-# --- CẤU HÌNH BAN ĐẦU ---
+# --- CẤU HÌNH ---
 st.set_page_config(
     page_title="Tổ Bảo Dưỡng Số 1",
     layout="wide",
@@ -35,18 +35,13 @@ except FileNotFoundError as e:
 # --- CSS CHUNG ---
 css_style = f"""
 <style>
-/* Reset UI */
 #MainMenu, footer, header {{visibility: hidden;}}
 .main {{padding: 0; margin: 0;}}
 div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
-
-/* Background */
 .stApp {{
     --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
 }}
-
-/* Reveal grid */
 .reveal-grid {{
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
     display: grid; grid-template-columns: repeat(20, 1fr); 
@@ -57,34 +52,19 @@ div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
     background-image: var(--main-bg-url-pc);
     background-size: cover; background-position: center; background-attachment: fixed;
 }}
-
-/* Keyframes ánh sáng */
-@keyframes shine-horizontal {{
-    0% {{ background-position: -150% 0; }}
-    100% {{ background-position: 250% 0; }}
-}}
-@keyframes shine-diagonal {{
-    0% {{ background-position: -200% 0; }}
-    100% {{ background-position: 300% 0; }}
-}}
-
-/* Intro text */
+@keyframes shine-horizontal {{ 0% {{ background-position: -150% 0; }} 100% {{ background-position: 250% 0; }} }}
+@keyframes shine-diagonal {{ 0% {{ background-position: -200% 0; }} 100% {{ background-position: 300% 0; }} }}
 #intro-text {{
     position: fixed; top: 5vh; width: 100%; text-align: center;
     font-family: 'Poppins', sans-serif;
-    font-size: 5vw; font-weight: 800;
-    text-transform: uppercase; letter-spacing: 2px;
-    padding: 0.5em 1em;
-    color: transparent;
+    font-size: 5vw; font-weight: 800; text-transform: uppercase; letter-spacing: 2px;
+    padding: 0.5em 1em; color: transparent;
     background: linear-gradient(45deg, #ffd700, #ffffff, #ffd700);
     -webkit-background-clip: text; background-clip: text;
-    mix-blend-mode: screen;
-    animation: shine-diagonal 4s infinite linear;
+    mix-blend-mode: screen; animation: shine-diagonal 4s infinite linear;
     text-shadow: 2px 2px 6px rgba(0,0,0,0.4);
     z-index: 100; pointer-events: none; opacity: 0; transition: opacity 1s;
 }}
-
-/* Main title */
 #main-title-container {{
     position: fixed; top: 5%; left: 50%;
     transform: translate(-50%, 0) scale(0.9);
@@ -105,8 +85,7 @@ div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
 }}
 #main-title-container h1::after {{
     content: attr(data-text);
-    position: absolute; left:0; top:0;
-    width:100%; height:100%; color:#fff;
+    position: absolute; left:0; top:0; width:100%; height:100%; color:#fff;
     opacity:0.15; filter: blur(10px); z-index:-1;
 }}
 #main-title-container h2 {{
@@ -115,16 +94,10 @@ div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
     text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
     margin-top: 10px;
 }}
-
-/* Mobile */
 @media (max-width: 768px) {{
     .main-content-revealed {{ background-image: var(--main-bg-url-mobile); }}
     .reveal-grid {{ grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(20, 1fr); }}
-    #main-title-container h1 {{
-        font-size: 10vw; letter-spacing: 3px;
-        background: linear-gradient(45deg, #ffd700, #ffffff, #ffd700);
-        animation: shine-diagonal 5s infinite linear;
-    }}
+    #main-title-container h1 {{ font-size: 10vw; letter-spacing: 3px; background: linear-gradient(45deg, #ffd700, #ffffff, #ffd700); animation: shine-diagonal 5s infinite linear; }}
     #main-title-container h2 {{ font-size: 4vw; margin-top: 0.5em; }}
     #intro-text {{ font-size: 8vw; }}
 }}
@@ -132,69 +105,7 @@ div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
 """
 st.markdown(css_style, unsafe_allow_html=True)
 
-# --- JS CALLBACK FIXED { } ---
-js_callback = f"""
-<script>
-function sendBackToStreamlit(){{{{ 
-    window.parent.document.querySelector('.stApp').classList.add('video-finished','main-content-revealed');
-    initRevealEffect();
-}}}}
-
-function initRevealEffect(){{{{ 
-    const revealGrid = window.parent.document.querySelector('.reveal-grid');
-    if(!revealGrid) return;
-    const cells = revealGrid.querySelectorAll('.grid-cell');
-    const shuffled = Array.from(cells).sort(()=>Math.random()-0.5);
-    shuffled.forEach((c,i)=>setTimeout(()=>{{{{ c.style.opacity=0; }}}}, i*10));
-    setTimeout(()=>{{{{ 
-        revealGrid.remove();
-        const mainTitle = window.parent.document.getElementById('main-title-container');
-        if(mainTitle){{
-            mainTitle.style.opacity=1;
-            mainTitle.style.transform='translate(-50%,0) scale(1)';
-        }}
-    }}}}, shuffled.length*10 + 1000);
-}}}}
-
-document.addEventListener("DOMContentLoaded", function(){{{{ 
-    const video = document.getElementById('intro-video');
-    const audio = document.getElementById('background-audio');
-    const introText = document.getElementById('intro-text');
-    const isMobile = window.innerWidth <= 768;
-
-    video.src = isMobile ? 'data:video/mp4;base64,{video_mobile_base64}' : 'data:video/mp4;base64,{video_pc_base64}';
-    audio.src = 'data:audio/mp3;base64,{audio_base64}';
-
-    const playMedia = () => {{{{
-        video.load(); 
-        video.play().catch(e => console.log("Video failed:", e));
-        setTimeout(() => {{{{ introText.style.opacity = 1; }}}}, 500);
-        audio.volume = 0.5; 
-        audio.loop = true;
-        audio.play().catch(e => {{{{
-            document.body.addEventListener('click', () => {{{{ audio.play().catch(() => {{{}}}); }}}}, {{once:true}});
-        }}}});
-    }}}};
-
-    playMedia();
-
-    video.onended = () => {{{{
-        video.style.opacity = 0; 
-        audio.pause(); 
-        audio.currentTime = 0; 
-        introText.style.opacity = 0;
-        sendBackToStreamlit();
-    }}}};
-
-    document.body.addEventListener('click', () => {{{{ 
-        video.play().catch(() => {{{}}}); 
-        audio.play().catch(() => {{{}}}); 
-    }}}}, {{once:true}});
-}}}});
-</script>
-"""
-
-# --- HTML VIDEO + INTRO TEXT ---
+# --- HTML + JS (KHÔNG F-STRING TRONG JS, chỉ chèn Base64) ---
 html_content = f"""
 <!DOCTYPE html>
 <html>
@@ -208,14 +119,65 @@ html_content = f"""
     <div id="intro-text">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
     <video id="intro-video" muted playsinline></video>
     <audio id="background-audio"></audio>
-    {js_callback}
+    <script>
+        const video = document.getElementById('intro-video');
+        const audio = document.getElementById('background-audio');
+        const introText = document.getElementById('intro-text');
+        const isMobile = window.innerWidth <= 768;
+
+        video.src = isMobile ? "data:video/mp4;base64,{video_mobile_base64}" : "data:video/mp4;base64,{video_pc_base64}";
+        audio.src = "data:audio/mp3;base64,{audio_base64}";
+
+        function sendBackToStreamlit() {{
+            document.querySelector('.stApp').classList.add('video-finished','main-content-revealed');
+            initRevealEffect();
+        }}
+
+        function initRevealEffect() {{
+            const revealGrid = document.querySelector('.reveal-grid');
+            if(!revealGrid) return;
+            const cells = revealGrid.querySelectorAll('.grid-cell');
+            const shuffled = Array.from(cells).sort(()=>Math.random()-0.5);
+            shuffled.forEach((c,i)=>setTimeout(()=>{{ c.style.opacity=0; }}, i*10));
+            setTimeout(()=>{{
+                revealGrid.remove();
+                const mainTitle = document.getElementById('main-title-container');
+                if(mainTitle){{
+                    mainTitle.style.opacity=1;
+                    mainTitle.style.transform='translate(-50%,0) scale(1)';
+                }}
+            }}, shuffled.length*10 + 1000);
+        }}
+
+        function playMedia() {{
+            video.load();
+            video.play().catch(e=>console.log(e));
+            setTimeout(()=>{{ introText.style.opacity=1; }},500);
+            audio.volume=0.5; audio.loop=true;
+            audio.play().catch(()=>{{
+                document.body.addEventListener('click',()=>{{ audio.play().catch(()=>{{}}); }}, {{once:true}});
+            }});
+        }}
+
+        playMedia();
+
+        video.onended = ()=>{{
+            video.style.opacity=0; audio.pause(); audio.currentTime=0; introText.style.opacity=0;
+            sendBackToStreamlit();
+        }};
+
+        document.body.addEventListener('click',()=>{{
+            video.play().catch(()=>{{}}); audio.play().catch(()=>{{}});
+        }}, {{once:true}});
+    </script>
 </body>
 </html>
 """
+
 st.components.v1.html(html_content, height=10, scrolling=False)
 
 # --- LƯỚI REVEAL ---
-grid_cells_html = "".join([f'<div class="grid-cell"></div>' for i in range(240)])
+grid_cells_html = "".join([f'<div class="grid-cell"></div>' for _ in range(240)])
 st.markdown(f'<div class="reveal-grid">{grid_cells_html}</div>', unsafe_allow_html=True)
 
 # --- TIÊU ĐỀ CHÍNH ---
