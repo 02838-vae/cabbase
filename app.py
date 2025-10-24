@@ -10,7 +10,7 @@ st.set_page_config(
 
 # Khởi tạo session state
 if 'video_ended' not in st.session_state:
-    st.session_session_state.video_ended = False
+    st.session_state.video_ended = False
 
 # --- CÁC HÀM TIỆN ÍCH ---
 
