@@ -6,12 +6,11 @@ from user_agents import parse
 import streamlit.components.v1 as components
 
 
-# ========== CẤU HÌNH TÀI NGUYÊN ==========
+# ========== CẤU HÌNH ==========
 
 VIDEO_PC = "airplane.mp4"
 VIDEO_MOBILE = "mobile.mp4"
 SFX = "plane_fly.mp3"
-
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 
@@ -37,7 +36,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO KHÔNG HIỆU ỨNG, CHUYỂN NGAY ==========
+# ========== MÀN HÌNH INTRO ==========
 
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
@@ -49,10 +48,8 @@ def intro_screen(is_mobile=False):
             video_b64 = base64.b64encode(f.read()).decode()
         with open(SFX, "rb") as a:
             audio_b64 = base64.b64encode(a.read()).decode()
-        with open(bg_file, "rb") as b:
-            bg_b64 = base64.b64encode(b.read()).decode()
     except FileNotFoundError as e:
-        st.error(f"Lỗi: Không tìm thấy file tài nguyên. Vui lòng kiểm tra: {e.filename}")
+        st.error(f"Lỗi: Thiếu file tài nguyên — {e.filename}")
         st.stop()
 
     intro_html = f"""
@@ -72,7 +69,6 @@ def intro_screen(is_mobile=False):
             width: 100%; height: 100%;
             object-fit: cover;
         }}
-        audio {{ display: none; }}
         #intro-text {{
             position: absolute; 
             top: 8%;
@@ -121,35 +117,23 @@ def intro_screen(is_mobile=False):
         function finishIntro() {{
             if (ended) return;
             ended = true;
-            window.parent.postMessage({{type: 'intro_done'}}, '*');
+            window.parent.postMessage({{ type: 'intro_done' }}, '*');
         }}
 
-        vid.addEventListener('canplay', () => {{
-            vid.play().catch(() => console.log('Autoplay bị chặn'));
-        }});
-
+        vid.addEventListener('canplay', () => vid.play().catch(()=>{{}}));
         vid.addEventListener('play', () => {{
             audio.volume = 1.0;
             audio.currentTime = 0;
-            audio.play().catch(() => console.log('Autoplay âm thanh bị chặn'));
+            audio.play().catch(()=>{{}});
         }});
 
-        // Cho phép click để bật âm thanh nếu trình duyệt chặn autoplay
         document.addEventListener('click', () => {{
             vid.muted = false;
             vid.play();
-            audio.volume = 1.0;
-            audio.currentTime = 0;
             audio.play().catch(()=>{{}});
-        }}, {{once:true}});
+        }}, {{ once: true }});
 
-        // Khi video kết thúc -> chuyển NGAY
-        vid.addEventListener('ended', () => {{
-            finishIntro();
-            setTimeout(() => {{
-                window.parent.location.reload();
-            }}, 10);
-        }});
+        vid.addEventListener('ended', finishIntro);
         </script>
     </body>
     </html>
@@ -162,38 +146,23 @@ def intro_screen(is_mobile=False):
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
-    try:
-        with open(bg, "rb") as f:
-            bg_b64 = base64.b64encode(f.read()).decode()
-    except FileNotFoundError as e:
-        st.error(f"Lỗi: Không tìm thấy file tài nguyên: {e.filename}")
-        st.stop()
+    with open(bg, "rb") as f:
+        bg_b64 = base64.b64encode(f.read()).decode()
 
     st.markdown(f"""
     <style>
     html, body, .stApp {{
         height: 100vh !important;
         background: 
-            linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
+            linear-gradient(to bottom, rgba(255, 235, 200, 0.25), rgba(90, 70, 50, 0.5)),
             url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
         background-size: cover !important;
-        overflow: hidden !important;
         margin: 0 !important;
         padding: 0 !important;
-        position: relative;
-        filter: brightness(1.05) contrast(1.1) saturate(1.05);
-        animation: fadeInBg 0.3s ease-in-out forwards; 
+        overflow: hidden !important;
+        animation: fadeIn 0.3s ease-in-out forwards;
     }}
-    .stApp::after {{
-        content: "";
-        position: absolute;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
-        opacity: 0.09;
-        mix-blend-mode: multiply;
-    }}
-    @keyframes fadeInBg {{
+    @keyframes fadeIn {{
         from {{ opacity: 0; }}
         to {{ opacity: 1; }}
     }}
@@ -205,47 +174,49 @@ def main_page(is_mobile=False):
         font-size: clamp(30px, 5vw, 65px);
         color: #fff5d7;
         font-family: 'Playfair Display', serif;
-        text-shadow: 0 0 18px rgba(0,0,0,0.65), 0 0 30px rgba(255,255,180,0.25);
+        text-shadow: 0 0 18px rgba(0,0,0,0.65);
         background: linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%);
         background-size: 200%;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
-        animation: textLight 10s linear infinite, fadeIn 0.6s ease-in-out forwards; 
-        letter-spacing: 2px;
+        animation: textLight 10s linear infinite;
         z-index: 3;
     }}
     @keyframes textLight {{
         0% {{ background-position: 200% 0%; }}
         100% {{ background-position: -200% 0%; }}
     }}
-    @keyframes fadeIn {{
-        from {{ opacity: 0; transform: scale(0.97); }}
-        to {{ opacity: 1; transform: scale(1); }}
-    }}
     </style>
-
     <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
     """, unsafe_allow_html=True)
 
 
-# ========== LUỒNG CHÍNH ==========
+# ========== CHẠY APP ==========
 
 hide_streamlit_ui()
 
 if "is_mobile" not in st.session_state:
-    ua_string = st_javascript("window.navigator.userAgent;")
-    if ua_string:
-        ua = parse(ua_string)
-        st.session_state.is_mobile = not ua.is_pc
-        st.rerun()
-    else:
-        st.info("Đang xác định thiết bị...")
-        time.sleep(1)
-        st.stop()
+    ua = parse(st_javascript("window.navigator.userAgent;"))
+    st.session_state.is_mobile = not ua.is_pc
+    st.rerun()
 
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
+# Nhận thông điệp từ JS
+intro_message = st_javascript("""
+new Promise((resolve) => {
+    window.addEventListener("message", (event) => {
+        if (event.data.type === "intro_done") resolve(true);
+    });
+});
+""")
+
+if intro_message:
+    st.session_state.intro_done = True
+    st.rerun()
+
+# Hiển thị intro hoặc main
 if not st.session_state.intro_done:
     intro_screen(st.session_state.is_mobile)
 else:
