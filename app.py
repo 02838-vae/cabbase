@@ -23,10 +23,12 @@ BG_MOBILE = "mobile.jpg"
 
 st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 
-# Cấu hình hiệu ứng broken glass
+# Cấu hình hiệu ứng
 GLASS_ROWS = 10
 GLASS_COLS = 10
 BREAK_DURATION = 1.5  # Thời gian hiệu ứng vỡ kính (giây)
+REVEAL_GRID = 8  # Lưới để reveal trang chính (8x8)
+REVEAL_DURATION = 3.5  # Thời gian reveal trang chính (giây)
 
 # ========== ẨN UI STREAMLIT ==========
 
@@ -47,7 +49,7 @@ def hide_streamlit_ui():
     """, unsafe_allow_html=True)
 
 
-# ========== MÀN HÌNH INTRO VỚI HIỆU ỨNG BROKEN GLASS ==========
+# ========== MÀN HÌNH INTRO VỚI HIỆU ỨNG BROKEN GLASS + REVEAL ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
@@ -80,7 +82,19 @@ def intro_screen(is_mobile=False):
             background: black;
             height: 100%;
         }}
-        #pre-load-bg {{ display: none; background-image: url("data:image/jpeg;base64,{bg_b64}"); }}
+        
+        /* Background trang chính - đặt ở layer dưới cùng */
+        #main-page-bg {{
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: 
+                linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
+                url("data:image/jpeg;base64,{bg_b64}") no-repeat center center;
+            background-size: cover;
+            filter: brightness(1.05) contrast(1.1) saturate(1.05);
+            z-index: 0;
+        }}
         
         video {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; 
@@ -136,16 +150,28 @@ def intro_screen(is_mobile=False):
             overflow: hidden;
         }}
 
-        #black-fade {{
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-            background: black; opacity: 1; z-index: 40;
-            transition: opacity 1s ease-in-out; pointer-events: none;
+        /* Reveal Grid Overlay */
+        #reveal-overlay {{
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            display: grid;
+            grid-template-columns: repeat({REVEAL_GRID}, 1fr);
+            grid-template-rows: repeat({REVEAL_GRID}, 1fr);
+            z-index: 20;
+            pointer-events: none;
+        }}
+        
+        .reveal-tile {{
+            background: black;
+            opacity: 1;
         }}
 
         </style>
     </head>
     <body>
-        <div id="pre-load-bg"></div>
+        <!-- Background trang chính -->
+        <div id="main-page-bg"></div>
         
         <video id='introVid' autoplay muted playsinline>
             <source src='data:video/mp4;base64,{video_b64}' type='video/mp4'>
@@ -159,26 +185,29 @@ def intro_screen(is_mobile=False):
 
         <div id='broken-glass-container'></div>
         
-        <div id='black-fade'></div>
+        <!-- Reveal overlay -->
+        <div id='reveal-overlay'></div>
 
         <script>
-        const ROWS = {GLASS_ROWS};
-        const COLS = {GLASS_COLS};
+        const GLASS_ROWS = {GLASS_ROWS};
+        const GLASS_COLS = {GLASS_COLS};
         const BREAK_DURATION = {BREAK_DURATION};
+        const REVEAL_GRID = {REVEAL_GRID};
+        const REVEAL_DURATION = {REVEAL_DURATION};
         
         const vid = document.getElementById('introVid');
         const audio = document.getElementById('flySfx');
-        const blackFade = document.getElementById('black-fade');
         const glassContainer = document.getElementById('broken-glass-container');
+        const revealOverlay = document.getElementById('reveal-overlay');
         let ended = false;
 
         // Tạo các mảnh vỡ
         function createBrokenPieces() {{
-            const pieceWidth = 100 / COLS;
-            const pieceHeight = 100 / ROWS;
+            const pieceWidth = 100 / GLASS_COLS;
+            const pieceHeight = 100 / GLASS_ROWS;
             
-            for (let row = 0; row < ROWS; row++) {{
-                for (let col = 0; col < COLS; col++) {{
+            for (let row = 0; row < GLASS_ROWS; row++) {{
+                for (let col = 0; col < GLASS_COLS; col++) {{
                     const piece = document.createElement('div');
                     piece.className = 'broken-piece';
                     
@@ -188,11 +217,21 @@ def intro_screen(is_mobile=False):
                     piece.style.height = pieceHeight + '%';
                     
                     piece.style.backgroundPosition = 
-                        (-col * (100 / COLS)) + '% ' + 
-                        (-row * (100 / ROWS)) + '%';
+                        (-col * (100 / GLASS_COLS)) + '% ' + 
+                        (-row * (100 / GLASS_ROWS)) + '%';
                     
                     glassContainer.appendChild(piece);
                 }}
+            }}
+        }}
+
+        // Tạo lưới reveal
+        function createRevealGrid() {{
+            for (let i = 0; i < REVEAL_GRID * REVEAL_GRID; i++) {{
+                const tile = document.createElement('div');
+                tile.className = 'reveal-tile';
+                tile.dataset.index = i;
+                revealOverlay.appendChild(tile);
             }}
         }}
 
@@ -219,6 +258,31 @@ def intro_screen(is_mobile=False):
             }});
         }}
 
+        function revealMainPage() {{
+            const tiles = document.querySelectorAll('.reveal-tile');
+            const centerRow = Math.floor(REVEAL_GRID / 2);
+            const centerCol = Math.floor(REVEAL_GRID / 2);
+            
+            // Tính khoảng cách từ mỗi ô đến trung tâm
+            tiles.forEach((tile, index) => {{
+                const row = Math.floor(index / REVEAL_GRID);
+                const col = index % REVEAL_GRID;
+                
+                // Khoảng cách Manhattan từ trung tâm
+                const distanceFromCenter = Math.abs(row - centerRow) + Math.abs(col - centerCol);
+                
+                // Delay tăng dần từ trung tâm ra ngoài
+                const delay = distanceFromCenter * (REVEAL_DURATION / (REVEAL_GRID * 2));
+                
+                gsap.to(tile, {{
+                    opacity: 0,
+                    duration: 0.4,
+                    delay: delay,
+                    ease: "power2.inOut"
+                }});
+            }});
+        }}
+
         function finishIntro() {{
             if (ended) return;
             ended = true;
@@ -232,24 +296,25 @@ def intro_screen(is_mobile=False):
                 breakGlass();
             }}, 100);
             
-            // Fade to black sau khi vỡ xong
+            // Sau khi vỡ xong, bắt đầu reveal trang chính
             setTimeout(() => {{
-                blackFade.style.opacity = 1;
-            }}, BREAK_DURATION * 1000 + 300);
+                glassContainer.style.opacity = 0;
+                revealMainPage();
+            }}, BREAK_DURATION * 1000 + 200);
             
-            // Reload trang
+            // Reload trang sau khi reveal hoàn tất
             setTimeout(() => {{
                 window.parent.postMessage({{type: 'intro_done'}}, '*');
-            }}, BREAK_DURATION * 1000 + 1300);
+            }}, BREAK_DURATION * 1000 + REVEAL_DURATION * 1000 + 500);
         }}
 
-        // Khởi tạo các mảnh vỡ
+        // Khởi tạo
         createBrokenPieces();
+        createRevealGrid();
 
         // Logic play video/audio
         vid.addEventListener('canplay', () => {{
             vid.play().catch(() => console.log('Autoplay bị chặn'));
-            blackFade.style.opacity = 0; 
         }});
         
         vid.addEventListener('play', () => {{
@@ -264,13 +329,10 @@ def intro_screen(is_mobile=False):
             audio.volume = 1.0;
             audio.currentTime = 0;
             audio.play().catch(()=>{{}}); 
-            blackFade.style.opacity = 0; 
         }}, {{once:true}});
 
         vid.addEventListener('ended', finishIntro);
         setTimeout(finishIntro, 9000); 
-
-        blackFade.style.opacity = 1;
 
         </script>
     </body>
