@@ -1,26 +1,20 @@
 import streamlit as st
 import base64
-import time
 from streamlit_javascript import st_javascript
 from user_agents import parse
 import streamlit.components.v1 as components
-
+import time
 
 # ========== CẤU HÌNH VÀ TÀI NGUYÊN ==========
-
-# File video và âm thanh intro
 VIDEO_PC = "airplane.mp4"
 VIDEO_MOBILE = "mobile.mp4"
 SFX = "plane_fly.mp3"
-
-# File ảnh nền của trang chính (sẽ hiện ra sau khi ghép lại)
 BG_PC = "cabbase.jpg"
 BG_MOBILE = "mobile.jpg"
 
 st.set_page_config(page_title="Cabbase", layout="wide", page_icon="✈️")
 
 # ========== ẨN UI STREAMLIT ==========
-
 def hide_streamlit_ui():
     st.markdown("""
     <style>
@@ -37,14 +31,12 @@ def hide_streamlit_ui():
     </style>
     """, unsafe_allow_html=True)
 
-
-# ========== MÀN HÌNH INTRO (ĐÃ GỘP JS VÀO HTML) ==========
+# ========== INTRO SCREEN ==========
 def intro_screen(is_mobile=False):
     hide_streamlit_ui()
     video_file = VIDEO_MOBILE if is_mobile else VIDEO_PC
     bg_file = BG_MOBILE if is_mobile else BG_PC
     
-    # ... (Đọc file và mã hóa Base64) ...
     try:
         with open(video_file, "rb") as f:
             video_b64 = base64.b64encode(f.read()).decode()
@@ -52,38 +44,30 @@ def intro_screen(is_mobile=False):
             audio_b64 = base64.b64encode(a.read()).decode()
         with open(bg_file, "rb") as b:
             bg_b64 = base64.b64encode(b.read()).decode()
-            
     except FileNotFoundError as e:
         st.error(f"Lỗi: Không tìm thấy file tài nguyên. Vui lòng kiểm tra: {e.filename}")
         st.stop()
     
-    # *** ĐÃ GỘP LOGIC CHUYỂN TRANG VÀO JS TRONG components.html ***
     intro_html = f"""
     <html>
     <head>
         <meta name='viewport' content='width=device-width, initial-scale=1.0'>
         <link href='https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap' rel='stylesheet'>
         <style>
-        /* CSS giữ nguyên */
         html, body {{
             margin: 0; padding: 0;
-            overflow: hidden;
-            background: black;
-            height: 100%;
+            overflow: hidden; background: black; height: 100%;
         }}
         video {{
             position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
         }}
-        #static-frame {{
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover;
-            background-size: cover; opacity: 0; z-index: 20; transition: opacity 0.1s linear;
-        }}
         audio {{ display: none; }}
         #intro-text {{
-            position: absolute; 
-            top: 8%; left: 50%; transform: translate(-50%, 0); 
+            position: absolute; top: 8%; left: 50%;
+            transform: translate(-50%, 0);
             width: 90vw; text-align: center; color: #f8f4e3;
-            font-size: clamp(22px, 6vw, 60px); font-weight: bold; font-family: 'Playfair Display', serif;
+            font-size: clamp(22px, 6vw, 60px); font-weight: bold;
+            font-family: 'Playfair Display', serif;
             background: linear-gradient(120deg, #e9dcb5 20%, #fff9e8 40%, #e9dcb5 60%);
             background-size: 200%; -webkit-background-clip: text; -webkit-text-fill-color: transparent;
             text-shadow: 0 0 15px rgba(255,255,230,0.4);
@@ -92,11 +76,6 @@ def intro_screen(is_mobile=False):
         }}
         @keyframes lightSweep {{ 0% {{ background-position: 200% 0%; }} 100% {{ background-position: -200% 0%; }} }}
         @keyframes fadeInOut {{ 0% {{ opacity: 0; }} 20% {{ opacity: 1; }} 80% {{ opacity: 1; }} 100% {{ opacity: 0; }} }}
-
-        #black-fade {{
-            position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: black; z-index: 100;
-            transition: opacity 1s ease-in-out; opacity: 1;
-        }}
         </style>
     </head>
     <body>
@@ -106,65 +85,39 @@ def intro_screen(is_mobile=False):
         <audio id="intro-audio" preload="auto">
             <source src="data:audio/mp3;base64,{audio_b64}" type="audio/mp3">
         </audio>
-        <div id="static-frame"></div>
-        <div id="intro-text">KHÁM PHÁ THẾ GIỚI<br>CÙNG CHÚNG TÔI</div> 
-        <div id="black-fade"></div>
-
+        <div id="intro-text">KHÁM PHÁ THẾ GIỚI<br>CÙNG CHÚNG TÔI</div>
         <script>
         const vid = document.getElementById('intro-video');
         const audio = document.getElementById('intro-audio');
-        const blackFade = document.getElementById('black-fade');
-        let finished = false;
 
         function finishIntro() {{
-            if (finished) return;
-            finished = true;
-
             vid.pause();
             audio.pause();
-            
-            // === LOGIC CHUYỂN TRANG NGAY LẬP TỨC ===
-            const url = new URL(window.parent.location.href);
-            url.searchParams.set('intro_done', 'true'); 
-            window.parent.location.href = url.toString(); // Kích hoạt Python rerender
+            window.parent.postMessage({{ type: "intro_done" }}, "*");
         }}
 
-        // Logic play video/audio
         vid.addEventListener('canplay', () => {{
-            vid.play().catch(() => console.log('Autoplay bị chặn'));
-            blackFade.style.opacity = 0;
+            vid.play().catch(()=>{{}});
         }});
         vid.addEventListener('play', () => {{
             audio.volume = 1.0;
             audio.currentTime = 0;
-            audio.play().catch(() => console.log('Autoplay âm thanh bị chặn'));
+            audio.play().catch(()=>{{}});
         }});
-        
-        // Xử lý click để vượt qua giới hạn Autoplay
+        vid.addEventListener('ended', finishIntro);
+
         document.addEventListener('click', () => {{
             vid.muted = false;
             vid.play();
-            audio.volume = 1.0;
-            audio.currentTime = 0;
-            audio.play().catch(()=>{{}}); 
-            blackFade.style.opacity = 0;
+            audio.play().catch(()=>{{}});
         }}, {{once:true}});
-
-        // Kích hoạt chuyển trang khi video kết thúc
-        vid.addEventListener('ended', finishIntro);
-        
-        // Fallback: Chuyển sau 9 giây nếu sự kiện 'ended' không hoạt động
-        setTimeout(finishIntro, 9000); 
-
         </script>
     </body>
     </html>
-    """ 
+    """
     components.html(intro_html, height=800, scrolling=False)
 
-
-# ========== TRANG CHÍNH (Giữ nguyên) ==========
-
+# ========== MAIN PAGE ==========
 def main_page(is_mobile=False):
     hide_streamlit_ui()
     bg = BG_MOBILE if is_mobile else BG_PC
@@ -175,105 +128,55 @@ def main_page(is_mobile=False):
         st.error(f"Lỗi: Không tìm thấy file tài nguyên: {e.filename}")
         st.stop()
 
-
     st.markdown(f"""
     <style>
-    /* CSS giữ nguyên */
     html, body, .stApp {{
         height: 100vh !important;
-        background: 
-            linear-gradient(to bottom, rgba(255, 235, 200, 0.25) 0%, rgba(160, 130, 90, 0.35) 50%, rgba(90, 70, 50, 0.5) 100%),
-            url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
+        background: url("data:image/jpeg;base64,{bg_b64}") no-repeat center center fixed !important;
         background-size: cover !important;
-        overflow: hidden !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        position: relative;
-        filter: brightness(1.05) contrast(1.1) saturate(1.05);
-        animation: fadeInBg 0.5s ease-in-out forwards; 
-    }}
-    .stApp::after {{
-        content: "";
-        position: absolute;
-        top: 0; left: 0;
-        width: 100%; height: 100%;
-        background-image: url("https://www.transparenttextures.com/patterns/noise-pattern-with-subtle-cross-lines.png");
-        opacity: 0.09;
-        mix-blend-mode: multiply;
-    }}
-    @keyframes fadeInBg {{
-        from {{ opacity: 0; }}
-        to {{ opacity: 1; }}
     }}
     .welcome {{
-        position: absolute;
-        top: 8%;
-        width: 100%;
-        text-align: center;
-        font-size: clamp(30px, 5vw, 65px);
-        color: #fff5d7;
+        position: absolute; top: 8%; width: 100%; text-align: center;
+        font-size: clamp(30px, 5vw, 65px); color: #fff5d7;
         font-family: 'Playfair Display', serif;
         text-shadow: 0 0 18px rgba(0,0,0,0.65), 0 0 30px rgba(255,255,180,0.25);
-        background: linear-gradient(120deg, #f3e6b4 20%, #fff7d6 40%, #f3e6b4 60%);
-        background-size: 200%;
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        animation: textLight 10s linear infinite, fadeIn 1s ease-in-out forwards; 
-        letter-spacing: 2px;
-        z-index: 3;
-    }}
-    @keyframes textLight {{
-        0% {{ background-position: 200% 0%; }}
-        100% {{ background-position: -200% 0%; }}
-    }}
-    @keyframes fadeIn {{
-        from {{ opacity: 0; transform: scale(0.97); }}
-        to {{ opacity: 1; transform: scale(1); }}
     }}
     </style>
-
-
     <div class="welcome">TỔ BẢO DƯỠNG SỐ 1</div>
     """, unsafe_allow_html=True)
 
-
-# =========================================================================
-# ========== LUỒNG CHÍNH (ĐÃ DỌN DẸP LOGIC CHUYỂN TRANG) ==========
-# =========================================================================
-
+# ========== LUỒNG CHÍNH ==========
 hide_streamlit_ui()
 
-# Kiểm tra thiết bị (Giữ nguyên)
 if "is_mobile" not in st.session_state:
     ua_string = st_javascript("window.navigator.userAgent;")
     if ua_string:
         ua = parse(ua_string)
         st.session_state.is_mobile = not ua.is_pc
-        st.rerun() 
+        st.experimental_rerun()
     else:
         st.info("Đang xác định thiết bị...")
-        time.sleep(1) 
         st.stop()
-
 
 if "intro_done" not in st.session_state:
     st.session_state.intro_done = False
 
 if not st.session_state.intro_done:
+    intro_screen(st.session_state.is_mobile)
     
-    # === THAY ĐỔI QUAN TRỌNG: CHỈ GỌI intro_screen() NẾU CẦN ===
+    # Lắng nghe message từ JS khi video kết thúc
+    done = st_javascript("""
+    new Promise((resolve) => {
+        window.addEventListener("message", (event) => {
+            if (event.data.type === "intro_done") {
+                resolve(true);
+            }
+        });
+    });
+    """)
     
-    # Bắt tham số 'intro_done' từ URL.
-    if st.query_params.get('intro_done') == 'true':
+    if done:
         st.session_state.intro_done = True
-        
-        # Xóa tham số và rerender ngay lập tức để chuyển trang.
-        del st.query_params['intro_done']
-        st.rerun()
-    
-    # Nếu không phải trạng thái chuyển, hiển thị màn hình intro
-    else:
-        intro_screen(st.session_state.is_mobile)
-
+        st.experimental_rerun()
 else:
     main_page(st.session_state.is_mobile)
