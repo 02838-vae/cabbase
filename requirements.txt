@@ -5,4 +5,5 @@ streamlit-js-eval
 streamlit-javascript
 pyyaml
 ua-parser
+st_static_file
 user-agents
