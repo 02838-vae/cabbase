@@ -24,7 +24,7 @@ if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
 
-# --- CÁC HÀM TIỆN ÍCH (Giữ nguyên) ---
+# --- CÁC HÀM TIỆN ÍCH ---
 
 
 def get_base64_encoded_file(file_path):
@@ -37,7 +37,7 @@ def get_base64_encoded_file(file_path):
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
 
-# --- MÃ HÓA CÁC FILE MEDIA (Giữ nguyên) ---
+# --- MÃ HÓA CÁC FILE MEDIA (Base64) VÀ TẠO URL GITHUB ---
 
 try:
     # 1. Base64 cho Video, Audio Intro, Ảnh Nền
@@ -73,7 +73,7 @@ font_links = """
 st.markdown(font_links, unsafe_allow_html=True)
 
 
-# --- PHẦN 2: CSS CHÍNH (Đã được FIX mạnh mẽ) ---
+# --- PHẦN 2: CSS CHÍNH (Đã FIX LỖI DẤU NGOẶC NHỌN) ---
 
 hide_streamlit_style = f"""
 <style>
@@ -119,7 +119,7 @@ iframe:first-of-type {{
 
 
 /* ************************************************* */
-/* === FIX MẠNH MẼ: KÍCH HOẠT TRANG CHÍNH === */
+/* === FIX MẠNH MẼ: KÍCH HOẠT TRANG CHÍNH VÀ FIX NỀN TRẮNG === */
 /* ************************************************* */
 
 /* FIX 1: Buộc các container chính của Streamlit thành trong suốt để ảnh nền .stApp được thấy */
@@ -127,22 +127,22 @@ iframe:first-of-type {{
 .stApp.video-finished .block-container,
 .stApp.video-finished [data-testid="stVerticalBlock"],
 .stApp.video-finished [data-testid="stHorizontalBlock"]
-{
+{{
     background-color: transparent !important;
-}
+}}
 
 /* FIX 2: Áp dụng background cực mạnh lên .stApp (Chỉ cần class video-finished) */
-.stApp.video-finished {
+.stApp.video-finished {{
     background-image: var(--main-bg-url-pc) !important;
     background-size: cover !important;
     background-position: center !important;
     background-attachment: fixed !important;
     filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%) !important;  
-    transition: all 2s ease-out; /* Dùng all để chuyển đổi mượt mà hơn */
-}
+    transition: all 2s ease-out; 
+}}
 
 
-/* Keyframes (Giữ nguyên) */
+/* Keyframes */
 @keyframes scrollText {{ 0% {{ transform: translate(100vw, 0); }} 100% {{ transform: translate(-100%, 0); }} }}
 @keyframes colorShift {{ 0% {{ background-position: 0% 50%; }} 50% {{ background-position: 100% 50%; }} 100% {{ background-position: 0% 50%; }} }}
 
@@ -206,7 +206,7 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: IFRAME CHO VIDEO INTRO (Đã FIX JS) ---
+# --- PHẦN 3: IFRAME CHO VIDEO INTRO (Giữ nguyên) ---
 
 js_callback_video = f"""
 <script>
@@ -296,7 +296,7 @@ js_callback_video = f"""
 </script>
 """
 
-# Mã HTML/CSS cho Video (Giữ nguyên)
+# Mã HTML/CSS cho Video 
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
