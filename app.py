@@ -159,13 +159,18 @@ iframe:first-of-type {{
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
     z-index: 10; 
     
-    /* FIX MỚI MẠNH MẼ: Mặc định ẩn hoàn toàn khỏi luồng hiển thị */
+    /* FIX CỰC KỲ MẠNH MẼ: Mặc định ẩn container */
     display: none !important; 
     
-    opacity: 0; /* Mặc định ẩn mờ */
-    pointer-events: none; /* Không thể tương tác */
+    opacity: 0; 
+    pointer-events: none; 
     height: 80px; width: 170px; 
     transition: opacity 1s ease-out;
+}}
+
+/* FIX MẠNH MẼ BỔ SUNG: Ẩn luôn DIV wrapper Streamlit (đảm bảo ẩn iframe) */
+#music-player-container > div {{
+    display: none !important;
 }}
 
 /* KHI VIDEO KẾT THÚC, HIỂN THỊ VÀ BẬT TƯƠNG TÁC */
@@ -173,6 +178,11 @@ iframe:first-of-type {{
     display: block !important; /* HIỆN container */
     opacity: 1; 
     pointer-events: auto; 
+}}
+
+/* HIỆN DIV wrapper Streamlit */
+.video-finished #music-player-container > div {{
+    display: block !important;
 }}
 
 
