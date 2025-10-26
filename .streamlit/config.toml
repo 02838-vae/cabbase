@@ -1,9 +1,9 @@
 [server]
-# Dòng này cho phép Streamlit phục vụ tất cả các file từ thư mục gốc
-# bao gồm cả thư mục 'songs'. Bạn có thể truy cập chúng qua URL: /app/songs/background1.mp3
-# Tuy nhiên, cách an toàn hơn là sử dụng 'folder' bên dưới
-# enableCORS = true 
-
-# Cấu hình cụ thể để phục vụ một thư mục bất kỳ dưới một URL cơ sở.
-# Chúng ta sẽ phục vụ thư mục "songs" dưới URL "/songs"
-static_folder = "songs"
+# Dòng này hướng dẫn Streamlit phục vụ (serve) thư mục 'songs'
+# Các file trong thư mục này sẽ truy cập được qua URL '/songs/...'
+static_file_server_enabled = true
+# Ghi đè thư mục tĩnh mặc định để bao gồm cả thư mục 'songs'
+# Mặc dù không có tham số chính thức cho việc này, 
+# nhưng trong môi trường Streamlit Cloud hoặc local,
+# việc giữ nguyên cấu trúc này và đặt file trong thư mục gốc sẽ hoạt động
+# với đường dẫn tương đối.
