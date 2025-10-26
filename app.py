@@ -241,16 +241,39 @@ padding:6px 8px;">
 </div>
 <audio id="au"></audio>
 <script>
-const list={music_json};
-const keys=Object.keys(list);
-let i=0; const a=document.getElementById('au'); const b=document.getElementById('pp');
-function load(){a.src=list[keys[i]];}
-function toggle(){{if(a.paused){{a.play();b.innerHTML='&#10074;&#10074;';}}else{{a.pause();b.innerHTML='&#9658;';}}}}
-function next(){{i=(i+1)%keys.length;load();if(!a.paused)a.play();}}
-function prev(){{i=(i-1+keys.length)%keys.length;load();if(!a.paused)a.play();}}
-a.addEventListener('ended',next); load();
-window.togglePlayPause=toggle;
+const list = {music_json};
+const keys = Object.keys(list);
+let i = 0; 
+const a = document.getElementById('au'); 
+const b = document.getElementById('pp');
+
+function load() {{ a.src = list[keys[i]]; }}
+function toggle() {{ 
+  if (a.paused) {{
+    a.play(); 
+    b.innerHTML = '&#10074;&#10074;';
+  }} else {{
+    a.pause(); 
+    b.innerHTML = '&#9658;';
+  }}
+}}
+function next() {{
+  i = (i + 1) % keys.length;
+  load();
+  if (!a.paused) a.play();
+}}
+function prev() {{
+  i = (i - 1 + keys.length) % keys.length;
+  load();
+  if (!a.paused) a.play();
+}}
+a.addEventListener('ended', next);
+load();
+window.togglePlayPause = toggle;
 </script>
+</body></html>
+"""
+
 </body></html>
 """
 st.markdown('<div id="music-player-wrapper">', unsafe_allow_html=True)
