@@ -1,9 +1,3 @@
 [server]
-# Dòng này hướng dẫn Streamlit phục vụ (serve) thư mục 'songs'
-# Các file trong thư mục này sẽ truy cập được qua URL '/songs/...'
-static_file_server_enabled = true
-# Ghi đè thư mục tĩnh mặc định để bao gồm cả thư mục 'songs'
-# Mặc dù không có tham số chính thức cho việc này, 
-# nhưng trong môi trường Streamlit Cloud hoặc local,
-# việc giữ nguyên cấu trúc này và đặt file trong thư mục gốc sẽ hoạt động
-# với đường dẫn tương đối.
+# Dòng này cho phép Streamlit phục vụ các file tĩnh (bao gồm thư mục 'songs')
+enableStaticServing = true
