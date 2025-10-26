@@ -6,4 +6,3 @@ streamlit-javascript
 pyyaml
 ua-parser
 user-agents
-streamlit_static_resource
