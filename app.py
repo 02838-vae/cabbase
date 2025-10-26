@@ -1,8 +1,6 @@
 import streamlit as st
-import base64
 import json
-# Import thư viện phục vụ file tĩnh mới
-import streamlit_static_resource as st_resource
+# KHÔNG CẦN import base64 hoặc bất kỳ thư viện static nào khác.
 
 # --- CẤU HÌNH BAN ĐẦU ---
 
@@ -16,48 +14,31 @@ st.set_page_config(
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
-# KHAI BÁO STATIC SERVER VÀ LẤY BASE URL
-# Sử dụng thư mục "Static" (chữ S hoa)
-music_base_url = st_resource.static_resource_base(resource_path="Static")
+# --- CÁC ĐƯỜNG DẪN URL TĨNH (Sử dụng tính năng Static File Serving) ---
 
+# TẤT CẢ FILE MEDIA ĐỀU PHẢI NẰM TRONG THƯ MỤC Static/ (Dù là ảnh, video hay nhạc)
+# CHÚ Ý: Đảm bảo các file sau: airplane.mp4, mobile.mp4, plane_fly.mp3, cabbase.jpg, mobile.jpg 
+# đã được chuyển vào thư mục Static/
 
-# --- CÁC HÀM TIỆN ÍCH ---
+STATIC_URL_BASE = "/app/static"
 
-def get_base64_encoded_file(file_path):
-    """Đọc file và trả về Base64 encoded string."""
-    try:
-        with open(file_path, "rb") as f:
-            data = f.read()
-        return base64.b64encode(data).decode("utf-8")
-    except FileNotFoundError as e:
-        # Đường dẫn cho các file khác vẫn ở thư mục gốc
-        raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
+# URL cho video, hình ảnh và nhạc intro
+video_pc_url = f"{STATIC_URL_BASE}/airplane.mp4"
+video_mobile_url = f"{STATIC_URL_BASE}/mobile.mp4"
+audio_intro_url = f"{STATIC_URL_BASE}/plane_fly.mp3"
+bg_pc_url = f"{STATIC_URL_BASE}/cabbase.jpg"
+bg_mobile_url = f"{STATIC_URL_BASE}/mobile.jpg"
 
-
-# Mã hóa các file media
-try:
-    # BASE64 CHO VIDEO VÀ HÌNH ẢNH (Vẫn dùng Base64 vì chúng ở thư mục gốc)
-    video_pc_base64 = get_base64_encoded_file("airplane.mp4")
-    video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
-    audio_base64 = get_base64_encoded_file("plane_fly.mp3") 
-    
-    bg_pc_base64 = get_base64_encoded_file("cabbase.jpg")    
-    bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
-
-    # SỬ DỤNG URL TĨNH CHO MUSIC PLAYER (Giúp load nhanh hơn)
-    music_files = {
-        "background1": f"{music_base_url}/background1.mp3",
-        "background2": f"{music_base_url}/background2.mp3",
-        "background3": f"{music_base_url}/background3.mp3",
-        "background4": f"{music_base_url}/background4.mp3",
-        "background5": f"{music_base_url}/background5.mp3",
-        "background6": f"{music_base_url}/background6.mp3",
-    }
-    music_playlist_json = json.dumps(music_files)
-
-except FileNotFoundError as e:
-    st.error(e)
-    st.stop()
+# URL cho MUSIC PLAYER
+music_files = {
+    "background1": f"{STATIC_URL_BASE}/background1.mp3",
+    "background2": f"{STATIC_URL_BASE}/background2.mp3",
+    "background3": f"{STATIC_URL_BASE}/background3.mp3",
+    "background4": f"{STATIC_URL_BASE}/background4.mp3",
+    "background5": f"{STATIC_URL_BASE}/background5.mp3",
+    "background6": f"{STATIC_URL_BASE}/background6.mp3",
+}
+music_playlist_json = json.dumps(music_files)
 
 
 # --- PHẦN 1: NHÚNG FONT VÀ CSS CHUNG ---
@@ -69,6 +50,7 @@ st.markdown(font_links, unsafe_allow_html=True)
 
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
+# Ảnh nền giờ cũng dùng URL, không cần Base64
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -110,8 +92,8 @@ iframe:first-of-type {{
 
 /* CSS cho phần còn lại */
 .stApp {{
-    --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
-    --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
+    --main-bg-url-pc: url('{bg_pc_url}');
+    --main-bg-url-mobile: url('{bg_mobile_url}');
 }}
 /* ... (Giữ nguyên các CSS còn lại cho .reveal-grid, #main-title-container, keyframes) ... */
 .reveal-grid {{
@@ -233,9 +215,9 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (GIỮ NGUYÊN) ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (DÙNG URL TĨNH) ---
 
-# JavaScript (Giữ nguyên logic pause nhạc intro)
+# JavaScript (Đã chuyển sang dùng URL tĩnh)
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
@@ -280,12 +262,12 @@ js_callback_video = f"""
 
 
         if (isMobile) {{
-            video.src = 'data:video/mp4;base64,{video_mobile_base64}';
+            video.src = '{video_mobile_url}';
         }} else {{
-            video.src = 'data:video/mp4;base64,{video_pc_base64}';
+            video.src = '{video_pc_url}';
         }}
         
-        audio.src = 'data:audio/mp3;base64,{audio_base64}'; // Nhạc intro dùng Base64
+        audio.src = '{audio_intro_url}'; // Nhạc intro dùng URL tĩnh
 
 
         const playMedia = () => {{
