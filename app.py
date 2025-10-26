@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Khởi tạo session state (giữ nguyên)
+# Khởi tạo session state
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
@@ -19,7 +19,7 @@ def get_base64_encoded_file(file_path):
     """Đọc file và trả về Base64 encoded string. Dùng cho các file nhỏ/cần tải ngay."""
     if not os.path.exists(file_path):
         st.error(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {file_path}")
-        st.stop() # Dừng ứng dụng nếu file không tồn tại
+        st.stop()
     try:
         with open(file_path, "rb") as f:
             data = f.read()
@@ -29,8 +29,12 @@ def get_base64_encoded_file(file_path):
         st.stop()
 
 
-# Mã hóa các file media cần thiết (Ảnh nền)
+# Mã hóa các file media cần thiết
 try:
+    video_pc_base64 = get_base64_encoded_file("airplane.mp4")
+    video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
+    audio_base64 = get_base64_encoded_file("plane_fly.mp3") # Âm thanh Intro
+    
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
 
@@ -38,12 +42,11 @@ try:
     SONG_PATHS = [f"songs/background{i}.mp3" for i in range(1, 7)]
     song_paths_js_array = str(SONG_PATHS).replace("'", '"')
     
-except Exception as e:
-    st.error(f"Lỗi khi tải file media: {e}")
+except Exception:
     st.stop()
 
 
-# --- FONT LINKS (giữ nguyên) ---
+# --- FONT LINKS ---
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
@@ -51,8 +54,8 @@ font_links = """
 st.markdown(font_links, unsafe_allow_html=True)
 
 
-# --- PHẦN CSS CHUNG CHO ỨNG DỤNG (ĐÃ CẬP NHẬT CHO GIAO DIỆN MỚI) ---
-app_css = f"""
+# --- PHẦN CSS CHUNG CHO ỨNG DỤNG (ĐÃ CẬP NHẬT) ---
+hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 
@@ -66,7 +69,6 @@ div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
 .stApp {{
     --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
-    background-image: var(--main-bg-url-pc);
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
@@ -74,9 +76,62 @@ div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
     transition: filter 2s ease-out; 
 }}
 
+/* TRẠNG THÁI SAU KHI VIDEO KẾT THÚC */
+.video-finished {{
+    background-image: var(--main-bg-url-pc);
+    filter: sepia(0%) grayscale(0%) brightness(100%) contrast(100%); 
+}}
 @media (max-width: 768px) {{
-    .stApp {{
+    .video-finished {{
         background-image: var(--main-bg-url-mobile);
+    }}
+}}
+
+/* Ẩn Iframe Video Intro */
+iframe:first-of-type {{
+    transition: opacity 1s ease-out, visibility 1s ease-out;
+    opacity: 1;
+    visibility: visible;
+    width: 100vw !important;
+    height: 100vh !important;
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+}}
+
+.video-finished iframe:first-of-type {{
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    height: 1px !important; 
+}}
+
+
+/* --- REVEAL GRID VÀ HIỆU ỨNG --- */
+.reveal-grid {{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    display: grid;
+    grid-template-columns: repeat(20, 1fr); 
+    grid-template-rows: repeat(12, 1fr);
+    z-index: 500; 
+    pointer-events: none; 
+}}
+
+.grid-cell {{
+    background-color: white; 
+    opacity: 1;
+    transition: opacity 0.5s ease-out;
+}}
+
+@media (max-width: 768px) {{
+    .reveal-grid {{
+        grid-template-columns: repeat(10, 1fr);
+        grid-template-rows: repeat(20, 1fr);
     }}
 }}
 
@@ -94,9 +149,16 @@ div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
     align-items: center;
     z-index: 1000;
     transition: background 0.3s ease-in-out, padding 0.3s ease-in-out;
+    opacity: 0; /* Ẩn ban đầu */
+    pointer-events: none;
 }}
 
-.header.scrolled {{ /* Header khi cuộn */
+.video-finished .header {{
+    opacity: 1; /* Hiện sau khi video xong */
+    pointer-events: all;
+}}
+
+.header.scrolled {{ 
     background: rgba(0, 0, 0, 0.9);
     padding: 10px 30px;
 }}
@@ -116,7 +178,7 @@ div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
     flex-direction: column;
     justify-content: space-between;
     cursor: pointer;
-    z-index: 1001; /* Đảm bảo nút hamburger nằm trên menu overlay */
+    z-index: 1001;
 }}
 
 .hamburger-menu .bar {{
@@ -126,7 +188,6 @@ div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
     transition: all 0.3s ease-in-out;
 }}
 
-/* Hiệu ứng khi menu mở */
 .hamburger-menu.open .bar:nth-child(1) {{
     transform: translateY(8.5px) rotate(45deg);
 }}
@@ -140,7 +201,7 @@ div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
 .menu-overlay {{
     position: fixed;
     top: 0;
-    right: -100%; /* Ban đầu ẩn sang phải */
+    right: -100%; 
     width: 100%;
     height: 100%;
     background: rgba(0, 0, 0, 0.95);
@@ -152,7 +213,7 @@ div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
 }}
 
 .menu-overlay.open {{
-    right: 0; /* Hiện ra */
+    right: 0; 
 }}
 
 .menu-overlay nav ul {{
@@ -164,13 +225,13 @@ div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
 
 .menu-overlay nav ul li {{
     margin-bottom: 20px;
-    opacity: 0; /* Ban đầu ẩn các mục menu */
+    opacity: 0; 
     transform: translateX(50px);
     transition: opacity 0.4s ease-out, transform 0.4s ease-out;
 }}
 
 .menu-overlay.open nav ul li {{
-    opacity: 1; /* Hiện ra khi menu mở */
+    opacity: 1; 
     transform: translateX(0);
 }}
 
@@ -193,47 +254,74 @@ div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
     color: gold;
 }}
 
+/* --- TIÊU ĐỀ CHẠY (TỪ CODE CŨ) --- */
+@keyframes scrollText {{
+    0% {{ transform: translate(100vw, 0); }} 
+    100% {{ transform: translate(-100%, 0); }} 
+}}
+@keyframes colorShift {{
+    0% {{ background-position: 0% 50%; }}
+    50% {{ background-position: 100% 50%; }}
+    100% {{ background-position: 0% 50%; }}
+}}
+
+#main-title-container {{
+    position: fixed;
+    top: 15vh; /* Hạ xuống dưới Header */
+    left: 0; 
+    width: 100%; 
+    height: 10vh; 
+    overflow: hidden; 
+    z-index: 20; 
+    pointer-events: none; 
+    
+    opacity: 0; 
+    transition: opacity 2s;
+}}
+
+.video-finished #main-title-container {{
+    opacity: 1;
+}}
+
+#main-title-container h1 {{
+    font-family: 'Playfair Display', serif; 
+    font-size: 3.5vw; 
+    margin: 0;
+    font-weight: 900; 
+    font-feature-settings: "lnum" 1; 
+    letter-spacing: 5px; 
+    white-space: nowrap; 
+    
+    display: inline-block; 
+    animation: scrollText 15s linear infinite; 
+    
+    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3); 
+    background-size: 400% 400%; 
+    -webkit-background-clip: text; 
+    -webkit-text-fill-color: transparent; 
+    color: transparent; 
+    animation: colorShift 10s ease infinite, scrollText 15s linear infinite; 
+    
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
+}}
+
 /* --- CÁC SECTION NỘI DUNG CHÍNH --- */
 .section {{
-    min-height: 100vh; /* Mỗi section cao ít nhất 100% viewport */
+    min-height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
     color: white;
     text-align: center;
     padding: 50px 20px;
-    box-sizing: border-box; /* Bao gồm padding trong chiều cao */
+    box-sizing: border-box;
     
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
+    padding-top: 100px; /* Thêm padding để không bị Header che mất */
 }}
 
 #hero-section {{
-    background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), var(--main-bg-url-pc); /* Lớp phủ đen trên ảnh nền chính */
-    background-attachment: fixed; /* Parallax */
-}}
-@media (max-width: 768px) {{
-    #hero-section {{
-        background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), var(--main-bg-url-mobile);
-    }}
-}}
-
-
-.section h2 {{
-    font-family: 'Playfair Display', serif;
-    font-size: 50px;
-    margin-bottom: 20px;
-    color: gold;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.7);
-}}
-
-.section p {{
-    font-family: 'Playfair Display', serif;
-    font-size: 20px;
-    line-height: 1.6;
-    max-width: 800px;
-    margin: 0 auto;
+    /* Đã được áp dụng qua .video-finished trong .stApp */
+    padding-top: 250px; /* Giữ khoảng trống lớn cho Tiêu đề chạy */
 }}
 
 /* Hiệu ứng Reveal cho các phần tử */
@@ -257,25 +345,32 @@ div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
     z-index: 150; 
     width: 200px; 
     transition: opacity 1s ease-in-out;
-    opacity: 1; /* Luôn hiển thị */
+    opacity: 0; /* Ẩn ban đầu */
+}}
+
+.video-finished #music-player-container {{
+    opacity: 1; /* Hiện ra sau khi video kết thúc */
 }}
 
 @media (max-width: 768px) {{
     #music-player-container {{
-        top: auto; /* Bỏ vị trí top cố định */
-        bottom: 20px; /* Đặt ở dưới cùng */
+        top: auto; 
+        bottom: 20px; 
         left: 50%;
-        transform: translateX(-50%); /* Căn giữa theo chiều ngang */
-        width: 80%; /* Rộng hơn trên di động */
+        transform: translateX(-50%); 
+        width: 80%; 
     }}
 }}
 
 </style>
 """
-st.markdown(app_css, unsafe_allow_html=True)
+
+# Thêm CSS vào trang chính
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
 # --- JAVASCRIPT CHUNG CHO GIAO DIỆN (HEADER, MENU, SCROLL REVEAL) ---
+# Đã Tích hợp logic kích hoạt cho Video Intro
 app_js = """
 <script>
     document.addEventListener('DOMContentLoaded', function() {
@@ -297,19 +392,19 @@ app_js = """
         function toggleMenu() {
             hamburgerMenu.classList.toggle('open');
             menuOverlay.classList.toggle('open');
-            document.body.classList.toggle('no-scroll'); // Ngăn cuộn khi menu mở
+            // document.body.classList.toggle('no-scroll'); // Tạm thời bỏ để tránh xung đột
         }
 
         hamburgerMenu.addEventListener('click', toggleMenu);
 
         menuLinks.forEach(link => {
             link.addEventListener('click', function(e) {
-                e.preventDefault(); // Ngăn hành vi cuộn mặc định
-                const targetId = this.getAttribute('href').substring(1); // Lấy ID của section
+                e.preventDefault(); 
+                const targetId = this.getAttribute('href').substring(1); 
                 const targetSection = document.getElementById(targetId);
 
                 if (targetSection) {
-                    toggleMenu(); // Đóng menu sau khi chọn
+                    toggleMenu(); 
                     // Cuộn đến section với offset cho header
                     window.scrollTo({
                         top: targetSection.offsetTop - header.offsetHeight, 
@@ -323,16 +418,16 @@ app_js = """
         const revealElements = document.querySelectorAll('.reveal');
 
         const observerOptions = {
-            root: null, // viewport
+            root: null, 
             rootMargin: '0px',
-            threshold: 0.2 // Hiện ra khi 20% phần tử hiển thị
+            threshold: 0.2 
         };
 
         const observer = new IntersectionObserver((entries, observer) => {
             entries.forEach(entry => {
                 if (entry.isIntersecting) {
                     entry.target.classList.add('visible');
-                    observer.unobserve(entry.target); // Ngừng quan sát sau khi hiện
+                    observer.unobserve(entry.target); 
                 }
             });
         }, observerOptions);
@@ -343,6 +438,200 @@ app_js = """
 """
 st.markdown(app_js, unsafe_allow_html=True)
 
+
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (ĐÃ TÍCH HỢP LẠI) ---
+
+js_callback_video = f"""
+<script>
+    function sendBackToStreamlit() {{
+        // Gửi tín hiệu lên Streamlit parent để kích hoạt CSS cho trang chính và Player
+        window.parent.document.querySelector('.stApp').classList.add('video-finished');
+        initRevealEffect();
+    }}
+    
+    function initRevealEffect() {{
+        const revealGrid = window.parent.document.querySelector('.reveal-grid');
+
+        if (!revealGrid) {{ return; }}
+
+        const cells = revealGrid.querySelectorAll('.grid-cell');
+        const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
+
+        shuffledCells.forEach((cell, index) => {{
+            setTimeout(() => {{
+                cell.style.opacity = 0; 
+            }}, index * 10);
+        }});
+        
+        setTimeout(() => {{
+             revealGrid.remove();
+        }}, shuffledCells.length * 10 + 1000);
+    }}
+
+    document.addEventListener("DOMContentLoaded", function() {{
+        const video = document.getElementById('intro-video');
+        const audio = document.getElementById('background-audio');
+        const introTextContainer = document.getElementById('intro-text-container'); 
+        const isMobile = window.innerWidth <= 768;
+
+        if (isMobile) {{
+            video.src = 'data:video/mp4;base64,{video_mobile_base64}';
+        }} else {{
+            video.src = 'data:video/mp4;base64,{video_pc_base64}';
+        }}
+        
+        audio.src = 'data:audio/mp3;base64,{audio_base64}';
+
+        const playMedia = () => {{
+            video.load();
+            video.play().catch(e => console.log("Video playback failed:", e));
+                
+            const chars = introTextContainer.querySelectorAll('.intro-char');
+            chars.forEach((char, index) => {{
+                char.style.animationDelay = `${{index * 0.1}}s`; 
+                char.classList.add('char-shown'); 
+            }});
+
+            audio.volume = 0.5;
+            audio.loop = true; 
+            audio.play().catch(e => {{
+                document.body.addEventListener('click', () => {{
+                    audio.play().catch(err => console.error("Audio playback error on click:", err));
+                }}, {{ once: true }});
+            }});
+        }};
+            
+        playMedia();
+        
+        video.onended = () => {{
+            video.style.opacity = 0;
+            audio.pause();
+            audio.currentTime = 0;
+            introTextContainer.style.opacity = 0; 
+            
+            sendBackToStreamlit(); 
+        }};
+
+        document.body.addEventListener('click', () => {{
+             video.play().catch(e => {{}});
+             audio.play().catch(e => {{}});
+        }}, {{ once: true }});
+    }});
+</script>
+"""
+
+html_content_modified = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        html, body {{
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }}
+        
+        #intro-video {{
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -100;
+            transition: opacity 1s; 
+        }}
+
+        #intro-text-container {{ 
+            position: fixed;
+            top: 5vh;
+            width: 100%;
+            text-align: center;
+            color: #FFD700; 
+            font-size: 3vw; 
+            font-family: 'Sacramento', cursive; 
+            font-weight: 400; 
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8); 
+            z-index: 100;
+            pointer-events: none;
+            display: flex; 
+            justify-content: center;
+            opacity: 1; 
+        }}
+        
+        .intro-char {{
+            display: inline-block; 
+            opacity: 0;
+            transform: translateY(-50px); 
+            animation-fill-mode: forwards; 
+            animation-duration: 0.8s; 
+            animation-timing-function: ease-out; 
+        }}
+
+        @keyframes charDropIn {{
+            from {{
+                opacity: 0;
+                transform: translateY(-50px);
+            }}
+            to {{
+                opacity: 1;
+                transform: translateY(0);
+            }}
+        }}
+
+        .intro-char.char-shown {{
+            animation-name: charDropIn;
+        }}
+
+        @media (max-width: 768px) {{
+            #intro-text-container {{
+                font-size: 6vw; 
+            }}
+        }}
+        
+    </style>
+</head>
+<body>
+
+    <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+    
+    <video id="intro-video" muted playsinline></video>
+    
+    <audio id="background-audio"></audio>
+
+    {js_callback_video}
+</body>
+</html>
+"""
+
+intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
+intro_chars_html = ''.join([
+    f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>' 
+    for char in intro_title
+])
+html_content_modified = html_content_modified.replace(
+    "<div id=\"intro-text-container\">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>",
+    f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
+)
+
+# Hiển thị thành phần HTML (video)
+st.components.v1.html(html_content_modified, height=10, scrolling=False)
+
+# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
+
+# Tạo Lưới Reveal (Giữ nguyên)
+grid_cells_html = ""
+for i in range(240): 
+    grid_cells_html += f'<div class="grid-cell"></div>'
+
+reveal_grid_html = f"""
+<div class="reveal-grid">
+    {grid_cells_html}
+</div>
+"""
+st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
 # --- CẤU TRÚC HEADER VÀ MENU ---
 st.markdown("""
@@ -368,13 +657,21 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# --- TIÊU ĐỀ CHẠY (TỪ CODE CŨ) ---
+main_title_text = "TỔ BẢO DƯỠNG SỐ 1" 
+st.markdown(f"""
+<div id="main-title-container">
+    <h1>{main_title_text}</h1>
+</div>
+""", unsafe_allow_html=True)
+
+
 # --- CÁC SECTION NỘI DUNG ---
 
-# Section 1: Hero Section (Trang chủ)
 st.markdown(f"""
 <section id="hero-section" class="section">
     <div class="reveal">
-        <h2>Chào mừng đến với Tổ Bảo Dưỡng Số 1</h2>
+        <h2 style="margin-top: 100px;">Chào mừng đến với Tổ Bảo Dưỡng Số 1</h2>
         <p>Chúng tôi mang đến những giải pháp bảo dưỡng máy bay hàng đầu với công nghệ tiên tiến và đội ngũ chuyên gia giàu kinh nghiệm.</p>
         <p style="margin-top: 20px;">An toàn, Chất lượng, Hiệu quả là cam kết của chúng tôi.</p>
     </div>
@@ -382,7 +679,6 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 
-# Section 2: About Us (Về chúng tôi)
 st.markdown("""
 <section id="about-section" class="section" style="background-color: rgba(20, 20, 20, 0.8);">
     <div class="reveal">
@@ -393,7 +689,6 @@ st.markdown("""
 </section>
 """, unsafe_allow_html=True)
 
-# Section 3: Services (Dịch vụ)
 st.markdown("""
 <section id="services-section" class="section" style="background-color: rgba(30, 30, 30, 0.8);">
     <div class="reveal">
@@ -404,7 +699,6 @@ st.markdown("""
 </section>
 """, unsafe_allow_html=True)
 
-# Section 4: Team (Đội ngũ)
 st.markdown("""
 <section id="team-section" class="section" style="background-color: rgba(40, 40, 40, 0.8);">
     <div class="reveal">
@@ -415,7 +709,6 @@ st.markdown("""
 </section>
 """, unsafe_allow_html=True)
 
-# Section 5: Contact (Liên hệ)
 st.markdown("""
 <section id="contact-section" class="section" style="background-color: rgba(50, 50, 50, 0.8);">
     <div class="reveal">
@@ -428,11 +721,14 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# --- MUSIC PLAYER CỐ ĐỊNH ---
+# -----------------------------------------------------------
+# --- PHẦN 4: MUSIC PLAYER CỐ ĐỊNH (FIXED MUSIC PLAYER - ĐÃ FIX LỖI HIỂN THỊ CODE) ---
+# -----------------------------------------------------------
 
 song_names_js_array = str([f"Background {i}" for i in range(1, 7)]).replace("'", '"')
 
-music_player_full_template = """
+# === SỬ DỤNG r""" VÀ NỐI CHUỖI ĐỂ TRÁNH LỖI KEYERROR/RENDER HTML TRONG ST.MARKDOWN ===
+music_player_full_code = f"""
 <style>
 /* CSS NỘI BỘ CHO PLAYER */
 #music-player-container {{
@@ -507,6 +803,7 @@ music_player_full_template = """
 </div>
 
 <script>
+    // CHÈN BIẾN QUA F-STRING VÀ CHUỖI JS TỪ PYTHON
     const SONG_PATHS = {song_paths_js_array}; 
     const SONG_NAMES = {song_names_js_array};
 
@@ -590,12 +887,17 @@ music_player_full_template = """
         if (SONG_PATHS.length > 0) {{
             loadSong(currentSongIndex);
             
-            // Tự động phát nhạc sau khi trang tải xong và có tương tác đầu tiên (nếu cần)
-            document.body.addEventListener('click', () => {{
-                if (player.paused) {{
-                    playSong();
-                }}
-            }}, {{ once: true }});
+            const stApp = window.parent.document.querySelector('.stApp');
+            if(stApp) {{
+                // Chờ cho lớp 'video-finished' được thêm vào (Video Intro kết thúc)
+                const observer = new MutationObserver((mutationsList, observer) => {{
+                    if (stApp.classList.contains('video-finished')) {{
+                        setTimeout(playSong, 1000); 
+                        observer.disconnect(); 
+                    }}
+                }});
+                observer.observe(stApp, {{ attributes: true, attributeFilter: ['class'] }});
+            }}
         }}
     }});
     
@@ -608,12 +910,6 @@ music_player_full_template = """
 
 </script>
 """
-
-# Chèn các biến Python vào template
-music_player_full_code = music_player_full_template.format(
-    song_paths_js_array=song_paths_js_array,
-    song_names_js_array=song_names_js_array
-)
 
 # Nhúng Music Player vào trang chính bằng st.markdown
 st.markdown(music_player_full_code, unsafe_allow_html=True)
