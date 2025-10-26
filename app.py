@@ -1,6 +1,5 @@
 import streamlit as st
 import json
-# KHÔNG CÓ IMPORT THƯ VIỆN PHỤ THUỘC NÀO.
 
 # --- CẤU HÌNH BAN ĐẦU ---
 
@@ -15,8 +14,8 @@ if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
 # --- CÁC ĐƯỜNG DẪN URL TĨNH ---
-# Dùng tên thư mục "static" (chữ thường)
-STATIC_URL_BASE = "/app/static" 
+# THAY ĐỔI QUAN TRỌNG: Sử dụng "/static" thay vì "/app/static"
+STATIC_URL_BASE = "/static" 
 
 # URL cho video, hình ảnh và nhạc intro
 video_pc_url = f"{STATIC_URL_BASE}/airplane.mp4"
@@ -44,6 +43,21 @@ font_links = """
 """
 st.markdown(font_links, unsafe_allow_html=True)
 
+# Nút Bỏ qua (Chỉ hiển thị khi video bị kẹt)
+st.markdown(
+    """
+    <button 
+        id="skip-intro-btn" 
+        onclick="window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed'); 
+                 window.parent.initRevealEffect(); 
+                 window.parent.document.querySelector('iframe').style.display='none'; 
+                 this.style.display='none';"
+    >
+        Bỏ qua Intro >>
+    </button>
+    """,
+    unsafe_allow_html=True
+)
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
 hide_streamlit_style = f"""
@@ -53,11 +67,32 @@ hide_streamlit_style = f"""
 /* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
 
+/* CSS cho Nút Bỏ qua */
+#skip-intro-btn {{
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 1001;
+    background-color: rgba(255, 215, 0, 0.7);
+    color: #000;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: bold;
+}}
+
+/* Ẩn nút Bỏ qua khi video đã kết thúc */
+.video-finished #skip-intro-btn {{
+    display: none !important;
+}}
+
 .main {{
     padding: 0;
     margin: 0;
 }}
 
+/* ... (Giữ nguyên các CSS còn lại cho .stApp, .reveal-grid, #main-title-container) ... */
 div.block-container {{
     padding: 0;
     margin: 0;
@@ -203,7 +238,6 @@ iframe:first-of-type {{
     transition: opacity 1s ease-out;
     pointer-events: none;
     
-    /* Đảm bảo container này có đủ không gian để chứa player */
     height: 80px; 
     width: 350px; 
 }}
@@ -234,27 +268,27 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
-# JavaScript (Giữ nguyên, dùng URL tĩnh)
+# JavaScript (Đã chuyển sang dùng URL tĩnh)
 js_callback_video = f"""
 <script>
-    function sendBackToStreamlit() {{
-        // THÊM CLASS ĐỂ KÍCH HOẠT CSS VÀ HIỆU ỨNG (Bao gồm cả music player)
-        window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
-        initRevealEffect();
-    }}
-    
+    // Hàm khởi tạo hiệu ứng reveal và chuyển trang
     function initRevealEffect() {{
+        // LẤY CÁC THÀNH PHẦN
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
         const mainTitle = window.parent.document.getElementById('main-title-container');
+
 
         if (mainTitle) {{
             mainTitle.style.opacity = 1;  
         }}
 
+
         if (!revealGrid) {{ return; }}
+
 
         const cells = revealGrid.querySelectorAll('.grid-cell');
         const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
+
 
         shuffledCells.forEach((cell, index) => {{
             setTimeout(() => {{
@@ -266,6 +300,9 @@ js_callback_video = f"""
             revealGrid.remove();
         }}, shuffledCells.length * 10 + 1000);
     }}
+
+    // Gán hàm vào window.parent để nút Bỏ qua có thể gọi được
+    window.parent.initRevealEffect = initRevealEffect; 
 
 
     document.addEventListener("DOMContentLoaded", function() {{
@@ -300,7 +337,6 @@ js_callback_video = f"""
             audio.volume = 0.5;
             audio.loop = true;  
             audio.play().catch(e => {{
-                // Xử lý Autoplay fail: Yêu cầu tương tác người dùng
                 console.log("Audio intro blocked. Waiting for user interaction.");
             }});
         }};
@@ -313,7 +349,9 @@ js_callback_video = f"""
             audio.currentTime = 0;
             introTextContainer.style.opacity = 0;  
             
-            sendBackToStreamlit();  
+            // THÊM CLASS ĐỂ KÍCH HOẠT CSS VÀ HIỆU ỨNG (Bao gồm cả music player)
+            window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
+            initRevealEffect();
         }};
 
         // XỬ LÝ CLICK ĐẦU TIÊN (Cho cả video và nhạc intro)
@@ -352,8 +390,7 @@ html_content_modified = f"""
             transition: opacity 1s;  
         }}
 
-
-        /* === TIÊU ĐỀ INTRO === */
+        /* ... (CSS cho tiêu đề intro - Giữ nguyên) ... */
         #intro-text-container {{  
             position: fixed;
             top: 5vh;
@@ -492,7 +529,7 @@ custom_music_player_html = f"""
             background-color: rgba(0, 0, 0, 0.4); 
             border-radius: 8px;
             width: 300px;
-            margin: 0 auto; /* Đảm bảo căn giữa */
+            margin: 0 auto; 
             border: 1px solid #FFD700;
         }}
         
