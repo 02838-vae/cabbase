@@ -19,7 +19,7 @@ st.set_page_config(
 )
 
 
-# Khởi tạo session state
+# Khởi tạo session state (Không cần thiết cho logic hiện tại nhưng giữ lại)
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
@@ -34,7 +34,6 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
-        # Nếu file không tồn tại, Streamlit sẽ dừng và báo lỗi cho người dùng biết
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
 
@@ -171,8 +170,10 @@ iframe:first-of-type {{
     transform: none !important;
     z-index: 10 !important; 
     
-    /* ẨN HOÀN TOÀN MẶC ĐỊNH (NGĂN LÓE SÁNG) */
+    /* 🚀 FIX MẠNH MẼ: Đảm bảo Player bị ẩn ngay lập tức (dù là iframe) */
+    visibility: hidden !important; 
     display: none !important; 
+    
     opacity: 0 !important; 
     pointer-events: none !important; 
     
@@ -181,20 +182,23 @@ iframe:first-of-type {{
     transition: opacity 1s ease-out;
 }}
 
-/* ẨN DIV wrapper Streamlit (Bổ sung để ngăn lỗi Race Condition) */
+/* 🚀 FIX MẠNH MẼ: ẨN DIV wrapper Streamlit (đảm bảo ẩn iframe) */
 #music-player-container > div {{
+    visibility: hidden !important; 
     display: none !important;
 }}
 
 /* KHI VIDEO KẾT THÚC, HIỂN THỊ VÀ BẬT TƯƠNG TÁC */
 .video-finished #music-player-container {{
     display: block !important;
+    visibility: visible !important;
     opacity: 1 !important; 
     pointer-events: auto !important; 
 }}
 
 .video-finished #music-player-container > div {{
     display: block !important;
+    visibility: visible !important;
 }}
 
 @media (max-width: 768px) {{
@@ -233,7 +237,6 @@ js_callback_video = f"""
         
         // KÍCH HOẠT PLAYER: Gọi hàm play trong iframe của Music Player 
         try {{
-            // Sử dụng window.parent để truy cập DOM của Streamlit và tìm Player iframe
             window.parent.document.querySelector('#music-player-container iframe').contentWindow.togglePlayPause(true);
         }} catch(e) {{
             console.warn("Could not auto-play background music player:", e);
@@ -344,7 +347,7 @@ html_content_modified = html_content_modified.replace(
     f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
 )
 
-# 🚀 FIX QUAN TRỌNG: Tăng chiều cao để video có thể hiện ra
+# Giữ chiều cao lớn để video được render đúng
 st.components.v1.html(html_content_modified, height=800, scrolling=False) 
 
 
