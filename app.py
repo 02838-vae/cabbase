@@ -4,17 +4,17 @@ import os
 
 st.set_page_config(page_title="Cabbase", page_icon="✈️", layout="wide")
 
-# --- HÀM TIỆN ÍCH ---
+# --- HÀM HỖ TRỢ ---
 def get_base64_encoded_file(path):
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode()
 
-# --- ĐỌC FILE ---
+# --- LOAD FILE ---
 video_pc_base64 = get_base64_encoded_file("airplane.mp4")
 video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
-audio_base64 = get_base64_encoded_file("background1.mp3")  # âm thanh intro
+audio_base64 = get_base64_encoded_file("background1.mp3")
 
-# --- CSS TOÀN TRANG ---
+# --- CSS ---
 st.markdown("""
 <style>
 * {margin: 0; padding: 0; box-sizing: border-box;}
@@ -55,7 +55,7 @@ st.markdown("""
     to {opacity: 1; transform: translateY(0);}
 }
 
-/* --- BACKGROUND CHÍNH --- */
+/* --- BACKGROUND --- */
 .video-finished .stApp {
     background: radial-gradient(circle at top left, #001, #003);
 }
@@ -75,7 +75,7 @@ st.markdown("""
     opacity: 1;
 }
 
-/* --- PLAYER GÓC TRÁI --- */
+/* --- PLAYER NHẠC --- */
 #music-player {
     position: fixed;
     bottom: 2vh;
@@ -136,11 +136,11 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- SCRIPT INTRO ---
-js_callback_video = f"""
+# --- JAVASCRIPT CHẠY INTRO ---
+js_intro = f"""
 <script>
 function sendBackToStreamlit() {{
-    window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
+    window.parent.document.querySelector('.stApp').classList.add('video-finished');
 }}
 
 document.addEventListener("DOMContentLoaded", () => {{
@@ -154,7 +154,6 @@ document.addEventListener("DOMContentLoaded", () => {{
     }} else {{
         video.src = "data:video/mp4;base64,{video_pc_base64}";
     }}
-
     audio.src = "data:audio/mp3;base64,{audio_base64}";
 
     const playMedia = () => {{
@@ -169,19 +168,18 @@ document.addEventListener("DOMContentLoaded", () => {{
         audio.loop = true;
         audio.play().catch(() => {{}});
     }};
-
     playMedia();
 
     video.onended = () => {{
         video.style.opacity = 0;
-        audio.pause();
         intro.style.opacity = 0;
+        audio.pause();
         sendBackToStreamlit();
     }};
 }});
 </script>
 """
-st.markdown(js_callback_video, unsafe_allow_html=True)
+st.markdown(js_intro, unsafe_allow_html=True)
 
 # --- MUSIC PLAYER ---
 song_base64_list = []
@@ -192,14 +190,63 @@ for i in range(1, 7):
 
 if song_base64_list:
     song_sources_js = "[" + ",".join([f"'data:audio/mp3;base64,{b}'" for b in song_base64_list]) + "]"
-
     music_player_html = f"""
-    <div id="music-player">
-        <button id="prev-btn">⏮️</button>
-        <button id="play-btn">▶️</button>
-        <button id="next-btn">⏭️</button>
-        <input type="range" id="progress-bar" value="0" min="0" max="100">
-    </div>
+<div id="music-player">
+    <button id='prev-btn'>⏮️</button>
+    <button id='play-btn'>▶️</button>
+    <button id='next-btn'>⏭️</button>
+    <input type='range' id='progress-bar' value='0' min='0' max='100'>
+</div>
 
-    <script>
-    const playlist
+<script>
+const playlist = {song_sources_js};
+let currentSongIndex = 0;
+const audioPlayer = new Audio(playlist[currentSongIndex]);
+const playBtn = document.getElementById('play-btn');
+const nextBtn = document.getElementById('next-btn');
+const prevBtn = document.getElementById('prev-btn');
+const progressBar = document.getElementById('progress-bar');
+let isPlaying = false;
+
+playBtn.addEventListener('click', () => {{
+    if (!isPlaying) {{
+        audioPlayer.play();
+        playBtn.textContent = '⏸️';
+    }} else {{
+        audioPlayer.pause();
+        playBtn.textContent = '▶️';
+    }}
+    isPlaying = !isPlaying;
+}});
+
+nextBtn.addEventListener('click', () => {{
+    currentSongIndex = (currentSongIndex + 1) % playlist.length;
+    changeSong();
+}});
+prevBtn.addEventListener('click', () => {{
+    currentSongIndex = (currentSongIndex - 1 + playlist.length) % playlist.length;
+    changeSong();
+}});
+function changeSong() {{
+    audioPlayer.src = playlist[currentSongIndex];
+    audioPlayer.play();
+    isPlaying = true;
+    playBtn.textContent = '⏸️';
+}}
+audioPlayer.addEventListener('timeupdate', () => {{
+    if (audioPlayer.duration) {{
+        progressBar.value = (audioPlayer.currentTime / audioPlayer.duration) * 100;
+    }}
+}});
+progressBar.addEventListener('input', () => {{
+    if (audioPlayer.duration) {{
+        audioPlayer.currentTime = (progressBar.value / 100) * audioPlayer.duration;
+    }}
+}});
+audioPlayer.addEventListener('ended', () => {{
+    currentSongIndex = (currentSongIndex + 1) % playlist.length;
+    changeSong();
+}});
+</script>
+"""
+    st.markdown(music_player_html, unsafe_allow_html=True)
