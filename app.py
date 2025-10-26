@@ -19,7 +19,7 @@ st.set_page_config(
 )
 
 
-# Khởi tạo session state (Không dùng trong logic hiện tại, nhưng giữ lại)
+# Khởi tạo session state
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
@@ -73,7 +73,7 @@ font_links = """
 st.markdown(font_links, unsafe_allow_html=True)
 
 
-# --- PHẦN 2: CSS CHÍNH (Đã FIX LỖI DẤU NGOẶC NHỌN) ---
+# --- PHẦN 2: CSS CHÍNH (Đã FIX LỖI NỀN TRẮNG & PLAYER) ---
 
 hide_streamlit_style = f"""
 <style>
@@ -146,7 +146,7 @@ iframe:first-of-type {{
 @keyframes scrollText {{ 0% {{ transform: translate(100vw, 0); }} 100% {{ transform: translate(-100%, 0); }} }}
 @keyframes colorShift {{ 0% {{ background-position: 0% 50%; }} 50% {{ background-position: 100% 50%; }} 100% {{ background-position: 0% 50%; }} }}
 
-/* === TIÊU ĐỀ TRANG CHÍNH (Kích hoạt bằng .video-finished) === */
+/* === TIÊU ĐỀ TRANG CHÍNH === */
 #main-title-container {{
     position: fixed; top: 5vh; left: 0; width: 100%; height: 10vh; overflow: hidden;  z-index: 20;  pointer-events: none; 
     opacity: 0; /* Mặc định ẩn */
@@ -166,32 +166,35 @@ iframe:first-of-type {{
 }}
 
 /* === MUSIC PLAYER CONTAINER (Vị trí và Ẩn cứng) === */
+/* Chúng ta sẽ dùng Inner CSS để ẩn cứng, nên Outer CSS chỉ cần hiển thị/ẩn Container chính */
 #music-player-container {{
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
     z-index: 10; 
     
-    /* ẨN CỨNG CONTAINER (Đảm bảo không thấy trong Intro) */
-    display: none !important; 
+    /* Ẩn bằng opacity/visibility để fade-in mượt hơn */
+    opacity: 0;
+    visibility: hidden; 
     pointer-events: none; 
     
     height: 80px; width: 170px; 
-    transition: opacity 1s ease-out;
+    transition: opacity 1s ease-out, visibility 0s 1s; /* Chờ 1s rồi ẩn hẳn */
 }}
 
 /* KHI VIDEO KẾT THÚC, HIỂN THỊ VÀ BẬT TƯƠNG TÁC */
 .video-finished #music-player-container {{
-    display: block !important; /* HIỆN container */
     opacity: 1; 
+    visibility: visible;
     pointer-events: auto; 
+    transition-delay: 0s; /* Bật ngay lập tức */
 }}
 
-/* ẨN/HIỆN Streamlit Wrapper của Player */
+/* Fix: Đảm bảo Streamlit Wrapper của Player cũng nhận lệnh */
 #music-player-container > div {{
-    display: none !important;
+    visibility: hidden !important;
 }}
 
 .video-finished #music-player-container > div {{
-    display: block !important;
+    visibility: visible !important;
 }}
 
 
@@ -213,14 +216,15 @@ js_callback_video = f"""
     function sendBackToStreamlit() {{
         const stApp = window.parent.document.querySelector('.stApp');
         
-        // CHỈ THÊM MỘT CLASS DUY NHẤT để kích hoạt tất cả CSS (Background, Title, Player)
+        // CHỈ THÊM MỘT CLASS DUY NHẤT
         stApp.classList.add('video-finished');
         
         // 2. Kích hoạt hiệu ứng reveal
         initRevealEffect();
         
-        // 3. KÍCH HOẠT PLAYER
+        // 3. KÍCH HOẠT PLAYER: Gửi lệnh chơi và hiển thị player
         try {{
+            // Gọi hàm play/show trong iframe của Music Player 
             window.parent.document.querySelector('#music-player-container iframe').contentWindow.togglePlayPause(true);
         }} catch(e) {{
             console.warn("Could not auto-play background music player:", e);
@@ -297,6 +301,11 @@ js_callback_video = f"""
 """
 
 # Mã HTML/CSS cho Video 
+intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
+intro_chars_html = ''.join([
+    f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'  
+    for char in intro_title
+])
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -312,24 +321,13 @@ html_content_modified = f"""
     </style>
 </head>
 <body>
-    <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+    <div id="intro-text-container">{intro_chars_html}</div>
     <video id="intro-video" muted playsinline></video>
     <audio id="background-audio"></audio>
     {js_callback_video}
 </body>
 </html>
 """
-
-# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
-intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
-intro_chars_html = ''.join([
-    f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'  
-    for char in intro_title
-])
-html_content_modified = html_content_modified.replace(
-    "<div id=\"intro-text-container\">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>",
-    f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
-)
 
 # Hiển thị thành phần HTML (video)
 st.components.v1.html(html_content_modified, height=10, scrolling=False)
@@ -360,7 +358,7 @@ st.markdown(f"""
 
 
 # =======================================================
-#               MUSIC PLAYER TÙY CHỈNH (Giữ nguyên)
+#               MUSIC PLAYER TÙY CHỈNH (Đã FIX LỖI ẨN TRONG IFRAME)
 # =======================================================
 
 custom_music_player_html = f"""
@@ -370,10 +368,13 @@ custom_music_player_html = f"""
     <style>
         /* CSS CHỈ DÀNH CHO IFRAME CỦA PLAYER */
         body {{ margin: 0; padding: 0; overflow: hidden; background: transparent; font-family: Arial, sans-serif; }}
-        .player-container {{ display: flex; align-items: center; justify-content: center; padding: 10px; background-color: rgba(0, 0, 0, 0.4); border-radius: 8px; 
-            width: 150px; /* Thu gọn kích thước */
+        .player-container {{ 
+            display: none; /* FIX CỨNG: ẨN PLAYER NGAY TỪ KHI IFRAME ĐƯỢC TẢI */
+            align-items: center; justify-content: center; padding: 10px; background-color: rgba(0, 0, 0, 0.4); border-radius: 8px; 
+            width: 150px; 
             margin: 0 auto; border: 1px solid #FFD700; 
             opacity: 1; 
+            transition: all 0.5s ease-in-out;
         }}
         
         .player-controls button {{ background: none; border: 1px solid #FFD700; color: #FFD700; padding: 8px 10px; margin: 0 3px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: background-color 0.3s, color 0.3s; }}
@@ -400,6 +401,7 @@ custom_music_player_html = f"""
         const playlistKeys = Object.keys(playlistData);
         const audio = document.getElementById('audio-player');
         const playPauseBtn = document.getElementById('play-pause-btn');
+        const playerMainContainer = document.getElementById('player-main-container'); // Lấy container chính
         
         let currentTrackIndex = 0;
 
@@ -413,6 +415,9 @@ custom_music_player_html = f"""
         function togglePlayPause(forcePlay = false) {{
             if (audio.paused || forcePlay) {{
                 if (audio.src === "") {{ loadTrack(currentTrackIndex); }}
+                
+                // BƯỚC MỚI: HIỂN THỊ PLAYER TRƯỚC KHI PLAY
+                playerMainContainer.style.display = 'flex'; 
                 
                 audio.play().then(() => {{
                     playPauseBtn.innerHTML = '&#10074;&#10074;'; 
