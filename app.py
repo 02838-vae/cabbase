@@ -28,14 +28,13 @@ def get_base64_encoded_file(file_path):
 def get_static_song_urls(directory="songs", prefix="background", count=6):
     """Tạo danh sách URL tương đối cho các bài hát tĩnh từ thư mục 'songs'."""
     song_urls = []
-    song_names = []
     
     # URL mà Trình duyệt sẽ tìm kiếm (đường dẫn tương đối)
     base_url = "songs/" 
     
     if not os.path.exists(directory):
         st.error(f"LỖI: Không tìm thấy thư mục nhạc '{directory}'. Vui lòng kiểm tra lại cấu trúc file.")
-        return [], []
+        return []
     
     for i in range(1, count + 1):
         filename = f"{prefix}{i}.mp3"
@@ -43,11 +42,10 @@ def get_static_song_urls(directory="songs", prefix="background", count=6):
         if os.path.exists(file_path):
             url = base_url + filename
             song_urls.append(url)
-            song_names.append(filename)
         else:
-            st.warning(f"Cảnh báo: Không tìm thấy file {file_path}. Bỏ qua file này.")
+            #st.warning(f"Cảnh báo: Không tìm thấy file {file_path}. Bỏ qua file này.")
             continue
-    return song_urls, song_names
+    return song_urls
 
 # Mã hóa các file media
 try:
@@ -60,7 +58,7 @@ try:
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
 
     # Music Player songs (Dùng URL tĩnh từ thư mục "songs")
-    songs_url_list, song_names_list = get_static_song_urls()
+    songs_url_list = get_static_song_urls()
 
 except FileNotFoundError as e:
     st.error(e)
@@ -286,16 +284,7 @@ iframe:first-of-type {{
     border-radius: 3px;
 }}
 
-/* GIỮ LẠI ĐỂ DUY TRÌ BỐ CỤC */
-#song-title {{
-    font-family: 'Playfair Display', serif;
-    font-size: 14px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    margin-top: 5px;
-    text-align: center;
-}}
+/* Đã loại bỏ #song-title CSS */
 
 @media (max-width: 768px) {{
     #music-player-container {{
@@ -310,9 +299,6 @@ iframe:first-of-type {{
     }}
     #play-pause-btn {{
         font-size: 24px;
-    }}
-    #song-title {{
-        font-size: 12px;
     }}
 }}
 
@@ -542,11 +528,10 @@ st.markdown(f"""
 """, unsafe_allow_html=True) 
 
 
-# --- MUSIC PLAYER COMPONENT (ĐÃ SỬA LỖI TƯƠNG TÁC) ---
+# --- MUSIC PLAYER COMPONENT (ĐÃ SỬA LỖI TƯƠNG TÁC VÀ BỎ TÊN BÀI HÁT) ---
 
 # Chuẩn bị dữ liệu URL cho JS
 songs_data_js = [f"'{url}'" for url in songs_url_list] 
-song_names_js = [f"'{name}'" for name in song_names_list] 
 
 music_player_js = f"""
 <script>
@@ -554,7 +539,6 @@ music_player_js = f"""
         const audioPlayer = new Audio();
         // Sử dụng URL tĩnh từ thư mục 'songs'
         const songs = [{', '.join(songs_data_js)}];
-        const songTitles = [{', '.join(song_names_js)}]; // Giữ lại songTitles để đảm bảo loadSong hoạt động
         let currentSongIndex = 0;
         let isPlaying = false;
 
@@ -563,17 +547,15 @@ music_player_js = f"""
         const prevBtn = document.getElementById('prev-btn');
         const progressBar = document.getElementById('progress-bar');
         const progressContainer = document.getElementById('progress-container');
-        const songTitleDisplay = document.getElementById('song-title');
 
         if (songs.length === 0) {{
+            // Ẩn player nếu không tìm thấy bài hát nào
             document.getElementById('music-player-container').style.display = 'none';
             return;
         }}
         
         function loadSong(index) {{
             audioPlayer.src = songs[index];
-            // BỎ qua việc cập nhật tên bài hát. Giữ lại text tĩnh "Đang tải..." nếu muốn.
-            // Nếu muốn ẩn hoàn toàn, có thể dùng: songTitleDisplay.style.display = 'none';
             audioPlayer.load();
         }}
 
@@ -582,9 +564,8 @@ music_player_js = f"""
             audioPlayer.play().then(() => {{
                 isPlaying = true;
                 playPauseBtn.innerHTML = '&#9208;'; // Pause icon
-                songTitleDisplay.textContent = songTitles[currentSongIndex]; // Cập nhật tên khi play thành công
             }}).catch(e => {{
-                console.log("Audio play failed (Autoplay Blocked). Ensure user interaction occurred:", e);
+                console.log("Audio play failed (Autoplay Blocked or Load Error):", e);
                 // Giữ nguyên icon Play nếu bị chặn
             }});
         }}
@@ -615,28 +596,17 @@ music_player_js = f"""
                 progressBar.style.width = `${{progressPercent}}%`;
             }}
         }});
-        
-        // Cập nhật trạng thái loading
-        audioPlayer.addEventListener('loadeddata', () => {{
-            // Khi dữ liệu bài hát đã sẵn sàng, thay đổi text sang tên bài hát
-            songTitleDisplay.textContent = songTitles[currentSongIndex]; 
-        }});
-        audioPlayer.addEventListener('error', (e) => {{
-            songTitleDisplay.textContent = "Lỗi tải nhạc!";
-            console.error("Lỗi tải file nhạc:", e);
-        }});
-
 
         // Chuyển bài khi kết thúc
         audioPlayer.addEventListener('ended', nextSong);
 
-        // Xử lý nút Play/Pause - Đảm bảo lệnh play được gọi trực tiếp từ tương tác
+        // Xử lý nút Play/Pause - Quan trọng: Lệnh playSong() phải được gọi trực tiếp từ tương tác
         playPauseBtn.addEventListener('click', (e) => {{
-            e.stopPropagation(); // Ngăn sự kiện click lan truyền lên body
+            e.stopPropagation(); 
             if (isPlaying) {{
                 pauseSong();
             }} else {{
-                playSong();
+                playSong(); // Bấm Play sẽ cố gắng phát
             }}
         }});
         
@@ -657,10 +627,9 @@ music_player_js = f"""
         // Khởi tạo bài hát đầu tiên
         loadSong(currentSongIndex);
 
-        // Tối ưu Autoplay: Đảm bảo player hoạt động ngay sau khi người dùng tương tác lần đầu
+        // Tối ưu Autoplay: Nếu người dùng tương tác bất kỳ đâu trên body lần đầu, cố gắng play
         window.parent.document.body.addEventListener('click', () => {{
              if (!isPlaying && audioPlayer.paused && audioPlayer.src) {{
-                 // Tải lại bài hát và cố gắng play
                  playSong();
              }}
         }}, {{ once: true }});
@@ -669,9 +638,9 @@ music_player_js = f"""
 </script>
 """
 
+# ĐÃ LOẠI BỎ THẺ <div id="song-title">
 music_player_html = f"""
 <div id="music-player-container">
-    <div id="song-title">Đang tải...</div>
     <div id="player-controls">
         <button id="prev-btn" title="Previous">&#9664;</button>
         <button id="play-pause-btn" title="Play">&#9654;</button>
