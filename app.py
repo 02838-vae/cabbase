@@ -25,21 +25,19 @@ def get_base64_encoded_file(file_path):
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {file_path}")
 
 
-# Mã hóa các file media
+# Mã hóa các file media (CHỈ GIỮ LẠI CÁC FILE CẦN THIẾT)
 try:
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
-    audio_base64 = get_base64_encoded_file("plane_fly.mp3")
+    audio_base64 = get_base64_encoded_file("plane_fly.mp3") # Âm thanh Intro
     
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
 
-    # === THÊM MÃ HÓA CÁC BÀI HÁT ===
-    song_files = [f"background{i}.mp3" for i in range(1, 7)]
-    # Lưu ý: Đảm bảo thư mục 'songs/' tồn tại
-    song_base64_list = [get_base64_encoded_file(f"songs/{filename}") for filename in song_files]
-    # Tạo chuỗi JSON cho JavaScript
-    song_base64_js_array = str(song_base64_list).replace("'", '"')
+    # === THAY ĐỔI QUAN TRỌNG: KHÔNG MÃ HÓA 6 BÀI HÁT ===
+    # Thay vào đó, tạo mảng các đường dẫn tương đối cho JavaScript
+    SONG_PATHS = [f"songs/background{i}.mp3" for i in range(1, 7)]
+    song_paths_js_array = str(SONG_PATHS).replace("'", '"')
     
 except FileNotFoundError as e:
     st.error(e)
@@ -55,7 +53,6 @@ st.markdown(font_links, unsafe_allow_html=True)
 
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
-# ĐÃ SỬA: Đảm bảo tất cả ngoặc nhọn trong CSS là ngoặc kép {{ }}
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -292,7 +289,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
-# JavaScript (ĐÃ SỬA: Thay thế { và } bằng {{ và }} trong các khối JS)
+# JavaScript (ĐÃ SỬA: Đảm bảo cú pháp ngoặc nhọn trong JS là {{ }})
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
@@ -469,7 +466,7 @@ html_content_modified = f"""
 """
 
 # Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
-intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
+intro_title = "KHÁM PHẾ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
     f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>' 
     for char in intro_title
@@ -514,7 +511,7 @@ st.markdown(f"""
 # --- PHẦN 4: MUSIC PLAYER CỐ ĐỊNH (FIXED MUSIC PLAYER) ---
 # -----------------------------------------------------------
 
-# ĐÃ SỬA: Thay thế { và } bằng {{ và }} trong các khối JS
+# ĐÃ SỬA: Thay thế Base64 bằng đường dẫn tương đối và đảm bảo cú pháp JS là {{ }}
 music_player_html = f"""
 <div id="music-player-container">
     <div id="song-info">Đang tải...</div>
@@ -533,8 +530,8 @@ music_player_html = f"""
 </div>
 
 <script>
-    // Dữ liệu Base64 của các bài hát từ Streamlit (Python)
-    const SONGS_BASE64 = {song_base64_js_array};
+    // === THAY ĐỔI QUAN TRỌNG: SỬ DỤNG ĐƯỜNG DẪN TƯƠNG ĐỐI ===
+    const SONG_PATHS = {song_paths_js_array}; 
     const SONG_NAMES = {str([f"Background {{i}}" for i in range(1, 7)]).replace("'", '"')};
 
     let currentSongIndex = 0;
@@ -548,12 +545,13 @@ music_player_html = f"""
 
     function loadSong(index) {{
         // Cập nhật index vòng lặp
-        currentSongIndex = (index + SONGS_BASE64.length) % SONGS_BASE64.length;
+        currentSongIndex = (index + SONG_PATHS.length) % SONG_PATHS.length;
         
-        const base64Data = SONGS_BASE64[currentSongIndex];
+        const path = SONG_PATHS[currentSongIndex];
         const songName = SONG_NAMES[currentSongIndex];
         
-        player.src = 'data:audio/mp3;base64,' + base64Data;
+        // Gán đường dẫn tương đối
+        player.src = path;
         songInfo.textContent = songName;
         player.load();
     }}
@@ -620,7 +618,7 @@ music_player_html = f"""
 
     // Tải bài hát đầu tiên và xử lý tự động phát
     document.addEventListener("DOMContentLoaded", () => {{
-        if (SONGS_BASE64.length > 0) {{
+        if (SONG_PATHS.length > 0) {{
             loadSong(currentSongIndex);
             
             // Theo dõi sự kiện video intro kết thúc để cố gắng tự động phát
