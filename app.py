@@ -159,8 +159,8 @@ iframe:first-of-type {{
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
     z-index: 10; 
     
-    /* FIX MỚI: Mặc định ẩn hoàn toàn khỏi luồng hiển thị */
-    display: none; 
+    /* FIX MỚI MẠNH MẼ: Mặc định ẩn hoàn toàn khỏi luồng hiển thị */
+    display: none !important; 
     
     opacity: 0; 
     pointer-events: none; 
@@ -170,7 +170,7 @@ iframe:first-of-type {{
 
 /* KHI VIDEO KẾT THÚC, HIỂN THỊ VÀ BẬT TƯƠNG TÁC */
 .video-finished #music-player-container {{
-    display: block; /* Hiện container */
+    display: block !important; /* HIỆN container */
     opacity: 1; 
     pointer-events: auto; 
 }}
@@ -394,12 +394,12 @@ custom_music_player_html = f"""
         }}
         
         function togglePlayPause(forcePlay = false) {{
-            // Kiểm tra trạng thái hiển thị của player container cha
+            // Kiểm tra trạng thái hiển thị của đối tượng cha
             const parentContainer = window.parent.document.getElementById('music-player-container');
             // Kiểm tra Class video-finished trên đối tượng .stApp cấp cao nhất
             const isFinished = parentContainer && window.parent.document.querySelector('.stApp').classList.contains('video-finished');
 
-            // Chỉ cho phép thao tác khi đã ở trang chính (video-finished) hoặc khi được gọi forcePlay từ sự kiện kết thúc video
+            // Chỉ cho phép thao tác khi đã ở trang chính (video-finished) HOẶC khi được gọi forcePlay từ sự kiện kết thúc video
             if (isFinished || forcePlay) {{ 
                 if (audio.paused || forcePlay) {{
                     if (audio.src === "") {{ loadTrack(currentTrackIndex); }}
@@ -414,7 +414,6 @@ custom_music_player_html = f"""
                     playPauseBtn.innerHTML = '&#9658;'; 
                 }}
             }}
-            // Nếu không phải trang chính và không phải forcePlay (tức là người dùng cố gắng tương tác sớm), bỏ qua.
         }}
         window.togglePlayPause = togglePlayPause; 
 
@@ -448,6 +447,7 @@ custom_music_player_html = f"""
 """
 
 # Tạo container HTML cho Music Player để áp dụng CSS ID
+# Quan trọng: Streamlit tạo một DIV wrapper xung quanh st.components.v1.html, nhưng ID #music-player-container này nằm ở cấp cao hơn.
 st.markdown('<div id="music-player-container">', unsafe_allow_html=True)
 st.components.v1.html(custom_music_player_html, height=80)
 st.markdown('</div>', unsafe_allow_html=True)
