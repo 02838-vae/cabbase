@@ -118,8 +118,7 @@ iframe:first-of-type {{
 .grid-cell {{ background-color: white; opacity: 1; transition: opacity 0.5s ease-out; }}
 
 
-/* KÍCH HOẠT BACKGROUND VÀO THÀNH PHẦN GỐC KHI VIDEO KẾT THÚC */
-.stApp.video-finished {{
+.main-content-revealed {{
     background-image: var(--main-bg-url-pc);
     background-size: cover;
     background-position: center;
@@ -155,23 +154,17 @@ iframe:first-of-type {{
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
 }}
 
-/* === MUSIC PLAYER (CHỈ HIỆN KHI VIDEO KẾT THÚC) === */
+/* === MUSIC PLAYER CONTAINER (Vị trí và Ẩn cứng) === */
 #music-player-container {{
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
     z-index: 10; 
     
-    /* FIX CỰC KỲ MẠNH MẼ: Mặc định ẩn container */
+    /* ẨN CỨNG CONTAINER VÀ NỘI DUNG BÊN TRONG */
     display: none !important; 
-    
-    opacity: 0; 
     pointer-events: none; 
+    
     height: 80px; width: 170px; 
     transition: opacity 1s ease-out;
-}}
-
-/* FIX MẠNH MẼ BỔ SUNG: Ẩn luôn DIV wrapper Streamlit (đảm bảo ẩn iframe) */
-#music-player-container > div {{
-    display: none !important;
 }}
 
 /* KHI VIDEO KẾT THÚC, HIỂN THỊ VÀ BẬT TƯƠNG TÁC */
@@ -181,14 +174,18 @@ iframe:first-of-type {{
     pointer-events: auto; 
 }}
 
-/* HIỆN DIV wrapper Streamlit */
+/* ẨN/HIỆN Streamlit Wrapper của Player */
+#music-player-container > div {{
+    display: none !important;
+}}
+
 .video-finished #music-player-container > div {{
     display: block !important;
 }}
 
 
 @media (max-width: 768px) {{
-    .stApp.video-finished {{ background-image: var(--main-bg-url-mobile); }}
+    .main-content-revealed {{ background-image: var(--main-bg-url-mobile); }}
     #main-title-container {{ height: 8vh; width: 100%; left: 0; }}
     #main-title-container h1 {{ font-size: 6.5vw; animation-duration: 8s; }}
     .reveal-grid {{ grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(20, 1fr); }}
@@ -200,19 +197,19 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- PHẦN 3: IFRAME CHO VIDEO INTRO (DÙNG BASE64) ---
 
-# JavaScript Đã đơn giản hóa (chỉ thêm class 'video-finished' để kích hoạt Trang Chính)
+# JavaScript NÂNG CẤP (chỉ còn chức năng kích hoạt CSS và Player)
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
         const stApp = window.parent.document.querySelector('.stApp');
         
-        // CHỈ THÊM MỘT CLASS DUY NHẤT để kích hoạt tất cả CSS (Background, Title, Player)
-        stApp.classList.add('video-finished');
+        // 1. Thêm class để ẩn Video và bật nền
+        stApp.classList.add('video-finished', 'main-content-revealed');
         
-        // Kích hoạt hiệu ứng reveal
+        // 2. Kích hoạt hiệu ứng reveal
         initRevealEffect();
         
-        // KÍCH HOẠT PLAYER: Gọi hàm play trong iframe của Music Player 
+        // 3. KÍCH HOẠT PLAYER: Gọi hàm play trong iframe của Music Player 
         try {{
             window.parent.document.querySelector('#music-player-container iframe').contentWindow.togglePlayPause(true);
         }} catch(e) {{
@@ -254,7 +251,7 @@ js_callback_video = f"""
 
         const playMedia = () => {{
             video.load();
-            video.play().catch(e => {{}});
+            video.play().catch(e => console.log("Video playback failed:", e));
                 
             const chars = introTextContainer.querySelectorAll('.intro-char');
             chars.forEach((char, index) => {{
@@ -314,7 +311,7 @@ html_content_modified = f"""
 """
 
 # Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
-intro_title = "TỔ BẢO DƯỠNG SỐ 1"
+intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
     f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'  
     for char in intro_title
@@ -356,6 +353,8 @@ st.markdown(f"""
 #               MUSIC PLAYER TÙY CHỈNH (DÙNG GITHUB RAW URL)
 # =======================================================
 
+# Đặt mã Player HTML trở lại Python để Streamlit xử lý,
+# và dùng CSS/JS trong Intro để kiểm soát thời điểm nó được hiển thị/chạy.
 custom_music_player_html = f"""
 <!DOCTYPE html>
 <html>
@@ -366,7 +365,8 @@ custom_music_player_html = f"""
         .player-container {{ display: flex; align-items: center; justify-content: center; padding: 10px; background-color: rgba(0, 0, 0, 0.4); border-radius: 8px; 
             width: 150px; /* Thu gọn kích thước */
             margin: 0 auto; border: 1px solid #FFD700; 
-            opacity: 1; 
+            opacity: 0; /* Mặc định trong suốt để fade-in mượt hơn */
+            transition: opacity 1s ease-in-out;
         }}
         
         .player-controls button {{ background: none; border: 1px solid #FFD700; color: #FFD700; padding: 8px 10px; margin: 0 3px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: background-color 0.3s, color 0.3s; }}
@@ -393,6 +393,7 @@ custom_music_player_html = f"""
         const playlistKeys = Object.keys(playlistData);
         const audio = document.getElementById('audio-player');
         const playPauseBtn = document.getElementById('play-pause-btn');
+        const playerMainContainer = document.getElementById('player-main-container');
         
         let currentTrackIndex = 0;
 
@@ -434,9 +435,10 @@ custom_music_player_html = f"""
         // Tự động chuyển bài khi kết thúc
         audio.addEventListener('ended', nextTrack);
 
-        // Khởi tạo player với bài đầu tiên khi iframe load xong
+        // Kích hoạt fade-in (opacity: 1) khi Player được hiển thị
         document.addEventListener("DOMContentLoaded", function() {{
             loadTrack(currentTrackIndex);
+            // playerMainContainer.style.opacity = 1; // Bỏ cái này vì nó fade-in luôn khi iframe được render
         }});
     </script>
 </body>
