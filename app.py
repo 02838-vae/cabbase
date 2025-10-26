@@ -162,8 +162,8 @@ iframe:first-of-type {{
     /* FIX MỚI MẠNH MẼ: Mặc định ẩn hoàn toàn khỏi luồng hiển thị */
     display: none !important; 
     
-    opacity: 0; 
-    pointer-events: none; 
+    opacity: 0; /* Mặc định ẩn mờ */
+    pointer-events: none; /* Không thể tương tác */
     height: 80px; width: 170px; 
     transition: opacity 1s ease-out;
 }}
@@ -394,10 +394,8 @@ custom_music_player_html = f"""
         }}
         
         function togglePlayPause(forcePlay = false) {{
-            // Kiểm tra trạng thái hiển thị của đối tượng cha
-            const parentContainer = window.parent.document.getElementById('music-player-container');
-            // Kiểm tra Class video-finished trên đối tượng .stApp cấp cao nhất
-            const isFinished = parentContainer && window.parent.document.querySelector('.stApp').classList.contains('video-finished');
+            // Kiểm tra trạng thái hiển thị của đối tượng .stApp cấp cao nhất
+            const isFinished = window.parent.document.querySelector('.stApp').classList.contains('video-finished');
 
             // Chỉ cho phép thao tác khi đã ở trang chính (video-finished) HOẶC khi được gọi forcePlay từ sự kiện kết thúc video
             if (isFinished || forcePlay) {{ 
@@ -447,7 +445,6 @@ custom_music_player_html = f"""
 """
 
 # Tạo container HTML cho Music Player để áp dụng CSS ID
-# Quan trọng: Streamlit tạo một DIV wrapper xung quanh st.components.v1.html, nhưng ID #music-player-container này nằm ở cấp cao hơn.
 st.markdown('<div id="music-player-container">', unsafe_allow_html=True)
 st.components.v1.html(custom_music_player_html, height=80)
 st.markdown('</div>', unsafe_allow_html=True)
