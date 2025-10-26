@@ -1,14 +1,14 @@
 import streamlit as st
+import base64
 import json
 
-# --- THÔNG TIN GITHUB CỦA BẠN ---
+# --- THÔNG TIN GITHUB CỦA BẠN (Dùng cho Music Player) ---
 GITHUB_USER = "02838-vae" 
 GITHUB_REPO = "cabbase"       
 GITHUB_BRANCH = "main"        
+GITHUB_RAW_BASE = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/{GITHUB_BRANCH}/static"
 # -----------------------------------------------------------------
 
-# URL BASE RAW CONTENT (Đường dẫn ổn định cho file media nhỏ)
-GITHUB_RAW_BASE = f"https://raw.githubusercontent.com/{GITHUB_USER}/{GITHUB_REPO}/{GITHUB_BRANCH}/static"
 
 # --- CẤU HÌNH BAN ĐẦU ---
 
@@ -18,50 +18,67 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+
 # Khởi tạo session state
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
-# --- CÁC ĐƯỜNG DẪN URL ---
 
-# 1. URL DÙNG GITHUB RAW (CHO ẢNH VÀ NHẠC)
-audio_intro_url = f"{GITHUB_RAW_BASE}/plane_fly.mp3"
-bg_pc_url = f"{GITHUB_RAW_BASE}/cabbase.jpg"
-bg_mobile_url = f"{GITHUB_RAW_BASE}/mobile.jpg"
+# --- CÁC HÀM TIỆN ÍCH ---
 
-# URL cho MUSIC PLAYER (Sử dụng GitHub Raw URL)
-music_files = {
-    "background1": f"{GITHUB_RAW_BASE}/background1.mp3",
-    "background2": f"{GITHUB_RAW_BASE}/background2.mp3",
-    "background3": f"{GITHUB_RAW_BASE}/background3.mp3",
-    "background4": f"{GITHUB_RAW_BASE}/background4.mp3",
-    "background5": f"{GITHUB_RAW_BASE}/background5.mp3",
-    "background6": f"{GITHUB_RAW_BASE}/background6.mp3",
-}
-music_playlist_json = json.dumps(music_files)
 
-# 2. URL DÙNG STREAMLIT STATIC (CHO VIDEO LỚN)
-# Vẫn giữ "/static" là lựa chọn cuối cùng cho video. 
-STATIC_URL_BASE = "/static" 
-video_pc_url = f"{STATIC_URL_BASE}/airplane.mp4"
-video_mobile_url = f"{STATIC_URL_BASE}/mobile.mp4"
+def get_base64_encoded_file(file_path):
+    """Đọc file và trả về Base64 encoded string."""
+    try:
+        with open(file_path, "rb") as f:
+            data = f.read()
+        return base64.b64encode(data).decode("utf-8")
+    except FileNotFoundError as e:
+        # FileNotFoundError được handle ở khối try...except chính
+        raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
+
+
+# --- MÃ HÓA CÁC FILE MEDIA (Base64) VÀ TẠO URL GITHUB ---
+
+try:
+    # 1. Base64 cho Video, Audio Intro, Ảnh Nền (Ổn định cho các file này)
+    video_pc_base64 = get_base64_encoded_file("airplane.mp4")
+    video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
+    audio_base64 = get_base64_encoded_file("plane_fly.mp3")
+    
+    bg_pc_base64 = get_base64_encoded_file("cabbase.jpg")    
+    bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
+
+    # 2. GITHUB RAW URL cho Nhạc nền Music Player (Ổn định trên Streamlit Cloud)
+    music_files = {
+        "background1": f"{GITHUB_RAW_BASE}/background1.mp3",
+        "background2": f"{GITHUB_RAW_BASE}/background2.mp3",
+        "background3": f"{GITHUB_RAW_BASE}/background3.mp3",
+        "background4": f"{GITHUB_RAW_BASE}/background4.mp3",
+        "background5": f"{GITHUB_RAW_BASE}/background5.mp3",
+        "background6": f"{GITHUB_RAW_BASE}/background6.mp3",
+    }
+    music_playlist_json = json.dumps(music_files)
+
+except FileNotFoundError as e:
+    st.error(e)
+    st.stop()
 
 
 # --- PHẦN 1: NHÚNG FONT VÀ NÚT BỎ QUA ---
+
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 """
 st.markdown(font_links, unsafe_allow_html=True)
 
-# Nút Bỏ qua
+# Nút Bỏ qua 
 st.markdown(
     """
     <button 
         id="skip-intro-btn" 
-        onclick="window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed'); 
-                 window.parent.initRevealEffect(); 
-                 window.parent.document.querySelector('iframe').style.display='none'; 
+        onclick="window.parent.document.querySelector('iframe:first-of-type').contentWindow.sendBackToStreamlit(); 
                  this.style.display='none';"
     >
         Bỏ qua Intro >>
@@ -71,6 +88,7 @@ st.markdown(
 )
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
+
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -80,17 +98,10 @@ hide_streamlit_style = f"""
 
 /* CSS cho Nút Bỏ qua */
 #skip-intro-btn {{
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1001;
-    background-color: rgba(255, 215, 0, 0.7);
-    color: #000;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
+    position: fixed; top: 20px; right: 20px; z-index: 1001;
+    background-color: rgba(255, 215, 0, 0.7); color: #000;
+    border: none; padding: 10px 20px; border-radius: 5px;
+    cursor: pointer; font-weight: bold;
 }}
 
 /* Ẩn nút Bỏ qua khi video đã kết thúc */
@@ -104,29 +115,24 @@ div.block-container {{ padding: 0; margin: 0; max-width: 100% !important; }}
 /* CSS cho iframe video intro */
 iframe:first-of-type {{
     transition: opacity 1s ease-out, visibility 1s ease-out;
-    opacity: 1;
-    visibility: visible;
-    width: 100vw !important;
-    height: 100vh !important;
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 1000;
+    opacity: 1; visibility: visible;
+    width: 100vw !important; height: 100vh !important;
+    position: fixed; top: 0; left: 0; z-index: 1000;
 }}
 
 
 .video-finished iframe:first-of-type {{
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
+    opacity: 0; visibility: hidden; pointer-events: none;
     height: 1px !important;    
 }}
 
-/* CSS cho phần còn lại (Dùng GITHUB RAW URL cho ảnh nền) */
+/* CSS NỀN DÙNG BASE64 */
 .stApp {{
-    --main-bg-url-pc: url('{bg_pc_url}');
-    --main-bg-url-mobile: url('{bg_mobile_url}');
+    --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
+    --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
 }}
+
+
 .reveal-grid {{
     position: fixed; top: 0; left: 0;
     width: 100vw; height: 100vh;
@@ -168,14 +174,18 @@ iframe:first-of-type {{
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
 }}
 
-/* === MUSIC PLAYER (Ẩn khi chưa xong video) === */
+/* === MUSIC PLAYER (MỚI) === */
 #music-player-container {{
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-    z-index: 10; opacity: 0; transition: opacity 1s ease-out;
-    pointer-events: none; height: 80px; width: 350px; 
+    z-index: 10; 
+    opacity: 0; 
+    transition: opacity 1s ease-out;
+    pointer-events: none; 
+    height: 80px; width: 350px; 
 }}
 .video-finished #music-player-container {{
-    opacity: 1; pointer-events: auto;
+    opacity: 1; 
+    pointer-events: auto;
 }}
 
 
@@ -190,24 +200,43 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: IFRAME CHO VIDEO INTRO ---
+# --- PHẦN 3: IFRAME CHO VIDEO INTRO (DÙNG BASE64) ---
 
-# JavaScript (Dùng GitHub Raw URL cho nhạc)
+# JavaScript (Đã thêm logic play nhạc nền player khi chuyển cảnh)
 js_callback_video = f"""
 <script>
+    function sendBackToStreamlit() {{
+        window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
+        initRevealEffect();
+        
+        // Cố gắng tự động play nhạc nền khi chuyển cảnh
+        try {{
+            // Gọi hàm togglePlayPause trong iframe của Music Player
+            window.parent.document.querySelector('#music-player-container iframe').contentWindow.togglePlayPause(true);
+        }} catch(e) {{
+            console.warn("Could not auto-play background music player:", e);
+        }}
+    }}
+    window.sendBackToStreamlit = sendBackToStreamlit; 
+
+    
     function initRevealEffect() {{
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
         const mainTitle = window.parent.document.getElementById('main-title-container');
+
         if (mainTitle) {{ mainTitle.style.opacity = 1; }}
+
         if (!revealGrid) {{ return; }}
+
         const cells = revealGrid.querySelectorAll('.grid-cell');
         const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
+
         shuffledCells.forEach((cell, index) => {{
             setTimeout(() => {{ cell.style.opacity = 0; }}, index * 10);
         }});
+        
         setTimeout(() => {{ revealGrid.remove(); }}, shuffledCells.length * 10 + 1000);
     }}
-    window.parent.initRevealEffect = initRevealEffect; 
 
     document.addEventListener("DOMContentLoaded", function() {{
         const video = document.getElementById('intro-video');
@@ -215,22 +244,19 @@ js_callback_video = f"""
         const introTextContainer = document.getElementById('intro-text-container');  
         const isMobile = window.innerWidth <= 768;
 
-
-        // GÁN URL TĨNH CHO VIDEO (Vẫn dùng Streamlit static)
+        // GÁN DATA URL (BASE64)
         if (isMobile) {{
-            video.src = '{video_mobile_url}';
+            video.src = 'data:video/mp4;base64,{video_mobile_base64}';
         }} else {{
-            video.src = '{video_pc_url}';
+            video.src = 'data:video/mp4;base64,{video_pc_base64}';
         }}
         
-        // GÁN GITHUB RAW URL CHO NHẠC INTRO (Đã sửa lỗi)
-        audio.src = '{audio_intro_url}'; 
-
+        audio.src = 'data:audio/mp3;base64,{audio_base64}';
 
         const playMedia = () => {{
             video.load();
             video.play().catch(e => console.log("Video playback failed:", e));
-            
+                
             const chars = introTextContainer.querySelectorAll('.intro-char');
             chars.forEach((char, index) => {{
                 char.style.animationDelay = `${{index * 0.1}}s`;  
@@ -239,9 +265,8 @@ js_callback_video = f"""
 
             audio.volume = 0.5;
             audio.loop = true;  
-            audio.play().catch(e => {{ 
-                console.log("Audio intro blocked. GitHub raw URL is used."); 
-                // Lỗi này là do trình duyệt chặn Autoplay. Sẽ được xử lý bằng click đầu tiên.
+            audio.play().catch(e => {{
+                 console.log("Audio playback blocked, setting click listener.");
             }});
         }};
             
@@ -249,13 +274,11 @@ js_callback_video = f"""
         
         video.onended = () => {{
             video.style.opacity = 0;
-            audio.pause(); 
+            audio.pause();
             audio.currentTime = 0;
             introTextContainer.style.opacity = 0;  
             
-            // Kích hoạt hiển thị trang chính và player
-            window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
-            initRevealEffect();
+            sendBackToStreamlit(); 
         }};
 
         // XỬ LÝ CLICK ĐẦU TIÊN (Quan trọng để kích hoạt media)
@@ -339,6 +362,7 @@ custom_music_player_html = f"""
 <html>
 <head>
     <style>
+        /* CSS CHỈ DÀNH CHO IFRAME CỦA PLAYER */
         body {{ margin: 0; padding: 0; overflow: hidden; background: transparent; font-family: Arial, sans-serif; }}
         .player-container {{ display: flex; align-items: center; justify-content: center; padding: 10px; background-color: rgba(0, 0, 0, 0.4); border-radius: 8px; width: 300px; margin: 0 auto; border: 1px solid #FFD700; }}
         
@@ -363,6 +387,7 @@ custom_music_player_html = f"""
     <audio id="audio-player"></audio>
 
     <script>
+        // Data chứa GITHUB RAW URL
         const playlistData = {music_playlist_json}; 
         const playlistKeys = Object.keys(playlistData);
         const audio = document.getElementById('audio-player');
@@ -375,27 +400,30 @@ custom_music_player_html = f"""
             const key = playlistKeys[index];
             const url = playlistData[key]; 
 
-            // SỬ DỤNG GITHUB RAW URL
+            // SỬ DỤNG GITHUB RAW URL TRỰC TIẾP
             audio.src = url; 
 
             trackNameDisplay.textContent = key.toUpperCase().replace("BACKGROUND", "Bài ");
             audio.load();
         }}
         
-        function togglePlayPause() {{
-            if (audio.paused) {{
+        function togglePlayPause(forcePlay = false) {{
+            if (audio.paused || forcePlay) {{
+                // Nếu đang cố gắng play, đảm bảo load track đầu tiên 
+                if (audio.src === "") {{ loadTrack(currentTrackIndex); }}
+                
                 audio.play().then(() => {{
                     playPauseBtn.innerHTML = '&#10074;&#10074;'; 
                 }}).catch(e => {{
                     console.error('Lỗi tự động phát (Chặn Autoplay):', e);
-                    // Thông báo chỉ cần nói về Autoplay.
-                    alert('Trình duyệt đã chặn tự động phát. Vui lòng thử click vào trang trước.'); 
+                    // Không hiện alert.
                 }});
             }} else {{
                 audio.pause();
                 playPauseBtn.innerHTML = '&#9658;'; 
             }}
         }}
+        window.togglePlayPause = togglePlayPause; // Xuất hàm để iframe cha gọi được
 
         function nextTrack() {{
             currentTrackIndex = (currentTrackIndex + 1) % playlistKeys.length;
