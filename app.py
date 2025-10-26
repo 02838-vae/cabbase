@@ -1,7 +1,7 @@
 import streamlit as st
 import base64
 import json
-import st_static_file # <-- Thêm thư viện Static File
+# import st_static_file # <-- Dòng này đã bị loại bỏ để tránh lỗi ModuleNotFoundError
 
 # --- CẤU HÌNH BAN ĐẦU ---
 
@@ -15,9 +15,7 @@ st.set_page_config(
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
-# BƯỚC 1: KHAI BÁO STATIC SERVER VÀ LẤY BASE URL
-# Đảm bảo thư mục 'static' tồn tại và chứa các file mp3
-music_base_url = st_static_file.static_server(static_dir="static") 
+# music_base_url = st_static_file.static_server(static_dir="static") # <-- Dòng này đã bị loại bỏ
 
 
 # --- CÁC HÀM TIỆN ÍCH ---
@@ -29,27 +27,28 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
+        # Quan trọng: Đảm bảo đường dẫn file đã đúng, ví dụ: 'static/background1.mp3'
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
 
 # Mã hóa các file media
 try:
-    # BASE64 CHO VIDEO VÀ HÌNH ẢNH (Vì chúng cần được nhúng ngay lập tức)
+    # BASE64 CHO VIDEO VÀ HÌNH ẢNH (Giữ nguyên)
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
-    audio_base64 = get_base64_encoded_file("plane_fly.mp3") # Nhạc intro
+    audio_base64 = get_base64_encoded_file("plane_fly.mp3") # Nhạc intro (ở thư mục gốc)
     
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg")    
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
 
-    # BƯỚC 2: DÙNG URL TĨNH CHO MUSIC PLAYER (Giảm kích thước file HTML)
+    # BASE64 CHO MUSIC PLAYER (ĐỌC TỪ THƯ MỤC STATIC/)
     music_files = {
-        "background1": f"{music_base_url}/background1.mp3",
-        "background2": f"{music_base_url}/background2.mp3",
-        "background3": f"{music_base_url}/background3.mp3",
-        "background4": f"{music_base_url}/background4.mp3",
-        "background5": f"{music_base_url}/background5.mp3",
-        "background6": f"{music_base_url}/background6.mp3",
+        "background1": get_base64_encoded_file("static/background1.mp3"),
+        "background2": get_base64_encoded_file("static/background2.mp3"),
+        "background3": get_base64_encoded_file("static/background3.mp3"),
+        "background4": get_base64_encoded_file("static/background4.mp3"),
+        "background5": get_base64_encoded_file("static/background5.mp3"),
+        "background6": get_base64_encoded_file("static/background6.mp3"),
     }
     music_playlist_json = json.dumps(music_files)
 
@@ -58,7 +57,7 @@ except FileNotFoundError as e:
     st.stop()
 
 
-# --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
+# --- PHẦN 1: NHÚNG FONT VÀ CSS CHUNG ---
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
@@ -106,12 +105,12 @@ iframe:first-of-type {{
     height: 1px !important;    
 }}
 
-/* CSS cho phần còn lại (Giữ nguyên) */
+/* CSS cho phần còn lại */
 .stApp {{
     --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
 }}
-/* ... (Giữ nguyên các CSS còn lại cho .reveal-grid, .grid-cell, main-content-revealed, keyframes, và #main-title-container) ... */
+/* ... (Giữ nguyên các CSS còn lại cho .reveal-grid, #main-title-container, keyframes) ... */
 .reveal-grid {{
     position: fixed;
     top: 0;
@@ -156,8 +155,8 @@ iframe:first-of-type {{
 
 /* Keyframes cho hiệu ứng chữ chạy đơn (từ phải sang trái, lặp lại) */
 @keyframes scrollText {{
-    0% {{ transform: translate(100vw, 0); }} /* Bắt đầu từ ngoài cùng bên phải */
-    100% {{ transform: translate(-100%, 0); }} /* Chạy sang trái (độ rộng của chữ) */
+    0% {{ transform: translate(100vw, 0); }} 
+    100% {{ transform: translate(-100%, 0); }} 
 }}
 
 
@@ -198,11 +197,11 @@ iframe:first-of-type {{
     display: inline-block;  
 
 
-    /* 1. Hiệu ứng chữ chạy - Tăng tốc độ */
-    animation: scrollText 15s linear infinite; /* Giảm từ 25s xuống 15s */
+    /* 1. Hiệu ứng chữ chạy */
+    animation: scrollText 15s linear infinite; 
     
     /* 2. Hiệu ứng đổi màu */
-    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3); /* Cầu vồng */
+    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3); 
     background-size: 400% 400%; 
     -webkit-background-clip: text; 
     -webkit-text-fill-color: transparent; 
@@ -223,7 +222,7 @@ iframe:first-of-type {{
     
     #main-title-container h1 {{
         font-size: 6.5vw;  
-        animation-duration: 8s; /* Tăng tốc độ trên mobile */
+        animation-duration: 8s; 
     }}
 }}
 </style>
@@ -283,7 +282,7 @@ js_callback_video = f"""
             video.src = 'data:video/mp4;base64,{video_pc_base64}';
         }}
         
-        audio.src = 'data:audio/mp3;base64,{audio_base64}';
+        audio.src = 'data:audio/mp3;base64,{audio_base64}'; // Nhạc intro dùng Base64
 
 
         const playMedia = () => {{
@@ -333,7 +332,6 @@ html_content_modified = f"""
 <html>
 <head>
     <style>
-    /* ... (Giữ nguyên CSS cho video intro) ... */
         html, body {{
             margin: 0;
             padding: 0;
@@ -354,7 +352,7 @@ html_content_modified = f"""
         }}
 
 
-        /* === TIÊU ĐỀ INTRO (FONT SACRAMENTO - Chữ Ký) === */
+        /* === TIÊU ĐỀ INTRO === */
         #intro-text-container {{  
             position: fixed;
             top: 5vh;
@@ -442,7 +440,7 @@ st.components.v1.html(html_content_modified, height=10, scrolling=False)
 
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
 
-# Tạo Lưới Reveal (Giữ nguyên)
+# Tạo Lưới Reveal 
 grid_cells_html = ""
 for i in range(240): 
     grid_cells_html += f'<div class="grid-cell"></div>'
@@ -469,7 +467,7 @@ st.markdown(f"""
 
 
 # =======================================================
-#               BƯỚC 3: MUSIC PLAYER TÙY CHỈNH
+#               MUSIC PLAYER TÙY CHỈNH (DÙNG BASE64)
 # =======================================================
 
 custom_music_player_html = f"""
@@ -553,9 +551,11 @@ custom_music_player_html = f"""
 
         function loadTrack(index) {{
             const key = playlistKeys[index];
-            const url = playlistData[key]; 
-            
-            audio.src = url; // Sử dụng URL tĩnh
+            const base64 = playlistData[key]; // <-- Base64 data
+
+            // SỬ DỤNG BASE64 Data URI
+            audio.src = `data:audio/mp3;base64,${{base64}}`; 
+
             trackNameDisplay.textContent = key.toUpperCase().replace("BACKGROUND", "Bài ");
             audio.load();
         }}
@@ -605,4 +605,4 @@ custom_music_player_html = f"""
 
 # Tạo khoảng trống và nhúng Music Player
 st.markdown("<br><br><br>", unsafe_allow_html=True) 
-st.components.v1.html(custom_music_player_html, height=80) 
+st.components.v1.html(custom_music_player_html, height=80)
