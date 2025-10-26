@@ -43,7 +43,6 @@ def get_static_song_urls(directory="songs", prefix="background", count=6):
             url = base_url + filename
             song_urls.append(url)
         else:
-            #st.warning(f"Cảnh báo: Không tìm thấy file {file_path}. Bỏ qua file này.")
             continue
     return song_urls
 
@@ -269,6 +268,12 @@ iframe:first-of-type {{
     font-size: 28px;
 }}
 
+/* Tinh chỉnh kích thước icon Next/Prev */
+#prev-btn, #next-btn {{
+    font-size: 20px; 
+}}
+
+
 #progress-container {{
     width: 100%;
     height: 6px;
@@ -284,8 +289,6 @@ iframe:first-of-type {{
     border-radius: 3px;
 }}
 
-/* Đã loại bỏ #song-title CSS */
-
 @media (max-width: 768px) {{
     #music-player-container {{
         bottom: 10px;
@@ -299,6 +302,9 @@ iframe:first-of-type {{
     }}
     #play-pause-btn {{
         font-size: 24px;
+    }}
+    #prev-btn, #next-btn {{
+        font-size: 16px;
     }}
 }}
 
@@ -528,7 +534,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True) 
 
 
-# --- MUSIC PLAYER COMPONENT (ĐÃ SỬA LỖI TƯƠNG TÁC VÀ BỎ TÊN BÀI HÁT) ---
+# --- MUSIC PLAYER COMPONENT (ĐÃ SỬA LỖI TƯƠNG TÁC VÀ ICON) ---
 
 # Chuẩn bị dữ liệu URL cho JS
 songs_data_js = [f"'{url}'" for url in songs_url_list] 
@@ -537,7 +543,9 @@ music_player_js = f"""
 <script>
     document.addEventListener("DOMContentLoaded", function() {{
         const audioPlayer = new Audio();
-        // Sử dụng URL tĩnh từ thư mục 'songs'
+        // Quan trọng: Thêm thuộc tính crossOrigin
+        audioPlayer.crossOrigin = "anonymous";
+        
         const songs = [{', '.join(songs_data_js)}];
         let currentSongIndex = 0;
         let isPlaying = false;
@@ -549,7 +557,6 @@ music_player_js = f"""
         const progressContainer = document.getElementById('progress-container');
 
         if (songs.length === 0) {{
-            // Ẩn player nếu không tìm thấy bài hát nào
             document.getElementById('music-player-container').style.display = 'none';
             return;
         }}
@@ -560,97 +567,3 @@ music_player_js = f"""
         }}
 
         function playSong() {{
-            // Sử dụng Promise để xử lý lỗi Autoplay một cách chính xác
-            audioPlayer.play().then(() => {{
-                isPlaying = true;
-                playPauseBtn.innerHTML = '&#9208;'; // Pause icon
-            }}).catch(e => {{
-                console.log("Audio play failed (Autoplay Blocked or Load Error):", e);
-                // Giữ nguyên icon Play nếu bị chặn
-            }});
-        }}
-
-        function pauseSong() {{
-            audioPlayer.pause();
-            isPlaying = false;
-            playPauseBtn.innerHTML = '&#9654;'; // Play icon
-        }}
-
-        function nextSong() {{
-            currentSongIndex = (currentSongIndex + 1) % songs.length;
-            loadSong(currentSongIndex);
-            playSong();
-        }}
-
-        function prevSong() {{
-            currentSongIndex = (currentSongIndex - 1 + songs.length) % songs.length;
-            loadSong(currentSongIndex);
-            playSong();
-        }}
-        
-        // Cập nhật thanh tiến trình
-        audioPlayer.addEventListener('timeupdate', (e) => {{
-            const {{duration, currentTime}} = e.target;
-            if (isFinite(duration) && duration > 0) {{
-                const progressPercent = (currentTime / duration) * 100;
-                progressBar.style.width = `${{progressPercent}}%`;
-            }}
-        }});
-
-        // Chuyển bài khi kết thúc
-        audioPlayer.addEventListener('ended', nextSong);
-
-        // Xử lý nút Play/Pause - Quan trọng: Lệnh playSong() phải được gọi trực tiếp từ tương tác
-        playPauseBtn.addEventListener('click', (e) => {{
-            e.stopPropagation(); 
-            if (isPlaying) {{
-                pauseSong();
-            }} else {{
-                playSong(); // Bấm Play sẽ cố gắng phát
-            }}
-        }});
-        
-        // Xử lý nút Next/Prev
-        nextBtn.addEventListener('click', nextSong);
-        prevBtn.addEventListener('click', prevSong);
-        
-        // Xử lý click trên thanh tiến trình
-        progressContainer.addEventListener('click', (e) => {{
-            const width = progressContainer.clientWidth;
-            const clickX = e.offsetX;
-            const duration = audioPlayer.duration;
-            if (isFinite(duration) && duration > 0) {{
-                 audioPlayer.currentTime = (clickX / width) * duration;
-            }}
-        }});
-        
-        // Khởi tạo bài hát đầu tiên
-        loadSong(currentSongIndex);
-
-        // Tối ưu Autoplay: Nếu người dùng tương tác bất kỳ đâu trên body lần đầu, cố gắng play
-        window.parent.document.body.addEventListener('click', () => {{
-             if (!isPlaying && audioPlayer.paused && audioPlayer.src) {{
-                 playSong();
-             }}
-        }}, {{ once: true }});
-        
-    }});
-</script>
-"""
-
-# ĐÃ LOẠI BỎ THẺ <div id="song-title">
-music_player_html = f"""
-<div id="music-player-container">
-    <div id="player-controls">
-        <button id="prev-btn" title="Previous">&#9664;</button>
-        <button id="play-pause-btn" title="Play">&#9654;</button>
-        <button id="next-btn" title="Next">&#9655;</button>
-    </div>
-    <div id="progress-container">
-        <div id="progress-bar"></div>
-    </div>
-    {music_player_js}
-</div>
-"""
-
-st.markdown(music_player_html, unsafe_allow_html=True)
