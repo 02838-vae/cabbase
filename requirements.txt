@@ -1,9 +1,9 @@
 streamlit
+st_static_file
 pandas
 openpyxl
 streamlit-js-eval
 streamlit-javascript
 pyyaml
 ua-parser
-st_static_file
 user-agents
