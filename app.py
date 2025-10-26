@@ -161,11 +161,20 @@ iframe:first-of-type {{
     opacity: 0; 
     transition: opacity 1s ease-out;
     pointer-events: none; /* Mặc định KHÔNG TƯƠNG TÁC được trong Intro */
-    height: 80px; width: 350px; 
+    height: 80px; width: 170px; /* Thu gọn kích thước */
 }}
+
+/* Đảm bảo ẩn iframe của player khi intro đang chạy */
+.stApp:not(.video-finished) #music-player-container iframe {{
+    display: none !important;
+}}
+
 .video-finished #music-player-container {{
     opacity: 1; 
     pointer-events: auto; /* Cho phép tương tác khi intro kết thúc */
+}}
+.video-finished #music-player-container iframe {{
+    display: block !important;
 }}
 
 
@@ -208,10 +217,6 @@ js_callback_video = f"""
     
     function initRevealEffect() {{
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
-        const mainTitle = window.parent.document.getElementById('main-title-container');
-
-        // Bỏ việc gán opacity ở đây. Dùng CSS class .video-finished để handle
-        // if (mainTitle) {{ mainTitle.style.opacity = 1; }}
 
         if (!revealGrid) {{ return; }}
 
@@ -351,12 +356,15 @@ custom_music_player_html = f"""
     <style>
         /* CSS CHỈ DÀNH CHO IFRAME CỦA PLAYER */
         body {{ margin: 0; padding: 0; overflow: hidden; background: transparent; font-family: Arial, sans-serif; }}
-        .player-container {{ display: flex; align-items: center; justify-content: center; padding: 10px; background-color: rgba(0, 0, 0, 0.4); border-radius: 8px; width: 300px; margin: 0 auto; border: 1px solid #FFD700; }}
+        .player-container {{ display: flex; align-items: center; justify-content: center; padding: 10px; background-color: rgba(0, 0, 0, 0.4); border-radius: 8px; 
+            width: 150px; /* Thu gọn kích thước */
+            margin: 0 auto; border: 1px solid #FFD700; 
+        }}
         
         .player-controls button {{ background: none; border: 1px solid #FFD700; color: #FFD700; padding: 8px 10px; margin: 0 3px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: background-color 0.3s, color 0.3s; }}
         .player-controls button:hover {{ background-color: #FFD700; color: #000; }}
         
-        #track-name {{ color: white; font-size: 12px; margin: 0 10px; width: 80px; text-align: center; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }}
+        /* ĐÃ BỎ #track-name */
         #audio-player {{ display: none; }} 
     </style>
 </head>
@@ -368,8 +376,7 @@ custom_music_player_html = f"""
             <button id="play-pause-btn" onclick="togglePlayPause()">&#9658;</button>
             <button onclick="nextTrack()">&#9658;&#9658;</button>
         </div>
-        <div id="track-name">Đang tải...</div>
-    </div>
+        </div>
     
     <audio id="audio-player"></audio>
 
@@ -379,7 +386,6 @@ custom_music_player_html = f"""
         const playlistKeys = Object.keys(playlistData);
         const audio = document.getElementById('audio-player');
         const playPauseBtn = document.getElementById('play-pause-btn');
-        const trackNameDisplay = document.getElementById('track-name');
         
         let currentTrackIndex = 0;
 
@@ -390,14 +396,14 @@ custom_music_player_html = f"""
             // SỬ DỤNG GITHUB RAW URL TRỰC TIẾP
             audio.src = url; 
 
-            trackNameDisplay.textContent = key.toUpperCase().replace("BACKGROUND", "Bài ");
+            // ĐÃ BỎ: trackNameDisplay.textContent = key.toUpperCase().replace("BACKGROUND", "Bài ");
             audio.load();
         }}
         
         function togglePlayPause(forcePlay = false) {{
             // Kiểm tra trạng thái hiển thị của player container cha
             const parentContainer = window.parent.document.getElementById('music-player-container');
-            const isFinished = parentContainer && parentContainer.closest('.stApp.video-finished');
+            const isFinished = parentContainer && parentContainer.classList.contains('video-finished');
 
             if (isFinished) {{
                 if (audio.paused || forcePlay) {{
