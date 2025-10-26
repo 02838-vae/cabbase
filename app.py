@@ -118,7 +118,7 @@ iframe:first-of-type {{
 .grid-cell {{ background-color: white; opacity: 1; transition: opacity 0.5s ease-out; }}
 
 
-/* FIX: Chỉ dùng .video-finished để kích hoạt background */
+/* KÍCH HOẠT BACKGROUND VÀO THÀNH PHẦN GỐC KHI VIDEO KẾT THÚC */
 .stApp.video-finished {{
     background-image: var(--main-bg-url-pc);
     background-size: cover;
@@ -160,12 +160,18 @@ iframe:first-of-type {{
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
     z-index: 10; 
     
-    /* ẨN CỨNG CONTAINER VÀ NỘI DUNG BÊN TRONG */
+    /* FIX CỰC KỲ MẠNH MẼ: Mặc định ẩn container */
     display: none !important; 
-    pointer-events: none; 
     
+    opacity: 0; 
+    pointer-events: none; 
     height: 80px; width: 170px; 
     transition: opacity 1s ease-out;
+}}
+
+/* FIX MẠNH MẼ BỔ SUNG: Ẩn luôn DIV wrapper Streamlit (đảm bảo ẩn iframe) */
+#music-player-container > div {{
+    display: none !important;
 }}
 
 /* KHI VIDEO KẾT THÚC, HIỂN THỊ VÀ BẬT TƯƠNG TÁC */
@@ -175,11 +181,7 @@ iframe:first-of-type {{
     pointer-events: auto; 
 }}
 
-/* ẨN/HIỆN Streamlit Wrapper của Player */
-#music-player-container > div {{
-    display: none !important;
-}}
-
+/* HIỆN DIV wrapper Streamlit */
 .video-finished #music-player-container > div {{
     display: block !important;
 }}
@@ -198,13 +200,13 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- PHẦN 3: IFRAME CHO VIDEO INTRO (DÙNG BASE64) ---
 
-# JavaScript Đã đơn giản hóa (chỉ thêm class 'video-finished')
+# JavaScript Đã đơn giản hóa (chỉ thêm class 'video-finished' để kích hoạt Trang Chính)
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
         const stApp = window.parent.document.querySelector('.stApp');
         
-        // CHỈ THÊM MỘT CLASS DUY NHẤT để kích hoạt tất cả CSS
+        // CHỈ THÊM MỘT CLASS DUY NHẤT để kích hoạt tất cả CSS (Background, Title, Player)
         stApp.classList.add('video-finished');
         
         // Kích hoạt hiệu ứng reveal
@@ -252,11 +254,7 @@ js_callback_video = f"""
 
         const playMedia = () => {{
             video.load();
-            // CHƠI VIDEO LUÔN (Nếu trình duyệt cho phép)
-            video.play().catch(e => {{ 
-                console.log("Video playback failed on first attempt:", e);
-                // Nếu bị chặn, thử lại khi click
-            }});
+            video.play().catch(e => {{}});
                 
             const chars = introTextContainer.querySelectorAll('.intro-char');
             chars.forEach((char, index) => {{
@@ -316,7 +314,7 @@ html_content_modified = f"""
 """
 
 # Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
-intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
+intro_title = "TỔ BẢO DƯỠNG SỐ 1"
 intro_chars_html = ''.join([
     f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'  
     for char in intro_title
