@@ -534,7 +534,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True) 
 
 
-# --- MUSIC PLAYER COMPONENT (ĐÃ SỬA LỖI SYNTAX, TƯƠNG TÁC VÀ ICON) ---
+# --- MUSIC PLAYER COMPONENT (ĐÃ THÊM ERROR LISTENER VÀ LOGIC CHẮC CHẮN) ---
 
 # Chuẩn bị dữ liệu URL cho JS
 songs_data_js = [f"'{url}'" for url in songs_url_list] 
@@ -558,9 +558,19 @@ music_player_js = f"""
         const progressContainer = document.getElementById('progress-container');
 
         if (songs.length === 0) {{
+            console.error("LỖI: Không tìm thấy file nhạc nào trong danh sách.");
             document.getElementById('music-player-container').style.display = 'none';
             return;
         }}
+        
+        // Listener báo lỗi khi tải file
+        audioPlayer.addEventListener('error', (e) => {{
+            console.error('LỖI TẢI AUDIO (Mã lỗi:', e.target.error.code, '):', e.target.error.message);
+            console.error('Đường dẫn file bị lỗi:', audioPlayer.src);
+            // Mã lỗi 4 = MEDIA_ERR_SRC_NOT_SUPPORTED (Thường là 404 hoặc đường dẫn sai)
+            playPauseBtn.innerHTML = '&#9940;'; // Icon cấm
+            isPlaying = false;
+        }});
         
         function loadSong(index) {{
             audioPlayer.src = songs[index];
@@ -614,6 +624,7 @@ music_player_js = f"""
             if (isPlaying) {{
                 pauseSong();
             }} else {{
+                // Nếu đang Pause/Stopped, gọi play.
                 playSong(); 
             }}
         }});
