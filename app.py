@@ -224,7 +224,7 @@ st.markdown("""
 
 
 # --- PLAYER ---
-player_html = f"""
+player_html = f'''
 <html><body style="margin:0;padding:0;">
 <div style="display:flex;align-items:center;justify-content:center;
 background:linear-gradient(135deg,rgba(0,0,0,0.75),rgba(30,30,30,0.85));
@@ -244,17 +244,17 @@ padding:6px 8px;">
 const list = {music_json};
 const keys = Object.keys(list);
 let i = 0; 
-const a = document.getElementById('au'); 
-const b = document.getElementById('pp');
+const a = document.getElementById("au"); 
+const b = document.getElementById("pp");
 
 function load() {{ a.src = list[keys[i]]; }}
 function toggle() {{ 
   if (a.paused) {{
     a.play(); 
-    b.innerHTML = '&#10074;&#10074;';
+    b.innerHTML = "&#10074;&#10074;";
   }} else {{
     a.pause(); 
-    b.innerHTML = '&#9658;';
+    b.innerHTML = "&#9658;";
   }}
 }}
 function next() {{
@@ -267,15 +267,13 @@ function prev() {{
   load();
   if (!a.paused) a.play();
 }}
-a.addEventListener('ended', next);
+a.addEventListener("ended", next);
 load();
 window.togglePlayPause = toggle;
 </script>
 </body></html>
-"""
+'''
 
-</body></html>
-"""
 st.markdown('<div id="music-player-wrapper">', unsafe_allow_html=True)
 st.components.v1.html(player_html, height=70)
 st.markdown('</div>', unsafe_allow_html=True)
