@@ -158,23 +158,21 @@ iframe:first-of-type {{
 #music-player-container {{
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
     z-index: 10; 
+    
+    /* FIX MỚI: Mặc định ẩn hoàn toàn khỏi luồng hiển thị */
+    display: none; 
+    
     opacity: 0; 
+    pointer-events: none; 
+    height: 80px; width: 170px; 
     transition: opacity 1s ease-out;
-    pointer-events: none; /* Mặc định KHÔNG TƯƠNG TÁC được trong Intro */
-    height: 80px; width: 170px; /* Thu gọn kích thước */
 }}
 
-/* Đảm bảo ẩn iframe của player khi intro đang chạy */
-.stApp:not(.video-finished) #music-player-container iframe {{
-    display: none !important;
-}}
-
+/* KHI VIDEO KẾT THÚC, HIỂN THỊ VÀ BẬT TƯƠNG TÁC */
 .video-finished #music-player-container {{
+    display: block; /* Hiện container */
     opacity: 1; 
-    pointer-events: auto; /* Cho phép tương tác khi intro kết thúc */
-}}
-.video-finished #music-player-container iframe {{
-    display: block !important;
+    pointer-events: auto; 
 }}
 
 
@@ -364,7 +362,6 @@ custom_music_player_html = f"""
         .player-controls button {{ background: none; border: 1px solid #FFD700; color: #FFD700; padding: 8px 10px; margin: 0 3px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: background-color 0.3s, color 0.3s; }}
         .player-controls button:hover {{ background-color: #FFD700; color: #000; }}
         
-        /* ĐÃ BỎ #track-name */
         #audio-player {{ display: none; }} 
     </style>
 </head>
@@ -376,7 +373,7 @@ custom_music_player_html = f"""
             <button id="play-pause-btn" onclick="togglePlayPause()">&#9658;</button>
             <button onclick="nextTrack()">&#9658;&#9658;</button>
         </div>
-        </div>
+    </div>
     
     <audio id="audio-player"></audio>
 
@@ -392,20 +389,18 @@ custom_music_player_html = f"""
         function loadTrack(index) {{
             const key = playlistKeys[index];
             const url = playlistData[key]; 
-
-            // SỬ DỤNG GITHUB RAW URL TRỰC TIẾP
             audio.src = url; 
-
-            // ĐÃ BỎ: trackNameDisplay.textContent = key.toUpperCase().replace("BACKGROUND", "Bài ");
             audio.load();
         }}
         
         function togglePlayPause(forcePlay = false) {{
             // Kiểm tra trạng thái hiển thị của player container cha
             const parentContainer = window.parent.document.getElementById('music-player-container');
-            const isFinished = parentContainer && parentContainer.classList.contains('video-finished');
+            // Kiểm tra Class video-finished trên đối tượng .stApp cấp cao nhất
+            const isFinished = parentContainer && window.parent.document.querySelector('.stApp').classList.contains('video-finished');
 
-            if (isFinished) {{
+            // Chỉ cho phép thao tác khi đã ở trang chính (video-finished) hoặc khi được gọi forcePlay từ sự kiện kết thúc video
+            if (isFinished || forcePlay) {{ 
                 if (audio.paused || forcePlay) {{
                     if (audio.src === "") {{ loadTrack(currentTrackIndex); }}
                     
@@ -418,10 +413,8 @@ custom_music_player_html = f"""
                     audio.pause();
                     playPauseBtn.innerHTML = '&#9658;'; 
                 }}
-            }} else if (forcePlay) {{
-                // Nếu bị gọi forcePlay khi chưa ở trang chính, load track nhưng KHÔNG PLAY
-                if (audio.src === "") {{ loadTrack(currentTrackIndex); }}
             }}
+            // Nếu không phải trang chính và không phải forcePlay (tức là người dùng cố gắng tương tác sớm), bỏ qua.
         }}
         window.togglePlayPause = togglePlayPause; 
 
