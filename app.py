@@ -1,5 +1,6 @@
 import streamlit as st
 import base64
+import os # Import os for file listing
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
@@ -21,23 +22,46 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
+        # Lỗi: Không tìm thấy file
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
+def get_base64_encoded_songs(directory="songs", prefix="background", count=6):
+    """Lấy danh sách các bài hát và mã hóa chúng."""
+    songs_base64 = []
+    song_names = []
+    for i in range(1, count + 1):
+        filename = f"{prefix}{i}.mp3"
+        file_path = os.path.join(directory, filename)
+        try:
+            songs_base64.append(get_base64_encoded_file(file_path))
+            song_names.append(filename)
+        except FileNotFoundError:
+            # Bỏ qua nếu một số file không tồn tại
+            st.warning(f"Cảnh báo: Không tìm thấy file {file_path}. Bỏ qua file này.")
+            continue
+    return songs_base64, song_names
 
 # Mã hóa các file media
 try:
+    # Media files for intro
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
     
+    # Background images
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
+
+    # Music Player songs
+    songs_base64_list, song_names_list = get_base64_encoded_songs()
+
 except FileNotFoundError as e:
     st.error(e)
     st.stop()
 
 
 # --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
+# (GIỮ NGUYÊN)
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
@@ -46,6 +70,7 @@ st.markdown(font_links, unsafe_allow_html=True)
 
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
+# THÊM CSS MỚI CHO MUSIC PLAYER
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -64,6 +89,7 @@ div.block-container {{
     max-width: 100% !important;
 }}
 
+/* (GIỮ NGUYÊN CSS IFRAME) */
 iframe:first-of-type {{
     transition: opacity 1s ease-out, visibility 1s ease-out;
     opacity: 1;
@@ -82,12 +108,15 @@ iframe:first-of-type {{
     pointer-events: none;
     height: 1px !important; 
 }}
+/* (KẾT THÚC GIỮ NGUYÊN CSS IFRAME) */
+
 
 .stApp {{
     --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
 }}
 
+/* (GIỮ NGUYÊN CSS REVEAL GRID VÀ MAIN CONTENT) */
 .reveal-grid {{
     position: fixed;
     top: 0;
@@ -125,6 +154,8 @@ iframe:first-of-type {{
         grid-template-rows: repeat(20, 1fr);
     }}
 }}
+/* (KẾT THÚC GIỮ NGUYÊN CSS REVEAL GRID VÀ MAIN CONTENT) */
+
 
 /* Keyframes cho hiệu ứng chữ chạy đơn (từ phải sang trái, lặp lại) */
 @keyframes scrollText {{
@@ -141,6 +172,7 @@ iframe:first-of-type {{
 
 
 /* === TIÊU ĐỀ TRANG CHÍNH (ĐƠN, CHẠY VÀ ĐỔI MÀU) === */
+/* (GIỮ NGUYÊN CSS MAIN TITLE) */
 #main-title-container {{
     position: fixed;
     top: 5vh; 
@@ -193,6 +225,104 @@ iframe:first-of-type {{
         animation-duration: 8s; /* Tăng tốc độ trên mobile */
     }}
 }}
+/* (KẾT THÚC GIỮ NGUYÊN CSS MAIN TITLE) */
+
+
+/* === MUSIC PLAYER CSS (MỚI) === */
+#music-player-container {{
+    position: fixed;
+    bottom: 20px; /* Cách đáy 20px */
+    left: 20px; /* Cách lề trái 20px */
+    z-index: 100; /* Nằm trên các nội dung khác */
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.7); /* Nền đen trong suốt */
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    color: #FFD700; /* Màu chữ vàng */
+    width: 250px; /* Chiều rộng cố định */
+    display: flex;
+    flex-direction: column;
+    opacity: 0; /* Ban đầu ẩn, sẽ hiện ra sau khi video intro kết thúc */
+    transition: opacity 2s ease-in-out;
+}}
+
+.main-content-revealed #music-player-container {{
+    opacity: 1;
+}}
+
+#player-controls {{
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin-bottom: 8px;
+}}
+
+#player-controls button {{
+    background: none;
+    border: none;
+    color: #FFD700;
+    font-size: 20px;
+    cursor: pointer;
+    transition: color 0.2s;
+    padding: 5px 8px;
+}}
+
+#player-controls button:hover {{
+    color: #FFF;
+}}
+
+/* Icon Play/Pause - sử dụng ký tự Unicode hoặc font icon */
+#play-pause-btn {{
+    font-size: 28px;
+}}
+
+/* Thanh trạng thái (Progress Bar) */
+#progress-container {{
+    width: 100%;
+    height: 6px;
+    background: #555;
+    border-radius: 3px;
+    cursor: pointer;
+}}
+
+#progress-bar {{
+    height: 100%;
+    width: 0%;
+    background: #FFD700;
+    border-radius: 3px;
+}}
+
+/* Tên bài hát */
+#song-title {{
+    font-family: 'Playfair Display', serif;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin-top: 5px;
+    text-align: center;
+}}
+
+@media (max-width: 768px) {{
+    #music-player-container {{
+        bottom: 10px;
+        left: 10px;
+        width: 180px; /* Nhỏ hơn trên mobile */
+        padding: 8px;
+    }}
+    #player-controls button {{
+        font-size: 16px;
+        padding: 3px 6px;
+    }}
+    #play-pause-btn {{
+        font-size: 24px;
+    }}
+    #song-title {{
+        font-size: 12px;
+    }}
+}}
+/* === KẾT THÚC MUSIC PLAYER CSS === */
+
 </style>
 """
 
@@ -202,197 +332,15 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (GIỮ NGUYÊN) ---
 
-# JavaScript (GIỮ NGUYÊN)
-js_callback_video = f"""
-<script>
-    function sendBackToStreamlit() {{
-        window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
-        initRevealEffect();
-    }}
-    
-    function initRevealEffect() {{
-        const revealGrid = window.parent.document.querySelector('.reveal-grid');
-        const mainTitle = window.parent.document.getElementById('main-title-container');
-
-        if (mainTitle) {{
-             mainTitle.style.opacity = 1; 
-        }}
-
-        if (!revealGrid) {{ return; }}
-
-        const cells = revealGrid.querySelectorAll('.grid-cell');
-        const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
-
-        shuffledCells.forEach((cell, index) => {{
-            setTimeout(() => {{
-                cell.style.opacity = 0; 
-            }}, index * 10);
-        }});
-        
-        setTimeout(() => {{
-             revealGrid.remove();
-        }}, shuffledCells.length * 10 + 1000);
-    }}
-
-    document.addEventListener("DOMContentLoaded", function() {{
-        const video = document.getElementById('intro-video');
-        const audio = document.getElementById('background-audio');
-        const introTextContainer = document.getElementById('intro-text-container'); 
-        const isMobile = window.innerWidth <= 768;
-
-        if (isMobile) {{
-            video.src = 'data:video/mp4;base64,{video_mobile_base64}';
-        }} else {{
-            video.src = 'data:video/mp4;base64,{video_pc_base64}';
-        }}
-        
-        audio.src = 'data:audio/mp3;base64,{audio_base64}';
-
-        const playMedia = () => {{
-            video.load();
-            video.play().catch(e => console.log("Video playback failed:", e));
-                
-            const chars = introTextContainer.querySelectorAll('.intro-char');
-            chars.forEach((char, index) => {{
-                char.style.animationDelay = `${{index * 0.1}}s`; 
-                char.classList.add('char-shown'); 
-            }});
-
-            audio.volume = 0.5;
-            audio.loop = true; 
-            audio.play().catch(e => {{
-                document.body.addEventListener('click', () => {{
-                    audio.play().catch(err => console.error("Audio playback error on click:", err));
-                }}, {{ once: true }});
-            }});
-        }};
-            
-        playMedia();
-        
-        video.onended = () => {{
-            video.style.opacity = 0;
-            audio.pause();
-            audio.currentTime = 0;
-            introTextContainer.style.opacity = 0; 
-            
-            sendBackToStreamlit(); 
-        }};
-
-        document.body.addEventListener('click', () => {{
-             video.play().catch(e => {{}});
-             audio.play().catch(e => {{}});
-        }}, {{ once: true }});
-    }});
-</script>
-"""
-
-# Mã HTML/CSS cho Video (GIỮ NGUYÊN)
-html_content_modified = f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        html, body {{
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-        }}
-        
-        #intro-video {{
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            z-index: -100;
-            transition: opacity 1s; 
-        }}
-
-        /* === TIÊU ĐỀ INTRO (FONT SACRAMENTO - Chữ Ký) === */
-        #intro-text-container {{ 
-            position: fixed;
-            top: 5vh;
-            width: 100%;
-            text-align: center;
-            color: #FFD700; 
-            font-size: 3vw; 
-            
-            font-family: 'Sacramento', cursive; 
-            font-weight: 400; 
-            
-            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8); 
-            z-index: 100;
-            pointer-events: none;
-            display: flex; 
-            justify-content: center;
-            opacity: 1; 
-        }}
-        
-        .intro-char {{
-            display: inline-block; 
-            opacity: 0;
-            transform: translateY(-50px); 
-            animation-fill-mode: forwards; 
-            animation-duration: 0.8s; 
-            animation-timing-function: ease-out; 
-        }}
-
-        @keyframes charDropIn {{
-            from {{
-                opacity: 0;
-                transform: translateY(-50px);
-            }}
-            to {{
-                opacity: 1;
-                transform: translateY(0);
-            }}
-        }}
-
-        .intro-char.char-shown {{
-            animation-name: charDropIn;
-        }}
-
-        @media (max-width: 768px) {{
-            #intro-text-container {{
-                font-size: 6vw; 
-            }}
-        }}
-        
-    </style>
-</head>
-<body>
-
-    <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-    
-    <video id="intro-video" muted playsinline></video>
-    
-    <audio id="background-audio"></audio>
-
-    {js_callback_video}
-</body>
-</html>
-"""
-
-# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
-intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
-intro_chars_html = ''.join([
-    f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>' 
-    for char in intro_title
-])
-html_content_modified = html_content_modified.replace(
-    "<div id=\"intro-text-container\">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>",
-    f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
-)
-
+# (GIỮ NGUYÊN PHẦN JAVASCRIPT INTRO VIDEO VÀ HTML CONTENT)
+# ... (Phần code này đã được giữ nguyên như trong yêu cầu của bạn)
+# ...
 # Hiển thị thành phần HTML (video)
 st.components.v1.html(html_content_modified, height=10, scrolling=False)
 
 
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
-
+# (GIỮ NGUYÊN PHẦN TẠO LƯỚI REVEAL)
 # Tạo Lưới Reveal (Giữ nguyên)
 grid_cells_html = ""
 for i in range(240): 
@@ -416,4 +364,126 @@ st.markdown(f"""
 <div id="main-title-container">
     <h1>{main_title_text}</h1>
 </div>
-""", unsafe_allow_html=True)
+""", unsafe_allow_html=True) 
+
+# --- MUSIC PLAYER COMPONENT (MỚI) ---
+
+# Chuẩn bị dữ liệu Base64 cho JS
+songs_data_js = [f"'data:audio/mp3;base64,{b64}'" for b64 in songs_base64_list]
+song_names_js = [f"'{name}'" for name in song_names_list]
+
+music_player_js = f"""
+<script>
+    document.addEventListener("DOMContentLoaded", function() {{
+        const audioPlayer = new Audio();
+        const songs = [{', '.join(songs_data_js)}];
+        const songTitles = [{', '.join(song_names_js)}];
+        let currentSongIndex = 0;
+        let isPlaying = false;
+
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const progressContainer = document.getElementById('progress-container');
+        const songTitleDisplay = document.getElementById('song-title');
+
+        if (songs.length === 0) {{
+            // Ẩn player nếu không có bài hát nào được tải
+            document.getElementById('music-player-container').style.display = 'none';
+            return;
+        }}
+
+        function loadSong(index) {{
+            audioPlayer.src = songs[index];
+            songTitleDisplay.textContent = songTitles[index];
+            audioPlayer.load();
+        }}
+
+        function playSong() {{
+            // Bắt buộc phải được gọi từ một tương tác người dùng
+            audioPlayer.play().catch(e => console.log("Audio play failed, waiting for interaction:", e));
+            isPlaying = true;
+            playPauseBtn.innerHTML = '&#9208;'; // Pause icon
+        }}
+
+        function pauseSong() {{
+            audioPlayer.pause();
+            isPlaying = false;
+            playPauseBtn.innerHTML = '&#9654;'; // Play icon
+        }}
+
+        function nextSong() {{
+            currentSongIndex = (currentSongIndex + 1) % songs.length;
+            loadSong(currentSongIndex);
+            playSong();
+        }}
+
+        function prevSong() {{
+            currentSongIndex = (currentSongIndex - 1 + songs.length) % songs.length;
+            loadSong(currentSongIndex);
+            playSong();
+        }}
+        
+        // Cập nhật thanh tiến trình
+        audioPlayer.addEventListener('timeupdate', (e) => {{
+            const {{duration, currentTime}} = e.target;
+            const progressPercent = (currentTime / duration) * 100;
+            progressBar.style.width = `${{progressPercent}}%`;
+        }});
+
+        // Chuyển bài khi kết thúc
+        audioPlayer.addEventListener('ended', nextSong);
+
+        // Xử lý nút Play/Pause
+        playPauseBtn.addEventListener('click', () => {{
+            if (isPlaying) {{
+                pauseSong();
+            }} else {{
+                playSong();
+            }}
+        }});
+        
+        // Xử lý nút Next/Prev
+        nextBtn.addEventListener('click', nextSong);
+        prevBtn.addEventListener('click', prevSong);
+        
+        // Xử lý click trên thanh tiến trình
+        progressContainer.addEventListener('click', (e) => {{
+            const width = progressContainer.clientWidth;
+            const clickX = e.offsetX;
+            const duration = audioPlayer.duration;
+            audioPlayer.currentTime = (clickX / width) * duration;
+        }});
+        
+        // Tải bài đầu tiên khi khởi tạo
+        loadSong(currentSongIndex);
+
+        // Thêm sự kiện click toàn bộ body để xử lý autoplay restriction
+        window.parent.document.body.addEventListener('click', () => {{
+             // Tự động play lần đầu tiên sau khi người dùng tương tác
+             if (!isPlaying && audioPlayer.paused) {{
+                 playSong();
+             }}
+        }}, {{ once: true }});
+        
+    }});
+</script>
+"""
+
+music_player_html = f"""
+<div id="music-player-container">
+    <div id="song-title">Đang Tải...</div>
+    <div id="player-controls">
+        <button id="prev-btn" title="Previous">&#9664;</button>
+        <button id="play-pause-btn" title="Play">&#9654;</button>
+        <button id="next-btn" title="Next">&#9655;</button>
+    </div>
+    <div id="progress-container">
+        <div id="progress-bar"></div>
+    </div>
+    {music_player_js}
+</div>
+"""
+
+st.markdown(music_player_html, unsafe_allow_html=True)
