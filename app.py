@@ -96,7 +96,7 @@ header[data-testid="stHeader"] {{
 .main {{ padding: 0; margin: 0; }}
 div.block-container {{ padding: 0; margin: 0; max-width: 100% !important; }}
 
-/* CSS cho iframe video intro */
+/* CSS cho iframe video intro (iframe:nth-of-type(1)) */
 iframe:first-of-type {{
     transition: opacity 1s ease-out, visibility 1s ease-out;
     opacity: 1; visibility: visible;
@@ -161,8 +161,8 @@ iframe:first-of-type {{
 
 /* === MUSIC PLAYER (Ẩn hoàn toàn trong Intro, Hiện hoàn toàn trên Trang Chính) === */
 
-/* CHỌN CẢ 3 IFRAME ĐẦU TIÊN (Video, Reveal Grid, Player) */
-iframe:nth-of-type(3), 
+/* 🚀 FIX: Thay selector iframe:nth-of-type(3) thành iframe:nth-of-type(2) */
+iframe:nth-of-type(2), 
 #music-player-container {{
     position: fixed !important; 
     top: 17vh !important;
@@ -171,7 +171,6 @@ iframe:nth-of-type(3),
     transform: none !important;
     z-index: 10 !important; 
     
-    /* 🚀 FIX MẠNH MẼ: ẨN CẢ visibility và display */
     visibility: hidden !important; 
     display: none !important; 
     
@@ -183,14 +182,14 @@ iframe:nth-of-type(3),
     transition: opacity 1s ease-out;
 }}
 
-/* ẨN DIV wrapper Streamlit (Bổ sung để ngăn lỗi Race Condition) */
+/* ẨN DIV wrapper Streamlit */
 #music-player-container > div {{
     visibility: hidden !important; 
     display: none !important;
 }}
 
 /* KHI VIDEO KẾT THÚC, HIỂN THỊ VÀ BẬT TƯƠNG TÁC */
-.video-finished iframe:nth-of-type(3),
+.video-finished iframe:nth-of-type(2),
 .video-finished #music-player-container {{
     display: block !important;
     visibility: visible !important;
@@ -212,7 +211,7 @@ iframe:nth-of-type(3),
     #main-title-container h1 {{ font-size: 6.5vw; animation-duration: 8s; }}
     .reveal-grid {{ grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(20, 1fr); }}
     
-    iframe:nth-of-type(3),
+    iframe:nth-of-type(2),
     #music-player-container {{
         top: 15vh !important;
         left: 2vw !important;
@@ -290,7 +289,7 @@ js_callback_video = f"""
 
             audio.volume = 0.5;
             audio.loop = true;  
-            // 💡 FIX: Thêm setTimeout để cố gắng phát sau 1 giây
+            // FIX ÂM THANH: Thêm setTimeout để cố gắng phát sau 1 giây
             setTimeout(() => {{
                 audio.play().catch(e => {{
                     console.log("Audio playback blocked, setting click listener.");
@@ -312,7 +311,7 @@ js_callback_video = f"""
         // XỬ LÝ CLICK ĐẦU TIÊN (Quan trọng để kích hoạt media)
         document.body.addEventListener('click', () => {{
             video.play().catch(e => {{}});
-            audio.play().catch(e => {{}}); // Cố gắng phát âm thanh khi click
+            audio.play().catch(e => {{}}); 
         }}, {{ once: true }});
     }});
 </script>
@@ -353,13 +352,13 @@ html_content_modified = html_content_modified.replace(
     f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
 )
 
-# Giữ chiều cao lớn để video được render đúng
+# IFRAME THỨ 1
 st.components.v1.html(html_content_modified, height=800, scrolling=False) 
 
 
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
 
-# Tạo Lưới Reveal (Đây là iframe thứ 2)
+# Tạo Lưới Reveal (DIV)
 grid_cells_html = ""
 for i in range(240): 
     grid_cells_html += f'<div class="grid-cell"></div>'
@@ -382,7 +381,7 @@ st.markdown(f"""
 
 
 # =======================================================
-#               MUSIC PLAYER TÙY CHỈNH (Đây là iframe thứ 3)
+#               MUSIC PLAYER TÙY CHỈNH (IFRAME THỨ 2)
 # =======================================================
 
 custom_music_player_html = f"""
