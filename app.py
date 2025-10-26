@@ -1,7 +1,8 @@
 import streamlit as st
 import base64
 import json
-# Đảm bảo không còn dòng import st_static_file nào.
+# Import thư viện phục vụ file tĩnh mới
+import streamlit_static_resource as st_resource
 
 # --- CẤU HÌNH BAN ĐẦU ---
 
@@ -15,6 +16,10 @@ st.set_page_config(
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
+# KHAI BÁO STATIC SERVER VÀ LẤY BASE URL
+# Sử dụng thư mục "Static" (chữ S hoa)
+music_base_url = st_resource.static_resource_base(resource_path="Static")
+
 
 # --- CÁC HÀM TIỆN ÍCH ---
 
@@ -25,28 +30,28 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
-        # Quan trọng: Đường dẫn đã được cập nhật thành "Static/..."
+        # Đường dẫn cho các file khác vẫn ở thư mục gốc
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
 
 # Mã hóa các file media
 try:
-    # BASE64 CHO VIDEO VÀ HÌNH ẢNH
+    # BASE64 CHO VIDEO VÀ HÌNH ẢNH (Vẫn dùng Base64 vì chúng ở thư mục gốc)
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
-    audio_base64 = get_base64_encoded_file("plane_fly.mp3") # Nhạc intro (ở thư mục gốc)
+    audio_base64 = get_base64_encoded_file("plane_fly.mp3") 
     
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg")    
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
 
-    # BASE64 CHO MUSIC PLAYER (ĐỌC TỪ THƯ MỤC STATIC/ - CHỮ S HOA)
+    # SỬ DỤNG URL TĨNH CHO MUSIC PLAYER (Giúp load nhanh hơn)
     music_files = {
-        "background1": get_base64_encoded_file("Static/background1.mp3"),
-        "background2": get_base64_encoded_file("Static/background2.mp3"),
-        "background3": get_base64_encoded_file("Static/background3.mp3"),
-        "background4": get_base64_encoded_file("Static/background4.mp3"),
-        "background5": get_base64_encoded_file("Static/background5.mp3"),
-        "background6": get_base64_encoded_file("Static/background6.mp3"),
+        "background1": f"{music_base_url}/background1.mp3",
+        "background2": f"{music_base_url}/background2.mp3",
+        "background3": f"{music_base_url}/background3.mp3",
+        "background4": f"{music_base_url}/background4.mp3",
+        "background5": f"{music_base_url}/background5.mp3",
+        "background6": f"{music_base_url}/background6.mp3",
     }
     music_playlist_json = json.dumps(music_files)
 
@@ -465,7 +470,7 @@ st.markdown(f"""
 
 
 # =======================================================
-#               MUSIC PLAYER TÙY CHỈNH (DÙNG BASE64)
+#               MUSIC PLAYER TÙY CHỈNH (DÙNG URL TĨNH)
 # =======================================================
 
 custom_music_player_html = f"""
@@ -549,10 +554,10 @@ custom_music_player_html = f"""
 
         function loadTrack(index) {{
             const key = playlistKeys[index];
-            const base64 = playlistData[key]; // <-- Base64 data
+            const url = playlistData[key]; // <-- Bây giờ là URL
 
-            // SỬ DỤNG BASE64 Data URI
-            audio.src = `data:audio/mp3;base64,${{base64}}`; 
+            // SỬ DỤNG URL TRỰC TIẾP
+            audio.src = url; 
 
             trackNameDisplay.textContent = key.toUpperCase().replace("BACKGROUND", "Bài ");
             audio.load();
