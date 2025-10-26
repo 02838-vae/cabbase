@@ -98,7 +98,6 @@ div.block-container {{ padding: 0; margin: 0; max-width: 100% !important; }}
 
 /* CSS cho iframe video intro */
 iframe:first-of-type {{
-    /* Cố định vị trí và z-index để che toàn bộ trang */
     transition: opacity 1s ease-out, visibility 1s ease-out;
     opacity: 1; visibility: visible;
     width: 100vw !important; height: 100vh !important;
@@ -106,7 +105,6 @@ iframe:first-of-type {{
 }}
 
 .video-finished iframe:first-of-type {{
-    /* Ẩn hoàn toàn iframe sau khi kết thúc */
     opacity: 0; visibility: hidden; pointer-events: none;
     height: 1px !important;    
 }}
@@ -162,6 +160,9 @@ iframe:first-of-type {{
 }}
 
 /* === MUSIC PLAYER (Ẩn hoàn toàn trong Intro, Hiện hoàn toàn trên Trang Chính) === */
+
+/* CHỌN CẢ 3 IFRAME ĐẦU TIÊN (Video, Reveal Grid, Player) */
+iframe:nth-of-type(3), 
 #music-player-container {{
     position: fixed !important; 
     top: 17vh !important;
@@ -170,7 +171,7 @@ iframe:first-of-type {{
     transform: none !important;
     z-index: 10 !important; 
     
-    /* 🚀 FIX MẠNH MẼ: Đảm bảo Player bị ẩn ngay lập tức (dù là iframe) */
+    /* 🚀 FIX MẠNH MẼ: ẨN CẢ visibility và display */
     visibility: hidden !important; 
     display: none !important; 
     
@@ -182,13 +183,14 @@ iframe:first-of-type {{
     transition: opacity 1s ease-out;
 }}
 
-/* 🚀 FIX MẠNH MẼ: ẨN DIV wrapper Streamlit (đảm bảo ẩn iframe) */
+/* ẨN DIV wrapper Streamlit (Bổ sung để ngăn lỗi Race Condition) */
 #music-player-container > div {{
     visibility: hidden !important; 
     display: none !important;
 }}
 
 /* KHI VIDEO KẾT THÚC, HIỂN THỊ VÀ BẬT TƯƠNG TÁC */
+.video-finished iframe:nth-of-type(3),
 .video-finished #music-player-container {{
     display: block !important;
     visibility: visible !important;
@@ -210,6 +212,7 @@ iframe:first-of-type {{
     #main-title-container h1 {{ font-size: 6.5vw; animation-duration: 8s; }}
     .reveal-grid {{ grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(20, 1fr); }}
     
+    iframe:nth-of-type(3),
     #music-player-container {{
         top: 15vh !important;
         left: 2vw !important;
@@ -287,9 +290,12 @@ js_callback_video = f"""
 
             audio.volume = 0.5;
             audio.loop = true;  
-            audio.play().catch(e => {{
-                 console.log("Audio playback blocked, setting click listener.");
-            }});
+            // 💡 FIX: Thêm setTimeout để cố gắng phát sau 1 giây
+            setTimeout(() => {{
+                audio.play().catch(e => {{
+                    console.log("Audio playback blocked, setting click listener.");
+                }});
+            }}, 1000);
         }};
             
         playMedia();
@@ -306,7 +312,7 @@ js_callback_video = f"""
         // XỬ LÝ CLICK ĐẦU TIÊN (Quan trọng để kích hoạt media)
         document.body.addEventListener('click', () => {{
             video.play().catch(e => {{}});
-            audio.play().catch(e => {{}});
+            audio.play().catch(e => {{}}); // Cố gắng phát âm thanh khi click
         }}, {{ once: true }});
     }});
 </script>
@@ -353,7 +359,7 @@ st.components.v1.html(html_content_modified, height=800, scrolling=False)
 
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
 
-# Tạo Lưới Reveal 
+# Tạo Lưới Reveal (Đây là iframe thứ 2)
 grid_cells_html = ""
 for i in range(240): 
     grid_cells_html += f'<div class="grid-cell"></div>'
@@ -376,7 +382,7 @@ st.markdown(f"""
 
 
 # =======================================================
-#               MUSIC PLAYER TÙY CHỈNH (THU NHỎ)
+#               MUSIC PLAYER TÙY CHỈNH (Đây là iframe thứ 3)
 # =======================================================
 
 custom_music_player_html = f"""
