@@ -13,6 +13,7 @@ if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
 # --- CÁC HÀM TIỆN ÍCH ---
+
 def get_base64_encoded_file(file_path):
     """Đọc file và trả về Base64 encoded string."""
     try:
@@ -20,42 +21,57 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
-        raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
+        # Sử dụng f-string để hiển thị tên file bị thiếu
+        raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {file_path}")
+
 
 # Mã hóa các file media
 try:
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
-    bg_pc_base64 = get_base64_encoded_file("cabbase.jpg")
+    
+    bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
+
+    # === THÊM MÃ HÓA CÁC BÀI HÁT ===
+    song_files = [f"background{i}.mp3" for i in range(1, 7)]
+    song_base64_list = [get_base64_encoded_file(f"songs/{filename}") for filename in song_files]
+    # Tạo chuỗi JSON cho JavaScript
+    song_base64_js_array = str(song_base64_list).replace("'", '"')
+    
 except FileNotFoundError as e:
     st.error(e)
     st.stop()
 
-# --- PHẦN 1: NHÚNG FONT ---
+
+# --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 """
 st.markdown(font_links, unsafe_allow_html=True)
 
-# --- PHẦN 2: CSS CHÍNH ---
+
+# --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 
+/* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
 
 .main {{
     padding: 0;
     margin: 0;
 }}
+
 div.block-container {{
     padding: 0;
     margin: 0;
     max-width: 100% !important;
 }}
+
 iframe:first-of-type {{
     transition: opacity 1s ease-out, visibility 1s ease-out;
     opacity: 1;
@@ -67,16 +83,19 @@ iframe:first-of-type {{
     left: 0;
     z-index: 1000;
 }}
+
 .video-finished iframe:first-of-type {{
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    height: 1px !important;
+    height: 1px !important; 
 }}
+
 .stApp {{
     --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
 }}
+
 .reveal-grid {{
     position: fixed;
     top: 0;
@@ -84,24 +103,27 @@ iframe:first-of-type {{
     width: 100vw;
     height: 100vh;
     display: grid;
-    grid-template-columns: repeat(20, 1fr);
+    grid-template-columns: repeat(20, 1fr); 
     grid-template-rows: repeat(12, 1fr);
-    z-index: 500;
-    pointer-events: none;
+    z-index: 500; 
+    pointer-events: none; 
 }}
+
 .grid-cell {{
-    background-color: white;
+    background-color: white; 
     opacity: 1;
     transition: opacity 0.5s ease-out;
 }}
+
 .main-content-revealed {{
     background-image: var(--main-bg-url-pc);
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
-    filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%);
-    transition: filter 2s ease-out;
+    filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%); 
+    transition: filter 2s ease-out; 
 }}
+
 @media (max-width: 768px) {{
     .main-content-revealed {{
         background-image: var(--main-bg-url-mobile);
@@ -111,208 +133,518 @@ iframe:first-of-type {{
         grid-template-rows: repeat(20, 1fr);
     }}
 }}
+
+/* Keyframes cho hiệu ứng chữ chạy đơn (từ phải sang trái, lặp lại) */
 @keyframes scrollText {{
-    0% {{ transform: translate(100vw, 0); }}
-    100% {{ transform: translate(-100%, 0); }}
+    0% {{ transform: translate(100vw, 0); }} /* Bắt đầu từ ngoài cùng bên phải */
+    100% {{ transform: translate(-100%, 0); }} /* Chạy sang trái (độ rộng của chữ) */
 }}
+
+/* Keyframes cho hiệu ứng Đổi Màu Gradient */
 @keyframes colorShift {{
     0% {{ background-position: 0% 50%; }}
     50% {{ background-position: 100% 50%; }}
     100% {{ background-position: 0% 50%; }}
 }}
+
+
+/* === TIÊU ĐỀ TRANG CHÍNH (ĐƠN, CHẠY VÀ ĐỔI MÀU) === */
 #main-title-container {{
     position: fixed;
-    top: 5vh;
-    left: 0;
-    width: 100%;
-    height: 10vh;
-    overflow: hidden;
-    z-index: 20;
-    pointer-events: none;
-    opacity: 0;
+    top: 5vh; 
+    left: 0; 
+    width: 100%; 
+    height: 10vh; 
+    overflow: hidden; 
+    z-index: 20; 
+    pointer-events: none; 
+    
+    opacity: 0; 
     transition: opacity 2s;
 }}
+
 #main-title-container h1 {{
-    font-family: 'Playfair Display', serif;
-    font-size: 3.5vw;
+    font-family: 'Playfair Display', serif; 
+    font-size: 3.5vw; 
     margin: 0;
-    font-weight: 900;
-    letter-spacing: 5px;
-    white-space: nowrap;
-    display: inline-block;
-    animation: colorShift 10s ease infinite, scrollText 15s linear infinite;
-    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
-    background-size: 400% 400%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+    font-weight: 900; 
+    font-feature-settings: "lnum" 1; 
+    letter-spacing: 5px; 
+    white-space: nowrap; 
+    
+    display: inline-block; 
+
+    /* 1. Hiệu ứng chữ chạy - Tăng tốc độ */
+    animation: scrollText 15s linear infinite; 
+    
+    /* 2. Hiệu ứng đổi màu */
+    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3); /* Cầu vồng */
+    background-size: 400% 400%; /* Cần kích thước lớn để tạo hiệu ứng chuyển màu mượt */
+    -webkit-background-clip: text; /* Clip màu nền theo hình dạng chữ */
+    -webkit-text-fill-color: transparent; /* Ẩn màu chữ gốc */
+    color: transparent; /* Dành cho các trình duyệt khác */
+    animation: colorShift 10s ease infinite, scrollText 15s linear infinite; /* Áp dụng đồng thời 2 animation */
+    
+    /* Thiết lập bóng đổ cổ điển */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
 }}
+
 @media (max-width: 768px) {{
+    #main-title-container {{
+        height: 8vh;
+        width: 100%; 
+        left: 0;
+    }}
+    
     #main-title-container h1 {{
-        font-size: 6.5vw;
-        animation-duration: 8s;
+        font-size: 6.5vw; 
+        animation-duration: 8s; 
     }}
 }}
+
+/* === MUSIC PLAYER CỐ ĐỊNH - CSS MỚI === */
+#music-player-container {{
+    position: fixed;
+    top: 50%; /* Đặt ở giữa theo chiều dọc */
+    left: 20px; /* Góc trái */
+    transform: translateY(-50%);
+    z-index: 150; /* Đảm bảo nằm trên lớp nền và lưới reveal */
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.7); /* Nền tối mờ */
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    width: 200px; /* Độ rộng cố định */
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: opacity 1s ease-in-out;
+    opacity: 0; /* Ban đầu ẩn */
+}}
+
+.video-finished #music-player-container {{
+    opacity: 1; /* Hiện ra sau khi video kết thúc */
+}}
+
+#player-controls {{
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}}
+
+#player-controls button {{
+    background: none;
+    border: none;
+    color: gold;
+    font-size: 24px;
+    cursor: pointer;
+    transition: color 0.3s;
+    line-height: 1; /* Căn chỉnh biểu tượng */
+}}
+
+#player-controls button:hover {{
+    color: white;
+}}
+
+#song-info {{
+    color: white;
+    font-size: 14px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}}
+
+/* Thanh trạng thái nhỏ gọn */
+#progress-container {{
+    height: 5px;
+    background: #444;
+    border-radius: 5px;
+    cursor: pointer;
+}}
+
+#progress-bar {{
+    height: 100%;
+    width: 0%;
+    background: gold;
+    border-radius: 5px;
+    transition: width 0.1s linear;
+}}
+
+/* Cập nhật mobile */
+@media (max-width: 768px) {{
+    #music-player-container {{
+        top: 20px; /* Di chuyển lên góc trên cùng bên trái */
+        left: 10px;
+        transform: none;
+        width: 150px;
+        padding: 8px;
+    }}
+}}
+
 </style>
 """
+
+# Thêm CSS vào trang chính
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# --- PHẦN 3: VIDEO INTRO ---
+
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
+
+# JavaScript (GIỮ NGUYÊN)
 js_callback_video = f"""
 <script>
-function sendBackToStreamlit() {{
-    window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
-    initRevealEffect();
-}}
-function initRevealEffect() {{
-    const revealGrid = window.parent.document.querySelector('.reveal-grid');
-    const mainTitle = window.parent.document.getElementById('main-title-container');
-    if (mainTitle) mainTitle.style.opacity = 1;
-    if (!revealGrid) return;
-    const cells = revealGrid.querySelectorAll('.grid-cell');
-    const shuffled = Array.from(cells).sort(() => Math.random() - 0.5);
-    shuffled.forEach((c,i)=>setTimeout(()=>c.style.opacity=0,i*10));
-    setTimeout(()=>revealGrid.remove(),shuffled.length*10+1000);
-}}
-document.addEventListener("DOMContentLoaded", ()=>{
-    const video=document.getElementById('intro-video');
-    const audio=document.getElementById('background-audio');
-    const intro=document.getElementById('intro-text-container');
-    const isMobile=window.innerWidth<=768;
-    video.src=isMobile?'data:video/mp4;base64,{video_mobile_base64}':'data:video/mp4;base64,{video_pc_base64}';
-    audio.src='data:audio/mp3;base64,{audio_base64}';
-    const playMedia=()=>{
-        video.load(); video.play().catch(()=>{});
-        const chars=intro.querySelectorAll('.intro-char');
-        chars.forEach((ch,i)=>{ch.style.animationDelay=`${i*0.1}s`;ch.classList.add('char-shown');});
-        audio.volume=0.5; audio.loop=true; audio.play().catch(()=>{});
-    };
-    playMedia();
-    video.onended=()=>{video.style.opacity=0;audio.pause();intro.style.opacity=0;sendBackToStreamlit();};
-});
+    function sendBackToStreamlit() {{
+        // Thêm class để kích hoạt CSS Transition và hiển thị Player
+        window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
+        initRevealEffect();
+    }}
+    
+    function initRevealEffect() {{
+        const revealGrid = window.parent.document.querySelector('.reveal-grid');
+        const mainTitle = window.parent.document.getElementById('main-title-container');
+
+        if (mainTitle) {{
+             mainTitle.style.opacity = 1; 
+        }}
+
+        if (!revealGrid) {{ return; }}
+
+        const cells = revealGrid.querySelectorAll('.grid-cell');
+        const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
+
+        shuffledCells.forEach((cell, index) => {{
+            setTimeout(() => {{
+                cell.style.opacity = 0; 
+            }}, index * 10);
+        }});
+        
+        setTimeout(() => {{
+             revealGrid.remove();
+        }}, shuffledCells.length * 10 + 1000);
+    }}
+
+    document.addEventListener("DOMContentLoaded", function() {{
+        const video = document.getElementById('intro-video');
+        const audio = document.getElementById('background-audio');
+        const introTextContainer = document.getElementById('intro-text-container'); 
+        const isMobile = window.innerWidth <= 768;
+
+        if (isMobile) {{
+            video.src = 'data:video/mp4;base64,{video_mobile_base64}';
+        }} else {{
+            video.src = 'data:video/mp4;base64,{video_pc_base64}';
+        }}
+        
+        audio.src = 'data:audio/mp3;base64,{audio_base64}';
+
+        const playMedia = () => {{
+            video.load();
+            video.play().catch(e => console.log("Video playback failed:", e));
+                
+            const chars = introTextContainer.querySelectorAll('.intro-char');
+            chars.forEach((char, index) => {{
+                char.style.animationDelay = `${{index * 0.1}}s`; 
+                char.classList.add('char-shown'); 
+            }});
+
+            audio.volume = 0.5;
+            audio.loop = true; 
+            audio.play().catch(e => {{
+                // Fallback cho lần click đầu tiên
+                document.body.addEventListener('click', () => {{
+                    audio.play().catch(err => console.error("Audio playback error on click:", err));
+                }}, {{ once: true }});
+            }});
+        }};
+            
+        playMedia();
+        
+        video.onended = () => {{
+            video.style.opacity = 0;
+            audio.pause();
+            audio.currentTime = 0;
+            introTextContainer.style.opacity = 0; 
+            
+            sendBackToStreamlit(); 
+        }};
+
+        document.body.addEventListener('click', () => {{
+             video.play().catch(e => {{}});
+             audio.play().catch(e => {{}});
+        }}, {{ once: true }});
+    }});
 </script>
 """
-intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
-intro_chars_html = ''.join(
-    [f'<span class="intro-char">{c}</span>' if c != ' ' else '<span class="intro-char">&nbsp;</span>' for c in intro_title]
-)
-html_content = f"""
+
+# Mã HTML/CSS cho Video (GIỮ NGUYÊN)
+html_content_modified = f"""
 <!DOCTYPE html>
 <html>
 <head>
-<style>
-html,body{{margin:0;padding:0;overflow:hidden;height:100vh;width:100vw;}}
-#intro-video{{position:absolute;top:0;left:0;width:100%;height:100%;object-fit:cover;z-index:-100;transition:opacity 1s;}}
-#intro-text-container{{position:fixed;top:5vh;width:100%;text-align:center;color:#FFD700;font-size:3vw;
-font-family:'Sacramento',cursive;font-weight:400;text-shadow:3px 3px 6px rgba(0,0,0,0.8);z-index:100;
-display:flex;justify-content:center;opacity:1;}}
-.intro-char{{display:inline-block;opacity:0;transform:translateY(-50px);animation-fill-mode:forwards;
-animation-duration:0.8s;animation-timing-function:ease-out;}}
-@keyframes charDropIn{{from{{opacity:0;transform:translateY(-50px);}}to{{opacity:1;transform:translateY(0);}}}}
-.intro-char.char-shown{{animation-name:charDropIn;}}
-@media(max-width:768px){{#intro-text-container{{font-size:6vw;}}}}
-</style>
+    <style>
+        html, body {{
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }}
+        
+        #intro-video {{
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: -100;
+            transition: opacity 1s; 
+        }}
+
+        /* === TIÊU ĐỀ INTRO (FONT SACRAMENTO - Chữ Ký) === */
+        #intro-text-container {{ 
+            position: fixed;
+            top: 5vh;
+            width: 100%;
+            text-align: center;
+            color: #FFD700; 
+            font-size: 3vw; 
+            
+            font-family: 'Sacramento', cursive; 
+            font-weight: 400; 
+            
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8); 
+            z-index: 100;
+            pointer-events: none;
+            display: flex; 
+            justify-content: center;
+            opacity: 1; 
+        }}
+        
+        .intro-char {{
+            display: inline-block; 
+            opacity: 0;
+            transform: translateY(-50px); 
+            animation-fill-mode: forwards; 
+            animation-duration: 0.8s; 
+            animation-timing-function: ease-out; 
+        }}
+
+        @keyframes charDropIn {{
+            from {{
+                opacity: 0;
+                transform: translateY(-50px);
+            }}
+            to {{
+                opacity: 1;
+                transform: translateY(0);
+            }}
+        }}
+
+        .intro-char.char-shown {{
+            animation-name: charDropIn;
+        }}
+
+        @media (max-width: 768px) {{
+            #intro-text-container {{
+                font-size: 6vw; 
+            }}
+        }}
+        
+    </style>
 </head>
 <body>
-<div id="intro-text-container">{intro_chars_html}</div>
-<video id="intro-video" muted playsinline></video>
-<audio id="background-audio"></audio>
-{js_callback_video}
+
+    <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+    
+    <video id="intro-video" muted playsinline></video>
+    
+    <audio id="background-audio"></audio>
+
+    {js_callback_video}
 </body>
 </html>
 """
-st.components.v1.html(html_content, height=10, scrolling=False)
 
-# --- PHẦN 4: HIỆU ỨNG REVEAL ---
-grid_cells_html = ''.join('<div class="grid-cell"></div>' for _ in range(240))
-reveal_grid_html = f'<div class="reveal-grid">{grid_cells_html}</div>'
+# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
+intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
+intro_chars_html = ''.join([
+    f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>' 
+    for char in intro_title
+])
+html_content_modified = html_content_modified.replace(
+    "<div id=\"intro-text-container\">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>",
+    f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
+)
+
+# Hiển thị thành phần HTML (video)
+st.components.v1.html(html_content_modified, height=10, scrolling=False)
+
+
+# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
+
+# Tạo Lưới Reveal (Giữ nguyên)
+grid_cells_html = ""
+for i in range(240): 
+    grid_cells_html += f'<div class="grid-cell"></div>'
+
+reveal_grid_html = f"""
+<div class="reveal-grid">
+    {grid_cells_html}
+</div>
+"""
 st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
-# --- PHẦN 5: TIÊU ĐỀ CHÍNH ---
-main_title_text = "TỔ BẢO DƯỠNG SỐ 1"
+
+# --- NỘI DUNG CHÍNH (TIÊU ĐỀ ĐƠN, ĐỔI MÀU) ---
+
+# Tiêu đề đơn
+main_title_text = "TỔ BẢO DƯỠNG SỐ 1" 
+
+# Nhúng tiêu đề
 st.markdown(f"""
 <div id="main-title-container">
     <h1>{main_title_text}</h1>
 </div>
 """, unsafe_allow_html=True)
 
-# --- PHẦN 6: MUSIC PLAYER ---
-song_base64_list = []
-for i in range(1, 7):
-    try:
-        song_base64_list.append(get_base64_encoded_file(f"background{i}.mp3"))
-    except FileNotFoundError:
-        pass
+# -----------------------------------------------------------
+# --- PHẦN 4: MUSIC PLAYER CỐ ĐỊNH (FIXED MUSIC PLAYER) ---
+# -----------------------------------------------------------
 
-if song_base64_list:
-    song_sources_js = "[" + ",".join([f"'data:audio/mp3;base64,{b}'" for b in song_base64_list]) + "]"
-    music_player_html = f"""
-    <style>
-    #music-player {{
-        position: fixed;
-        bottom: 2vh;
-        left: 2vw;
-        width: 250px;
-        height: 60px;
-        background: rgba(0,0,0,0.55);
-        border-radius: 12px;
-        display: flex;
-        align-items: center;
-        justify-content: space-around;
-        padding: 6px 10px;
-        backdrop-filter: blur(6px);
-        box-shadow: 0 4px 10px rgba(0,0,0,0.3);
-        z-index: 50;
-        opacity: 0;
-        transition: opacity 2s ease;
-    }}
-    .video-finished #music-player {{
-        opacity: 1;
-    }}
-    #music-player button {{
-        background: none;
-        border: none;
-        color: white;
-        font-size: 18px;
-        cursor: pointer;
-        transition: transform 0.2s;
-    }}
-    #music-player button:hover {{
-        transform: scale(1.2);
-    }}
-    #music-player input[type="range"] {{
-        width: 100px;
-        accent-color: #FFD700;
-        cursor: pointer;
-    }}
-    </style>
-    <div id="music-player">
-        <button id="prev-btn">⏮️</button>
-        <button id="play-btn">▶️</button>
-        <button id="next-btn">⏭️</button>
-        <input type="range" id="progress-bar" value="0" min="0" max="100">
+music_player_html = f"""
+<div id="music-player-container">
+    <div id="song-info">Đang tải...</div>
+    
+    <div id="player-controls">
+        <button id="prev-btn" title="Bài trước">⏮️</button>
+        <button id="play-pause-btn" title="Phát/Dừng">▶️</button>
+        <button id="next-btn" title="Bài tiếp theo">⏭️</button>
     </div>
-    <script>
-    const playlist = {song_sources_js};
-    let current = 0;
-    const audio = new Audio(playlist[current]);
-    const playBtn = document.getElementById('play-btn');
-    const nextBtn = document.getElementById('next-btn');
-    const prevBtn = document.getElementById('prev-btn');
-    const bar = document.getElementById('progress-bar');
-    let playing = false;
+    
+    <div id="progress-container">
+        <div id="progress-bar"></div>
+    </div>
+    
+    <audio id="main-music-player"></audio>
+</div>
 
-    playBtn.addEventListener('click', ()=>{
-        if (!playing) {{audio.play();playBtn.textContent='⏸️';}}
-        else {{audio.pause();playBtn.textContent='▶️';}}
-        playing=!playing;
-    });
-    nextBtn.addEventListener('click', ()=>{{current=(current+1)%playlist.length;change();}});
-    prevBtn.addEventListener('click', ()=>{{current=(current-1+playlist.length)%playlist.length;change();}});
-    function change(){{audio.src=playlist[current];audio.play();playing=true;playBtn.textContent='⏸️';}}
-    audio.addEventListener('timeupdate', ()=>{{if(audio.duration) bar.value=(audio.currentTime/audio.duration)*100;}});
-    bar.addEventListener('input', ()=>{{if(audio.duration) audio.currentTime=(bar.value/100)*audio.duration;}});
-    audio.addEventListener('ended', ()=>{{current=(current+1)%playlist.length;change();}});
-    </script>
-    """
-    st.markdown(music_player_html, unsafe_allow_html=True)
+<script>
+    // Dữ liệu Base64 của các bài hát từ Streamlit (Python)
+    const SONGS_BASE64 = {song_base64_js_array};
+    const SONG_NAMES = {str([f"Background {i}" for i in range(1, 7)]).replace("'", '"')};
+
+    let currentSongIndex = 0;
+    const player = document.getElementById('main-music-player');
+    const playPauseBtn = document.getElementById('play-pause-btn');
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const songInfo = document.getElementById('song-info');
+    const progressBar = document.getElementById('progress-bar');
+    const progressContainer = document.getElementById('progress-container');
+
+    function loadSong(index) {{
+        // Cập nhật index vòng lặp
+        currentSongIndex = (index + SONGS_BASE64.length) % SONGS_BASE64.length;
+        
+        const base64Data = SONGS_BASE64[currentSongIndex];
+        const songName = SONG_NAMES[currentSongIndex];
+        
+        player.src = 'data:audio/mp3;base64,' + base64Data;
+        songInfo.textContent = songName;
+        player.load();
+    }}
+
+    function playSong() {{
+        player.play().catch(e => {{
+            console.log("Audio play failed, waiting for user interaction:", e);
+        }});
+        playPauseBtn.textContent = '⏸️'; // Dấu tạm dừng
+        playPauseBtn.title = 'Pause';
+    }}
+
+    function pauseSong() {{
+        player.pause();
+        playPauseBtn.textContent = '▶️'; // Dấu phát
+        playPauseBtn.title = 'Play';
+    }}
+
+    function nextSong() {{
+        loadSong(currentSongIndex + 1);
+        playSong();
+    }}
+
+    function prevSong() {{
+        loadSong(currentSongIndex - 1);
+        playSong();
+    }}
+
+    // === XỬ LÝ SỰ KIỆN ===
+
+    // Ngăn chặn nổi bọt sự kiện click (quan trọng)
+    playPauseBtn.addEventListener('click', (e) => {{
+        e.stopPropagation(); 
+        if (player.paused) {{
+            playSong();
+        }} else {{
+            pauseSong();
+        }}
+    }});
+
+    nextBtn.addEventListener('click', (e) => {{ e.stopPropagation(); nextSong(); }});
+    prevBtn.addEventListener('click', (e) => {{ e.stopPropagation(); prevSong(); }});
+
+    // Cập nhật thanh trạng thái
+    player.addEventListener('timeupdate', () => {{
+        if (!isNaN(player.duration)) {{
+            const progressPercent = (player.currentTime / player.duration) * 100;
+            progressBar.style.width = progressPercent + '%';
+        }}
+    }});
+    
+    // Bấm vào thanh trạng thái để tua
+    progressContainer.addEventListener('click', (e) => {{
+        const width = progressContainer.clientWidth;
+        const clickX = e.offsetX;
+        const duration = player.duration;
+        if (!isNaN(duration)) {{
+            player.currentTime = (clickX / width) * duration;
+        }}
+    }});
+
+    // Tự động chuyển bài khi kết thúc
+    player.addEventListener('ended', nextSong);
+
+    // Tải bài hát đầu tiên và xử lý tự động phát
+    document.addEventListener("DOMContentLoaded", () => {{
+        if (SONGS_BASE64.length > 0) {{
+            loadSong(currentSongIndex);
+            
+            // Theo dõi sự kiện video intro kết thúc để cố gắng tự động phát
+            const stApp = window.parent.document.querySelector('.stApp');
+            if(stApp) {{
+                const observer = new MutationObserver((mutationsList, observer) => {{
+                    if (stApp.classList.contains('video-finished')) {{
+                        // Chờ 1 giây cho hiệu ứng reveal xong rồi mới phát nhạc
+                        setTimeout(playSong, 1000); 
+                        observer.disconnect(); 
+                    }}
+                }});
+                observer.observe(stApp, {{ attributes: true, attributeFilter: ['class'] }});
+            }}
+        }
+    }});
+    
+    // Fallback: Cho phép phát nhạc khi người dùng click lần đầu tiên trên Player (cho trình duyệt mobile/chrome)
+    const playerContainer = document.getElementById('music-player-container');
+    playerContainer.addEventListener('click', () => {{
+         if (player.src && player.paused) {{
+             playSong();
+         }}
+    }}, {{ once: true }});
+
+</script>
+"""
+
+# Nhúng Music Player vào trang chính
+st.markdown(music_player_html, unsafe_allow_html=True)
