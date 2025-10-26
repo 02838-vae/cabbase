@@ -1,7 +1,7 @@
 import streamlit as st
 import base64
 import os
-import streamlit.components.v1 as components # Import components for clarity
+import streamlit.components.v1 as components
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
@@ -25,43 +25,45 @@ def get_base64_encoded_file(file_path):
     except FileNotFoundError as e:
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
-def get_base64_encoded_songs(directory="songs", prefix="background", count=6):
-    """Lấy danh sách các bài hát và mã hóa chúng."""
-    songs_base64 = []
+def get_static_song_urls(directory="songs", prefix="background", count=6):
+    """Tạo danh sách URL tương đối cho các bài hát tĩnh từ thư mục 'songs'."""
+    song_urls = []
     song_names = []
-    # Kiểm tra và tạo thư mục nếu chưa tồn tại (chỉ nên làm trong môi trường dev)
+    
+    # URL mà Trình duyệt sẽ tìm kiếm (đường dẫn tương đối)
+    base_url = "songs/" 
+    
+    # Kiểm tra xem có thư mục tồn tại không
     if not os.path.exists(directory):
-        os.makedirs(directory, exist_ok=True)
-        st.warning(f"Thư mục '{directory}' không tồn tại. Đã tạo thư mục, vui lòng thêm các file mp3 vào.")
-        # Nếu thư mục không có file, thoát ngay để tránh lỗi
+        st.error(f"LỖI: Không tìm thấy thư mục nhạc '{directory}'. Vui lòng kiểm tra lại cấu trúc file.")
         return [], []
-        
+    
     for i in range(1, count + 1):
         filename = f"{prefix}{i}.mp3"
         file_path = os.path.join(directory, filename)
-        try:
-            songs_base64.append(get_base64_encoded_file(file_path))
+        if os.path.exists(file_path):
+            # Đường dẫn URL tương đối (ví dụ: songs/background1.mp3)
+            url = base_url + filename
+            song_urls.append(url)
             song_names.append(filename)
-        except FileNotFoundError:
-            # Bỏ qua nếu một số file không tồn tại
+        else:
             st.warning(f"Cảnh báo: Không tìm thấy file {file_path}. Bỏ qua file này.")
             continue
-    return songs_base64, song_names
+    return song_urls, song_names
 
 # Mã hóa các file media
 try:
-    # Media files for intro
+    # Media files for intro và background images (vẫn dùng Base64)
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
     
-    # Background images
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
 
-    # Music Player songs
-    songs_base64_list, song_names_list = get_base64_encoded_songs()
-    
+    # Music Player songs (Dùng URL tĩnh từ thư mục "songs")
+    songs_url_list, song_names_list = get_static_song_urls()
+
 except FileNotFoundError as e:
     st.error(e)
     st.stop()
@@ -224,25 +226,24 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === MUSIC PLAYER CSS (MỚI) === */
+/* === MUSIC PLAYER CSS (ĐÃ FIX) === */
 #music-player-container {{
     position: fixed;
-    bottom: 20px; /* Cách đáy 20px */
-    left: 20px; /* Cách lề trái 20px */
-    z-index: 100; /* Nằm trên các nội dung khác */
+    bottom: 20px; 
+    left: 20px; 
+    z-index: 100; 
     padding: 10px;
-    background: rgba(0, 0, 0, 0.7); /* Nền đen trong suốt */
+    background: rgba(0, 0, 0, 0.7); 
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-    color: #FFD700; /* Màu chữ vàng */
-    width: 250px; /* Chiều rộng cố định */
+    color: #FFD700; 
+    width: 250px; 
     display: flex;
     flex-direction: column;
-    opacity: 0; /* Ban đầu ẩn, sẽ hiện ra sau khi video intro kết thúc */
+    opacity: 0; 
     transition: opacity 2s ease-in-out;
 }}
 
-/* Hiển thị player khi nội dung chính được reveal */
 .main-content-revealed #music-player-container {{
     opacity: 1;
 }}
@@ -268,12 +269,10 @@ iframe:first-of-type {{
     color: #FFF;
 }}
 
-/* Icon Play/Pause - sử dụng ký tự Unicode hoặc font icon */
 #play-pause-btn {{
     font-size: 28px;
 }}
 
-/* Thanh trạng thái (Progress Bar) */
 #progress-container {{
     width: 100%;
     height: 6px;
@@ -289,7 +288,6 @@ iframe:first-of-type {{
     border-radius: 3px;
 }}
 
-/* Tên bài hát */
 #song-title {{
     font-family: 'Playfair Display', serif;
     font-size: 14px;
@@ -304,7 +302,7 @@ iframe:first-of-type {{
     #music-player-container {{
         bottom: 10px;
         left: 10px;
-        width: 180px; /* Nhỏ hơn trên mobile */
+        width: 180px; 
         padding: 8px;
     }}
     #player-controls button {{
@@ -326,7 +324,7 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (ĐÃ KHÔI PHỤC) ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
 # JavaScript Callback
 js_callback_video = f"""
@@ -519,7 +517,7 @@ components.html(html_content_modified, height=10, scrolling=False)
 
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
 
-# Tạo Lưới Reveal (Giữ nguyên)
+# Tạo Lưới Reveal
 grid_cells_html = ""
 for i in range(240): 
     grid_cells_html += f'<div class="grid-cell"></div>'
@@ -545,17 +543,17 @@ st.markdown(f"""
 """, unsafe_allow_html=True) 
 
 
-# --- MUSIC PLAYER COMPONENT (MỚI) ---
+# --- MUSIC PLAYER COMPONENT (ĐÃ FIX DÙNG URL TĨNH TỪ THƯ MỤC SONGS) ---
 
-# Chuẩn bị dữ liệu Base64 cho JS
-songs_data_js = [f"'data:audio/mp3;base64,{b64}'" for b64 in songs_base64_list]
-song_names_js = [f"'{name}'" for name in song_names_list]
+# Chuẩn bị dữ liệu URL cho JS
+songs_data_js = [f"'{url}'" for url in songs_url_list] # Dùng URL
+song_names_js = [f"'{name}'" for name in song_names_list] 
 
 music_player_js = f"""
 <script>
     document.addEventListener("DOMContentLoaded", function() {{
         const audioPlayer = new Audio();
-        // Dữ liệu Base64 của các bài hát được truyền vào đây
+        // Sử dụng URL tĩnh từ thư mục 'songs'
         const songs = [{', '.join(songs_data_js)}];
         const songTitles = [{', '.join(song_names_js)}];
         let currentSongIndex = 0;
@@ -580,7 +578,7 @@ music_player_js = f"""
         }}
 
         function playSong() {{
-            // Cần tương tác người dùng để chạy
+            // Attempt to play (browser may still block until user interaction)
             audioPlayer.play().catch(e => console.log("Audio play failed, waiting for interaction:", e));
             isPlaying = true;
             playPauseBtn.innerHTML = '&#9208;'; // Pause icon
@@ -607,8 +605,10 @@ music_player_js = f"""
         // Cập nhật thanh tiến trình
         audioPlayer.addEventListener('timeupdate', (e) => {{
             const {{duration, currentTime}} = e.target;
-            const progressPercent = (currentTime / duration) * 100;
-            progressBar.style.width = `${{progressPercent}}%`;
+            if (isFinite(duration) && duration > 0) {{
+                const progressPercent = (currentTime / duration) * 100;
+                progressBar.style.width = `${{progressPercent}}%`;
+            }}
         }});
 
         // Chuyển bài khi kết thúc
@@ -632,13 +632,15 @@ music_player_js = f"""
             const width = progressContainer.clientWidth;
             const clickX = e.offsetX;
             const duration = audioPlayer.duration;
-            audioPlayer.currentTime = (clickX / width) * duration;
+            if (isFinite(duration) && duration > 0) {{
+                 audioPlayer.currentTime = (clickX / width) * duration;
+            }}
         }});
         
-        // Tải bài đầu tiên khi khởi tạo
+        // FIX LỖI: Tải bài đầu tiên ngay để hiển thị tên bài hát
         loadSong(currentSongIndex);
 
-        // Tự động play sau tương tác người dùng đầu tiên (để vượt qua giới hạn của trình duyệt)
+        // Tự động play sau tương tác người dùng đầu tiên
         window.parent.document.body.addEventListener('click', () => {{
              if (!isPlaying && audioPlayer.paused && audioPlayer.src) {{
                  playSong();
