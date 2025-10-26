@@ -41,7 +41,7 @@ def get_base64_encoded_file(file_path):
 # --- MÃ HÓA CÁC FILE MEDIA (Base64) VÀ TẠO URL GITHUB ---
 
 try:
-    # 1. Base64 cho Video, Audio Intro, Ảnh Nền (Ổn định cho các file này)
+    # 1. Base64 cho Video, Audio Intro, Ảnh Nền
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
@@ -49,7 +49,7 @@ try:
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg")    
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
 
-    # 2. GITHUB RAW URL cho Nhạc nền Music Player (Ổn định trên Streamlit Cloud)
+    # 2. GITHUB RAW URL cho Nhạc nền Music Player
     music_files = {
         "background1": f"{GITHUB_RAW_BASE}/background1.mp3",
         "background2": f"{GITHUB_RAW_BASE}/background2.mp3",
@@ -65,7 +65,7 @@ except FileNotFoundError as e:
     st.stop()
 
 
-# --- PHẦN 1: NHÚNG FONT VÀ NÚT BỎ QUA ---
+# --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
 
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
@@ -73,19 +73,6 @@ font_links = """
 """
 st.markdown(font_links, unsafe_allow_html=True)
 
-# Nút Bỏ qua 
-st.markdown(
-    """
-    <button 
-        id="skip-intro-btn" 
-        onclick="window.parent.document.querySelector('iframe:first-of-type').contentWindow.sendBackToStreamlit(); 
-                 this.style.display='none';"
-    >
-        Bỏ qua Intro >>
-    </button>
-    """,
-    unsafe_allow_html=True
-)
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
 
@@ -96,18 +83,7 @@ hide_streamlit_style = f"""
 /* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
 
-/* CSS cho Nút Bỏ qua */
-#skip-intro-btn {{
-    position: fixed; top: 20px; right: 20px; z-index: 1001;
-    background-color: rgba(255, 215, 0, 0.7); color: #000;
-    border: none; padding: 10px 20px; border-radius: 5px;
-    cursor: pointer; font-weight: bold;
-}}
-
-/* Ẩn nút Bỏ qua khi video đã kết thúc */
-.video-finished #skip-intro-btn {{
-    display: none !important;
-}}
+/* **ĐÃ BỎ CSS CHO NÚT BỎ QUA** */
 
 .main {{ padding: 0; margin: 0; }}
 div.block-container {{ padding: 0; margin: 0; max-width: 100% !important; }}
@@ -174,18 +150,18 @@ iframe:first-of-type {{
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
 }}
 
-/* === MUSIC PLAYER (MỚI) === */
+/* === MUSIC PLAYER (CHỈ HIỆN KHI VIDEO KẾT THÚC) === */
 #music-player-container {{
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
     z-index: 10; 
     opacity: 0; 
     transition: opacity 1s ease-out;
-    pointer-events: none; 
+    pointer-events: none; /* Rất quan trọng: Mặc định không tương tác được */
     height: 80px; width: 350px; 
 }}
 .video-finished #music-player-container {{
     opacity: 1; 
-    pointer-events: auto;
+    pointer-events: auto; /* Cho phép tương tác khi intro kết thúc */
 }}
 
 
@@ -202,10 +178,11 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- PHẦN 3: IFRAME CHO VIDEO INTRO (DÙNG BASE64) ---
 
-# JavaScript (Đã thêm logic play nhạc nền player khi chuyển cảnh)
+# JavaScript 
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
+        // Kích hoạt hiển thị trang chính và Player
         window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
         initRevealEffect();
         
@@ -290,7 +267,7 @@ js_callback_video = f"""
 </script>
 """
 
-# Mã HTML/CSS cho Video (Giữ nguyên)
+# Mã HTML/CSS cho Video 
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
