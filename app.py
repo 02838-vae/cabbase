@@ -59,7 +59,6 @@ st.markdown(font_links, unsafe_allow_html=True)
 
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
-# ĐÃ BỎ CSS CỦA PLAYER KHỎI KHỐI NÀY VÀ CHUYỂN VÀO KHỐI PLAYER HTML
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -208,7 +207,7 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === TẠM GIỮ LẠI KHUNG CHUNG CỦA PLAYER ĐỂ DỄ DÀNG CHUYỂN ĐỔI === */
+/* === KHUNG CHUNG CỦA PLAYER === */
 #music-player-container {{
     position: fixed;
     top: 50%; 
@@ -465,11 +464,11 @@ st.markdown(f"""
 
 song_names_js_array = str([f"Background {i}" for i in range(1, 7)]).replace("'", '"')
 
-
-music_player_full_code = f"""
+# === CHỈNH SỬA QUAN TRỌNG: DÙNG r""" ĐỂ KHẮC PHỤC LỖI RENDER HTML ===
+music_player_full_code = r"""
 <style>
 /* CSS NỘI BỘ CHO PLAYER (BẮT BUỘC ĐỂ HIỂN THỊ NÚT) */
-#music-player-container {{
+#music-player-container {
     padding: 10px;
     background: rgba(0, 0, 0, 0.7); 
     border-radius: 15px;
@@ -477,15 +476,15 @@ music_player_full_code = f"""
     display: flex;
     flex-direction: column;
     gap: 10px;
-}}
+}
 
-#player-controls {{
+#player-controls {
     display: flex;
     justify-content: space-around;
     align-items: center;
-}}
+}
 
-#player-controls button {{
+#player-controls button {
     background: none;
     border: none;
     color: gold;
@@ -493,35 +492,35 @@ music_player_full_code = f"""
     cursor: pointer;
     transition: color 0.3s;
     line-height: 1; 
-}}
+}
 
-#player-controls button:hover {{
+#player-controls button:hover {
     color: white;
-}}
+}
 
-#song-info {{
+#song-info {
     color: white;
     font-size: 14px;
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}}
+}
 
-#progress-container {{
+#progress-container {
     height: 5px;
     background: #444;
     border-radius: 5px;
     cursor: pointer;
-}}
+}
 
-#progress-bar {{
+#progress-bar {
     height: 100%;
     width: 0%;
     background: gold;
     border-radius: 5px;
     transition: width 0.1s linear;
-}}
+}
 </style>
 
 <div id="music-player-container">
@@ -541,9 +540,9 @@ music_player_full_code = f"""
 </div>
 
 <script>
-    // === Đảm bảo cú pháp ngoặc nhọn JS là {{ }} ===
-    const SONG_PATHS = {song_paths_js_array}; 
-    const SONG_NAMES = {song_names_js_array};
+    // Các biến Python được chèn ở ngoài khối r"""
+    const SONG_PATHS = """ + song_paths_js_array + """; 
+    const SONG_NAMES = """ + song_names_js_array + """;
 
     let currentSongIndex = 0;
     const player = document.getElementById('main-music-player');
@@ -554,7 +553,7 @@ music_player_full_code = f"""
     const progressBar = document.getElementById('progress-bar');
     const progressContainer = document.getElementById('progress-container');
 
-    function loadSong(index) {{
+    function loadSong(index) {
         // Cập nhật index vòng lặp
         currentSongIndex = (index + SONG_PATHS.length) % SONG_PATHS.length;
         
@@ -565,97 +564,103 @@ music_player_full_code = f"""
         player.src = path;
         songInfo.textContent = songName;
         player.load();
-    }}
+    }
 
-    function playSong() {{
-        player.play().catch(e => {{
+    function playSong() {
+        player.play().catch(e => {
             console.log("Audio play failed, waiting for user interaction:", e);
-        }});
+        });
         playPauseBtn.textContent = '⏸️'; // Dấu tạm dừng
         playPauseBtn.title = 'Pause';
-    }}
+    }
 
-    function pauseSong() {{
+    function pauseSong() {
         player.pause();
         playPauseBtn.textContent = '▶️'; // Dấu phát
         playPauseBtn.title = 'Play';
-    }}
+    }
 
-    function nextSong() {{
+    function nextSong() {
         loadSong(currentSongIndex + 1);
         playSong();
-    }}
+    }
 
-    function prevSong() {{
+    function prevSong() {
         loadSong(currentSongIndex - 1);
         playSong();
-    }}
+    }
 
     // === XỬ LÝ SỰ KIỆN ===
 
-    playPauseBtn.addEventListener('click', (e) => {{
+    playPauseBtn.addEventListener('click', (e) => {
         e.stopPropagation(); 
-        if (player.paused) {{
+        if (player.paused) {
             playSong();
-        }} else {{
+        } else {
             pauseSong();
-        }}
-    }});
+        }
+    });
 
-    nextBtn.addEventListener('click', (e) => {{ e.stopPropagation(); nextSong(); }});
-    prevBtn.addEventListener('click', (e) => {{ e.stopPropagation(); prevSong(); }});
+    nextBtn.addEventListener('click', (e) => { e.stopPropagation(); nextSong(); });
+    prevBtn.addEventListener('click', (e) => { e.stopPropagation(); prevSong(); });
 
     // Cập nhật thanh trạng thái
-    player.addEventListener('timeupdate', () => {{
-        if (!isNaN(player.duration)) {{
+    player.addEventListener('timeupdate', () => {
+        if (!isNaN(player.duration)) {
             const progressPercent = (player.currentTime / player.duration) * 100;
             progressBar.style.width = progressPercent + '%';
-        }}
-    }});
+        }
+    });
     
     // Bấm vào thanh trạng thái để tua
-    progressContainer.addEventListener('click', (e) => {{
+    progressContainer.addEventListener('click', (e) => {
         const rect = progressContainer.getBoundingClientRect();
         const clickX = e.clientX - rect.left;
         const width = rect.width;
         const duration = player.duration;
-        if (!isNaN(duration)) {{
+        if (!isNaN(duration)) {
             player.currentTime = (clickX / width) * duration;
             playSong();
-        }}
-    }});
+        }
+    });
     
 
     // Tự động chuyển bài khi kết thúc
     player.addEventListener('ended', nextSong);
 
     // Tải bài hát đầu tiên và xử lý tự động phát
-    document.addEventListener("DOMContentLoaded", () => {{
-        if (SONG_PATHS.length > 0) {{
+    document.addEventListener("DOMContentLoaded", () => {
+        if (SONG_PATHS.length > 0) {
             loadSong(currentSongIndex);
             
             const stApp = window.parent.document.querySelector('.stApp');
-            if(stApp) {{
-                const observer = new MutationObserver((mutationsList, observer) => {{
-                    if (stApp.classList.contains('video-finished')) {{
+            if(stApp) {
+                const observer = new MutationObserver((mutationsList, observer) => {
+                    if (stApp.classList.contains('video-finished')) {
                         setTimeout(playSong, 1000); 
                         observer.disconnect(); 
-                    }}
-                }});
-                observer.observe(stApp, {{ attributes: true, attributeFilter: ['class'] }});
-            }}
-        }}
-    }});
+                    }
+                });
+                observer.observe(stApp, { attributes: true, attributeFilter: ['class'] });
+            }
+        }
+    });
     
     const playerContainer = document.getElementById('music-player-container');
-    playerContainer.addEventListener('click', () => {{
-         if (player.src && player.paused) {{
+    playerContainer.addEventListener('click', () => {
+         if (player.src && player.paused) {
              playSong();
-         }}
-    }}, {{ once: true }});
+         }
+    }, { once: true });
 
 </script>
 """
 
-# Nhúng Music Player vào trang chính bằng st.markdown
-st.markdown(music_player_full_code, unsafe_allow_html=True)
+# Nhúng Music Player vào trang chính bằng st.markdown (Lệnh CUỐI CÙNG)
+# CHỈNH SỬA QUAN TRỌNG: KHÔNG DÙNG F-STRING TRỰC TIẾP VÌ DÙNG r"""
+final_player_html = music_player_full_code.format(
+    song_paths_js_array=song_paths_js_array,
+    song_names_js_array=song_names_js_array
+)
+
+st.markdown(final_player_html, unsafe_allow_html=True)
