@@ -1,6 +1,7 @@
 import streamlit as st
 import base64
 import json
+# Đảm bảo không còn dòng import st_static_file nào.
 
 # --- CẤU HÌNH BAN ĐẦU ---
 
@@ -14,8 +15,6 @@ st.set_page_config(
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
-# music_base_url = st_static_file.static_server(static_dir="static") # <-- Dòng này đã bị loại bỏ
-
 
 # --- CÁC HÀM TIỆN ÍCH ---
 
@@ -26,13 +25,13 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
-        # Quan trọng: Đảm bảo đường dẫn file đã đúng, ví dụ: 'static/background1.mp3'
+        # Quan trọng: Đường dẫn đã được cập nhật thành "Static/..."
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
 
 # Mã hóa các file media
 try:
-    # BASE64 CHO VIDEO VÀ HÌNH ẢNH (Giữ nguyên)
+    # BASE64 CHO VIDEO VÀ HÌNH ẢNH
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3") # Nhạc intro (ở thư mục gốc)
@@ -40,14 +39,14 @@ try:
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg")    
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
 
-    # BASE64 CHO MUSIC PLAYER (ĐỌC TỪ THƯ MỤC STATIC/)
+    # BASE64 CHO MUSIC PLAYER (ĐỌC TỪ THƯ MỤC STATIC/ - CHỮ S HOA)
     music_files = {
-        "background1": get_base64_encoded_file("static/background1.mp3"),
-        "background2": get_base64_encoded_file("static/background2.mp3"),
-        "background3": get_base64_encoded_file("static/background3.mp3"),
-        "background4": get_base64_encoded_file("static/background4.mp3"),
-        "background5": get_base64_encoded_file("static/background5.mp3"),
-        "background6": get_base64_encoded_file("static/background6.mp3"),
+        "background1": get_base64_encoded_file("Static/background1.mp3"),
+        "background2": get_base64_encoded_file("Static/background2.mp3"),
+        "background3": get_base64_encoded_file("Static/background3.mp3"),
+        "background4": get_base64_encoded_file("Static/background4.mp3"),
+        "background5": get_base64_encoded_file("Static/background5.mp3"),
+        "background6": get_base64_encoded_file("Static/background6.mp3"),
     }
     music_playlist_json = json.dumps(music_files)
 
