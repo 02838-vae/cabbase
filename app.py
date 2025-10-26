@@ -33,16 +33,14 @@ def get_static_song_urls(directory="songs", prefix="background", count=6):
     # URL mà Trình duyệt sẽ tìm kiếm (đường dẫn tương đối)
     base_url = "songs/" 
     
-    # Kiểm tra xem có thư mục tồn tại không
     if not os.path.exists(directory):
-        st.error(f"LỖI: Không tìm thấy thư mục nhạc '{directory}'. Vui lòng tạo thư mục và thêm file mp3.")
+        st.error(f"LỖI: Không tìm thấy thư mục nhạc '{directory}'. Vui lòng kiểm tra lại cấu trúc file.")
         return [], []
     
     for i in range(1, count + 1):
         filename = f"{prefix}{i}.mp3"
         file_path = os.path.join(directory, filename)
         if os.path.exists(file_path):
-            # Đường dẫn URL tương đối (ví dụ: songs/background1.mp3)
             url = base_url + filename
             song_urls.append(url)
             song_names.append(filename)
@@ -288,6 +286,7 @@ iframe:first-of-type {{
     border-radius: 3px;
 }}
 
+/* GIỮ LẠI ĐỂ DUY TRÌ BỐ CỤC */
 #song-title {{
     font-family: 'Playfair Display', serif;
     font-size: 14px;
@@ -324,7 +323,7 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (GIỮ NGUYÊN) ---
 
 # JavaScript Callback
 js_callback_video = f"""
@@ -543,10 +542,10 @@ st.markdown(f"""
 """, unsafe_allow_html=True) 
 
 
-# --- MUSIC PLAYER COMPONENT (ĐÃ FIX DÙNG URL TĨNH TỪ THƯ MỤC SONGS) ---
+# --- MUSIC PLAYER COMPONENT (ĐÃ SỬA LỖI TƯƠNG TÁC) ---
 
 # Chuẩn bị dữ liệu URL cho JS
-songs_data_js = [f"'{url}'" for url in songs_url_list] # Dùng URL
+songs_data_js = [f"'{url}'" for url in songs_url_list] 
 song_names_js = [f"'{name}'" for name in song_names_list] 
 
 music_player_js = f"""
@@ -555,7 +554,7 @@ music_player_js = f"""
         const audioPlayer = new Audio();
         // Sử dụng URL tĩnh từ thư mục 'songs'
         const songs = [{', '.join(songs_data_js)}];
-        const songTitles = [{', '.join(song_names_js)}];
+        const songTitles = [{', '.join(song_names_js)}]; // Giữ lại songTitles để đảm bảo loadSong hoạt động
         let currentSongIndex = 0;
         let isPlaying = false;
 
@@ -567,25 +566,25 @@ music_player_js = f"""
         const songTitleDisplay = document.getElementById('song-title');
 
         if (songs.length === 0) {{
-            // Ẩn player nếu không tìm thấy bài hát nào
             document.getElementById('music-player-container').style.display = 'none';
             return;
         }}
         
         function loadSong(index) {{
             audioPlayer.src = songs[index];
-            // FIX LỖI "Đang tải...": Cập nhật tên bài hát ngay lập tức
-            songTitleDisplay.textContent = songTitles[index]; 
+            // BỎ qua việc cập nhật tên bài hát. Giữ lại text tĩnh "Đang tải..." nếu muốn.
+            // Nếu muốn ẩn hoàn toàn, có thể dùng: songTitleDisplay.style.display = 'none';
             audioPlayer.load();
         }}
 
         function playSong() {{
-            // Cố gắng phát nhạc. Trình duyệt có thể chặn nếu chưa có tương tác.
+            // Sử dụng Promise để xử lý lỗi Autoplay một cách chính xác
             audioPlayer.play().then(() => {{
                 isPlaying = true;
                 playPauseBtn.innerHTML = '&#9208;'; // Pause icon
+                songTitleDisplay.textContent = songTitles[currentSongIndex]; // Cập nhật tên khi play thành công
             }}).catch(e => {{
-                console.log("Audio play failed (Autoplay Blocked):", e);
+                console.log("Audio play failed (Autoplay Blocked). Ensure user interaction occurred:", e);
                 // Giữ nguyên icon Play nếu bị chặn
             }});
         }}
@@ -616,12 +615,24 @@ music_player_js = f"""
                 progressBar.style.width = `${{progressPercent}}%`;
             }}
         }});
+        
+        // Cập nhật trạng thái loading
+        audioPlayer.addEventListener('loadeddata', () => {{
+            // Khi dữ liệu bài hát đã sẵn sàng, thay đổi text sang tên bài hát
+            songTitleDisplay.textContent = songTitles[currentSongIndex]; 
+        }});
+        audioPlayer.addEventListener('error', (e) => {{
+            songTitleDisplay.textContent = "Lỗi tải nhạc!";
+            console.error("Lỗi tải file nhạc:", e);
+        }});
+
 
         // Chuyển bài khi kết thúc
         audioPlayer.addEventListener('ended', nextSong);
 
-        // Xử lý nút Play/Pause
-        playPauseBtn.addEventListener('click', () => {{
+        // Xử lý nút Play/Pause - Đảm bảo lệnh play được gọi trực tiếp từ tương tác
+        playPauseBtn.addEventListener('click', (e) => {{
+            e.stopPropagation(); // Ngăn sự kiện click lan truyền lên body
             if (isPlaying) {{
                 pauseSong();
             }} else {{
@@ -646,10 +657,10 @@ music_player_js = f"""
         // Khởi tạo bài hát đầu tiên
         loadSong(currentSongIndex);
 
-        // Tự động play sau tương tác người dùng đầu tiên (FIX Autoplay)
-        // Lệnh này kích hoạt Play nếu người dùng tương tác bất kỳ đâu trên trang lần đầu
+        // Tối ưu Autoplay: Đảm bảo player hoạt động ngay sau khi người dùng tương tác lần đầu
         window.parent.document.body.addEventListener('click', () => {{
              if (!isPlaying && audioPlayer.paused && audioPlayer.src) {{
+                 // Tải lại bài hát và cố gắng play
                  playSong();
              }}
         }}, {{ once: true }});
@@ -660,7 +671,7 @@ music_player_js = f"""
 
 music_player_html = f"""
 <div id="music-player-container">
-    <div id="song-title">Đang Tải...</div>
+    <div id="song-title">Đang tải...</div>
     <div id="player-controls">
         <button id="prev-btn" title="Previous">&#9664;</button>
         <button id="play-pause-btn" title="Play">&#9654;</button>
