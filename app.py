@@ -34,7 +34,6 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
-        # FileNotFoundError được handle ở khối try...except chính
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
 
@@ -82,8 +81,6 @@ hide_streamlit_style = f"""
 
 /* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
-
-/* **ĐÃ BỎ CSS CHO NÚT BỎ QUA** */
 
 .main {{ padding: 0; margin: 0; }}
 div.block-container {{ padding: 0; margin: 0; max-width: 100% !important; }}
@@ -139,7 +136,14 @@ iframe:first-of-type {{
 
 /* === TIÊU ĐỀ TRANG CHÍNH === */
 #main-title-container {{
-    position: fixed; top: 5vh; left: 0; width: 100%; height: 10vh; overflow: hidden;  z-index: 20;  pointer-events: none; opacity: 0; transition: opacity 2s;
+    position: fixed; top: 5vh; left: 0; width: 100%; height: 10vh; overflow: hidden;  z-index: 20;  pointer-events: none; 
+    opacity: 0; /* Mặc định ẩn */
+    transition: opacity 2s;
+}}
+
+/* HIỂN THỊ TIÊU ĐỀ KHI VIDEO KẾT THÚC */
+.video-finished #main-title-container {{
+    opacity: 1 !important; 
 }}
 
 #main-title-container h1 {{
@@ -156,7 +160,7 @@ iframe:first-of-type {{
     z-index: 10; 
     opacity: 0; 
     transition: opacity 1s ease-out;
-    pointer-events: none; /* Rất quan trọng: Mặc định không tương tác được */
+    pointer-events: none; /* Mặc định KHÔNG TƯƠNG TÁC được trong Intro */
     height: 80px; width: 350px; 
 }}
 .video-finished #music-player-container {{
@@ -182,13 +186,18 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
-        // Kích hoạt hiển thị trang chính và Player
-        window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
+        // Kích hoạt hiển thị trang chính, gỡ bỏ video và kích hoạt Player
+        const stApp = window.parent.document.querySelector('.stApp');
+        
+        // 1. Thêm class để ẩn Video và bật nền
+        stApp.classList.add('video-finished', 'main-content-revealed');
+        
+        // 2. Kích hoạt hiệu ứng reveal
         initRevealEffect();
         
-        // Cố gắng tự động play nhạc nền khi chuyển cảnh
+        // 3. Cố gắng tự động play nhạc nền player
         try {{
-            // Gọi hàm togglePlayPause trong iframe của Music Player
+            // Gọi hàm togglePlayPause trong iframe của Music Player, với forcePlay=true
             window.parent.document.querySelector('#music-player-container iframe').contentWindow.togglePlayPause(true);
         }} catch(e) {{
             console.warn("Could not auto-play background music player:", e);
@@ -201,7 +210,8 @@ js_callback_video = f"""
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
         const mainTitle = window.parent.document.getElementById('main-title-container');
 
-        if (mainTitle) {{ mainTitle.style.opacity = 1; }}
+        // Bỏ việc gán opacity ở đây. Dùng CSS class .video-finished để handle
+        // if (mainTitle) {{ mainTitle.style.opacity = 1; }}
 
         if (!revealGrid) {{ return; }}
 
@@ -385,22 +395,29 @@ custom_music_player_html = f"""
         }}
         
         function togglePlayPause(forcePlay = false) {{
-            if (audio.paused || forcePlay) {{
-                // Nếu đang cố gắng play, đảm bảo load track đầu tiên 
+            // Kiểm tra trạng thái hiển thị của player container cha
+            const parentContainer = window.parent.document.getElementById('music-player-container');
+            const isFinished = parentContainer && parentContainer.closest('.stApp.video-finished');
+
+            if (isFinished) {{
+                if (audio.paused || forcePlay) {{
+                    if (audio.src === "") {{ loadTrack(currentTrackIndex); }}
+                    
+                    audio.play().then(() => {{
+                        playPauseBtn.innerHTML = '&#10074;&#10074;'; 
+                    }}).catch(e => {{
+                        console.error('Lỗi tự động phát (Chặn Autoplay):', e);
+                    }});
+                }} else {{
+                    audio.pause();
+                    playPauseBtn.innerHTML = '&#9658;'; 
+                }}
+            }} else if (forcePlay) {{
+                // Nếu bị gọi forcePlay khi chưa ở trang chính, load track nhưng KHÔNG PLAY
                 if (audio.src === "") {{ loadTrack(currentTrackIndex); }}
-                
-                audio.play().then(() => {{
-                    playPauseBtn.innerHTML = '&#10074;&#10074;'; 
-                }}).catch(e => {{
-                    console.error('Lỗi tự động phát (Chặn Autoplay):', e);
-                    // Không hiện alert.
-                }});
-            }} else {{
-                audio.pause();
-                playPauseBtn.innerHTML = '&#9658;'; 
             }}
         }}
-        window.togglePlayPause = togglePlayPause; // Xuất hàm để iframe cha gọi được
+        window.togglePlayPause = togglePlayPause; 
 
         function nextTrack() {{
             currentTrackIndex = (currentTrackIndex + 1) % playlistKeys.length;
