@@ -54,7 +54,7 @@ font_links = """
 st.markdown(font_links, unsafe_allow_html=True)
 
 
-# --- PHẦN CSS CHUNG CHO ỨNG DỤNG (ĐÃ CẬP NHẬT) ---
+# --- PHẦN CSS CHUNG CHO ỨNG DỤNG (ĐÃ SỬA LỖI MÀU NỀN VÀ FILTER) ---
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -69,20 +69,21 @@ div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
 .stApp {{
     --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
+    background-image: var(--main-bg-url-pc);
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
+    /* ÁP DỤNG HIỆU ỨNG MÀU GỐC TRƯỚC */
     filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%); 
     transition: filter 2s ease-out; 
 }}
 
-/* TRẠNG THÁI SAU KHI VIDEO KẾT THÚC */
-.video-finished {{
-    background-image: var(--main-bg-url-pc);
+/* TRẠNG THÁI SAU KHI VIDEO KẾT THÚC: KHÔI PHỤC MÀU GỐC */
+.stApp.video-finished {{
     filter: sepia(0%) grayscale(0%) brightness(100%) contrast(100%); 
 }}
 @media (max-width: 768px) {{
-    .video-finished {{
+    .stApp {{
         background-image: var(--main-bg-url-mobile);
     }}
 }}
@@ -142,19 +143,19 @@ iframe:first-of-type {{
     left: 0;
     width: 100%;
     padding: 15px 30px;
-    background: rgba(0, 0, 0, 0.7); /* Nền đen mờ ban đầu */
+    background: rgba(0, 0, 0, 0.7); 
     color: white;
     display: flex;
     justify-content: space-between;
     align-items: center;
     z-index: 1000;
     transition: background 0.3s ease-in-out, padding 0.3s ease-in-out;
-    opacity: 0; /* Ẩn ban đầu */
+    opacity: 0; 
     pointer-events: none;
 }}
 
 .video-finished .header {{
-    opacity: 1; /* Hiện sau khi video xong */
+    opacity: 1; 
     pointer-events: all;
 }}
 
@@ -267,7 +268,7 @@ iframe:first-of-type {{
 
 #main-title-container {{
     position: fixed;
-    top: 15vh; /* Hạ xuống dưới Header */
+    top: 15vh; 
     left: 0; 
     width: 100%; 
     height: 10vh; 
@@ -316,13 +317,15 @@ iframe:first-of-type {{
     padding: 50px 20px;
     box-sizing: border-box;
     
-    padding-top: 100px; /* Thêm padding để không bị Header che mất */
+    padding-top: 100px; 
 }}
 
 #hero-section {{
-    /* Đã được áp dụng qua .video-finished trong .stApp */
-    padding-top: 250px; /* Giữ khoảng trống lớn cho Tiêu đề chạy */
+    padding-top: 250px; 
+    background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)); /* Thêm lớp phủ đen để dễ đọc chữ */
+    background-attachment: fixed;
 }}
+
 
 /* Hiệu ứng Reveal cho các phần tử */
 .reveal {{
@@ -345,11 +348,11 @@ iframe:first-of-type {{
     z-index: 150; 
     width: 200px; 
     transition: opacity 1s ease-in-out;
-    opacity: 0; /* Ẩn ban đầu */
+    opacity: 0; 
 }}
 
 .video-finished #music-player-container {{
-    opacity: 1; /* Hiện ra sau khi video kết thúc */
+    opacity: 1; 
 }}
 
 @media (max-width: 768px) {{
@@ -370,44 +373,42 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
 # --- JAVASCRIPT CHUNG CHO GIAO DIỆN (HEADER, MENU, SCROLL REVEAL) ---
-# Đã Tích hợp logic kích hoạt cho Video Intro
 app_js = """
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const header = document.querySelector('.header');
-        const hamburgerMenu = document.querySelector('.hamburger-menu');
-        const menuOverlay = document.querySelector('.menu-overlay');
-        const menuLinks = document.querySelectorAll('.menu-overlay nav ul li a');
+        const header = window.parent.document.querySelector('.header');
+        const hamburgerMenu = window.parent.document.querySelector('.hamburger-menu');
+        const menuOverlay = window.parent.document.querySelector('.menu-overlay');
+        const menuLinks = window.parent.document.querySelectorAll('.menu-overlay nav ul li a');
         
         // --- Header Scroll Effect ---
         window.addEventListener('scroll', function() {
-            if (window.scrollY > 50) { // Khi cuộn quá 50px
-                header.classList.add('scrolled');
+            if (window.scrollY > 50) { 
+                if (header) header.classList.add('scrolled');
             } else {
-                header.classList.remove('scrolled');
+                if (header) header.classList.remove('scrolled');
             }
         });
 
         // --- Menu Hamburger Toggle ---
         function toggleMenu() {
-            hamburgerMenu.classList.toggle('open');
-            menuOverlay.classList.toggle('open');
-            // document.body.classList.toggle('no-scroll'); // Tạm thời bỏ để tránh xung đột
+            if (hamburgerMenu) hamburgerMenu.classList.toggle('open');
+            if (menuOverlay) menuOverlay.classList.toggle('open');
         }
 
-        hamburgerMenu.addEventListener('click', toggleMenu);
+        if (hamburgerMenu) hamburgerMenu.addEventListener('click', toggleMenu);
 
         menuLinks.forEach(link => {
             link.addEventListener('click', function(e) {
                 e.preventDefault(); 
                 const targetId = this.getAttribute('href').substring(1); 
-                const targetSection = document.getElementById(targetId);
+                const targetSection = window.parent.document.getElementById(targetId);
 
                 if (targetSection) {
                     toggleMenu(); 
                     // Cuộn đến section với offset cho header
-                    window.scrollTo({
-                        top: targetSection.offsetTop - header.offsetHeight, 
+                    window.parent.window.scrollTo({
+                        top: targetSection.offsetTop - (header ? header.offsetHeight : 0), 
                         behavior: 'smooth'
                     });
                 }
@@ -415,7 +416,7 @@ app_js = """
         });
 
         // --- Scroll Reveal Effect ---
-        const revealElements = document.querySelectorAll('.reveal');
+        const revealElements = window.parent.document.querySelectorAll('.reveal');
 
         const observerOptions = {
             root: null, 
@@ -439,12 +440,14 @@ app_js = """
 st.markdown(app_js, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (ĐÃ TÍCH HỢP LẠI) ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
+# LƯU Ý: KHÔNG ÁP DỤNG BẤT KỲ FILTER NÀO TRONG CSS CỦA IFRAME ĐỂ GIỮ MÀU CHUẨN CHO VIDEO
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
         // Gửi tín hiệu lên Streamlit parent để kích hoạt CSS cho trang chính và Player
+        // Lớp 'video-finished' sẽ loại bỏ filter màu trên .stApp
         window.parent.document.querySelector('.stApp').classList.add('video-finished');
         initRevealEffect();
     }}
@@ -722,12 +725,11 @@ st.markdown("""
 
 
 # -----------------------------------------------------------
-# --- PHẦN 4: MUSIC PLAYER CỐ ĐỊNH (FIXED MUSIC PLAYER - ĐÃ FIX LỖI HIỂN THỊ CODE) ---
+# --- PHẦN 4: MUSIC PLAYER CỐ ĐỊNH (FIXED MUSIC PLAYER) ---
 # -----------------------------------------------------------
 
 song_names_js_array = str([f"Background {i}" for i in range(1, 7)]).replace("'", '"')
 
-# === SỬ DỤNG r""" VÀ NỐI CHUỖI ĐỂ TRÁNH LỖI KEYERROR/RENDER HTML TRONG ST.MARKDOWN ===
 music_player_full_code = f"""
 <style>
 /* CSS NỘI BỘ CHO PLAYER */
@@ -803,7 +805,6 @@ music_player_full_code = f"""
 </div>
 
 <script>
-    // CHÈN BIẾN QUA F-STRING VÀ CHUỖI JS TỪ PYTHON
     const SONG_PATHS = {song_paths_js_array}; 
     const SONG_NAMES = {song_names_js_array};
 
