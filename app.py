@@ -1,6 +1,6 @@
 import streamlit as st
 import json
-# KHÔNG CẦN import base64 hoặc bất kỳ thư viện static nào khác.
+# KHÔNG CÓ IMPORT THƯ VIỆN PHỤ THUỘC NÀO.
 
 # --- CẤU HÌNH BAN ĐẦU ---
 
@@ -14,13 +14,9 @@ st.set_page_config(
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
-# --- CÁC ĐƯỜNG DẪN URL TĨNH (Sử dụng tính năng Static File Serving) ---
-
-# TẤT CẢ FILE MEDIA ĐỀU PHẢI NẰM TRONG THƯ MỤC Static/ (Dù là ảnh, video hay nhạc)
-# CHÚ Ý: Đảm bảo các file sau: airplane.mp4, mobile.mp4, plane_fly.mp3, cabbase.jpg, mobile.jpg 
-# đã được chuyển vào thư mục Static/
-
-STATIC_URL_BASE = "/app/static"
+# --- CÁC ĐƯỜNG DẪN URL TĨNH ---
+# Dùng tên thư mục "static" (chữ thường)
+STATIC_URL_BASE = "/app/static" 
 
 # URL cho video, hình ảnh và nhạc intro
 video_pc_url = f"{STATIC_URL_BASE}/airplane.mp4"
@@ -50,7 +46,6 @@ st.markdown(font_links, unsafe_allow_html=True)
 
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
-# Ảnh nền giờ cũng dùng URL, không cần Base64
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -95,7 +90,6 @@ iframe:first-of-type {{
     --main-bg-url-pc: url('{bg_pc_url}');
     --main-bg-url-mobile: url('{bg_mobile_url}');
 }}
-/* ... (Giữ nguyên các CSS còn lại cho .reveal-grid, #main-title-container, keyframes) ... */
 .reveal-grid {{
     position: fixed;
     top: 0;
@@ -154,7 +148,7 @@ iframe:first-of-type {{
 
 
 
-/* === TIÊU ĐỀ TRANG CHÍNH (ĐƠN, CHẠY VÀ ĐỔI MÀU) === */
+/* === TIÊU ĐỀ TRANG CHÍNH === */
 #main-title-container {{
     position: fixed;
     top: 5vh;  
@@ -197,6 +191,29 @@ iframe:first-of-type {{
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
 }}
 
+/* === MUSIC PLAYER (Ẩn khi chưa xong video) - SỬ DỤNG ID CONTAINER RÕ RÀNG HƠN === */
+#music-player-container {{
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    
+    opacity: 0; 
+    transition: opacity 1s ease-out;
+    pointer-events: none;
+    
+    /* Đảm bảo container này có đủ không gian để chứa player */
+    height: 80px; 
+    width: 350px; 
+}}
+
+/* Hiển thị player khi video đã kết thúc */
+.video-finished #music-player-container {{
+    opacity: 1;
+    pointer-events: auto;
+}}
+
 
 @media (max-width: 768px) {{
     #main-title-container {{
@@ -215,12 +232,13 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (DÙNG URL TĨNH) ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
-# JavaScript (Đã chuyển sang dùng URL tĩnh)
+# JavaScript (Giữ nguyên, dùng URL tĩnh)
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
+        // THÊM CLASS ĐỂ KÍCH HOẠT CSS VÀ HIỆU ỨNG (Bao gồm cả music player)
         window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
         initRevealEffect();
     }}
@@ -229,18 +247,14 @@ js_callback_video = f"""
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
         const mainTitle = window.parent.document.getElementById('main-title-container');
 
-
         if (mainTitle) {{
             mainTitle.style.opacity = 1;  
         }}
 
-
         if (!revealGrid) {{ return; }}
-
 
         const cells = revealGrid.querySelectorAll('.grid-cell');
         const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
-
 
         shuffledCells.forEach((cell, index) => {{
             setTimeout(() => {{
@@ -261,16 +275,18 @@ js_callback_video = f"""
         const isMobile = window.innerWidth <= 768;
 
 
+        // GÁN URL TĨNH
         if (isMobile) {{
             video.src = '{video_mobile_url}';
         }} else {{
             video.src = '{video_pc_url}';
         }}
         
-        audio.src = '{audio_intro_url}'; // Nhạc intro dùng URL tĩnh
+        audio.src = '{audio_intro_url}'; 
 
 
         const playMedia = () => {{
+            // Load và cố gắng play video (mặc định muted sẽ hoạt động)
             video.load();
             video.play().catch(e => console.log("Video playback failed:", e));
                 
@@ -284,9 +300,8 @@ js_callback_video = f"""
             audio.volume = 0.5;
             audio.loop = true;  
             audio.play().catch(e => {{
-                document.body.addEventListener('click', () => {{
-                    audio.play().catch(err => console.error("Audio playback error on click:", err));
-                }}, {{ once: true }});
+                // Xử lý Autoplay fail: Yêu cầu tương tác người dùng
+                console.log("Audio intro blocked. Waiting for user interaction.");
             }});
         }};
             
@@ -301,7 +316,7 @@ js_callback_video = f"""
             sendBackToStreamlit();  
         }};
 
-
+        // XỬ LÝ CLICK ĐẦU TIÊN (Cho cả video và nhạc intro)
         document.body.addEventListener('click', () => {{
             video.play().catch(e => {{}});
             audio.play().catch(e => {{}});
@@ -317,6 +332,7 @@ html_content_modified = f"""
 <html>
 <head>
     <style>
+        /* ... (CSS trong iframe - Giữ nguyên) ... */
         html, body {{
             margin: 0;
             padding: 0;
@@ -476,7 +492,7 @@ custom_music_player_html = f"""
             background-color: rgba(0, 0, 0, 0.4); 
             border-radius: 8px;
             width: 300px;
-            margin: 10px auto; 
+            margin: 0 auto; /* Đảm bảo căn giữa */
             border: 1px solid #FFD700;
         }}
         
@@ -536,9 +552,9 @@ custom_music_player_html = f"""
 
         function loadTrack(index) {{
             const key = playlistKeys[index];
-            const url = playlistData[key]; // <-- Bây giờ là URL
+            const url = playlistData[key]; 
 
-            // SỬ DỤNG URL TRỰC TIẾP
+            // SỬ DỤNG URL TĨNH
             audio.src = url; 
 
             trackNameDisplay.textContent = key.toUpperCase().replace("BACKGROUND", "Bài ");
@@ -548,14 +564,15 @@ custom_music_player_html = f"""
         function togglePlayPause() {{
             if (audio.paused) {{
                 audio.play().then(() => {{
-                    playPauseBtn.innerHTML = '&#10074;&#10074;'; // Pause icon
+                    playPauseBtn.innerHTML = '&#10074;&#10074;'; 
                 }}).catch(e => {{
-                    console.error('Lỗi tự động phát. Vui lòng thử lại:', e);
-                    alert('Trình duyệt yêu cầu tương tác. Vui lòng nhấn Phát lần nữa.'); 
+                    console.error('Lỗi tự động phát. Yêu cầu tương tác người dùng:', e);
+                    // Lỗi ở đây chứng tỏ file nhạc không tải được!
+                    alert('Lỗi tải file nhạc. Vui lòng kiểm tra lại đường dẫn file static hoặc mạng.'); 
                 }});
             }} else {{
                 audio.pause();
-                playPauseBtn.innerHTML = '&#9658;'; // Play icon
+                playPauseBtn.innerHTML = '&#9658;'; 
             }}
         }}
 
@@ -588,6 +605,7 @@ custom_music_player_html = f"""
 </html>
 """
 
-# Tạo khoảng trống và nhúng Music Player
-st.markdown("<br><br><br>", unsafe_allow_html=True) 
+# Tạo container HTML cho Music Player để áp dụng CSS ID
+st.markdown('<div id="music-player-container">', unsafe_allow_html=True)
 st.components.v1.html(custom_music_player_html, height=80)
+st.markdown('</div>', unsafe_allow_html=True)
