@@ -128,7 +128,7 @@ iframe:first-of-type {{
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# --- VIDEO INTRO ---
+# --- VIDEO INTRO (ĐÃ FIX ESCAPE) ---
 js_callback_video = f"""
 <script>
 function sendBackToStreamlit() {{
@@ -148,12 +148,13 @@ document.addEventListener("DOMContentLoaded", () => {{
     else
         video.src = 'data:video/mp4;base64,{video_pc_base64}';
     audio.src = 'data:audio/mp3;base64,{audio_base64}';
-    video.play().catch(()=>{});
-    audio.loop = true; audio.play().catch(()=>{});
+    video.play().catch(()=>{{}});
+    audio.loop = true; audio.play().catch(()=>{{}});
     video.onended = () => {{ audio.pause(); sendBackToStreamlit(); }};
 }});
 </script>
 """
+
 intro_html = f"""
 <html><body style="margin:0;overflow:hidden">
 <video id="intro-video" muted playsinline style="width:100vw;height:100vh;object-fit:cover"></video>
