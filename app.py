@@ -34,6 +34,7 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
+        # Nếu file không tồn tại, Streamlit sẽ dừng và báo lỗi cho người dùng biết
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
 
@@ -82,29 +83,40 @@ hide_streamlit_style = f"""
 /* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
 
+/* BỎ ĐƯỜNG KẺ NGANG PHÍA TRÊN */
+.stApp > header,
+[data-testid="stHeader"],
+header[data-testid="stHeader"] {{
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}}
+
 .main {{ padding: 0; margin: 0; }}
 div.block-container {{ padding: 0; margin: 0; max-width: 100% !important; }}
 
 /* CSS cho iframe video intro */
 iframe:first-of-type {{
+    /* Cố định vị trí và z-index để che toàn bộ trang */
     transition: opacity 1s ease-out, visibility 1s ease-out;
     opacity: 1; visibility: visible;
     width: 100vw !important; height: 100vh !important;
     position: fixed; top: 0; left: 0; z-index: 1000;
 }}
 
-
 .video-finished iframe:first-of-type {{
+    /* Ẩn hoàn toàn iframe sau khi kết thúc */
     opacity: 0; visibility: hidden; pointer-events: none;
     height: 1px !important;    
 }}
 
-/* CSS NỀN DÙNG BASE64 */
+/* CSS NỀN DÙNG BASE64 - CỐ ĐỊNH */
 .stApp {{
     --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
 }}
-
 
 .reveal-grid {{
     position: fixed; top: 0; left: 0;
@@ -114,35 +126,30 @@ iframe:first-of-type {{
     z-index: 500;  pointer-events: none;  
 }}
 
-
 .grid-cell {{ background-color: white; opacity: 1; transition: opacity 0.5s ease-out; }}
 
-
-/* KÍCH HOẠT BACKGROUND VÀO THÀNH PHẦN GỐC KHI VIDEO KẾT THÚC */
+/* KÍCH HOẠT BACKGROUND TRANG CHÍNH */
 .stApp.video-finished {{
-    background-image: var(--main-bg-url-pc);
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
-    filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%);  
-    transition: filter 2s ease-out;  
+    background-image: var(--main-bg-url-pc) !important;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-attachment: fixed !important;
+    background-repeat: no-repeat !important;
+    filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%) !important;  
+    transition: filter 2s ease-out !important;  
 }}
 
-
-/* Keyframes cho hiệu ứng chữ chạy đơn (từ phải sang trái, lặp lại) */
+/* Keyframes */
 @keyframes scrollText {{ 0% {{ transform: translate(100vw, 0); }} 100% {{ transform: translate(-100%, 0); }} }}
-
-/* Keyframes cho hiệu ứng Đổi Màu Gradient */
 @keyframes colorShift {{ 0% {{ background-position: 0% 50%; }} 50% {{ background-position: 100% 50%; }} 100% {{ background-position: 0% 50%; }} }}
 
 /* === TIÊU ĐỀ TRANG CHÍNH === */
 #main-title-container {{
     position: fixed; top: 5vh; left: 0; width: 100%; height: 10vh; overflow: hidden;  z-index: 20;  pointer-events: none; 
-    opacity: 0; /* Mặc định ẩn */
+    opacity: 0;
     transition: opacity 2s;
 }}
 
-/* HIỂN THỊ TIÊU ĐỀ KHI VIDEO KẾT THÚC */
 .video-finished #main-title-container {{
     opacity: 1 !important; 
 }}
@@ -155,43 +162,56 @@ iframe:first-of-type {{
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
 }}
 
-/* === MUSIC PLAYER (CHỈ HIỆN KHI VIDEO KẾT THÚC) === */
+/* === MUSIC PLAYER (Ẩn hoàn toàn trong Intro, Hiện hoàn toàn trên Trang Chính) === */
 #music-player-container {{
-    position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
-    z-index: 10; 
+    position: fixed !important; 
+    top: 17vh !important;
+    left: 2vw !important;
+    bottom: auto !important;
+    transform: none !important;
+    z-index: 10 !important; 
     
-    /* FIX CỰC KỲ MẠNH MẼ: Mặc định ẩn container */
+    /* ẨN HOÀN TOÀN MẶC ĐỊNH (NGĂN LÓE SÁNG) */
     display: none !important; 
+    opacity: 0 !important; 
+    pointer-events: none !important; 
     
-    opacity: 0; 
-    pointer-events: none; 
-    height: 80px; width: 170px; 
+    height: 70px !important; 
+    width: 150px !important; 
     transition: opacity 1s ease-out;
 }}
 
-/* FIX MẠNH MẼ BỔ SUNG: Ẩn luôn DIV wrapper Streamlit (đảm bảo ẩn iframe) */
+/* ẨN DIV wrapper Streamlit (Bổ sung để ngăn lỗi Race Condition) */
 #music-player-container > div {{
     display: none !important;
 }}
 
 /* KHI VIDEO KẾT THÚC, HIỂN THỊ VÀ BẬT TƯƠNG TÁC */
 .video-finished #music-player-container {{
-    display: block !important; /* HIỆN container */
-    opacity: 1; 
-    pointer-events: auto; 
+    display: block !important;
+    opacity: 1 !important; 
+    pointer-events: auto !important; 
 }}
 
-/* HIỆN DIV wrapper Streamlit */
 .video-finished #music-player-container > div {{
     display: block !important;
 }}
 
-
 @media (max-width: 768px) {{
-    .stApp.video-finished {{ background-image: var(--main-bg-url-mobile); }}
+    .stApp.video-finished {{ 
+        background-image: var(--main-bg-url-mobile) !important; 
+        background-position: center center !important;
+    }}
     #main-title-container {{ height: 8vh; width: 100%; left: 0; }}
     #main-title-container h1 {{ font-size: 6.5vw; animation-duration: 8s; }}
     .reveal-grid {{ grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(20, 1fr); }}
+    
+    #music-player-container {{
+        top: 15vh !important;
+        left: 2vw !important;
+        width: 130px !important;
+        height: 65px !important;
+    }}
 }}
 </style>
 """
@@ -200,13 +220,12 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- PHẦN 3: IFRAME CHO VIDEO INTRO (DÙNG BASE64) ---
 
-# JavaScript Đã đơn giản hóa (chỉ thêm class 'video-finished' để kích hoạt Trang Chính)
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
         const stApp = window.parent.document.querySelector('.stApp');
         
-        // CHỈ THÊM MỘT CLASS DUY NHẤT để kích hoạt tất cả CSS (Background, Title, Player)
+        // CHỈ THÊM MỘT CLASS DUY NHẤT để kích hoạt tất cả CSS
         stApp.classList.add('video-finished');
         
         // Kích hoạt hiệu ứng reveal
@@ -214,6 +233,7 @@ js_callback_video = f"""
         
         // KÍCH HOẠT PLAYER: Gọi hàm play trong iframe của Music Player 
         try {{
+            // Sử dụng window.parent để truy cập DOM của Streamlit và tìm Player iframe
             window.parent.document.querySelector('#music-player-container iframe').contentWindow.togglePlayPause(true);
         }} catch(e) {{
             console.warn("Could not auto-play background music player:", e);
@@ -254,7 +274,7 @@ js_callback_video = f"""
 
         const playMedia = () => {{
             video.load();
-            video.play().catch(e => {{}});
+            video.play().catch(e => console.log("Video playback failed on first attempt:", e));
                 
             const chars = introTextContainer.querySelectorAll('.intro-char');
             chars.forEach((char, index) => {{
@@ -305,7 +325,7 @@ html_content_modified = f"""
     </style>
 </head>
 <body>
-    <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+    <div id="intro-text-container">TỔ BẢO DƯỠNG SỐ 1</div>
     <video id="intro-video" muted playsinline></video>
     <audio id="background-audio"></audio>
     {js_callback_video}
@@ -320,12 +340,12 @@ intro_chars_html = ''.join([
     for char in intro_title
 ])
 html_content_modified = html_content_modified.replace(
-    "<div id=\"intro-text-container\">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>",
+    "<div id=\"intro-text-container\">TỔ BẢO DƯỠNG SỐ 1</div>",
     f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
 )
 
-# Hiển thị thành phần HTML (video)
-st.components.v1.html(html_content_modified, height=10, scrolling=False)
+# 🚀 FIX QUAN TRỌNG: Tăng chiều cao để video có thể hiện ra
+st.components.v1.html(html_content_modified, height=800, scrolling=False) 
 
 
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
@@ -353,7 +373,7 @@ st.markdown(f"""
 
 
 # =======================================================
-#               MUSIC PLAYER TÙY CHỈNH (DÙNG GITHUB RAW URL)
+#               MUSIC PLAYER TÙY CHỈNH (THU NHỎ)
 # =======================================================
 
 custom_music_player_html = f"""
@@ -361,34 +381,65 @@ custom_music_player_html = f"""
 <html>
 <head>
     <style>
-        /* CSS CHỈ DÀNH CHO IFRAME CỦA PLAYER */
         body {{ margin: 0; padding: 0; overflow: hidden; background: transparent; font-family: Arial, sans-serif; }}
-        .player-container {{ display: flex; align-items: center; justify-content: center; padding: 10px; background-color: rgba(0, 0, 0, 0.4); border-radius: 8px; 
-            width: 150px; /* Thu gọn kích thước */
-            margin: 0 auto; border: 1px solid #FFD700; 
-            opacity: 1; 
+        .player-container {{ 
+            display: flex; 
+            align-items: center; 
+            justify-content: center; 
+            padding: 8px 10px; 
+            background: linear-gradient(135deg, rgba(0,0,0,0.7) 0%, rgba(30,30,30,0.8) 100%);
+            border-radius: 10px; 
+            width: 130px;
+            margin: 0 auto; 
+            border: 2px solid #FFD700;
+            box-shadow: 0 3px 12px rgba(255, 215, 0, 0.5);
         }}
         
-        .player-controls button {{ background: none; border: 1px solid #FFD700; color: #FFD700; padding: 8px 10px; margin: 0 3px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: background-color 0.3s, color 0.3s; }}
-        .player-controls button:hover {{ background-color: #FFD700; color: #000; }}
+        .player-controls {{ display: flex; gap: 5px; }}
+        
+        .player-controls button {{ 
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            border: none;
+            color: #000;
+            padding: 6px 8px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 6px rgba(255, 215, 0, 0.4);
+        }}
+        
+        .player-controls button:hover {{ 
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(255, 215, 0, 0.6);
+        }}
+        
+        .player-controls button:active {{
+            transform: translateY(0);
+        }}
+        
+        #play-pause-btn {{
+            padding: 6px 10px;
+            font-size: 14px;
+        }}
         
         #audio-player {{ display: none; }} 
     </style>
 </head>
 <body>
 
-    <div class="player-container" id="player-main-container">
+    <div class="player-container">
         <div class="player-controls">
-            <button onclick="prevTrack()">&#9664;&#9664;</button>
-            <button id="play-pause-btn" onclick="togglePlayPause()">&#9658;</button>
-            <button onclick="nextTrack()">&#9658;&#9658;</button>
+            <button onclick="prevTrack()" title="Bài trước">&#9664;&#9664;</button>
+            <button id="play-pause-btn" onclick="togglePlayPause()" title="Phát/Dừng">&#9658;</button>
+            <button onclick="nextTrack()" title="Bài sau">&#9658;&#9658;</button>
         </div>
     </div>
     
     <audio id="audio-player"></audio>
 
     <script>
-        // Data chứa GITHUB RAW URL
         const playlistData = {music_playlist_json}; 
         const playlistKeys = Object.keys(playlistData);
         const audio = document.getElementById('audio-player');
@@ -410,7 +461,7 @@ custom_music_player_html = f"""
                 audio.play().then(() => {{
                     playPauseBtn.innerHTML = '&#10074;&#10074;'; 
                 }}).catch(e => {{
-                    console.error('Lỗi tự động phát (Chặn Autoplay):', e);
+                    console.error('Lỗi tự động phát:', e);
                 }});
             }} else {{
                 audio.pause();
@@ -431,10 +482,8 @@ custom_music_player_html = f"""
             if (!audio.paused) {{ audio.play(); }}
         }}
 
-        // Tự động chuyển bài khi kết thúc
         audio.addEventListener('ended', nextTrack);
 
-        // Khởi tạo player với bài đầu tiên khi iframe load xong
         document.addEventListener("DOMContentLoaded", function() {{
             loadTrack(currentTrackIndex);
         }});
@@ -443,7 +492,7 @@ custom_music_player_html = f"""
 </html>
 """
 
-# Tạo container HTML cho Music Player để áp dụng CSS ID
+# Tạo container HTML cho Music Player
 st.markdown('<div id="music-player-container">', unsafe_allow_html=True)
-st.components.v1.html(custom_music_player_html, height=80)
+st.components.v1.html(custom_music_player_html, height=70)
 st.markdown('</div>', unsafe_allow_html=True)
