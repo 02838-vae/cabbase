@@ -64,106 +64,6 @@ except FileNotFoundError as e:
     st.stop()
 
 
-# =======================================================
-#               MÃ HTML/JS CỦA MUSIC PLAYER
-# (Được lưu trữ dưới dạng chuỗi và sẽ được nhúng động)
-# =======================================================
-
-custom_music_player_html = f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        /* CSS CHỈ DÀNH CHO IFRAME CỦA PLAYER */
-        body {{ margin: 0; padding: 0; overflow: hidden; background: transparent; font-family: Arial, sans-serif; }}
-        .player-container {{ 
-            display: flex; align-items: center; justify-content: center; padding: 10px; 
-            background-color: rgba(0, 0, 0, 0.4); border-radius: 8px; 
-            width: 150px; margin: 0 auto; border: 1px solid #FFD700; 
-            opacity: 0; /* Mặc định trong suốt để fade-in mượt hơn */
-            transition: opacity 1s ease-in-out;
-        }}
-        
-        .player-controls button {{ background: none; border: 1px solid #FFD700; color: #FFD700; padding: 8px 10px; margin: 0 3px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: background-color 0.3s, color 0.3s; }}
-        .player-controls button:hover {{ background-color: #FFD700; color: #000; }}
-        
-        #audio-player {{ display: none; }} 
-    </style>
-</head>
-<body>
-
-    <div class="player-container" id="player-main-container">
-        <div class="player-controls">
-            <button onclick="prevTrack()">&#9664;&#9664;</button>
-            <button id="play-pause-btn" onclick="togglePlayPause()">&#9658;</button>
-            <button onclick="nextTrack()">&#9658;&#9658;</button>
-        </div>
-    </div>
-    
-    <audio id="audio-player"></audio>
-
-    <script>
-        // Data chứa GITHUB RAW URL
-        const playlistData = {music_playlist_json}; 
-        const playlistKeys = Object.keys(playlistData);
-        const audio = document.getElementById('audio-player');
-        const playPauseBtn = document.getElementById('play-pause-btn');
-        const playerMainContainer = document.getElementById('player-main-container');
-        
-        let currentTrackIndex = 0;
-
-        function loadTrack(index) {{
-            const key = playlistKeys[index];
-            const url = playlistData[key]; 
-            audio.src = url; 
-            audio.load();
-        }}
-        
-        function togglePlayPause(forcePlay = false) {{
-            if (audio.paused || forcePlay) {{
-                if (audio.src === "") {{ loadTrack(currentTrackIndex); }}
-                
-                audio.play().then(() => {{
-                    playPauseBtn.innerHTML = '&#10074;&#10074;'; 
-                }}).catch(e => {{
-                    console.error('Lỗi tự động phát (Chặn Autoplay):', e);
-                }});
-            }} else {{
-                audio.pause();
-                playPauseBtn.innerHTML = '&#9658;'; 
-            }}
-        }}
-        window.togglePlayPause = togglePlayPause; 
-
-        function nextTrack() {{
-            currentTrackIndex = (currentTrackIndex + 1) % playlistKeys.length;
-            loadTrack(currentTrackIndex);
-            if (!audio.paused) {{ audio.play(); }}
-        }}
-
-        function prevTrack() {{
-            currentTrackIndex = (currentTrackIndex - 1 + playlistKeys.length) % playlistKeys.length;
-            loadTrack(currentTrackIndex);
-            if (!audio.paused) {{ audio.play(); }}
-        }}
-
-        // Tự động chuyển bài khi kết thúc
-        audio.addEventListener('ended', nextTrack);
-
-        // Khởi tạo player với bài đầu tiên khi iframe load xong
-        document.addEventListener("DOMContentLoaded", function() {{
-            loadTrack(currentTrackIndex);
-            // Kích hoạt fade-in (opacity: 1)
-            playerMainContainer.style.opacity = 1;
-        }});
-    </script>
-</body>
-</html>
-"""
-
-# Mã Player HTML đã được mã hóa Base64 để nhúng vào JS
-player_html_base64 = base64.b64encode(custom_music_player_html.encode('utf-8')).decode('utf-8')
-
 # --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
 
 font_links = """
@@ -254,22 +154,33 @@ iframe:first-of-type {{
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
 }}
 
-/* === MUSIC PLAYER CONTAINER (Vị trí) === */
+/* === MUSIC PLAYER CONTAINER (Vị trí và Ẩn cứng) === */
 #music-player-container {{
     position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
     z-index: 10; 
     
-    /* Mặc định ẩn container - chỉ dùng để chứa Player được tạo động */
-    display: none; 
-    
+    /* ẨN CỨNG CONTAINER VÀ NỘI DUNG BÊN TRONG */
+    display: none !important; 
     pointer-events: none; 
+    
     height: 80px; width: 170px; 
+    transition: opacity 1s ease-out;
 }}
 
 /* KHI VIDEO KẾT THÚC, HIỂN THỊ VÀ BẬT TƯƠNG TÁC */
 .video-finished #music-player-container {{
-    display: block; /* HIỆN container */
+    display: block !important; /* HIỆN container */
+    opacity: 1; 
     pointer-events: auto; 
+}}
+
+/* ẨN/HIỆN Streamlit Wrapper của Player */
+#music-player-container > div {{
+    display: none !important;
+}}
+
+.video-finished #music-player-container > div {{
+    display: block !important;
 }}
 
 
@@ -286,38 +197,9 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- PHẦN 3: IFRAME CHO VIDEO INTRO (DÙNG BASE64) ---
 
-# JavaScript NÂNG CẤP (Bao gồm logic tạo Player động)
+# JavaScript NÂNG CẤP (chỉ còn chức năng kích hoạt CSS và Player)
 js_callback_video = f"""
 <script>
-    const playerHtmlBase64 = '{player_html_base64}';
-
-    function createAndAppendPlayer() {{
-        const playerContainer = window.parent.document.getElementById('music-player-container');
-        if (!playerContainer) return;
-        
-        // 1. Tạo iframe mới
-        const iframe = window.parent.document.createElement('iframe');
-        iframe.src = 'data:text/html;base64,' + playerHtmlBase64;
-        iframe.width = '170px';
-        iframe.height = '80px';
-        iframe.style.border = 'none';
-        iframe.style.overflow = 'hidden';
-        iframe.scrolling = 'no';
-        
-        // 2. Thêm vào container
-        playerContainer.appendChild(iframe);
-
-        // 3. Cố gắng tự động play nhạc nền player (Chờ iframe tải)
-        iframe.onload = () => {{
-             try {{
-                // Gọi hàm togglePlayPause trong iframe của Music Player, với forcePlay=true
-                iframe.contentWindow.togglePlayPause(true);
-            }} catch(e) {{
-                console.warn("Could not auto-play background music player after load:", e);
-            }}
-        }};
-    }}
-
     function sendBackToStreamlit() {{
         const stApp = window.parent.document.querySelector('.stApp');
         
@@ -327,8 +209,12 @@ js_callback_video = f"""
         // 2. Kích hoạt hiệu ứng reveal
         initRevealEffect();
         
-        // 3. TẠO PLAYER ĐỘNG VÀ CHÈN VÀO TRANG
-        createAndAppendPlayer();
+        // 3. KÍCH HOẠT PLAYER: Gọi hàm play trong iframe của Music Player 
+        try {{
+            window.parent.document.querySelector('#music-player-container iframe').contentWindow.togglePlayPause(true);
+        }} catch(e) {{
+            console.warn("Could not auto-play background music player:", e);
+        }}
     }}
     window.sendBackToStreamlit = sendBackToStreamlit; 
 
@@ -463,6 +349,103 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 
-# TẠO CONTAINER RỖNG DÀNH CHO PLAYER ĐƯỢC CHÈN BẰNG JAVASCRIPT
-# Player sẽ được chèn vào đây khi video kết thúc.
-st.markdown('<div id="music-player-container"></div>', unsafe_allow_html=True)
+# =======================================================
+#               MUSIC PLAYER TÙY CHỈNH (DÙNG GITHUB RAW URL)
+# =======================================================
+
+# Đặt mã Player HTML trở lại Python để Streamlit xử lý,
+# và dùng CSS/JS trong Intro để kiểm soát thời điểm nó được hiển thị/chạy.
+custom_music_player_html = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        /* CSS CHỈ DÀNH CHO IFRAME CỦA PLAYER */
+        body {{ margin: 0; padding: 0; overflow: hidden; background: transparent; font-family: Arial, sans-serif; }}
+        .player-container {{ display: flex; align-items: center; justify-content: center; padding: 10px; background-color: rgba(0, 0, 0, 0.4); border-radius: 8px; 
+            width: 150px; /* Thu gọn kích thước */
+            margin: 0 auto; border: 1px solid #FFD700; 
+            opacity: 0; /* Mặc định trong suốt để fade-in mượt hơn */
+            transition: opacity 1s ease-in-out;
+        }}
+        
+        .player-controls button {{ background: none; border: 1px solid #FFD700; color: #FFD700; padding: 8px 10px; margin: 0 3px; border-radius: 5px; cursor: pointer; font-size: 14px; transition: background-color 0.3s, color 0.3s; }}
+        .player-controls button:hover {{ background-color: #FFD700; color: #000; }}
+        
+        #audio-player {{ display: none; }} 
+    </style>
+</head>
+<body>
+
+    <div class="player-container" id="player-main-container">
+        <div class="player-controls">
+            <button onclick="prevTrack()">&#9664;&#9664;</button>
+            <button id="play-pause-btn" onclick="togglePlayPause()">&#9658;</button>
+            <button onclick="nextTrack()">&#9658;&#9658;</button>
+        </div>
+    </div>
+    
+    <audio id="audio-player"></audio>
+
+    <script>
+        // Data chứa GITHUB RAW URL
+        const playlistData = {music_playlist_json}; 
+        const playlistKeys = Object.keys(playlistData);
+        const audio = document.getElementById('audio-player');
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const playerMainContainer = document.getElementById('player-main-container');
+        
+        let currentTrackIndex = 0;
+
+        function loadTrack(index) {{
+            const key = playlistKeys[index];
+            const url = playlistData[key]; 
+            audio.src = url; 
+            audio.load();
+        }}
+        
+        function togglePlayPause(forcePlay = false) {{
+            if (audio.paused || forcePlay) {{
+                if (audio.src === "") {{ loadTrack(currentTrackIndex); }}
+                
+                audio.play().then(() => {{
+                    playPauseBtn.innerHTML = '&#10074;&#10074;'; 
+                }}).catch(e => {{
+                    console.error('Lỗi tự động phát (Chặn Autoplay):', e);
+                }});
+            }} else {{
+                audio.pause();
+                playPauseBtn.innerHTML = '&#9658;'; 
+            }}
+        }}
+        window.togglePlayPause = togglePlayPause; 
+
+        function nextTrack() {{
+            currentTrackIndex = (currentTrackIndex + 1) % playlistKeys.length;
+            loadTrack(currentTrackIndex);
+            if (!audio.paused) {{ audio.play(); }}
+        }}
+
+        function prevTrack() {{
+            currentTrackIndex = (currentTrackIndex - 1 + playlistKeys.length) % playlistKeys.length;
+            loadTrack(currentTrackIndex);
+            if (!audio.paused) {{ audio.play(); }}
+        }}
+
+        // Tự động chuyển bài khi kết thúc
+        audio.addEventListener('ended', nextTrack);
+
+        // Kích hoạt fade-in (opacity: 1) khi Player được hiển thị
+        document.addEventListener("DOMContentLoaded", function() {{
+            loadTrack(currentTrackIndex);
+            // playerMainContainer.style.opacity = 1; // Bỏ cái này vì nó fade-in luôn khi iframe được render
+        }});
+    </script>
+</body>
+</html>
+"""
+
+# Tạo container HTML cho Music Player để áp dụng CSS ID
+st.markdown('<div id="music-player-container">', unsafe_allow_html=True)
+st.components.v1.html(custom_music_player_html, height=80)
+st.markdown('</div>', unsafe_allow_html=True)
