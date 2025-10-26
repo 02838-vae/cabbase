@@ -59,6 +59,7 @@ st.markdown(font_links, unsafe_allow_html=True)
 
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
+# KHÔNG CẦN THAY ĐỔI VÌ ĐÃ LÀ F-STRING VÀ SỬ DỤNG NGOẶC NHỌN KÉP CHO CSS
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -464,11 +465,11 @@ st.markdown(f"""
 
 song_names_js_array = str([f"Background {i}" for i in range(1, 7)]).replace("'", '"')
 
-# === SỬ DỤNG PHƯƠNG THỨC .format() VÀ KHÔNG DÙNG r""" ĐỂ TRÁNH LỖI THỤT LỀ ===
+# === SỬA LỖI KEY ERROR: NHÂN ĐÔI NGOẶC NHỌN PYTHON/CSS/JS CÓ SẴN ({{ và }}) ===
 music_player_full_template = """
 <style>
 /* CSS NỘI BỘ CHO PLAYER */
-#music-player-container {
+#music-player-container {{
     padding: 10px;
     background: rgba(0, 0, 0, 0.7); 
     border-radius: 15px;
@@ -476,15 +477,15 @@ music_player_full_template = """
     display: flex;
     flex-direction: column;
     gap: 10px;
-}
+}}
 
-#player-controls {
+#player-controls {{
     display: flex;
     justify-content: space-around;
     align-items: center;
-}
+}}
 
-#player-controls button {
+#player-controls button {{
     background: none;
     border: none;
     color: gold;
@@ -492,35 +493,35 @@ music_player_full_template = """
     cursor: pointer;
     transition: color 0.3s;
     line-height: 1; 
-}
+}}
 
-#player-controls button:hover {
+#player-controls button:hover {{
     color: white;
-}
+}}
 
-#song-info {
+#song-info {{
     color: white;
     font-size: 14px;
     text-align: center;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-}
+}}
 
-#progress-container {
+#progress-container {{
     height: 5px;
     background: #444;
     border-radius: 5px;
     cursor: pointer;
-}
+}}
 
-#progress-bar {
+#progress-bar {{
     height: 100%;
     width: 0%;
     background: gold;
     border-radius: 5px;
     transition: width 0.1s linear;
-}
+}}
 </style>
 
 <div id="music-player-container">
