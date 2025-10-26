@@ -35,7 +35,7 @@ def get_static_song_urls(directory="songs", prefix="background", count=6):
     
     # Kiểm tra xem có thư mục tồn tại không
     if not os.path.exists(directory):
-        st.error(f"LỖI: Không tìm thấy thư mục nhạc '{directory}'. Vui lòng kiểm tra lại cấu trúc file.")
+        st.error(f"LỖI: Không tìm thấy thư mục nhạc '{directory}'. Vui lòng tạo thư mục và thêm file mp3.")
         return [], []
     
     for i in range(1, count + 1):
@@ -567,21 +567,27 @@ music_player_js = f"""
         const songTitleDisplay = document.getElementById('song-title');
 
         if (songs.length === 0) {{
+            // Ẩn player nếu không tìm thấy bài hát nào
             document.getElementById('music-player-container').style.display = 'none';
             return;
         }}
-
+        
         function loadSong(index) {{
             audioPlayer.src = songs[index];
-            songTitleDisplay.textContent = songTitles[index];
+            // FIX LỖI "Đang tải...": Cập nhật tên bài hát ngay lập tức
+            songTitleDisplay.textContent = songTitles[index]; 
             audioPlayer.load();
         }}
 
         function playSong() {{
-            // Attempt to play (browser may still block until user interaction)
-            audioPlayer.play().catch(e => console.log("Audio play failed, waiting for interaction:", e));
-            isPlaying = true;
-            playPauseBtn.innerHTML = '&#9208;'; // Pause icon
+            // Cố gắng phát nhạc. Trình duyệt có thể chặn nếu chưa có tương tác.
+            audioPlayer.play().then(() => {{
+                isPlaying = true;
+                playPauseBtn.innerHTML = '&#9208;'; // Pause icon
+            }}).catch(e => {{
+                console.log("Audio play failed (Autoplay Blocked):", e);
+                // Giữ nguyên icon Play nếu bị chặn
+            }});
         }}
 
         function pauseSong() {{
@@ -637,10 +643,11 @@ music_player_js = f"""
             }}
         }});
         
-        // FIX LỖI: Tải bài đầu tiên ngay để hiển thị tên bài hát
+        // Khởi tạo bài hát đầu tiên
         loadSong(currentSongIndex);
 
-        // Tự động play sau tương tác người dùng đầu tiên
+        // Tự động play sau tương tác người dùng đầu tiên (FIX Autoplay)
+        // Lệnh này kích hoạt Play nếu người dùng tương tác bất kỳ đâu trên trang lần đầu
         window.parent.document.body.addEventListener('click', () => {{
              if (!isPlaying && audioPlayer.paused && audioPlayer.src) {{
                  playSong();
