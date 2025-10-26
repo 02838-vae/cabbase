@@ -31,6 +31,7 @@ def get_base64_encoded_file(file_path):
 
 # Mã hóa các file media cần thiết
 try:
+    # Không cần mã hóa video nếu chỉ dùng để preload/src trong iframe
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3") # Âm thanh Intro
@@ -54,18 +55,19 @@ font_links = """
 st.markdown(font_links, unsafe_allow_html=True)
 
 
-# --- PHẦN CSS CHUNG CHO ỨNG DỤNG (ĐÃ SỬA LỖI MÀU NỀN VÀ FILTER) ---
+# --- PHẦN CSS CHUNG CHO ỨNG DỤNG (ĐÃ FIX LỖI MÀU FILTER) ---
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 
 /* Reset và ẩn các thành phần Streamlit mặc định */
 #MainMenu, footer, header {{visibility: hidden;}}
-html, body {{margin: 0; padding: 0; scroll-behavior: smooth;}} /* Cuộn mượt */
+html, body {{margin: 0; padding: 0; scroll-behavior: smooth;}}
 
 .main {{padding: 0; margin: 0;}}
 div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
 
+/* --- MÀU NỀN VÀ FILTER CỦA TRANG STREAMLIT CHÍNH --- */
 .stApp {{
     --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
@@ -73,14 +75,15 @@ div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
-    /* ÁP DỤNG HIỆU ỨNG MÀU GỐC TRƯỚC */
+    
+    /* TRẠNG THÁI GỐC: ÁP DỤNG HIỆU ỨNG CỔ ĐIỂN */
     filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%); 
     transition: filter 2s ease-out; 
 }}
 
 /* TRẠNG THÁI SAU KHI VIDEO KẾT THÚC: KHÔI PHỤC MÀU GỐC */
 .stApp.video-finished {{
-    filter: sepia(0%) grayscale(0%) brightness(100%) contrast(100%); 
+    filter: none; /* Reset filter về màu gốc */
 }}
 @media (max-width: 768px) {{
     .stApp {{
@@ -88,7 +91,7 @@ div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
     }}
 }}
 
-/* Ẩn Iframe Video Intro */
+/* --- ẨN IFRAME VIDEO INTRO --- */
 iframe:first-of-type {{
     transition: opacity 1s ease-out, visibility 1s ease-out;
     opacity: 1;
@@ -99,6 +102,7 @@ iframe:first-of-type {{
     top: 0;
     left: 0;
     z-index: 1000;
+    filter: none; /* ĐẢM BẢO KHÔNG BỊ FILTER TỪ .stApp ẢNH HƯỞNG */
 }}
 
 .video-finished iframe:first-of-type {{
@@ -322,7 +326,7 @@ iframe:first-of-type {{
 
 #hero-section {{
     padding-top: 250px; 
-    background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)); /* Thêm lớp phủ đen để dễ đọc chữ */
+    background-image: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)); 
     background-attachment: fixed;
 }}
 
@@ -442,11 +446,9 @@ st.markdown(app_js, unsafe_allow_html=True)
 
 # --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
-# LƯU Ý: KHÔNG ÁP DỤNG BẤT KỲ FILTER NÀO TRONG CSS CỦA IFRAME ĐỂ GIỮ MÀU CHUẨN CHO VIDEO
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
-        // Gửi tín hiệu lên Streamlit parent để kích hoạt CSS cho trang chính và Player
         // Lớp 'video-finished' sẽ loại bỏ filter màu trên .stApp
         window.parent.document.querySelector('.stApp').classList.add('video-finished');
         initRevealEffect();
