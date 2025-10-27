@@ -25,9 +25,12 @@ def get_base64_encoded_file(file_path):
     except FileNotFoundError as e:
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
-def get_base64_songs(directory="songs", prefix="background", count=6):
-    """Đọc các file nhạc và chuyển sang Base64."""
-    songs_base64 = []
+def get_static_song_urls(directory="songs", prefix="background", count=6):
+    """Tạo danh sách URL tương đối cho các bài hát tĩnh từ thư mục 'songs'."""
+    song_urls = []
+    
+    # URL mà Trình duyệt sẽ tìm kiếm (đường dẫn tương đối)
+    base_url = "songs/" 
     
     if not os.path.exists(directory):
         st.error(f"LỖI: Không tìm thấy thư mục nhạc '{directory}'. Vui lòng kiểm tra lại cấu trúc file.")
@@ -37,20 +40,15 @@ def get_base64_songs(directory="songs", prefix="background", count=6):
         filename = f"{prefix}{i}.mp3"
         file_path = os.path.join(directory, filename)
         if os.path.exists(file_path):
-            try:
-                base64_data = get_base64_encoded_file(file_path)
-                songs_base64.append(base64_data)
-            except Exception as e:
-                st.warning(f"Không thể đọc file {filename}: {e}")
-                continue
+            url = base_url + filename
+            song_urls.append(url)
         else:
             continue
-    
-    return songs_base64
+    return song_urls
 
 # Mã hóa các file media
 try:
-    # Media files for intro và background images
+    # Media files for intro và background images (vẫn dùng Base64)
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
@@ -58,8 +56,8 @@ try:
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
 
-    # Music Player songs (Chuyển sang Base64)
-    songs_base64_list = get_base64_songs()
+    # Music Player songs (Dùng URL tĩnh từ thư mục "songs")
+    songs_url_list = get_static_song_urls()
 
 except FileNotFoundError as e:
     st.error(e)
@@ -110,19 +108,6 @@ iframe:first-of-type {{
     visibility: hidden;
     pointer-events: none;
     height: 1px !important; 
-}}
-
-/* Ẩn music player ban đầu */
-iframe:nth-of-type(2) {{
-    opacity: 0;
-    visibility: hidden;
-    transition: opacity 2s ease-in-out, visibility 2s ease-in-out;
-}}
-
-/* Hiển thị music player sau khi video kết thúc */
-.video-finished iframe:nth-of-type(2) {{
-    opacity: 1;
-    visibility: visible;
 }}
 
 .stApp {{
@@ -236,6 +221,93 @@ iframe:nth-of-type(2) {{
     }}
 }}
 
+/* === MUSIC PLAYER CSS (ĐÃ FIX) === */
+#music-player-container {{
+    position: fixed;
+    bottom: 20px; 
+    left: 20px; 
+    z-index: 100; 
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.7); 
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+    color: #FFD700; 
+    width: 250px; 
+    display: flex;
+    flex-direction: column;
+    opacity: 0; 
+    transition: opacity 2s ease-in-out;
+}}
+
+.main-content-revealed #music-player-container {{
+    opacity: 1;
+}}
+
+#player-controls {{
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    margin-bottom: 8px;
+}}
+
+#player-controls button {{
+    background: none;
+    border: none;
+    color: #FFD700;
+    font-size: 20px;
+    cursor: pointer;
+    transition: color 0.2s;
+    padding: 5px 8px;
+}}
+
+#player-controls button:hover {{
+    color: #FFF;
+}}
+
+#play-pause-btn {{
+    font-size: 28px;
+}}
+
+/* Tinh chỉnh kích thước icon Next/Prev */
+#prev-btn, #next-btn {{
+    font-size: 20px; 
+}}
+
+
+#progress-container {{
+    width: 100%;
+    height: 6px;
+    background: #555;
+    border-radius: 3px;
+    cursor: pointer;
+}}
+
+#progress-bar {{
+    height: 100%;
+    width: 0%;
+    background: #FFD700;
+    border-radius: 3px;
+}}
+
+@media (max-width: 768px) {{
+    #music-player-container {{
+        bottom: 10px;
+        left: 10px;
+        width: 180px; 
+        padding: 8px;
+    }}
+    #player-controls button {{
+        font-size: 16px;
+        padding: 3px 6px;
+    }}
+    #play-pause-btn {{
+        font-size: 24px;
+    }}
+    #prev-btn, #next-btn {{
+        font-size: 16px;
+    }}
+}}
+
 </style>
 """
 
@@ -243,7 +315,7 @@ iframe:nth-of-type(2) {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (GIỮ NGUYÊN) ---
 
 # JavaScript Callback
 js_callback_video = f"""
@@ -251,12 +323,6 @@ js_callback_video = f"""
     function sendBackToStreamlit() {{
         window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
         initRevealEffect();
-        
-        // Gửi signal cho music player để hiển thị
-        const musicPlayerIframe = window.parent.document.querySelectorAll('iframe')[1]; // iframe thứ 2 là music player
-        if (musicPlayerIframe && musicPlayerIframe.contentWindow) {{
-            musicPlayerIframe.contentWindow.postMessage('show-music-player', '*');
-        }}
     }}
     
     function initRevealEffect() {{
@@ -468,117 +534,131 @@ st.markdown(f"""
 """, unsafe_allow_html=True) 
 
 
-# --- MUSIC PLAYER COMPONENT (FIXED - Dùng components.html) ---
+# --- MUSIC PLAYER COMPONENT (ĐÃ THÊM ERROR LISTENER VÀ LOGIC CHẮC CHẮN) ---
 
-# Chuẩn bị dữ liệu Base64 cho JS
-songs_data_js = ', '.join([f'"data:audio/mp3;base64,{song}"' for song in songs_base64_list])
+# Chuẩn bị dữ liệu URL cho JS
+songs_data_js = [f"'{url}'" for url in songs_url_list] 
 
-# Tạo HTML đầy đủ cho Music Player trong iframe riêng
-music_player_full_html = f"""
-<!DOCTYPE html>
-<html>
-<head>
-<style>
-    * {{
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-    }}
-    
-    body {{
-        background: transparent;
-        overflow: hidden;
-    }}
-    
-    #music-player-container {{
-        position: fixed;
-        bottom: 20px; 
-        left: 20px; 
-        z-index: 100; 
-        padding: 10px;
-        background: rgba(0, 0, 0, 0.7); 
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        color: #FFD700; 
-        width: 250px; 
-        display: flex;
-        flex-direction: column;
-        opacity: 0;
-        visibility: hidden;
-        transition: opacity 2s ease-in-out, visibility 2s ease-in-out;
-    }}
-    
-    /* Hiển thị music player khi video intro kết thúc */
-    body.show-player #music-player-container {{
-        opacity: 1;
-        visibility: visible;
-    }}
+# SỬ DỤNG {{ VÀ }} ĐỂ ESCAPE CÁC DẤU NGOẶC NHỌN CỦA JAVASCRIPT
+music_player_js = f"""
+<script>
+    document.addEventListener("DOMContentLoaded", function() {{
+        const audioPlayer = new Audio();
+        // Quan trọng: Thêm thuộc tính crossOrigin
+        audioPlayer.crossOrigin = "anonymous";
+        
+        const songs = [{', '.join(songs_data_js)}];
+        let currentSongIndex = 0;
+        let isPlaying = false;
 
-    #player-controls {{
-        display: flex;
-        justify-content: space-around;
-        align-items: center;
-        margin-bottom: 8px;
-    }}
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const progressContainer = document.getElementById('progress-container');
 
-    #player-controls button {{
-        background: none;
-        border: none;
-        color: #FFD700;
-        font-size: 20px;
-        cursor: pointer;
-        transition: color 0.2s;
-        padding: 5px 8px;
-    }}
-
-    #player-controls button:hover {{
-        color: #FFF;
-    }}
-
-    #play-pause-btn {{
-        font-size: 28px;
-    }}
-
-    #prev-btn, #next-btn {{
-        font-size: 20px; 
-    }}
-
-    #progress-container {{
-        width: 100%;
-        height: 6px;
-        background: #555;
-        border-radius: 3px;
-        cursor: pointer;
-    }}
-
-    #progress-bar {{
-        height: 100%;
-        width: 0%;
-        background: #FFD700;
-        border-radius: 3px;
-    }}
-
-    @media (max-width: 768px) {{
-        #music-player-container {{
-            bottom: 10px;
-            left: 10px;
-            width: 180px; 
-            padding: 8px;
+        if (songs.length === 0) {{
+            console.error("LỖI: Không tìm thấy file nhạc nào trong danh sách.");
+            document.getElementById('music-player-container').style.display = 'none';
+            return;
         }}
-        #player-controls button {{
-            font-size: 16px;
-            padding: 3px 6px;
+        
+        // Listener báo lỗi khi tải file
+        audioPlayer.addEventListener('error', (e) => {{
+            console.error('LỖI TẢI AUDIO (Mã lỗi:', e.target.error.code, '):', e.target.error.message);
+            console.error('Đường dẫn file bị lỗi:', audioPlayer.src);
+            // Mã lỗi 4 = MEDIA_ERR_SRC_NOT_SUPPORTED (Thường là 404 hoặc đường dẫn sai)
+            playPauseBtn.innerHTML = '&#9940;'; // Icon cấm
+            isPlaying = false;
+        }});
+        
+        function loadSong(index) {{
+            audioPlayer.src = songs[index];
+            audioPlayer.load();
         }}
-        #play-pause-btn {{
-            font-size: 24px;
+
+        function playSong() {{
+            // Cố gắng phát nhạc ngay khi được gọi
+            audioPlayer.play().then(() => {{
+                isPlaying = true;
+                playPauseBtn.innerHTML = '&#9208;'; // Icon Pause
+            }}).catch(e => {{
+                // Nếu bị chặn Autoplay, in ra lỗi nhưng không thay đổi isPlaying
+                console.log("Audio play failed (Autoplay Blocked or Load Error):", e);
+            }});
         }}
-        #prev-btn, #next-btn {{
-            font-size: 16px;
+
+        function pauseSong() {{
+            audioPlayer.pause();
+            isPlaying = false;
+            playPauseBtn.innerHTML = '&#9654;'; // Icon Play
         }}
-    }}
-</style>
-</head>
-<body>
+
+        function nextSong() {{
+            currentSongIndex = (currentSongIndex + 1) % songs.length;
+            loadSong(currentSongIndex);
+            playSong();
+        }}
+
+        function prevSong() {{
+            currentSongIndex = (currentSongIndex - 1 + songs.length) % songs.length;
+            loadSong(currentSongIndex);
+            playSong();
+        }}
+        
+        // Cập nhật thanh tiến trình
+        audioPlayer.addEventListener('timeupdate', (e) => {{
+            const {{duration, currentTime}} = e.target;
+            if (isFinite(duration) && duration > 0) {{
+                const progressPercent = (currentTime / duration) * 100;
+                progressBar.style.width = `${{progressPercent}}%`;
+            }}
+        }});
+        
+        // Chuyển bài khi kết thúc
+        audioPlayer.addEventListener('ended', nextSong);
+
+        // Xử lý nút Play/Pause - Logic cốt lõi để phát nhạc
+        playPauseBtn.addEventListener('click', (e) => {{
+            e.stopPropagation(); 
+            if (isPlaying) {{
+                pauseSong();
+            }} else {{
+                // Nếu đang Pause/Stopped, gọi play.
+                playSong(); 
+            }}
+        }});
+        
+        // Xử lý nút Next/Prev
+        nextBtn.addEventListener('click', nextSong);
+        prevBtn.addEventListener('click', prevSong);
+        
+        // Xử lý click trên thanh tiến trình
+        progressContainer.addEventListener('click', (e) => {{
+            const width = progressContainer.clientWidth;
+            const clickX = e.offsetX;
+            const duration = audioPlayer.duration;
+            if (isFinite(duration) && duration > 0) {{
+                 audioPlayer.currentTime = (clickX / width) * duration;
+            }}
+        }});
+        
+        // Khởi tạo bài hát đầu tiên
+        loadSong(currentSongIndex);
+        
+        // Tối ưu Autoplay: Nếu người dùng tương tác bất kỳ đâu trên body lần đầu, cố gắng play
+        // Dùng sự kiện 'click' trên body để kích hoạt âm thanh
+        window.parent.document.body.addEventListener('click', () => {{
+             if (!isPlaying && audioPlayer.paused && audioPlayer.src) {{
+                 playSong();
+             }}
+        }}, {{ once: true }});
+        
+    }});
+</script>
+"""
+
+music_player_html = f"""
 <div id="music-player-container">
     <div id="player-controls">
         <button id="prev-btn" title="Previous">&#171;</button> 
@@ -588,117 +668,8 @@ music_player_full_html = f"""
     <div id="progress-container">
         <div id="progress-bar"></div>
     </div>
+    {music_player_js}
 </div>
-
-<script>
-    const audioPlayer = new Audio();
-    const songs = [{songs_data_js}];
-    let currentSongIndex = 0;
-    let isPlaying = false;
-
-    const playPauseBtn = document.getElementById('play-pause-btn');
-    const nextBtn = document.getElementById('next-btn');
-    const prevBtn = document.getElementById('prev-btn');
-    const progressBar = document.getElementById('progress-bar');
-    const progressContainer = document.getElementById('progress-container');
-
-    if (songs.length === 0) {{
-        console.error("LỖI: Không tìm thấy file nhạc nào trong danh sách.");
-        document.getElementById('music-player-container').style.display = 'none';
-    }}
-    
-    audioPlayer.addEventListener('error', (e) => {{
-        console.error('LỖI TẢI AUDIO:', e.target.error);
-        playPauseBtn.innerHTML = '&#9940;';
-        isPlaying = false;
-    }});
-    
-    function loadSong(index) {{
-        audioPlayer.src = songs[index];
-        audioPlayer.load();
-    }}
-
-    function playSong() {{
-        audioPlayer.play().then(() => {{
-            isPlaying = true;
-            playPauseBtn.innerHTML = '&#9208;';
-        }}).catch(e => {{
-            console.log("Audio play failed:", e);
-        }});
-    }}
-
-    function pauseSong() {{
-        audioPlayer.pause();
-        isPlaying = false;
-        playPauseBtn.innerHTML = '&#9654;';
-    }}
-
-    function nextSong() {{
-        currentSongIndex = (currentSongIndex + 1) % songs.length;
-        loadSong(currentSongIndex);
-        playSong();
-    }}
-
-    function prevSong() {{
-        currentSongIndex = (currentSongIndex - 1 + songs.length) % songs.length;
-        loadSong(currentSongIndex);
-        playSong();
-    }}
-    
-    audioPlayer.addEventListener('timeupdate', (e) => {{
-        const {{duration, currentTime}} = e.target;
-        if (isFinite(duration) && duration > 0) {{
-            const progressPercent = (currentTime / duration) * 100;
-            progressBar.style.width = `${{progressPercent}}%`;
-        }}
-    }});
-    
-    audioPlayer.addEventListener('ended', nextSong);
-
-    playPauseBtn.addEventListener('click', () => {{
-        if (isPlaying) {{
-            pauseSong();
-        }} else {{
-            playSong();
-        }}
-    }});
-    
-    nextBtn.addEventListener('click', nextSong);
-    prevBtn.addEventListener('click', prevSong);
-    
-    progressContainer.addEventListener('click', (e) => {{
-        const width = progressContainer.clientWidth;
-        const clickX = e.offsetX;
-        const duration = audioPlayer.duration;
-        if (isFinite(duration) && duration > 0) {{
-             audioPlayer.currentTime = (clickX / width) * duration;
-        }}
-    }});
-    
-    loadSong(currentSongIndex);
-    
-    // Lắng nghe sự kiện từ parent window để hiển thị player
-    window.addEventListener('message', (event) => {{
-        if (event.data === 'show-music-player') {{
-            document.body.classList.add('show-player');
-            // Auto-play khi hiển thị (tùy chọn)
-            setTimeout(() => {{
-                if (!isPlaying) playSong();
-            }}, 500);
-        }}
-    }});
-    
-    // Kiểm tra xem video intro đã kết thúc chưa (fallback)
-    setTimeout(() => {{
-        const parentHasClass = window.parent.document.querySelector('.stApp.video-finished');
-        if (parentHasClass) {{
-            document.body.classList.add('show-player');
-        }}
-    }}, 1000);
-</script>
-</body>
-</html>
 """
 
-# Hiển thị Music Player trong iframe riêng với height đủ lớn
-components.html(music_player_full_html, height=100, scrolling=False)
+st.markdown(music_player_html, unsafe_allow_html=True)
