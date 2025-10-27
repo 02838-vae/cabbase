@@ -7,12 +7,10 @@ import random
 st.set_page_config(
     page_title="Tổ Bảo Dưỡng Số 1",
     layout="wide",
-    initial_sidebar_state="expanded" # ⚠️ Thay đổi: Mở rộng thanh bên để chứa Player
+    initial_sidebar_state="expanded" 
 )
 
-# --- KHỞI TẠO STATE & CỜ KIỂM TRA (SỬ DỤNG st.query_params) ---
-
-# Đọc cờ từ query params
+# --- KHỞI TẠO STATE & CỜ KIỂM TRA ---
 query_params = st.query_params
 video_ended_flag = query_params.get('video_ended_flag') == 'true'
 
@@ -21,7 +19,6 @@ if 'video_ended' not in st.session_state:
 
 if video_ended_flag:
     st.session_state.video_ended = True
-
 
 # --- CÁC HÀM TIỆN ÍCH ---
 
@@ -51,7 +48,7 @@ except FileNotFoundError as e:
     st.error(e)
     st.stop()
 
-# --- PHẦN 1: NHÚNG FONT & CSS CHUNG (FIXED) ---
+# --- PHẦN 1: NHÚNG FONT & CSS CHUNG (ĐÃ LOẠI BỎ HẦU HẾT CSS FIXED) ---
 
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
@@ -126,57 +123,33 @@ iframe:first-of-type {{
     #main-title-container h1 {{ font-size: 6.5vw; animation-duration: 8s; }}
 }}
 
-/* ⚠️ CSS MỚI: Cố định Player Audio trong Sidebar */
-/* Cố định Sidebar xuống dưới cùng bên phải của viewport */
-section.main {{
-    padding-bottom: 0px !important; /* Loại bỏ padding dưới để nội dung không chạm đáy Player */
-}}
-
+/* CSS ĐỂ ĐẢM BẢO SIDEBAR LUÔN HIỂN THỊ TRÊN CÙNG (FIXED/EXPANDED) */
 div[data-testid="stSidebar"] {{
     z-index: 10000 !important;
-    transform: none !important; /* Đảm bảo Sidebar không bị transform */
-    transition: transform 300ms ease 0s, margin-left 300ms ease 0s;
+    visibility: visible !important; 
 }}
 
-/* Đóng Sidebar (nhưng vẫn giữ Player) nếu intro chưa kết thúc */
-.stApp:not(.main-content-revealed) div[data-testid="stSidebar"] {{
-    margin-left: -300px; /* Ẩn Sidebar */
-    visibility: hidden;
-}}
-
-/* Cố định Player vào góc dưới bên phải Sidebar */
+/* CSS LÀM MỜ PLAYER KHI VIDEO INTRO CHƯA KẾT THÚC */
 div[data-testid="stSidebarContent"] div.stAudio + div {{
-    position: fixed !important;
-    bottom: 20px !important;
-    left: auto !important;
-    right: 20px !important; /* Đặt ở góc dưới bên phải */
-    width: 250px !important; /* Giảm chiều rộng một chút */
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3) !important;
-    border-radius: 8px !important;
-    background: #f0f2f6; /* Nền Player */
-    opacity: 1 !important; 
-    z-index: 10001 !important;
+    opacity: 0.1;
+    transition: opacity 1s ease-out;
 }}
 
-/* Ẩn nút mũi tên mở/đóng Sidebar */
-.css-1y4ppc2 {{ /* Đây là class của nút mở/đóng Sidebar */
-    visibility: hidden;
-    pointer-events: none;
+.main-content-revealed div[data-testid="stSidebarContent"] div.stAudio + div {{
+    opacity: 1;
 }}
-
 </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-## PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (FIXED)
+## PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO 
 # ------------------------------------------------------------------
 
 # JavaScript (Giữ nguyên logic reload)
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
-        // Thêm class main-content-revealed
         window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
         initRevealEffect();
         
@@ -314,16 +287,22 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-## PHẦN BỔ SUNG: ST.AUDIO (DÙNG SIDEBAR)
+## PHẦN BỔ SUNG: ST.AUDIO (DÙNG SIDEBAR - ĐÃ ĐƠN GIẢN HÓA)
 # ------------------------------------------------------------------
 
 # ⚠️ BẠN PHẢI THAY THẾ URL NÀY BẰNG URL MP3 CÔNG KHAI CỦA BẠN
 audio_url = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" # URL MP3 mẫu
 
+# ⚠️ THÊM NỘI DUNG GIẢ Ở TRANG CHÍNH ĐỂ ĐẨY TRANG XUỐNG DÀI HƠN
 if st.session_state.video_ended:
+    for i in range(20):
+        st.markdown(f"<h2>Nội dung Trang Chính (Dòng {i+1})</h2>")
+        st.write("---")
+
     # ⚠️ Render Player trong Sidebar
     with st.sidebar:
-        # Chúng ta dùng một widget vô hại như st.empty() để buộc Streamlit render Sidebar ngay cả khi trống
-        st.empty() 
-        # Render st.audio. CSS ở trên sẽ định vị lại nó
+        st.title("Trình Chơi Nhạc")
+        st.write("Nhấn Play để bắt đầu!")
+        
+        # Player sẽ được render ở cuối Sidebar
         st.audio(audio_url, format="audio/mp3", loop=True)
