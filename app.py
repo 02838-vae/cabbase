@@ -54,7 +54,7 @@ except FileNotFoundError as e:
     st.stop()
 
 # --- PHẦN 1: NHÚNG FONT & CSS CHUNG ---
-# (Phần này giữ nguyên CSS ngoài việc thêm CSS cố định Player)
+
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
@@ -135,22 +135,17 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 ## PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (FIXED)
 # ------------------------------------------------------------------
 
-# JavaScript (Đã FIX: Sử dụng window.parent.location.search)
+# JavaScript (FIXED: Logic reload)
 js_callback_video = f"""
 <script>
-    // Hàm được gọi sau khi video kết thúc
     function sendBackToStreamlit() {{
-        // Áp dụng class để kích hoạt CSS background: .main-content-revealed
         window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
-        
-        // Kích hoạt hiệu ứng Reveal Grid và hiển thị tiêu đề
         initRevealEffect();
         
-        // 1. Đặt cờ vào query parameter
         const currentUrl = new URL(window.parent.location);
         currentUrl.searchParams.set('video_ended_flag', 'true');
         
-        // 2. Tải lại trang chính Streamlit
+        // Tải lại trang chính Streamlit
         window.parent.location.replace(currentUrl.toString()); 
     }}
     
@@ -165,9 +160,7 @@ js_callback_video = f"""
         const cells = revealGrid.querySelectorAll('.grid-cell');
         const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
         shuffledCells.forEach((cell, index) => {{
-            setTimeout(() => {{ 
-                cell.style.opacity = 0; // CHỈ ẨN ĐI
-            }}, index * 10);
+            setTimeout(() => {{ cell.style.opacity = 0; }}, index * 10);
         }});
     }}
 
@@ -195,16 +188,13 @@ js_callback_video = f"""
             }});
         }};
         
-        // Kiểm tra cờ đã kết thúc (dùng query param)
         const urlParams = new URLSearchParams(window.parent.location.search);
         if (urlParams.get('video_ended_flag') === 'true') {{
-            // Nếu đã kết thúc, ẩn video intro ngay lập tức và chỉ kích hoạt CSS/Grid
             video.style.opacity = 0;
             introTextContainer.style.opacity = 0; 
             window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
             initRevealEffect(); 
         }} else {{
-            // Chạy intro nếu chưa kết thúc
             playMedia();
             
             video.onended = () => {{
@@ -213,7 +203,6 @@ js_callback_video = f"""
                 sendBackToStreamlit(); 
             }};
             
-            // Kích hoạt video intro khi user click bất kỳ đâu
             document.body.addEventListener('click', () => {{
                 video.play().catch(e => {{}});
             }}, {{ once: true }});
@@ -222,6 +211,7 @@ js_callback_video = f"""
 </script>
 """
 
+# ... (Mã HTML/CSS/Intro Text Generation giữ nguyên) ...
 
 # Mã HTML/CSS cho Video 
 html_content_modified = f"""
@@ -246,8 +236,6 @@ html_content_modified = f"""
 </html>
 """
 
-
-# Xử lý nội dung của tiêu đề video intro
 intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
     f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>' 
@@ -260,14 +248,13 @@ html_content_modified = html_content_modified.replace(
 
 
 # Hiển thị thành phần HTML (video)
-# Chỉ hiển thị iframe nếu video chưa kết thúc.
 if not st.session_state.video_ended:
     st.components.v1.html(html_content_modified, height=10, scrolling=False)
 
 
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
 
-# Tạo Lưới Reveal 
+# Tạo Lưới Reveal (Giữ nguyên)
 grid_cells_html = ""
 for i in range(240): 
     grid_cells_html += f'<div class="grid-cell"></div>'
@@ -299,31 +286,34 @@ if st.session_state.video_ended:
 
     soundcloud_playlist_url = "https://on.soundcloud.com/nSYcGjjP8uDv0EwBAL"
     
-    # Đặt Player vào cột col_player để có thể cố định vị trí (tránh bị Streamlit đặt ngẫu nhiên)
-    col_player, _ = st.columns([0.15, 0.85]) # Cột 1 nhỏ, cột 2 lớn để Player nằm bên phải
+    # KHÔNG DÙNG st.columns nữa, sử dụng st.container để đặt Player vào đó
+    # Player sẽ được render ở đầu container, nhưng CSS sẽ cố định vị trí
+    player_container = st.container()
 
-    with col_player:
+    with player_container:
         st.markdown("""
             <style>
-            /* CSS để cố định vị trí Player của Streamlit Player */
-            /* Tìm container chứa Streamlit Player và cố định nó */
-            div[data-testid="stPlayer"] {
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                z-index: 10000;
-                width: 300px !important; /* Đặt chiều rộng cố định */
-                height: 150px !important; /* Đặt chiều cao cố định */
-                border-radius: 8px;
-                overflow: hidden;
-                box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-                background: #f2f2f2; /* Nền player */
-                opacity: 0.9;
-                /* Reset vị trí mặc định để fixed hoạt động đúng */
-                margin-top: 0 !important;
-                padding-top: 0 !important;
+            /* CSS Ghi đè Mạnh hơn */
+            /* Tìm container chính của Streamlit Player (div[data-testid="stPlayer"]) 
+               và container của nó (div[data-testid^="stHorizontalBlock"]) */
+
+            div[data-testid^="stHorizontalBlock"] > div:first-child > div:first-child div[data-testid="stPlayer"] {
+                position: fixed !important;
+                bottom: 20px !important;
+                right: 20px !important;
+                z-index: 10000 !important;
+                width: 300px !important;
+                height: 150px !important;
+                border-radius: 8px !important;
+                overflow: hidden !important;
+                box-shadow: 0 4px 8px rgba(0,0,0,0.3) !important;
+                background: #f2f2f2 !important;
+                opacity: 0.9 !important;
+                margin: 0 !important;
+                padding: 0 !important;
             }
-            /* Đảm bảo Player bên trong cũng có kích thước phù hợp */
+            
+            /* Đảm bảo iframe bên trong cũng có kích thước phù hợp */
             div[data-testid="stPlayer"] iframe {
                 width: 100% !important;
                 height: 100% !important;
@@ -334,9 +324,9 @@ if st.session_state.video_ended:
         # Hiển thị Streamlit Player
         st_player(
             soundcloud_playlist_url,
-            playing=False,         # Không tự động phát (do quy tắc trình duyệt)
-            loop=True,             # Lặp lại toàn bộ Playlist
-            width=300,             # Kích thước sẽ được điều chỉnh bởi CSS
-            height=150,            # Kích thước sẽ được điều chỉnh bởi CSS
+            playing=False,         
+            loop=True,             
+            width=300,             
+            height=150,            
             key="soundcloud_playlist_player"
         )
