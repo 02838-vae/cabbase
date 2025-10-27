@@ -26,33 +26,19 @@ def get_base64_encoded_file(file_path):
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
 # ------------------------------------------------------------------
-## PHẦN MÃ HÓA CÁC FILE MEDIA (ĐÃ LOẠI BỎ logic sử dụng plane_fly.mp3 cho intro)
+## PHẦN MÃ HÓA CÁC FILE MEDIA (CHỈ CẦN VIDEO VÀ HÌNH NỀN)
 # ------------------------------------------------------------------
 
 try:
-    # Media Intro (Giữ nguyên)
+    # Media Intro 
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
-    
-    # Audio Intro (Chỉ mã hóa, nhưng KHÔNG dùng trong iframe nữa)
-    # Giữ nguyên dòng này để tránh lỗi nếu các biến khác cần nó, 
-    # nhưng chúng ta sẽ loại bỏ việc phát nó trong JS bên dưới.
-    audio_intro_base64 = get_base64_encoded_file("plane_fly.mp3") 
     
     # Backgrounds
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
-
-    # Audio Trang Chính (Playlist)
-    audio_files = {
-        "background1": get_base64_encoded_file("background1.mp3"),
-        "background2": get_base64_encoded_file("background2.mp3"),
-        "background3": get_base64_encoded_file("background3.mp3"),
-    }
     
-    # Tạo danh sách các data URL cho player chính
-    audio_urls = [f'data:audio/mp3;base64,{b64_data}' for b64_data in audio_files.values()]
-    audio_urls_js = ",".join([f"'{url}'" for url in audio_urls]) 
+    # KHÔNG CẦN mã hóa plane_fly.mp3 hay backgroundX.mp3 nữa
     
 except FileNotFoundError as e:
     st.error(e)
@@ -90,33 +76,14 @@ iframe:first-of-type {{
     opacity: 0; visibility: hidden; pointer-events: none; height: 1px !important; 
 }}
 
-/* BACKGROUND CHÍNH */
+/* BACKGROUND CHÍNH và TIÊU ĐỀ */
+
 .stApp {{
     --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
 }}
+/* ... (Giữ nguyên CSS còn lại cho Reveal Grid, main-content-revealed và Tiêu đề chạy) ... */
 
-.reveal-grid {{
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    display: grid; grid-template-columns: repeat(20, 1fr); grid-template-rows: repeat(12, 1fr);
-    z-index: 500; pointer-events: none; 
-}}
-
-.grid-cell {{ background-color: white; opacity: 1; transition: opacity 0.5s ease-out; }}
-
-.main-content-revealed {{
-    background-image: var(--main-bg-url-pc);
-    background-size: cover; background-position: center; background-attachment: fixed;
-    filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%); 
-    transition: filter 2s ease-out; 
-}}
-
-@media (max-width: 768px) {{
-    .main-content-revealed {{ background-image: var(--main-bg-url-mobile); }}
-    .reveal-grid {{ grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(20, 1fr); }}
-}}
-
-/* Keyframes và Tiêu đề chính */
 @keyframes scrollText {{ 0% {{ transform: translate(100vw, 0); }} 100% {{ transform: translate(-100%, 0); }} }}
 @keyframes colorShift {{ 0% {{ background-position: 0% 50%; }} 50% {{ background-position: 100% 50%; }} 100% {{ background-position: 0% 50%; }} }}
 
@@ -133,19 +100,45 @@ iframe:first-of-type {{
     #main-title-container {{ height: 8vh; width: 100%; left: 0; }}
     #main-title-container h1 {{ font-size: 6.5vw; animation-duration: 8s; }}
 }}
+/* CSS cho player cố định (quan trọng) */
+.soundcloud-player-fixed {{
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: 10000;
+    width: 300px; /* Chiều rộng cố định cho Player */
+    height: 150px; /* Chiều cao cố định cho Player */
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    transition: opacity 1s;
+    opacity: 0; /* Ẩn player lúc đầu */
+}}
+.video-finished .soundcloud-player-fixed {{
+    opacity: 1; /* Hiển thị player sau khi video intro kết thúc */
+}}
+.reveal-grid {{
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    display: grid; grid-template-columns: repeat(20, 1fr); grid-template-rows: repeat(12, 1fr);
+    z-index: 500; pointer-events: none; 
+}}
+
+.grid-cell {{ background-color: white; opacity: 1; transition: opacity 0.5s ease-out; }}
 </style>
 """
 # Thêm CSS vào trang chính
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-## PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (ĐÃ GỠ BỎ NHẠC INTRO)
+## PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (ĐÃ BỎ NHẠC)
 # ------------------------------------------------------------------
 
-# JavaScript (Đã GỠ BỎ mọi lệnh liên quan đến audio intro)
+# JavaScript (Đã BỎ hoàn toàn logic nhạc intro)
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
+        // Thêm class 'video-finished' để kích hoạt hiệu ứng CSS (ví dụ: hiển thị SoundCloud player)
         window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
         initRevealEffect();
     }}
@@ -154,32 +147,20 @@ js_callback_video = f"""
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
         const mainTitle = window.parent.document.getElementById('main-title-container');
         
-        // Cố gắng kích hoạt player nhạc chính sau khi intro kết thúc
-        const mainAudioPlayer = window.parent.document.getElementById('main-audio-player'); 
-        if (mainAudioPlayer) {{
-            // Cố gắng play. Nếu thất bại, người dùng phải click vào controls
-            mainAudioPlayer.play().catch(e => console.log("Main Audio Autoplay failed. Click controls to start.", e)); 
-        }}
-
-
         if (mainTitle) {{
             mainTitle.style.opacity = 1; 
         }}
 
         if (!revealGrid) {{ return; }}
-
+        
+        // Logic Reveal Grid (Giữ nguyên)
         const cells = revealGrid.querySelectorAll('.grid-cell');
         const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
-
         shuffledCells.forEach((cell, index) => {{
-            setTimeout(() => {{
-                cell.style.opacity = 0; 
-            }}, index * 10);
+            setTimeout(() => {{ cell.style.opacity = 0; }}, index * 10);
         }});
         
-        setTimeout(() => {{
-            revealGrid.remove();
-        }}, shuffledCells.length * 10 + 1000);
+        setTimeout(() => {{ revealGrid.remove(); }}, shuffledCells.length * 10 + 1000);
     }}
 
 
@@ -195,8 +176,6 @@ js_callback_video = f"""
             video.src = 'data:video/mp4;base64,{video_pc_base64}';
         }}
         
-        // Đã gỡ bỏ: audio.src = 'data:audio/mp3;base64,{audio_intro_base64}'; 
-
         const playMedia = () => {{
             video.load();
             video.play().catch(e => console.log("Video playback failed:", e));
@@ -206,31 +185,26 @@ js_callback_video = f"""
                 char.style.animationDelay = `${{index * 0.1}}s`; 
                 char.classList.add('char-shown'); 
             }});
-            
-            // Đã gỡ bỏ: Logic play audio intro
         }};
             
         playMedia();
         
         video.onended = () => {{
             video.style.opacity = 0;
-            // Đã gỡ bỏ: audio.pause(); audio.currentTime = 0;
             introTextContainer.style.opacity = 0; 
-            
             sendBackToStreamlit(); 
         }};
 
         // Kích hoạt video intro khi user click bất kỳ đâu
         document.body.addEventListener('click', () => {{
             video.play().catch(e => {{}});
-            // Đã gỡ bỏ: audio.play().catch(e => {{}});
         }}, {{ once: true }});
     }});
 </script>
 """
 
 
-# Mã HTML/CSS cho Video (Đã gỡ bỏ thẻ <audio> khỏi iframe)
+# Mã HTML/CSS cho Video 
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -248,14 +222,13 @@ html_content_modified = f"""
 <body>
     <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
     <video id="intro-video" muted playsinline></video>
-    
     {js_callback_video}
 </body>
 </html>
 """
 
 
-# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
+# Xử lý nội dung của tiêu đề video intro
 intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
     f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>' 
@@ -297,77 +270,23 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-## PHẦN BỔ SUNG: MUSIC PLAYER CHO TRANG CHÍNH (ĐÃ TỐI ƯU HÓA)
+## PHẦN BỔ SUNG: SOUNDCLOUD EMBED PLAYER (ĐẢM BẢO HOẠT ĐỘNG)
 # ------------------------------------------------------------------
 
-# JavaScript để xử lý danh sách phát và tự động chuyển bài (Đã Tối Ưu Hóa)
-player_script_js = f"""
-<script>
-    // Danh sách các URL Base64 của 3 bài hát
-    const audioUrls = [{audio_urls_js}];
-    let currentTrackIndex = 0;
-    
-    const player = document.getElementById('main-audio-player');
-    
-    if (player) {{
-        
-        // --- Hàm gán và tải bài hát ---
-        function loadTrack(index) {{
-            player.src = audioUrls[index];
-            player.load();
-            console.log("Player Debug: Đã tải bài hát:", index + 1, "từ", audioUrls.length, "bài.");
-            
-            // Xóa bỏ hàm oncanplay cũ để tránh lỗi gọi đệ quy
-            player.oncanplay = null; 
-        }}
-        
-        // --- Xử lý lỗi (Quan trọng) ---
-        player.onerror = (e) => {{
-            console.error("Player Debug: Lỗi khi tải hoặc phát nhạc.", player.error.code);
-            console.error("Player Debug: Chi tiết lỗi:", player.error);
-            
-            // Thử chuyển bài nếu bài hiện tại bị lỗi (Lỗi 4: MEDIA_ERR_SRC_NOT_SUPPORTED)
-            if (player.error.code === 4) {{ 
-                setTimeout(() => {{ 
-                    console.log("Player Debug: Base64/File bị lỗi. Thử chuyển sang bài tiếp theo...");
-                    currentTrackIndex = (currentTrackIndex + 1) % audioUrls.length;
-                    loadTrack(currentTrackIndex);
-                }}, 1000);
-            }}
-        }};
-
-        // --- Khởi tạo và Playlist Logic ---
-        
-        // 1. Chọn ngẫu nhiên một bài hát khi trang load
-        currentTrackIndex = Math.floor(Math.random() * audioUrls.length);
-        loadTrack(currentTrackIndex);
-        
-        // 2. Xử lý tự động chuyển bài khi bài hát kết thúc
-        player.addEventListener('ended', () => {{
-            currentTrackIndex = (currentTrackIndex + 1) % audioUrls.length; 
-            loadTrack(currentTrackIndex);
-            // Sau khi tải bài mới, cố gắng play ngay (cần tương tác ban đầu của user)
-            player.play().catch(e => console.log("Player Debug: Autoplay bài kế tiếp bị chặn.")); 
-        }});
-        
-        // 3. Debug Play/Pause
-        player.addEventListener('play', () => {{
-            console.log("Player Debug: Bắt đầu phát track:", currentTrackIndex + 1);
-        }});
-    }}
-</script>
+# Mã nhúng của Playlist SoundCloud bạn cung cấp
+# Đã điều chỉnh autoplay=false để tuân thủ quy tắc trình duyệt, nhưng nó sẽ hiện controls
+SOUNDCLOUD_EMBED_CODE = """
+<iframe width="100%" height="150" scrolling="no" frameborder="no" allow="autoplay" 
+src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/playlists/1879007623&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true">
+</iframe>
 """
 
-# HTML Audio Player (Hiển thị Controls)
-audio_player_html = f"""
-<div style="position: fixed; bottom: 20px; right: 20px; z-index: 10000; opacity: 0.8; border-radius: 5px; background: rgba(0,0,0,0.5); padding: 5px;">
-    <audio id="main-audio-player" controls>
-        Trình duyệt của bạn không hỗ trợ phần tử audio.
-    </audio>
+# HTML để cố định Player và ẩn/hiện bằng CSS (dùng class 'soundcloud-player-fixed' đã định nghĩa ở trên)
+soundcloud_player_html = f"""
+<div class="soundcloud-player-fixed">
+    {SOUNDCLOUD_EMBED_CODE}
 </div>
-
-{player_script_js}
 """
 
-# Chèn player vào trang chính sau phần nội dung chính
-st.markdown(audio_player_html, unsafe_allow_html=True)
+# Chèn player vào trang chính
+st.markdown(soundcloud_player_html, unsafe_allow_html=True)
