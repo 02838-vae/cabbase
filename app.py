@@ -23,15 +23,20 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
-        # Thay đổi thông báo lỗi để chỉ ra file nào bị thiếu
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
-# --- MÃ HÓA CÁC FILE MEDIA ---
+# ------------------------------------------------------------------
+## PHẦN MÃ HÓA CÁC FILE MEDIA (ĐÃ LOẠI BỎ logic sử dụng plane_fly.mp3 cho intro)
+# ------------------------------------------------------------------
 
 try:
-    # Media Intro
+    # Media Intro (Giữ nguyên)
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
+    
+    # Audio Intro (Chỉ mã hóa, nhưng KHÔNG dùng trong iframe nữa)
+    # Giữ nguyên dòng này để tránh lỗi nếu các biến khác cần nó, 
+    # nhưng chúng ta sẽ loại bỏ việc phát nó trong JS bên dưới.
     audio_intro_base64 = get_base64_encoded_file("plane_fly.mp3") 
     
     # Backgrounds
@@ -45,16 +50,15 @@ try:
         "background3": get_base64_encoded_file("background3.mp3"),
     }
     
-    # Tạo danh sách các data URL cho player sau này
+    # Tạo danh sách các data URL cho player chính
     audio_urls = [f'data:audio/mp3;base64,{b64_data}' for b64_data in audio_files.values()]
-    audio_urls_js = ",".join([f"'{url}'" for url in audio_urls]) # Dùng cho JS
+    audio_urls_js = ",".join([f"'{url}'" for url in audio_urls]) 
     
 except FileNotFoundError as e:
     st.error(e)
     st.stop()
 
-# --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
-
+# --- PHẦN 1: NHÚNG FONT ---
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
@@ -72,35 +76,18 @@ hide_streamlit_style = f"""
 /* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
 
-.main {{
-    padding: 0;
-    margin: 0;
-}}
-
-div.block-container {{
-    padding: 0;
-    margin: 0;
-    max-width: 100% !important;
-}}
+.main {{ padding: 0; margin: 0; }}
+div.block-container {{ padding: 0; margin: 0; max-width: 100% !important; }}
 
 /* IFRAME VIDEO INTRO */
 iframe:first-of-type {{
     transition: opacity 1s ease-out, visibility 1s ease-out;
-    opacity: 1;
-    visibility: visible;
-    width: 100vw !important;
-    height: 100vh !important;
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 1000;
+    opacity: 1; visibility: visible; width: 100vw !important; height: 100vh !important;
+    position: fixed; top: 0; left: 0; z-index: 1000;
 }}
 
 .video-finished iframe:first-of-type {{
-    opacity: 0;
-    visibility: hidden;
-    pointer-events: none;
-    height: 1px !important; 
+    opacity: 0; visibility: hidden; pointer-events: none; height: 1px !important; 
 }}
 
 /* BACKGROUND CHÍNH */
@@ -110,59 +97,30 @@ iframe:first-of-type {{
 }}
 
 .reveal-grid {{
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    display: grid;
-    grid-template-columns: repeat(20, 1fr); 
-    grid-template-rows: repeat(12, 1fr);
-    z-index: 500; 
-    pointer-events: none; 
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    display: grid; grid-template-columns: repeat(20, 1fr); grid-template-rows: repeat(12, 1fr);
+    z-index: 500; pointer-events: none; 
 }}
 
-.grid-cell {{
-    background-color: white; 
-    opacity: 1;
-    transition: opacity 0.5s ease-out;
-}}
+.grid-cell {{ background-color: white; opacity: 1; transition: opacity 0.5s ease-out; }}
 
 .main-content-revealed {{
     background-image: var(--main-bg-url-pc);
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
+    background-size: cover; background-position: center; background-attachment: fixed;
     filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%); 
     transition: filter 2s ease-out; 
 }}
 
 @media (max-width: 768px) {{
-    .main-content-revealed {{
-        background-image: var(--main-bg-url-mobile);
-    }}
-    .reveal-grid {{
-        grid-template-columns: repeat(10, 1fr);
-        grid-template-rows: repeat(20, 1fr);
-    }}
+    .main-content-revealed {{ background-image: var(--main-bg-url-mobile); }}
+    .reveal-grid {{ grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(20, 1fr); }}
 }}
 
 /* Keyframes và Tiêu đề chính */
-@keyframes scrollText {{
-    0% {{ transform: translate(100vw, 0); }} 
-    100% {{ transform: translate(-100%, 0); }} 
-}}
+@keyframes scrollText {{ 0% {{ transform: translate(100vw, 0); }} 100% {{ transform: translate(-100%, 0); }} }}
+@keyframes colorShift {{ 0% {{ background-position: 0% 50%; }} 50% {{ background-position: 100% 50%; }} 100% {{ background-position: 0% 50%; }} }}
 
-@keyframes colorShift {{
-    0% {{ background-position: 0% 50%; }}
-    50% {{ background-position: 100% 50%; }}
-    100% {{ background-position: 0% 50%; }}
-}}
-
-#main-title-container {{
-    position: fixed; top: 5vh; left: 0; width: 100%; height: 10vh; overflow: hidden; z-index: 20; pointer-events: none; opacity: 0; transition: opacity 2s;
-}}
-
+#main-title-container {{ position: fixed; top: 5vh; left: 0; width: 100%; height: 10vh; overflow: hidden; z-index: 20; pointer-events: none; opacity: 0; transition: opacity 2s; }}
 #main-title-container h1 {{
     font-family: 'Playfair Display', serif; font-size: 3.5vw; margin: 0; font-weight: 900; letter-spacing: 5px; white-space: nowrap; display: inline-block; 
     animation: colorShift 10s ease infinite, scrollText 15s linear infinite;
@@ -181,10 +139,10 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-## PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO
+## PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (ĐÃ GỠ BỎ NHẠC INTRO)
 # ------------------------------------------------------------------
 
-# JavaScript (Đã sửa lỗi gọi player chính)
+# JavaScript (Đã GỠ BỎ mọi lệnh liên quan đến audio intro)
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
@@ -199,7 +157,7 @@ js_callback_video = f"""
         // Cố gắng kích hoạt player nhạc chính sau khi intro kết thúc
         const mainAudioPlayer = window.parent.document.getElementById('main-audio-player'); 
         if (mainAudioPlayer) {{
-            // Cố gắng play. Nếu thất bại (thường là do quy tắc Autoplay), người dùng phải click vào controls
+            // Cố gắng play. Nếu thất bại, người dùng phải click vào controls
             mainAudioPlayer.play().catch(e => console.log("Main Audio Autoplay failed. Click controls to start.", e)); 
         }}
 
@@ -227,7 +185,6 @@ js_callback_video = f"""
 
     document.addEventListener("DOMContentLoaded", function() {{
         const video = document.getElementById('intro-video');
-        const audio = document.getElementById('background-audio'); // Audio intro
         const introTextContainer = document.getElementById('intro-text-container'); 
         const isMobile = window.innerWidth <= 768;
 
@@ -238,7 +195,7 @@ js_callback_video = f"""
             video.src = 'data:video/mp4;base64,{video_pc_base64}';
         }}
         
-        audio.src = 'data:audio/mp3;base64,{audio_intro_base64}'; 
+        // Đã gỡ bỏ: audio.src = 'data:audio/mp3;base64,{audio_intro_base64}'; 
 
         const playMedia = () => {{
             video.load();
@@ -249,39 +206,31 @@ js_callback_video = f"""
                 char.style.animationDelay = `${{index * 0.1}}s`; 
                 char.classList.add('char-shown'); 
             }});
-
-            audio.volume = 0.5;
-            audio.loop = true; 
-            audio.play().catch(e => {{
-                // Fallback cho autoplay thất bại
-                document.body.addEventListener('click', () => {{
-                    audio.play().catch(err => console.error("Audio intro playback error on click:", err));
-                }}, {{ once: true }});
-            }});
+            
+            // Đã gỡ bỏ: Logic play audio intro
         }};
             
         playMedia();
         
         video.onended = () => {{
             video.style.opacity = 0;
-            audio.pause(); // Tắt nhạc intro
-            audio.currentTime = 0;
+            // Đã gỡ bỏ: audio.pause(); audio.currentTime = 0;
             introTextContainer.style.opacity = 0; 
             
             sendBackToStreamlit(); 
         }};
 
-        // Kích hoạt video/audio intro khi user click bất kỳ đâu
+        // Kích hoạt video intro khi user click bất kỳ đâu
         document.body.addEventListener('click', () => {{
             video.play().catch(e => {{}});
-            audio.play().catch(e => {{}});
+            // Đã gỡ bỏ: audio.play().catch(e => {{}});
         }}, {{ once: true }});
     }});
 </script>
 """
 
 
-# Mã HTML/CSS cho Video 
+# Mã HTML/CSS cho Video (Đã gỡ bỏ thẻ <audio> khỏi iframe)
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -289,21 +238,17 @@ html_content_modified = f"""
     <style>
         html, body {{ margin: 0; padding: 0; overflow: hidden; height: 100vh; width: 100vw; }}
         #intro-video {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -100; transition: opacity 1s; }}
-        
-        /* Tiêu đề Intro */
         #intro-text-container {{ position: fixed; top: 5vh; width: 100%; text-align: center; color: #FFD700; font-size: 3vw; font-family: 'Sacramento', cursive; font-weight: 400; text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8); z-index: 100; pointer-events: none; display: flex; justify-content: center; opacity: 1; }}
         .intro-char {{ display: inline-block; opacity: 0; transform: translateY(-50px); animation-fill-mode: forwards; animation-duration: 0.8s; animation-timing-function: ease-out; }}
-
         @keyframes charDropIn {{ from {{ opacity: 0; transform: translateY(-50px); }} to {{ opacity: 1; transform: translateY(0); }} }}
         .intro-char.char-shown {{ animation-name: charDropIn; }}
         @media (max-width: 768px) {{ #intro-text-container {{ font-size: 6vw; }} }}
-        
     </style>
 </head>
 <body>
     <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
     <video id="intro-video" muted playsinline></video>
-    <audio id="background-audio"></audio>
+    
     {js_callback_video}
 </body>
 </html>
@@ -343,10 +288,8 @@ st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
 # --- NỘI DUNG CHÍNH (TIÊU ĐỀ ĐƠN, ĐỔI MÀU) ---
 
-# Tiêu đề đơn
 main_title_text = "TỔ BẢO DƯỠNG SỐ 1" 
 
-# Nhúng tiêu đề
 st.markdown(f"""
 <div id="main-title-container">
     <h1>{main_title_text}</h1>
@@ -354,12 +297,13 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-## PHẦN BỔ SUNG: MUSIC PLAYER CHO TRANG CHÍNH (3 BÀI HÁT)
+## PHẦN BỔ SUNG: MUSIC PLAYER CHO TRANG CHÍNH (ĐÃ TỐI ƯU HÓA)
 # ------------------------------------------------------------------
 
-# JavaScript để xử lý danh sách phát và tự động chuyển bài (Đã thêm Debug)
+# JavaScript để xử lý danh sách phát và tự động chuyển bài (Đã Tối Ưu Hóa)
 player_script_js = f"""
 <script>
+    // Danh sách các URL Base64 của 3 bài hát
     const audioUrls = [{audio_urls_js}];
     let currentTrackIndex = 0;
     
@@ -373,41 +317,40 @@ player_script_js = f"""
             player.load();
             console.log("Player Debug: Đã tải bài hát:", index + 1, "từ", audioUrls.length, "bài.");
             
-            // Cố gắng play ngay sau khi tải và có thể phát
-            player.oncanplay = () => {{
-                player.play().catch(e => {{
-                     // Thông báo cho người dùng biết cần tương tác
-                    console.log("Player Debug: Autoplay bị chặn. Vui lòng click vào nút Play của player.", e);
-                }});
-            }};
+            // Xóa bỏ hàm oncanplay cũ để tránh lỗi gọi đệ quy
+            player.oncanplay = null; 
         }}
         
-        // --- Xử lý lỗi (Quan trọng để xác định lỗi Base64/File) ---
+        // --- Xử lý lỗi (Quan trọng) ---
         player.onerror = (e) => {{
             console.error("Player Debug: Lỗi khi tải hoặc phát nhạc.", player.error.code);
             console.error("Player Debug: Chi tiết lỗi:", player.error);
             
-            // Thử chuyển bài nếu bài hiện tại bị lỗi 
-            setTimeout(() => {{ 
-                console.log("Player Debug: Thử chuyển sang bài tiếp theo...");
-                currentTrackIndex = (currentTrackIndex + 1) % audioUrls.length;
-                loadTrack(currentTrackIndex);
-            }}, 1000);
+            // Thử chuyển bài nếu bài hiện tại bị lỗi (Lỗi 4: MEDIA_ERR_SRC_NOT_SUPPORTED)
+            if (player.error.code === 4) {{ 
+                setTimeout(() => {{ 
+                    console.log("Player Debug: Base64/File bị lỗi. Thử chuyển sang bài tiếp theo...");
+                    currentTrackIndex = (currentTrackIndex + 1) % audioUrls.length;
+                    loadTrack(currentTrackIndex);
+                }}, 1000);
+            }}
         }};
 
         // --- Khởi tạo và Playlist Logic ---
         
-        // Chọn ngẫu nhiên một bài hát khi trang load
+        // 1. Chọn ngẫu nhiên một bài hát khi trang load
         currentTrackIndex = Math.floor(Math.random() * audioUrls.length);
         loadTrack(currentTrackIndex);
         
-        // Xử lý tự động chuyển bài khi bài hát kết thúc
+        // 2. Xử lý tự động chuyển bài khi bài hát kết thúc
         player.addEventListener('ended', () => {{
             currentTrackIndex = (currentTrackIndex + 1) % audioUrls.length; 
             loadTrack(currentTrackIndex);
+            // Sau khi tải bài mới, cố gắng play ngay (cần tương tác ban đầu của user)
+            player.play().catch(e => console.log("Player Debug: Autoplay bài kế tiếp bị chặn.")); 
         }});
         
-        // Debug Play/Pause
+        // 3. Debug Play/Pause
         player.addEventListener('play', () => {{
             console.log("Player Debug: Bắt đầu phát track:", currentTrackIndex + 1);
         }});
