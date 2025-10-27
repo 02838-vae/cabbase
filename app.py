@@ -484,7 +484,14 @@ music_player_full_html = f"""
         width: 250px; 
         display: flex;
         flex-direction: column;
+        opacity: 0;
+        visibility: hidden;
+        transition: opacity 2s ease-in-out, visibility 2s ease-in-out;
+    }}
+    
+    .player-visible #music-player-container {{
         opacity: 1;
+        visibility: visible;
     }}
 
     #player-controls {{
