@@ -6,4 +6,4 @@ streamlit-javascript
 pyyaml
 ua-parser
 user-agents
-streamlit_react_player
+st-react-player
