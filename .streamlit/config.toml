@@ -1,3 +1,2 @@
 [server]
-# Buộc sử dụng Python 3.11 để đảm bảo khả năng tương thích của gói
-pythonVersion = 3.11
+
