@@ -1,3 +1,2 @@
 [server]
-# Bật tính năng phục vụ các tệp tĩnh (ví dụ: trong thư mục 'songs')
-enable_static_file_serving = true 
+# Bật tính năng phục vụ các tệp tĩnh (ví dụ: trong thư mục 
