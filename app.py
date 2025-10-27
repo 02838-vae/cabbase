@@ -12,9 +12,18 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Khởi tạo session state
+# --- KHỞI TẠO STATE & CỜ KIỂM TRA ---
+
+# Cờ để kiểm tra nếu trang được tải lại sau khi video intro kết thúc
+# Kiểm tra cờ từ query params (được thêm khi reload)
+video_ended_flag = st.experimental_get_query_params().get('video_ended_flag') == ['true']
+
 if 'video_ended' not in st.session_state:
-    st.session_state.video_ended = False
+    st.session_state.video_ended = video_ended_flag
+
+if video_ended_flag:
+    st.session_state.video_ended = True
+
 
 # --- CÁC HÀM TIỆN ÍCH ---
 
@@ -28,7 +37,7 @@ def get_base64_encoded_file(file_path):
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
 # ------------------------------------------------------------------
-## PHẦN MÃ HÓA CÁC FILE MEDIA (CHỈ CẦN VIDEO VÀ HÌNH NỀN)
+## PHẦN MÃ HÓA CÁC FILE MEDIA 
 # ------------------------------------------------------------------
 
 try:
@@ -76,12 +85,35 @@ iframe:first-of-type {{
     opacity: 0; visibility: hidden; pointer-events: none; height: 1px !important; 
 }}
 
-/* BACKGROUND CHÍNH và TIÊU ĐỀ */
-
+/* BACKGROUND CHÍNH */
 .stApp {{
     --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
 }}
+.main-content-revealed {{
+    background-image: var(--main-bg-url-pc);
+    background-size: cover; 
+    background-position: center; 
+    background-attachment: fixed;
+    filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%); 
+    transition: filter 2s ease-out; 
+}}
+
+@media (max-width: 768px) {{
+    .main-content-revealed {{ background-image: var(--main-bg-url-mobile); }}
+}}
+
+/* REVEAL GRID */
+.reveal-grid {{
+    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+    display: grid; grid-template-columns: repeat(20, 1fr); grid-template-rows: repeat(12, 1fr);
+    z-index: 500; pointer-events: none; 
+}}
+
+.grid-cell {{ background-color: white; opacity: 1; transition: opacity 0.5s ease-out; }}
+
+
+/* TIÊU ĐỀ CHÍNH */
 @keyframes scrollText {{ 0% {{ transform: translate(100vw, 0); }} 100% {{ transform: translate(-100%, 0); }} }}
 @keyframes colorShift {{ 0% {{ background-position: 0% 50%; }} 50% {{ background-position: 100% 50%; }} 100% {{ background-position: 0% 50%; }} }}
 
@@ -98,34 +130,33 @@ iframe:first-of-type {{
     #main-title-container {{ height: 8vh; width: 100%; left: 0; }}
     #main-title-container h1 {{ font-size: 6.5vw; animation-duration: 8s; }}
 }}
-
-/* Thêm CSS ẩn Player lúc đầu, Streamlit Player sẽ nằm trong container mặc định của Streamlit */
-/* Chúng ta sẽ dùng Python để ẩn/hiện Player */
-.reveal-grid {{
-    position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
-    display: grid; grid-template-columns: repeat(20, 1fr); grid-template-rows: repeat(12, 1fr);
-    z-index: 500; pointer-events: none; 
-}}
-
-.grid-cell {{ background-color: white; opacity: 1; transition: opacity 0.5s ease-out; }}
 </style>
 """
 # Thêm CSS vào trang chính
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-## PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO 
+## PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (ĐÃ FIX RELOAD)
 # ------------------------------------------------------------------
 
-# JavaScript (Đã gỡ bỏ logic kích hoạt player chính để tránh xung đột)
+# JavaScript (Đã FIX: Sử dụng localStorage và reload)
 js_callback_video = f"""
 <script>
+    // Hàm được gọi sau khi video kết thúc
     function sendBackToStreamlit() {{
-        // Thêm class 'video-finished'
+        // Áp dụng class để kích hoạt CSS background: .main-content-revealed
         window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
-        // Kích hoạt lại Streamlit để render nội dung chính/player
-        window.parent.document.dispatchEvent(new Event('refresh')); 
+        
+        // Kích hoạt hiệu ứng Reveal Grid và hiển thị tiêu đề
         initRevealEffect();
+        
+        // Cần cập nhật session state để render Streamlit Player
+        // 1. Đặt cờ vào query parameter
+        const currentUrl = new URL(window.parent.location);
+        currentUrl.searchParams.set('video_ended_flag', 'true');
+        
+        // 2. Tải lại trang chính Streamlit
+        window.parent.location.replace(currentUrl.toString()); 
     }}
     
     function initRevealEffect() {{
@@ -139,10 +170,10 @@ js_callback_video = f"""
         const cells = revealGrid.querySelectorAll('.grid-cell');
         const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
         shuffledCells.forEach((cell, index) => {{
-            setTimeout(() => {{ cell.style.opacity = 0; }}, index * 10);
+            setTimeout(() => {{ 
+                cell.style.opacity = 0; // CHỈ ẨN ĐI
+            }}, index * 10);
         }});
-        
-        setTimeout(() => {{ revealGrid.remove(); }}, shuffledCells.length * 10 + 1000);
     }}
 
 
@@ -168,19 +199,30 @@ js_callback_video = f"""
                 char.classList.add('char-shown'); 
             }});
         }};
-            
-        playMedia();
         
-        video.onended = () => {{
+        // Kiểm tra cờ đã kết thúc (dùng query param thay vì localStorage)
+        const urlParams = new URLSearchParams(window.parent.location.search);
+        if (urlParams.get('video_ended_flag') === 'true') {{
+            // Nếu đã kết thúc, ẩn video intro ngay lập tức và chỉ kích hoạt CSS
             video.style.opacity = 0;
             introTextContainer.style.opacity = 0; 
-            sendBackToStreamlit(); 
-        }};
-
-        // Kích hoạt video intro khi user click bất kỳ đâu
-        document.body.addEventListener('click', () => {{
-            video.play().catch(e => {{}});
-        }}, {{ once: true }});
+            window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
+            initRevealEffect(); 
+        }} else {{
+            // Chạy intro nếu chưa kết thúc
+            playMedia();
+            
+            video.onended = () => {{
+                video.style.opacity = 0;
+                introTextContainer.style.opacity = 0; 
+                sendBackToStreamlit(); 
+            }};
+            
+            // Kích hoạt video intro khi user click bất kỳ đâu
+            document.body.addEventListener('click', () => {{
+                video.play().catch(e => {{}});
+            }}, {{ once: true }});
+        }}
     }});
 </script>
 """
@@ -223,7 +265,12 @@ html_content_modified = html_content_modified.replace(
 
 
 # Hiển thị thành phần HTML (video)
-st.components.v1.html(html_content_modified, height=10, scrolling=False)
+# Chỉ hiển thị iframe nếu video chưa kết thúc.
+if not st.session_state.video_ended:
+    st.components.v1.html(html_content_modified, height=10, scrolling=False)
+else:
+    # Sau khi reload, không hiển thị iframe nữa để tiết kiệm tài nguyên
+    pass 
 
 
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
@@ -252,12 +299,12 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-## PHẦN BỔ SUNG: STREAMLIT PLAYER COMPONENT (GIẢI PHÁP CHUYÊN NGHIỆP)
+## PHẦN BỔ SUNG: STREAMLIT PLAYER COMPONENT
 # ------------------------------------------------------------------
 
-# ⚠️ Điều kiện hiển thị Player: CHỈ hiển thị khi video đã kết thúc
+# ⚠️ CHỈ render Player khi video intro đã kết thúc (sau khi reload)
 if st.session_state.video_ended:
-    # URL Playlist SoundCloud của bạn
+
     soundcloud_playlist_url = "https://on.soundcloud.com/nSYcGjjP8uDv0EwBAL"
     
     st.markdown("""
@@ -275,6 +322,7 @@ if st.session_state.video_ended:
             overflow: hidden;
             box-shadow: 0 4px 8px rgba(0,0,0,0.3);
             background: #f2f2f2; /* Nền player */
+            opacity: 0.9;
         }
         /* Đảm bảo Player bên trong cũng có kích thước phù hợp */
         div[data-testid="stPlayer"] iframe {
@@ -284,7 +332,7 @@ if st.session_state.video_ended:
         </style>
     """, unsafe_allow_html=True)
 
-
+    # Hiển thị Streamlit Player
     st_player(
         soundcloud_playlist_url,
         playing=False,         # Không tự động phát (do quy tắc trình duyệt)
@@ -293,8 +341,3 @@ if st.session_state.video_ended:
         height=150,            # Kích thước sẽ được điều chỉnh bởi CSS
         key="soundcloud_playlist_player"
     )
-
-# Cập nhật session state sau khi video kết thúc (logic từ JS sẽ kích hoạt lần chạy này)
-# Nếu bạn muốn player xuất hiện ngay, bạn có thể xóa toàn bộ phần if/else cho video intro
-if 'video_finished' in st.session_state and st.session_state.video_finished:
-    st.session_state.video_ended = True
