@@ -7,3 +7,4 @@ pyyaml
 ua-parser
 user-agents
 streamlit-react-player
+streamlit_react_player
