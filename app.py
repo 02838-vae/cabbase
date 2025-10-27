@@ -1,6 +1,6 @@
 import streamlit as st
 import base64
-from streamlit_player import st_player # Thư viện cho Music Player
+from streamlit_player import st_player 
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
@@ -28,6 +28,7 @@ def get_base64_encoded_file(file_path):
 
 # Mã hóa các file media
 try:
+    # Giữ lại các file cần thiết cho Intro (dù không còn nội dung chính)
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
@@ -62,16 +63,8 @@ hide_streamlit_style = f"""
 /* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
 
-.main {{
-    padding: 0;
-    margin: 0;
-}}
-
-div.block-container {{
-    padding: 0;
-    margin: 0;
-    max-width: 100% !important;
-}}
+.main {{padding: 0; margin: 0;}}
+div.block-container {{padding: 0; margin: 0; max-width: 100% !important;}}
 
 /* Điều khiển Video Intro */
 iframe:first-of-type {{
@@ -93,28 +86,10 @@ iframe:first-of-type {{
     height: 1px !important; 
 }}
 
+/* CSS Nền Chính */
 .stApp {{
     --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
-}}
-
-.reveal-grid {{
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    display: grid;
-    grid-template-columns: repeat(20, 1fr); 
-    grid-template-rows: repeat(12, 1fr);
-    z-index: 500; 
-    pointer-events: none; 
-}}
-
-.grid-cell {{
-    background-color: white; 
-    opacity: 1;
-    transition: opacity 0.5s ease-out;
 }}
 
 .main-content-revealed {{
@@ -124,31 +99,16 @@ iframe:first-of-type {{
     background-attachment: fixed;
     filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%); 
     transition: filter 2s ease-out; 
+    /* Đảm bảo nội dung chính (body) chiếm toàn màn hình */
+    min-height: 100vh;
 }}
 
-@media (max-width: 768px) {{
-    .main-content-revealed {{
-        background-image: var(--main-bg-url-mobile);
-    }}
-    .reveal-grid {{
-        grid-template-columns: repeat(10, 1fr);
-        grid-template-rows: repeat(20, 1fr);
-    }}
-}}
-
-@keyframes scrollText {{
-    0% {{ transform: translate(100vw, 0); }} 
-    100% {{ transform: translate(-100%, 0); }} 
-}}
-
-@keyframes colorShift {{
-    0% {{ background-position: 0% 50%; }}
-    50% {{ background-position: 100% 50%; }}
-    100% {{ background-position: 0% 50%; }}
-}}
+/* Keyframes cho tiêu đề chạy */
+@keyframes scrollText {{0% {{ transform: translate(100vw, 0); }} 100% {{ transform: translate(-100%, 0); }}}}
+@keyframes colorShift {{0% {{ background-position: 0% 50%; }} 50% {{ background-position: 100% 50%; }} 100% {{ background-position: 0% 50%; }}}}
 
 
-/* === TIÊU ĐỀ TRANG CHÍNH === */
+/* === TIÊU ĐỀ CHẠY (MARQUEE) === */
 #main-title-container {{
     position: fixed;
     top: 5vh; 
@@ -165,25 +125,23 @@ iframe:first-of-type {{
 #main-title-container h1 {{
     font-family: 'Playfair Display', serif; 
     font-size: 3.5vw; 
-    /* ... (CSS cho tiêu đề giữ nguyên) */
+    margin: 0;
+    font-weight: 900; 
+    letter-spacing: 5px; 
+    white-space: nowrap; 
+    display: inline-block; 
+    
     animation: colorShift 10s ease infinite, scrollText 15s linear infinite; 
+    
     background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3); 
     background-size: 400% 400%; 
     -webkit-background-clip: text; 
     -webkit-text-fill-color: transparent; 
     color: transparent; 
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
-    margin: 0;
-    font-weight: 900; 
-    font-feature-settings: "lnum" 1; 
-    letter-spacing: 5px; 
-    white-space: nowrap; 
-    display: inline-block; 
 }}
 
 /* === STYLES CHO MUSIC PLAYER VÀ IFRAME === */
-
-/* Container wrapper để cố định vị trí Player */
 .music-player-container {{
     position: fixed;
     bottom: 20px; 
@@ -191,15 +149,14 @@ iframe:first-of-type {{
     z-index: 50; 
     opacity: 0;
     transition: opacity 1s ease-in;
-    width: 280px; /* Cố định kích thước container */
-    height: 60px; /* Cố định kích thước container */
+    width: 280px; 
+    height: 60px; 
 }}
 
 .video-finished .music-player-container {{
     opacity: 1;
 }}
 
-/* Điều chỉnh kích thước iframe bên trong container */
 .music-player-container iframe {{
     width: 100% !important;
     height: 100% !important;
@@ -208,7 +165,7 @@ iframe:first-of-type {{
 }}
 
 
-/* === KHẮC PHỤC: ẨN NÚT TRIGGER MỘT CÁCH TRIỆT ĐỂ BẰNG CONTAINER CSS === */
+/* === ẨN NÚT TRIGGER === */
 .hidden-trigger-container {{
     position: fixed;
     top: 0;
@@ -233,45 +190,21 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
-# JavaScript (Đã CHỈNH SỬA để KÍCH HOẠT RERUN)
+# JavaScript (Giữ nguyên logic kích hoạt RERUN)
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
+        // Gửi lệnh CSS để ẩn video và reveal nội dung chính
         window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
-        initRevealEffect();
-
         // Kích hoạt Rerun
         const hiddenButton = window.parent.document.getElementById('video-ended-trigger');
         if (hiddenButton) {{
             hiddenButton.click(); 
         }}
+        // Chỉ cần ẩn video và kích hoạt nút, không cần hiệu ứng reveal nữa
     }}
     
-    // ... (Các hàm initRevealEffect và DOMContentLoaded giữ nguyên)
-    function initRevealEffect() {{
-        const revealGrid = window.parent.document.querySelector('.reveal-grid');
-        const mainTitle = window.parent.document.getElementById('main-title-container');
-
-        if (mainTitle) {{
-             mainTitle.style.opacity = 1; 
-        }}
-
-        if (!revealGrid) {{ return; }}
-
-        const cells = revealGrid.querySelectorAll('.grid-cell');
-        const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
-
-        shuffledCells.forEach((cell, index) => {{
-            setTimeout(() => {{
-                cell.style.opacity = 0; 
-            }}, index * 10);
-        }});
-        
-        setTimeout(() => {{
-             revealGrid.remove();
-        }}, shuffledCells.length * 10 + 1000);
-    }}
-
+    // ... (Các hàm và DOMContentLoaded giữ nguyên)
     document.addEventListener("DOMContentLoaded", function() {{
         const video = document.getElementById('intro-video');
         const audio = document.getElementById('background-audio');
@@ -330,7 +263,7 @@ html_content_modified = f"""
 <html>
 <head>
     <style>
-        /* ... (CSS cho iframe giữ nguyên) ... */
+        /* ... CSS cho iframe header ... */
         html, body {{margin: 0; padding: 0; overflow: hidden; height: 100vh; width: 100vw;}}
         #intro-video {{position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: -100; transition: opacity 1s;}}
         #intro-text-container {{position: fixed; top: 5vh; width: 100%; text-align: center; color: #FFD700; font-size: 3vw; font-family: 'Sacramento', cursive; font-weight: 400; text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8); z-index: 100; pointer-events: none; display: flex; justify-content: center; opacity: 1;}}
@@ -349,7 +282,7 @@ html_content_modified = f"""
 </html>
 """
 
-# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
+# Xử lý nội dung của tiêu đề video intro
 intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
     f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>' 
@@ -365,14 +298,13 @@ st.components.v1.html(html_content_modified, height=10, scrolling=False)
 
 
 # ----------------------------------------------------------------------------------
-# --- LOGIC CẬP NHẬT STATE VÀ NỘI DUNG CHÍNH ---
+# --- LOGIC CẬP NHẬT STATE VÀ CÁC THÀNH PHẦN ẨN ---
 # ----------------------------------------------------------------------------------
 
-# Hàm callback để cập nhật state sau khi video kết thúc
 def set_video_ended():
     st.session_state.video_ended = True
 
-# --- KHẮC PHỤC: Ẩn nút Trigger bằng cách bọc trong container CSS ---
+# Ẩn nút Trigger
 st.markdown('<div class="hidden-trigger-container">', unsafe_allow_html=True)
 st.button(
     "Video Ended Trigger", 
@@ -382,20 +314,9 @@ st.button(
 st.markdown('</div>', unsafe_allow_html=True)
 
 
-# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
+# --- HIỆU ỨNG REVEAL & TIÊU ĐỀ CHÍNH ---
 
-if not st.session_state.video_ended:
-    grid_cells_html = ""
-    for i in range(240): 
-        grid_cells_html += f'<div class="grid-cell"></div>'
-
-    reveal_grid_html = f"""
-    <div class="reveal-grid">
-        {grid_cells_html}
-    </div>
-    """
-    st.markdown(reveal_grid_html, unsafe_allow_html=True)
-
+# Đã bỏ Reveal Grid
 
 # Tiêu đề chính (Đã được CSS fixed)
 main_title_text = "TỔ BẢO DƯỠNG SỐ 1" 
@@ -406,19 +327,18 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ----------------------------------------------------------------------------------
-# THÊM MUSIC PLAYER DÙNG streamlit-player (ĐÃ LOẠI BỎ height/width)
+# THÊM MUSIC PLAYER DÙNG streamlit-player (FIXED VÀ HIỂN THỊ)
 # ----------------------------------------------------------------------------------
 
 if st.session_state.video_ended and bg_music_urls:
     
-    # 1. Tạo một container trống để chứa Player
     player_placeholder = st.empty()
     
     with player_placeholder:
-        # 2. Bọc Player trong markdown container để áp dụng CSS cố định vị trí
+        # Bọc Player trong markdown container để áp dụng CSS cố định vị trí
         st.markdown('<div class="music-player-container">', unsafe_allow_html=True)
         
-        # KHẮC PHỤC LỖI TYPEERROR: LOẠI BỎ height và width
+        # CHỈ GIỮ CÁC THAM SỐ ĐƯỢC HỖ TRỢ BỞI st_player
         st_player(
             url=bg_music_urls,
             playing=True,
@@ -429,23 +349,13 @@ if st.session_state.video_ended and bg_music_urls:
                     "forceAudio": True
                 }
             },
-            key="bg_music_player" # Giữ nguyên key
+            key="bg_music_player" 
         )
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-# --- NỘI DUNG TRANG CHÍNH KHÁC ---
-if st.session_state.video_ended:
-    st.markdown('<br>' * 8, unsafe_allow_html=True) 
+# --- NỘI DUNG TRANG CHÍNH KHÁC (ĐÃ XÓA HẾT) ---
 
-    st.header("Chào mừng đến với Trang Chủ! 👋")
-    st.write("Đây là nội dung chính của ứng dụng. Nhạc nền (playlist) đang tự động phát ở góc dưới bên phải.")
-    
-    st.markdown("---")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.subheader("Về Tổ Bảo Dưỡng")
-        st.info("Chúng tôi là đội ngũ chuyên gia hàng đầu trong lĩnh vực bảo trì và sửa chữa máy bay.")
-    with col2:
-        st.subheader("Dịch Vụ")
-        st.success("Kiểm tra định kỳ, bảo dưỡng khẩn cấp, nâng cấp hệ thống.")
+if st.session_state.video_ended:
+    # Chỉ giữ lại một khoảng trống để đảm bảo nền hiển thị
+    st.markdown('<br>' * 20, unsafe_allow_html=True) 
