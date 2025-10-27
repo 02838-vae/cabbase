@@ -1,69 +1,72 @@
 import streamlit as st
 import base64
 import os
+# Thêm import cho Music Player
 from streamlit_player import st_player 
-import streamlit.components.v1 as components
 
-# --- 1. KHỞI TẠO STATE AN TOÀN ---
-if 'video_ended' not in st.session_state:
-    st.session_state.video_ended = False
-if 'ran_once' not in st.session_state:
-    st.session_state.ran_once = False
-if 'rerun_done' not in st.session_state:
-    st.session_state.rerun_done = False 
-
-# --- CÁC HÀM TIỆN ÍCH DÙNG BASE64 ---
-
-def get_base64_encoded_file(file_path):
-    """Đọc file và trả về byte data và Base64 encoded string."""
-    try:
-        abs_path = os.path.join(os.getcwd(), file_path)
-        with open(abs_path, "rb") as f:
-            data = f.read()
-        return data, base64.b64encode(data).decode("utf-8")
-    except FileNotFoundError as e:
-        st.error(f"LỖI CỐT LÕI: Không tìm thấy file media. Vui lòng kiểm tra đường dẫn: {e.filename}")
-        st.stop()
-    except Exception as e:
-        st.error(f"Lỗi đọc file {file_path}: {e}")
-        st.stop()
-
-# --- 2. BIẾN TOÀN CỤC VÀ TẢI DỮ LIỆU ---
-
-try:
-    # Tải video/ảnh
-    video_pc_data, video_pc_base64 = get_base64_encoded_file("airplane.mp4")
-    video_mobile_data, video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
-    audio_intro_data, audio_base64 = get_base64_encoded_file("plane_fly.mp3")
-    bg_pc_data, bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
-    bg_mobile_data, bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
-
-    # Tải file nhạc nền background1.mp3
-    audio_bg_data, _ = get_base64_encoded_file("background1.mp3")
-    base64_data_url = f"data:audio/mp3;base64,{base64.b64encode(audio_bg_data).decode('utf-8')}"
-
-except Exception:
-    pass 
-
-# --- 3. CẤU HÌNH BAN ĐẦU & CSS ---
-
+# --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
     page_title="Tổ Bảo Dưỡng Số 1",
     layout="wide",
     initial_sidebar_state="collapsed"
 )
 
+# Khởi tạo session state
+if 'video_ended' not in st.session_state:
+    st.session_state.video_ended = False
+# Thêm state để kiểm soát việc xóa query params
+if 'ran_once' not in st.session_state:
+    st.session_state.ran_once = False
+
+
+# --- CÁC HÀM TIỆN ÍCH ---
+
+def get_base64_encoded_file(file_path):
+    """Đọc file và trả về Base64 encoded string và byte data."""
+    try:
+        # Sử dụng đường dẫn an toàn
+        abs_path = os.path.join(os.getcwd(), file_path)
+        with open(abs_path, "rb") as f:
+            data = f.read()
+        return base64.b64encode(data).decode("utf-8"), data
+    except FileNotFoundError as e:
+        raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
+
+
+# Mã hóa các file media
+try:
+    video_pc_base64, _ = get_base64_encoded_file("airplane.mp4")
+    video_mobile_base64, _ = get_base64_encoded_file("mobile.mp4")
+    audio_base64, _ = get_base64_encoded_file("plane_fly.mp3")
+    
+    bg_pc_base64, _ = get_base64_encoded_file("cabbase.jpg") 
+    bg_mobile_base64, _ = get_base64_encoded_file("mobile.jpg")
+
+    # Tải file nhạc nền background1.mp3
+    audio_bg_base64, audio_bg_data = get_base64_encoded_file("background1.mp3")
+    base64_data_url = f"data:audio/mp3;base64,{audio_bg_base64}"
+    
+except FileNotFoundError as e:
+    st.error(e)
+    st.stop()
+
+
+# --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 """
 st.markdown(font_links, unsafe_allow_html=True)
 
-# Khối CSS (Sử dụng các biến Base64 cho background)
+
+# --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 
+/* ... (Phần CSS Giữ Nguyên - đã loại bỏ để rút gọn) ... */
+
+/* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
 
 .main {{ padding: 0; margin: 0; }}
@@ -134,7 +137,7 @@ iframe:first-of-type {{
     }}
 }}
 
-/* Keyframes và CSS cho Tiêu đề Chính */
+/* Keyframes và CSS cho Tiêu đề Chính (Giữ nguyên) */
 @keyframes scrollText {{ 0% {{ transform: translate(100vw, 0); }} 100% {{ transform: translate(-100%, 0); }} }}
 @keyframes colorShift {{ 0% {{ background-position: 0% 50%; }} 50% {{ background-position: 100% 50%; }} 100% {{ background-position: 0% 50%; }} }}
 
@@ -153,7 +156,7 @@ iframe:first-of-type {{
     #main-title-container h1 {{ font-size: 6.5vw; animation-duration: 8s; }}
 }}
 
-/* CSS cho Player - Đảm bảo nó nổi trên nội dung */
+/* CSS cho Music Player (st_player) */
 [data-testid="stComponentV1"] {{
     position: fixed !important; 
     bottom: 20px !important; 
@@ -163,19 +166,18 @@ iframe:first-of-type {{
 
 </style>
 """
+
+# Thêm CSS vào trang chính
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- 4. VIDEO INTRO & LOGIC RERUNING ĐÃ SỬA LỖI REVEAL ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (ĐÃ SỬA RERUN LOGIC) ---
 
-# JavaScript Callback cho Video Intro 
+# JavaScript ĐÃ SỬA: SỬ DỤNG window.parent.postMessage
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
-        // 1. Kích hoạt hiệu ứng Reveal nhanh (immediate=true)
-        initRevealEffect(true); 
-        
-        // 2. Gửi lệnh SET_QUERY_PARAMS để kích hoạt rerun Streamlit
+        // Dùng postMessage để gửi tín hiệu SET_QUERY_PARAMS tới Streamlit
         window.parent.postMessage({{
             streamlit: {{
                 command: 'SET_QUERY_PARAMS',
@@ -184,22 +186,14 @@ js_callback_video = f"""
         }}, '*');
     }}
     
-    function initRevealEffect(immediate = false) {{
+    function initRevealEffect() {{
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
         const mainTitle = window.parent.document.getElementById('main-title-container');
-        
+
         if (mainTitle) {{ mainTitle.style.opacity = 1; }}
 
         if (!revealGrid) {{ return; }}
 
-        if (immediate) {{
-            // Nếu gọi ngay lập tức, xóa/ẩn nhanh
-            revealGrid.style.opacity = 0;
-            setTimeout(() => {{ revealGrid.remove(); }}, 1000);
-            return;
-        }}
-        
-        // Logic hiệu ứng Reveal từng ô (chạy khi trang chính hiện lên)
         const cells = revealGrid.querySelectorAll('.grid-cell');
         const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
 
@@ -220,61 +214,70 @@ js_callback_video = f"""
         else {{ video.src = 'data:video/mp4;base64,{video_pc_base64}'; }}
         
         audio.src = 'data:audio/mp3;base64,{audio_base64}';
-        
+
+        // Lấy query param từ URL
         var urlParams = new URLSearchParams(window.location.search);
         const videoEnded = urlParams.get('video_ended') === 'true';
-        
-        // Đặt các lớp CSS cho nội dung chính ngay lập tức cho lần chạy thứ 2
-        window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
 
-        if (!videoEnded) {{
-            // Lần chạy đầu: Chạy video intro và gửi tín hiệu
-            
-            // Xóa lớp reveal cho lần đầu chạy (quan trọng)
-            window.parent.document.querySelector('.stApp').classList.remove('video-finished', 'main-content-revealed');
-
-            const playMedia = () => {{
-                video.load();
-                video.play().catch(e => console.log("Video playback failed:", e));
-                
-                const chars = introTextContainer.querySelectorAll('.intro-char');
-                chars.forEach((char, index) => {{
-                    char.style.animationDelay = `${{index * 0.1}}s`; 
-                    char.classList.add('char-shown'); 
-                }});
-
-                audio.volume = 0.5;
-                audio.loop = true; 
-                audio.play().catch(e => {{}});
-            }};
-            
-            playMedia();
-            
-            video.onended = () => {{
-                video.style.opacity = 0;
-                audio.pause();
-                audio.currentTime = 0;
-                introTextContainer.style.opacity = 0; 
-                sendBackToStreamlit(); 
-            }};
-            
-            // Lắng nghe click lần đầu để bật video/audio
-            document.body.addEventListener('click', () => {{
-                  video.play().catch(e => {{}});
-                  audio.play().catch(e => {{}});
-            }}, {{ once: true }});
-            
-        }} else {{
-            // Lần chạy lại (Sau khi RERUN): Ẩn video/audio và gọi hiệu ứng Reveal chậm
+        if (videoEnded) {{
+            // Lần chạy lại (sau rerun): Ẩn video, bật hiệu ứng Reveal
             video.style.opacity = 0;
             video.style.display = 'none';
-            initRevealEffect(); 
+            window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
+            initRevealEffect();
+            return;
         }}
+        
+        // Lần chạy đầu tiên: Chạy Intro Video
+        const playMedia = () => {{
+            video.load();
+            video.play().catch(e => console.log("Video playback failed:", e));
+            
+            const chars = introTextContainer.querySelectorAll('.intro-char');
+            chars.forEach((char, index) => {{
+                char.style.animationDelay = `${{index * 0.1}}s`; 
+                char.classList.add('char-shown'); 
+            }});
+
+            audio.volume = 0.5;
+            audio.loop = true; 
+            audio.play().catch(e => {{
+                // Nếu autoplay audio thất bại, lắng nghe click để bật
+                document.body.addEventListener('click', () => {{
+                    audio.play().catch(err => console.error("Audio playback error on click:", err));
+                }}, {{ once: true }});
+            }});
+        }};
+            
+        playMedia();
+        
+        video.onended = () => {{
+            video.style.opacity = 0;
+            audio.pause();
+            audio.currentTime = 0;
+            introTextContainer.style.opacity = 0; 
+            
+            // 1. Kích hoạt hiệu ứng Reveal nhanh
+            const revealGrid = window.parent.document.querySelector('.reveal-grid');
+            if (revealGrid) {{
+                 revealGrid.style.opacity = 0;
+                 setTimeout(() => {{ revealGrid.remove(); }}, 1000);
+            }}
+
+            // 2. Gửi tín hiệu RERUN
+            sendBackToStreamlit(); 
+        }};
+
+        // Lắng nghe click lần đầu để bật video/audio (dự phòng)
+        document.body.addEventListener('click', () => {{
+              video.play().catch(e => {{}});
+              audio.play().catch(e => {{}});
+        }}, {{ once: true }});
     }});
 </script>
 """
 
-# Mã HTML/CSS cho Video Intro
+# Mã HTML/CSS cho Video (Phần HTML tĩnh)
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -298,7 +301,7 @@ html_content_modified = f"""
 </html>
 """
 
-# Xử lý nội dung của tiêu đề video intro
+# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
 intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
     f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>' 
@@ -310,25 +313,41 @@ html_content_modified = html_content_modified.replace(
 )
 
 # Hiển thị thành phần HTML (video)
-components.html(html_content_modified, height=10, scrolling=False)
+st.components.v1.html(html_content_modified, height=10, scrolling=False)
 
-# Tạo Lưới Reveal
+
+# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
+
+# Tạo Lưới Reveal (Giữ nguyên)
 grid_cells_html = ""
-for i in range(240): grid_cells_html += f'<div class="grid-cell"></div>'
-reveal_grid_html = f"""<div class="reveal-grid">{grid_cells_html}</div>"""
+for i in range(240): 
+    grid_cells_html += f'<div class="grid-cell"></div>'
+
+reveal_grid_html = f"""
+<div class="reveal-grid">
+    {grid_cells_html}
+</div>
+"""
 st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
-# Nhúng tiêu đề chính
+
+# --- NỘI DUNG CHÍNH (TIÊU ĐỀ ĐƠN, ĐỔI MÀU) ---
+
+# Tiêu đề đơn
 main_title_text = "TỔ BẢO DƯỠNG SỐ 1" 
+
+# Nhúng tiêu đề
 st.markdown(f"""
 <div id="main-title-container">
     <h1>{main_title_text}</h1>
 </div>
-""", unsafe_allow_html=True) 
+""", unsafe_allow_html=True)
 
+# ----------------------------------------------------
+# PHẦN 4: HIỂN THỊ NỘI DUNG VÀ MUSIC PLAYER
+# ----------------------------------------------------
 
-# --- 5. NỘI DUNG CHÍNH (Sử dụng st_player) ---
-
+# Kiểm tra query params từ JavaScript
 query_params = st.query_params
 video_ended_from_js = query_params.get("video_ended", None) == 'true'
 
@@ -341,7 +360,7 @@ if video_ended_from_js:
     # SỬ DỤNG STREAMLIT-PLAYER (st_player)
     try:
         st_player(
-            base64_data_url, 
+            base64_data_url, # Đường dẫn Base64
             playing=True,       # Cố gắng Autoplay
             loop=True,          # Phát lặp lại
             volume=0.5,         # Âm lượng
@@ -353,9 +372,9 @@ if video_ended_from_js:
     except Exception as e:
         st.error(f"Lỗi khi tải St Player: {e}")
     
-    st.warning("⚠️ Nếu nhạc không tự động phát, vui lòng nhấn nút Play trên player. Đây là giới hạn bảo mật của trình duyệt di động.")
+    st.warning("⚠️ Nếu nhạc không tự động phát, vui lòng nhấn nút Play trên player màu đen/trắng. Đây là giới hạn bảo mật của trình duyệt di động.")
 
-    # Xóa Query Param để ngăn loop
+    # Logic xóa Query Param để ngăn loop rerun liên tục
     if not st.session_state.ran_once:
          updated_params = dict(query_params)
          if 'video_ended' in updated_params:
