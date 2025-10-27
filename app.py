@@ -14,10 +14,10 @@ st.set_page_config(
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
-# --- CÁC HÀM TIỆN ÍCH ---
+# --- CÁC HÀM TIỆN ÍCH DÙNG BASE64 CHO MỌI FILE MEDIA ---
 
 def get_base64_encoded_file(file_path):
-    """Đọc file và trả về Base64 encoded string (dùng cho video/ảnh)."""
+    """Đọc file và trả về Base64 encoded string."""
     try:
         with open(file_path, "rb") as f:
             data = f.read()
@@ -25,35 +25,32 @@ def get_base64_encoded_file(file_path):
     except FileNotFoundError as e:
         st.error(f"LỖI CỐT LÕI: Không tìm thấy file media. Vui lòng kiểm tra đường dẫn: {e.filename}")
         st.stop()
-        
-def get_static_song_urls(directory="", prefix="background", count=6):
-    """
-    Tạo danh sách URL tương đối cho các bài hát tĩnh.
-    Tìm kiếm file MP3 trong thư mục gốc (ngang hàng app.py).
-    """
-    song_urls = []
-    base_url = "" # Đường dẫn tương đối từ thư mục gốc
-    
+
+def get_base64_songs(prefix="background", count=6):
+    """Tạo danh sách URL Base64 cho tất cả các bài hát nền."""
+    songs_data = []
     found_count = 0
     for i in range(1, count + 1):
         filename = f"{prefix}{i}.mp3"
-        file_path = os.path.join(directory, filename) 
-        
-        # Kiểm tra file MP3 có tồn tại trong thư mục gốc không
-        if os.path.exists(file_path):
-            url = base_url + filename
-            song_urls.append(url)
-            found_count += 1
-    
+        try:
+            # Đảm bảo file MP3 nằm trong thư mục gốc
+            with open(filename, "rb") as f:
+                data = base64.b64encode(f.read()).decode("utf-8")
+                # Dùng chuỗi data URL Base64
+                songs_data.append(f"'data:audio/mp3;base64,{data}'")
+                found_count += 1
+        except FileNotFoundError:
+            continue
+            
     if found_count == 0:
-        st.error(f"⚠️ LỖI NGHIÊM TRỌNG: Không tìm thấy tệp MP3 nào theo định dạng '{prefix}X.mp3' trong thư mục gốc. Vui lòng di chuyển file MP3 ra ngoài.")
+        st.error(f"⚠️ LỖI NGHIÊM TRỌNG: Không tìm thấy tệp MP3 nào theo định dạng '{prefix}X.mp3' trong thư mục gốc.")
         st.stop()
+        
+    return songs_data
 
-    return song_urls
 
 # Mã hóa các file media
 try:
-    # Media files for intro và background images
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
@@ -61,15 +58,15 @@ try:
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
 
-    # Music Player songs (Tìm kiếm trong thư mục gốc)
-    songs_url_list = get_static_song_urls()
+    # Music Player songs (Sử dụng Base64)
+    songs_data_js = get_base64_songs()
+    songs_js_array = ", ".join(songs_data_js)
 
 except:
-    # Nếu stop() đã được gọi trong hàm tiện ích, thì bỏ qua
-    pass
+    pass # Lỗi đã được xử lý trong hàm tiện ích
 
 
-# --- PHẦN 1: NHÚNG FONT VÀ CSS CHUNG ---
+# --- PHẦN 1: NHÚNG FONT VÀ CSS CHUNG (Không đổi) ---
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
@@ -81,7 +78,8 @@ hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 
-/* Ẩn các thành phần mặc định của Streamlit */
+/* ... (CSS giữ nguyên) ... */
+
 #MainMenu, footer, header {{visibility: hidden;}}
 
 .main {{
@@ -379,6 +377,7 @@ js_callback_video = f"""
             audio.volume = 0.5;
             audio.loop = true; 
             audio.play().catch(e => {{
+                // Lắng nghe click để bật âm thanh máy bay/intro
                 document.body.addEventListener('click', () => {{
                     audio.play().catch(err => console.error("Audio playback error on click:", err));
                 }}, {{ once: true }});
@@ -529,10 +528,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True) 
 
 
-# --- MUSIC PLAYER COMPONENT (Đã tinh chỉnh) ---
-
-# Chuẩn bị dữ liệu URL cho JS
-songs_data_js = [f"'{url}'" for url in songs_url_list] 
+# --- MUSIC PLAYER COMPONENT (Dùng Base64) ---
 
 music_player_js = f"""
 <script>
@@ -540,7 +536,8 @@ music_player_js = f"""
         const audioPlayer = new Audio();
         audioPlayer.crossOrigin = "anonymous";
         
-        const songs = [{', '.join(songs_data_js)}];
+        // SỬ DỤNG DỮ LIỆU BASE64
+        const songs = [{songs_js_array}];
         let currentSongIndex = 0;
         let isPlaying = false;
 
@@ -553,22 +550,20 @@ music_player_js = f"""
         const progressContainer = document.getElementById('progress-container');
 
         if (songs.length === 0) {{
-            console.error("LỖI: Không tìm thấy file nhạc nào. Player bị ẩn.");
+            console.error("LỖI: Không tìm thấy file nhạc nào (Base64). Player bị ẩn.");
             document.getElementById('music-player-container').style.display = 'none';
             return;
         }}
         
-        // Listener báo lỗi khi tải file - QUAN TRỌNG ĐỂ DEBUG LỖI 404
+        // Listener báo lỗi khi tải file (Vẫn giữ để debug)
         audioPlayer.addEventListener('error', (e) => {{
-            console.error('❌ LỖI TẢI AUDIO (LỖI 404): VUI LÒNG KIỂM TRA VỊ TRÍ FILE MP3!');
-            console.error('Đường dẫn file bị lỗi:', audioPlayer.src);
-            playPauseBtn.innerHTML = '&#9940;'; // Icon cấm
+            console.error('❌ LỖI TẢI AUDIO! Lỗi xảy ra ngay cả với Base64. Kiểm tra định dạng file MP3.');
+            playPauseBtn.innerHTML = '&#9940;'; 
             isPlaying = false;
         }});
         
-        // Listener khi tệp được tải thành công
         audioPlayer.addEventListener('canplay', () => {{
-            console.log('✅ Tệp audio đã được tải và sẵn sàng phát:', audioPlayer.src);
+            console.log('✅ Tệp audio đã được tải và sẵn sàng phát (Base64).');
         }});
         
         function loadSong(index) {{
@@ -579,6 +574,7 @@ music_player_js = f"""
         function playSong() {{
             audioPlayer.play().then(() => {{
                 isPlaying = true;
+                audioPlayer.loop = false; // Tắt loop khi chuyển bài
                 playPauseBtn.innerHTML = '&#9208;'; // Icon Pause
                 console.log("MUSIC PLAYER: Phát nhạc thành công.");
             }}).catch(e => {{
