@@ -22,11 +22,11 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
-        # Thay đổi để chỉ raise lỗi nếu file quan trọng bị thiếu
-        # Các file nhạc nền sẽ được xử lý riêng
-        if not file_path.startswith("background"):
-            raise FileNotFoundError(f"Lỗi: Không tìm thấy file media quan trọng. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
-        return None # Trả về None nếu file nhạc nền không có
+        # Trả về None nếu file nhạc nền không có
+        if file_path.startswith("background"):
+            return None 
+        # Báo lỗi nếu các file quan trọng khác bị thiếu
+        raise FileNotFoundError(f"Lỗi: Không tìm thấy file media quan trọng. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
 # Mã hóa các file media
 try:
@@ -39,33 +39,28 @@ try:
 
     # MÃ HÓA CÁC FILE NHẠC NỀN
     background_music_files = [f"background{i}.mp3" for i in range(1, 7)]
-    # Danh sách các URL Base64 hợp lệ của file nhạc nền
     bg_music_urls = []
     for f in background_music_files:
         b64_data = get_base64_encoded_file(f)
         if b64_data:
             # Dùng định dạng URL Data cho file Base64
             bg_music_urls.append(f'data:audio/mp3;base64,{b64_data}')
-        else:
-            st.warning(f"Cảnh báo: Không tìm thấy file nhạc nền: {f}. Sẽ bị bỏ qua.")
+        # else: st.warning(f"Cảnh báo: Không tìm thấy file nhạc nền: {f}. Sẽ bị bỏ qua.")
 
 except FileNotFoundError as e:
     st.error(e)
     st.stop()
     
-# Nếu không tìm thấy file nhạc nào, có thể fallback hoặc thông báo
-if not bg_music_urls:
-    st.warning("Không tìm thấy file nhạc nền nào (background1.mp3 - background6.mp3). Trình phát nhạc sẽ không hiển thị.")
 # ------------------------------------------------------------------
 
-# --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY (GIỮ NGUYÊN) ---
+# --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 """
 st.markdown(font_links, unsafe_allow_html=True)
 
-# --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) (GIỮ NGUYÊN CSS) ---
+# --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -188,18 +183,18 @@ iframe:first-of-type {{
     display: inline-block; 
 
     /* 1. Hiệu ứng chữ chạy - Tăng tốc độ */
-    animation: scrollText 15s linear infinite; /* Giảm từ 25s xuống 15s */
+    animation: scrollText 15s linear infinite; 
     
     /* 2. Hiệu ứng đổi màu */
-    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3); /* Cầu vồng */
-    background-size: 400% 400%; /* Cần kích thước lớn để tạo hiệu ứng chuyển màu mượt */
-    -webkit-background-clip: text; /* Clip màu nền theo hình dạng chữ */
-    -webkit-text-fill-color: transparent; /* Ẩn màu chữ gốc */
-    color: transparent; /* Dành cho các trình duyệt khác */
-    animation: colorShift 10s ease infinite, scrollText 15s linear infinite; /* Áp dụng đồng thời 2 animation */
+    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3); 
+    background-size: 400% 400%; 
+    -webkit-background-clip: text; 
+    -webkit-text-fill-color: transparent; 
+    color: transparent; 
+    animation: colorShift 10s ease infinite, scrollText 15s linear infinite; 
     
     /* Thiết lập bóng đổ cổ điển */
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Giảm độ đậm của bóng để màu sắc nổi bật */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
 }}
 
 @media (max-width: 768px) {{
@@ -211,7 +206,7 @@ iframe:first-of-type {{
     
     #main-title-container h1 {{
         font-size: 6.5vw; 
-        animation-duration: 8s; /* Tăng tốc độ trên mobile */
+        animation-duration: 8s; 
     }}
 }}
 
@@ -223,18 +218,26 @@ iframe:first-of-type {{
     z-index: 50; 
     opacity: 0;
     transition: opacity 1s ease-in;
-    pointer-events: none; 
+    /* Dùng pointer-events: none; trên container để ẩn luôn Player khi video chưa kết thúc */
 }}
 
 .video-finished .music-player-container {{
     opacity: 1;
-    pointer-events: all; 
 }}
 
-.st-emotion-cache-12ttj9q > iframe, .st-emotion-cache-12ttj9q > div > iframe {{ /* Selector nhắm vào iframe của st_player */
-    box-shadow: 0 4px 12px rgba(0,0,0,0.5); 
-    border-radius: 8px;
-    overflow: hidden;
+/* === STYLES CHO HIDDEN TRIGGER BUTTON (Sửa lỗi TypeError) === */
+/* Streamlit tạo một DIV wrapper xung quanh button. Ta ẩn wrapper này. */
+[data-testid="stButton"] button#video-ended-trigger {{
+    position: fixed !important;
+    top: -100px !important; /* Đẩy ra khỏi viewport */
+    left: -100px !important; 
+    visibility: hidden !important;
+    pointer-events: none !important;
+    width: 1px !important; 
+    height: 1px !important;
+    padding: 0 !important;
+    border: none !important;
+    background: none !important;
 }}
 </style>
 """
@@ -245,7 +248,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
-# JavaScript (Cần CHỈNH SỬA để CẬP NHẬT Session State)
+# JavaScript (Đã CHỈNH SỬA để CẬP NHẬT Session State)
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
@@ -257,7 +260,8 @@ js_callback_video = f"""
         // Tìm button ẩn do Streamlit tạo và click nó để kích hoạt Rerun
         const hiddenButton = window.parent.document.getElementById('video-ended-trigger');
         if (hiddenButton) {{
-            hiddenButton.click();
+            // Sử dụng click() trên DOM element
+            hiddenButton.click(); 
         }}
     }}
     
@@ -301,6 +305,7 @@ js_callback_video = f"""
 
         const playMedia = () => {{
             video.load();
+            // Lỗi autoplay luôn xảy ra, nên cần catch
             video.play().catch(e => console.log("Video playback failed:", e));
                 
             const chars = introTextContainer.querySelectorAll('.intro-char');
@@ -312,6 +317,7 @@ js_callback_video = f"""
             audio.volume = 0.5;
             audio.loop = true; 
             audio.play().catch(e => {{
+                // Fallback: lắng nghe click để play audio
                 document.body.addEventListener('click', () => {{
                     audio.play().catch(err => console.error("Audio playback error on click:", err));
                 }}, {{ once: true }});
@@ -329,6 +335,7 @@ js_callback_video = f"""
             sendBackToStreamlit(); 
         }};
 
+        // Thêm lắng nghe click tổng quát để bypass autoplay policy
         document.body.addEventListener('click', () => {{
              video.play().catch(e => {{}});
              audio.play().catch(e => {{}});
@@ -337,7 +344,7 @@ js_callback_video = f"""
 </script>
 """
 
-# Mã HTML/CSS cho Video (GIỮ NGUYÊN HTML, thay thế JS)
+# Mã HTML/CSS cho Video (Giữ nguyên cấu trúc HTML)
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -362,7 +369,7 @@ html_content_modified = f"""
             transition: opacity 1s; 
         }}
 
-        /* === TIÊU ĐỀ INTRO (FONT SACRAMENTO - Chữ Ký) === */
+        /* === TIÊU ĐỀ INTRO === */
         #intro-text-container {{ 
             position: fixed;
             top: 5vh;
@@ -449,13 +456,17 @@ def set_video_ended():
     st.session_state.video_ended = True
 
 # Button ẩn để kích hoạt Rerun và cập nhật Session State
-# Thêm một Button ẩn (zero height) với ID đã định nghĩa trong JS
-st.button("Video Ended Trigger", key="video-ended-trigger", on_click=set_video_ended, help="", label_visibility="hidden")
+# Quan trọng: Đã loại bỏ label_visibility="hidden" để tránh TypeError và thay vào đó ẩn bằng CSS.
+st.button(
+    "Video Ended Trigger", 
+    key="video-ended-trigger", 
+    on_click=set_video_ended, 
+)
 
 
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
 
-# Tạo Lưới Reveal (Giữ nguyên)
+# Tạo Lưới Reveal (Chỉ chạy khi chưa kết thúc video)
 if not st.session_state.video_ended:
     grid_cells_html = ""
     for i in range(240): 
@@ -474,7 +485,7 @@ if not st.session_state.video_ended:
 # Tiêu đề đơn
 main_title_text = "TỔ BẢO DƯỠNG SỐ 1" 
 
-# Nhúng tiêu đề
+# Nhúng tiêu đề (Đã được CSS fixed)
 st.markdown(f"""
 <div id="main-title-container">
     <h1>{main_title_text}</h1>
@@ -487,21 +498,16 @@ st.markdown(f"""
 
 if st.session_state.video_ended and bg_music_urls:
     # Sử dụng một container để áp dụng CSS cố định vị trí
-    with st.container():
-        # Thêm CSS class cho container
+    # Dùng st.empty() để tạo không gian và sử dụng markdown để wrap
+    player_placeholder = st.empty()
+    with player_placeholder:
         st.markdown('<div class="music-player-container">', unsafe_allow_html=True)
         
-        # st_player được đặt trong container để dễ dàng định vị
-        # url: Danh sách các đường dẫn (URLs) của các file nhạc nền
-        # loop: True để tự động lặp lại danh sách phát
-        # playing: True để tự động phát khi hiển thị
-        # height/width: Thiết lập kích thước nhỏ gọn
         st_player(
             url=bg_music_urls,
             playing=True,
             loop=True,
             controls=True,
-            # Cấu hình cho React Player, đặc biệt là Playlist
             config={
                 "file": {
                     "forceAudio": True
@@ -514,12 +520,20 @@ if st.session_state.video_ended and bg_music_urls:
 
         st.markdown('</div>', unsafe_allow_html=True)
 
-# --- THÊM CÁC THÀNH PHẦN NỘI DUNG TRANG CHÍNH KHÁC Ở ĐÂY ---
-# Ví dụ:
+# --- NỘI DUNG TRANG CHÍNH KHÁC ---
 if st.session_state.video_ended:
-    # Dùng st.empty() để tạo không gian ảo, sau đó markdown với CSS để tạo khoảng trống cho tiêu đề
-    st.empty() # Không cần thiết nếu bạn đặt tiêu đề fixed
-    st.markdown('<br><br><br><br><br><br><br><br>', unsafe_allow_html=True) # Khoảng trống cho tiêu đề cố định
+    # Dùng markdown để tạo khoảng trống phía dưới tiêu đề cố định
+    st.markdown('<br>' * 8, unsafe_allow_html=True) 
 
     st.header("Chào mừng đến với Trang Chủ! 👋")
     st.write("Đây là nội dung chính của ứng dụng.")
+    
+    # Ví dụ nội dung thêm
+    st.markdown("---")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader("Về Tổ Bảo Dưỡng")
+        st.info("Chúng tôi là đội ngũ chuyên gia hàng đầu trong lĩnh vực bảo trì và sửa chữa máy bay.")
+    with col2:
+        st.subheader("Dịch Vụ")
+        st.success("Kiểm tra định kỳ, bảo dưỡng khẩn cấp, nâng cấp hệ thống.")
