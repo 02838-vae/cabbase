@@ -23,32 +23,41 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
-        raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
-
+        # Sử dụng st.error cho file quan trọng
+        st.error(f"LỖI CỐT LÕI: Không tìm thấy file media. Vui lòng kiểm tra đường dẫn: {e.filename}")
+        st.stop()
+        
 def get_static_song_urls(directory="songs", prefix="background", count=6):
-    """Tạo danh sách URL tương đối cho các bài hát tĩnh từ thư mục 'songs'."""
+    """
+    Tạo danh sách URL tương đối cho các bài hát tĩnh.
+    Điều này hoạt động nhờ cấu hình enable_static_file_serving = true.
+    """
     song_urls = []
-    
-    # URL mà Trình duyệt sẽ tìm kiếm (đường dẫn tương đối)
-    base_url = "songs/" 
+    # Streamlit phục vụ các tệp từ thư mục gốc, nên đường dẫn là thư mục/tên file
+    base_url = f"{directory}/" 
     
     if not os.path.exists(directory):
-        st.error(f"LỖI: Không tìm thấy thư mục nhạc '{directory}'. Vui lòng kiểm tra lại cấu trúc file.")
+        # Đây là cảnh báo quan trọng nếu thư mục không tồn tại
+        st.warning(f"⚠️ CẢNH BÁO: Không tìm thấy thư mục nhạc '{directory}'. Player sẽ không hoạt động.")
         return []
     
+    found_count = 0
     for i in range(1, count + 1):
         filename = f"{prefix}{i}.mp3"
         file_path = os.path.join(directory, filename)
         if os.path.exists(file_path):
             url = base_url + filename
             song_urls.append(url)
-        else:
-            continue
+            found_count += 1
+    
+    if found_count == 0 and os.path.exists(directory):
+        st.warning(f"⚠️ CẢNH BÁO: Tìm thấy thư mục '{directory}' nhưng không có tệp MP3 nào theo định dạng '{prefix}X.mp3'.")
+
     return song_urls
 
 # Mã hóa các file media
 try:
-    # Media files for intro và background images (vẫn dùng Base64)
+    # Media files for intro và background images
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
@@ -59,12 +68,12 @@ try:
     # Music Player songs (Dùng URL tĩnh từ thư mục "songs")
     songs_url_list = get_static_song_urls()
 
-except FileNotFoundError as e:
-    st.error(e)
+except FileNotFoundError:
+    # Lỗi đã được xử lý trong get_base64_encoded_file
     st.stop()
 
 
-# --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
+# --- PHẦN 1: NHÚNG FONT VÀ CSS CHUNG (Không đổi) ---
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
@@ -72,12 +81,12 @@ font_links = """
 st.markdown(font_links, unsafe_allow_html=True)
 
 
-# --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 
-/* Ẩn các thành phần mặc định của Streamlit */
+/* ... (Phần CSS giữ nguyên như phiên bản trước) ... */
+
 #MainMenu, footer, header {{visibility: hidden;}}
 
 .main {{
@@ -153,13 +162,11 @@ iframe:first-of-type {{
     }}
 }}
 
-/* Keyframes cho hiệu ứng chữ chạy đơn (từ phải sang trái, lặp lại) */
 @keyframes scrollText {{
     0% {{ transform: translate(100vw, 0); }}
     100% {{ transform: translate(-100%, 0); }}
 }}
 
-/* Keyframes cho hiệu ứng Đổi Màu Gradient */
 @keyframes colorShift {{
     0% {{ background-position: 0% 50%; }}
     50% {{ background-position: 100% 50%; }}
@@ -167,7 +174,6 @@ iframe:first-of-type {{
 }}
 
 
-/* === TIÊU ĐỀ TRANG CHÍNH (ĐƠN, CHẠY VÀ ĐỔI MÀU) === */
 #main-title-container {{
     position: fixed;
     top: 5vh; 
@@ -193,10 +199,8 @@ iframe:first-of-type {{
     
     display: inline-block; 
 
-    /* 1. Hiệu ứng chữ chạy - Tăng tốc độ */
     animation: scrollText 15s linear infinite; 
     
-    /* 2. Hiệu ứng đổi màu */
     background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3); 
     background-size: 400% 400%; 
     -webkit-background-clip: text; 
@@ -204,7 +208,6 @@ iframe:first-of-type {{
     color: transparent; 
     animation: colorShift 10s ease infinite, scrollText 15s linear infinite; 
     
-    /* Thiết lập bóng đổ cổ điển */
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
 }}
 
@@ -221,7 +224,6 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === MUSIC PLAYER CSS (ĐÃ FIX) === */
 #music-player-container {{
     position: fixed;
     bottom: 20px; 
@@ -268,7 +270,6 @@ iframe:first-of-type {{
     font-size: 28px;
 }}
 
-/* Tinh chỉnh kích thước icon Next/Prev */
 #prev-btn, #next-btn {{
     font-size: 20px; 
 }}
@@ -315,9 +316,9 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (GIỮ NGUYÊN) ---
+# --- PHẦN 2 & 3: VIDEO INTRO VÀ CONTENT CHÍNH (Không thay đổi logic) ---
 
-# JavaScript Callback
+# JavaScript Callback cho Video Intro (Giữ nguyên)
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
@@ -401,12 +402,13 @@ js_callback_video = f"""
 </script>
 """
 
-# Mã HTML/CSS cho Video 
+# Mã HTML/CSS cho Video (Giữ nguyên)
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
 <head>
     <style>
+        /* ... (CSS cho video giữ nguyên) ... */
         html, body {{
             margin: 0;
             padding: 0;
@@ -426,7 +428,6 @@ html_content_modified = f"""
             transition: opacity 1s; 
         }}
 
-        /* === TIÊU ĐỀ INTRO (FONT SACRAMENTO - Chữ Ký) === */
         #intro-text-container {{ 
             position: fixed;
             top: 5vh;
@@ -491,7 +492,7 @@ html_content_modified = f"""
 </html>
 """
 
-# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
+# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả (Giữ nguyên)
 intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
     f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>' 
@@ -505,10 +506,7 @@ html_content_modified = html_content_modified.replace(
 # Hiển thị thành phần HTML (video)
 components.html(html_content_modified, height=10, scrolling=False)
 
-
-# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
-
-# Tạo Lưới Reveal
+# Tạo Lưới Reveal (Giữ nguyên)
 grid_cells_html = ""
 for i in range(240): 
     grid_cells_html += f'<div class="grid-cell"></div>'
@@ -521,12 +519,8 @@ reveal_grid_html = f"""
 st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
 
-# --- NỘI DUNG CHÍNH (TIÊU ĐỀ ĐƠN, ĐỔI MÀU) ---
-
-# Tiêu đề đơn
+# Nhúng tiêu đề (Giữ nguyên)
 main_title_text = "TỔ BẢO DƯỠNG SỐ 1" 
-
-# Nhúng tiêu đề
 st.markdown(f"""
 <div id="main-title-container">
     <h1>{main_title_text}</h1>
@@ -534,17 +528,15 @@ st.markdown(f"""
 """, unsafe_allow_html=True) 
 
 
-# --- MUSIC PLAYER COMPONENT (ĐÃ THÊM ERROR LISTENER VÀ LOGIC CHẮC CHẮN) ---
+# --- MUSIC PLAYER COMPONENT (Tinh chỉnh log) ---
 
 # Chuẩn bị dữ liệu URL cho JS
 songs_data_js = [f"'{url}'" for url in songs_url_list] 
 
-# SỬ DỤNG {{ VÀ }} ĐỂ ESCAPE CÁC DẤU NGOẶC NHỌN CỦA JAVASCRIPT
 music_player_js = f"""
 <script>
     document.addEventListener("DOMContentLoaded", function() {{
         const audioPlayer = new Audio();
-        // Quan trọng: Thêm thuộc tính crossOrigin
         audioPlayer.crossOrigin = "anonymous";
         
         const songs = [{', '.join(songs_data_js)}];
@@ -552,24 +544,32 @@ music_player_js = f"""
         let isPlaying = false;
 
         const playPauseBtn = document.getElementById('play-pause-btn');
+        // Icon cảnh báo tải lỗi ban đầu
+        playPauseBtn.innerHTML = '&#9654;'; 
+
         const nextBtn = document.getElementById('next-btn');
         const prevBtn = document.getElementById('prev-btn');
         const progressBar = document.getElementById('progress-bar');
         const progressContainer = document.getElementById('progress-container');
 
         if (songs.length === 0) {{
-            console.error("LỖI: Không tìm thấy file nhạc nào trong danh sách.");
+            console.error("LỖI: Không tìm thấy file nhạc nào. Player bị ẩn.");
             document.getElementById('music-player-container').style.display = 'none';
             return;
         }}
         
         // Listener báo lỗi khi tải file
         audioPlayer.addEventListener('error', (e) => {{
-            console.error('LỖI TẢI AUDIO (Mã lỗi:', e.target.error.code, '):', e.target.error.message);
+            console.error('❌ LỖI TẢI AUDIO! VUI LÒNG KIỂM TRA LẠI FILE STATIC VÀ CONFIG.TOML');
+            console.error('Mã lỗi:', e.target.error.code, 'Message:', e.target.error.message);
             console.error('Đường dẫn file bị lỗi:', audioPlayer.src);
-            // Mã lỗi 4 = MEDIA_ERR_SRC_NOT_SUPPORTED (Thường là 404 hoặc đường dẫn sai)
             playPauseBtn.innerHTML = '&#9940;'; // Icon cấm
             isPlaying = false;
+        }});
+        
+        // Listener khi tệp được tải thành công
+        audioPlayer.addEventListener('canplay', () => {{
+            console.log('✅ Tệp audio đã được tải và sẵn sàng phát:', audioPlayer.src);
         }});
         
         function loadSong(index) {{
@@ -582,9 +582,12 @@ music_player_js = f"""
             audioPlayer.play().then(() => {{
                 isPlaying = true;
                 playPauseBtn.innerHTML = '&#9208;'; // Icon Pause
+                console.log("MUSIC PLAYER: Phát nhạc thành công.");
             }}).catch(e => {{
-                // Nếu bị chặn Autoplay, in ra lỗi nhưng không thay đổi isPlaying
-                console.log("Audio play failed (Autoplay Blocked or Load Error):", e);
+                // Đây là lúc Autoplay bị chặn
+                console.warn("MUSIC PLAYER: ⚠️ Autoplay bị chặn. Vui lòng BẤM LẠI nút Play.");
+                playPauseBtn.innerHTML = '&#9654;'; // Icon Play
+                isPlaying = false;
             }});
         }}
 
@@ -592,18 +595,21 @@ music_player_js = f"""
             audioPlayer.pause();
             isPlaying = false;
             playPauseBtn.innerHTML = '&#9654;'; // Icon Play
+            console.log("MUSIC PLAYER: Tạm dừng.");
         }}
 
         function nextSong() {{
             currentSongIndex = (currentSongIndex + 1) % songs.length;
             loadSong(currentSongIndex);
             playSong();
+            console.log("MUSIC PLAYER: Chuyển bài tiếp theo.");
         }}
 
         function prevSong() {{
             currentSongIndex = (currentSongIndex - 1 + songs.length) % songs.length;
             loadSong(currentSongIndex);
             playSong();
+            console.log("MUSIC PLAYER: Chuyển bài trước.");
         }}
         
         // Cập nhật thanh tiến trình
@@ -624,7 +630,6 @@ music_player_js = f"""
             if (isPlaying) {{
                 pauseSong();
             }} else {{
-                // Nếu đang Pause/Stopped, gọi play.
                 playSong(); 
             }}
         }});
@@ -646,9 +651,9 @@ music_player_js = f"""
         // Khởi tạo bài hát đầu tiên
         loadSong(currentSongIndex);
         
-        // Tối ưu Autoplay: Nếu người dùng tương tác bất kỳ đâu trên body lần đầu, cố gắng play
-        // Dùng sự kiện 'click' trên body để kích hoạt âm thanh
+        // Tối ưu Autoplay: Dùng sự kiện 'click' trên body để kích hoạt âm thanh sau khi video kết thúc
         window.parent.document.body.addEventListener('click', () => {{
+             // Chỉ cố gắng play nếu hiện tại không đang play và audio đã được load
              if (!isPlaying && audioPlayer.paused && audioPlayer.src) {{
                  playSong();
              }}
