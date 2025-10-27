@@ -3,28 +3,29 @@ import base64
 import os
 import streamlit.components.v1 as components
 
-# --- CẤU HÌNH BAN ĐẦU ---
-st.set_page_config(
-    page_title="Tổ Bảo Dưỡng Số 1",
-    layout="wide",
-    initial_sidebar_state="collapsed"
-)
+# --- 1. KHỞI TẠO STATE AN TOÀN (Bước BẮT BUỘC) ---
+if 'video_ended' not in st.session_state:
+    st.session_state.video_ended = False
+if 'ran_once' not in st.session_state:
+    st.session_state.ran_once = False
+if 'rerun_done' not in st.session_state:
+    st.session_state.rerun_done = False # Cờ mới để điều khiển rerun
 
-# --- CÁC HÀM TIỆN ÍCH DÙNG BASE64 ---
+# --- CẤC HÀM TIỆN ÍCH DÙNG BASE64 ---
 
 def get_base64_encoded_file(file_path):
     """Đọc file và trả về Base64 encoded string hoặc byte data."""
     try:
         with open(file_path, "rb") as f:
             data = f.read()
+        # Trả về cả byte data (cho st.audio) và base64 string (cho HTML)
         return data, base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
         st.error(f"LỖI CỐT LÕI: Không tìm thấy file media. Vui lòng kiểm tra đường dẫn: {e.filename}")
         st.stop()
 
-# --- BIẾN TOÀN CỤC VÀ TẢI DỮ LIỆU ---
+# --- 2. BIẾN TOÀN CỤC VÀ TẢI DỮ LIỆU ---
 
-# Tải các file media khác
 try:
     video_pc_data, video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_data, video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
@@ -37,19 +38,24 @@ try:
     audio_bg_data, _ = get_base64_encoded_file("background1.mp3")
 
 except:
-    pass # Lỗi đã được xử lý trong hàm tiện ích
+    pass 
 
-# --- CSS (Giữ nguyên) ---
+
+# --- CSS & HTML INTRO (Giữ nguyên) ---
+
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 """
 st.markdown(font_links, unsafe_allow_html=True)
 
+# ... (CSS code giữ nguyên) ... 
+# (Vì code CSS quá dài, tôi bỏ qua ở đây nhưng bạn giữ nguyên phần đó trong file của mình)
 
+# Bắt đầu lại phần CSS từ chỗ này:
 hide_streamlit_style = f"""
 <style>
-/* ... (Phần CSS giữ nguyên) ... */
+/* ... (TOÀN BỘ CSS Ở CÂU TRẢ LỜI TRƯỚC) ... */
 #MainMenu, footer, header {{visibility: hidden;}}
 
 .main {{ padding: 0; margin: 0; }}
@@ -95,36 +101,31 @@ iframe:first-of-type {{
         background-image: var(--main-bg-url-mobile);
     }}
 }}
-
-/* ... (Các phần CSS khác giữ nguyên) ... */
-
+/* ... (Các keyframe và CSS Music Player cũ nếu bạn muốn giữ, nhưng không cần thiết trong phiên bản thử nghiệm này) ... */
 </style>
 """
 
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 2: VIDEO INTRO (Giữ nguyên logic) ---
+# --- PHẦN 3: VIDEO INTRO & LOGIC RERUNING ĐƠN GIẢN HÓA ---
 
-# JavaScript Callback cho Video Intro (Giữ nguyên)
+# JavaScript Callback cho Video Intro (Điều chỉnh)
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
-        // Gửi tín hiệu video kết thúc
+        // 1. Gửi tín hiệu video kết thúc
         window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
-        // Kích hoạt lại Streamlit để hiển thị nội dung chính và st.audio
-        const element = window.parent.document.querySelector('[data-testid="stSidebar"]');
-        if (element) element.click(); // Kích hoạt rerun Streamlit
+        // 2. Kích hoạt rerun Streamlit: Sử dụng Query Params để kích hoạt thay vì click giả
+        var url = new URL(window.location);
+        url.searchParams.set('video_ended', 'true');
+        window.location.href = url.href; 
     }}
     
-    // ... (Các hàm khác như initRevealEffect, playMedia, onended giữ nguyên) ...
     function initRevealEffect() {{
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
         const mainTitle = window.parent.document.getElementById('main-title-container');
-
-        if (mainTitle) {{
-              mainTitle.style.opacity = 1; 
-        }}
+        if (mainTitle) {{ mainTitle.style.opacity = 1; }}
 
         if (!revealGrid) {{ return; }}
 
@@ -137,9 +138,7 @@ js_callback_video = f"""
             }}, index * 10);
         }});
         
-        setTimeout(() => {{
-              revealGrid.remove();
-        }}, shuffledCells.length * 10 + 1000);
+        setTimeout(() => {{ revealGrid.remove(); }}, shuffledCells.length * 10 + 1000);
     }}
 
     document.addEventListener("DOMContentLoaded", function() {{
@@ -148,11 +147,8 @@ js_callback_video = f"""
         const introTextContainer = document.getElementById('intro-text-container'); 
         const isMobile = window.innerWidth <= 768;
 
-        if (isMobile) {{
-            video.src = 'data:video/mp4;base64,{video_mobile_base64}';
-        }} else {{
-            video.src = 'data:video/mp4;base64,{video_pc_base64}';
-        }}
+        if (isMobile) {{ video.src = 'data:video/mp4;base64,{video_mobile_base64}'; }} 
+        else {{ video.src = 'data:video/mp4;base64,{video_pc_base64}'; }}
         
         audio.src = 'data:audio/mp3;base64,{audio_base64}';
 
@@ -175,17 +171,25 @@ js_callback_video = f"""
             }});
         }};
         
-        playMedia();
-        
-        video.onended = () => {{
+        // CHỈ CHẠY INTRO NẾU CHƯA KẾT THÚC
+        var urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('video_ended') !== 'true') {{
+            playMedia();
+            video.onended = () => {{
+                video.style.opacity = 0;
+                audio.pause();
+                audio.currentTime = 0;
+                introTextContainer.style.opacity = 0; 
+                sendBackToStreamlit(); 
+            }};
+        }} else {{
+            // Nếu đã kết thúc, ẩn video ngay lập tức và gọi hiệu ứng reveal
             video.style.opacity = 0;
-            audio.pause();
-            audio.currentTime = 0;
-            introTextContainer.style.opacity = 0; 
-            
-            sendBackToStreamlit(); 
-        }};
-
+            video.style.display = 'none';
+            window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
+            initRevealEffect();
+        }}
+        
         document.body.addEventListener('click', () => {{
               video.play().catch(e => {{}});
               audio.play().catch(e => {{}});
@@ -194,23 +198,14 @@ js_callback_video = f"""
 </script>
 """
 
-# Mã HTML/CSS cho Video và Tiêu đề intro (Giữ nguyên)
+# Mã HTML cho Video Intro (Giữ nguyên)
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
-<head>
-    <style>
-        /* ... (CSS cho video giữ nguyên) ... */
-    </style>
-</head>
 <body>
-
     <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-    
     <video id="intro-video" muted playsinline></video>
-    
     <audio id="background-audio"></audio>
-
     {js_callback_video}
 </body>
 </html>
@@ -232,16 +227,9 @@ components.html(html_content_modified, height=10, scrolling=False)
 
 # Tạo Lưới Reveal (Giữ nguyên)
 grid_cells_html = ""
-for i in range(240): 
-    grid_cells_html += f'<div class="grid-cell"></div>'
-
-reveal_grid_html = f"""
-<div class="reveal-grid">
-    {grid_cells_html}
-</div>
-"""
+for i in range(240): grid_cells_html += f'<div class="grid-cell"></div>'
+reveal_grid_html = f"""<div class="reveal-grid">{grid_cells_html}</div>"""
 st.markdown(reveal_grid_html, unsafe_allow_html=True)
-
 
 # Nhúng tiêu đề chính (Giữ nguyên)
 main_title_text = "TỔ BẢO DƯỠNG SỐ 1" 
@@ -252,19 +240,13 @@ st.markdown(f"""
 """, unsafe_allow_html=True) 
 
 
-# --- PHẦN 3: NỘI DUNG CHÍNH (Sử dụng st.audio) ---
+# --- PHẦN 4: NỘI DUNG CHÍNH (Sử dụng st.audio) ---
 
-# Tín hiệu giả lập để biết video đã kết thúc
-if 'rerun_done' not in st.session_state:
-    st.session_state.rerun_done = False
-    
-# Cần phải kích hoạt rerun sau khi video kết thúc
-if st.session_state.rerun_done:
-    st.session_state.video_ended = True
-    
-# Logic đơn giản hóa: Nếu đã kết thúc video, hiển thị st.audio
-if st.session_state.video_ended or st.session_state.get('ran_once', False):
-    
+# Đọc Query Params để xác nhận video đã kết thúc
+query_params = st.experimental_get_query_params()
+video_ended_from_js = query_params.get("video_ended", [None])[0] == 'true'
+
+if video_ended_from_js:
     # 1. Hiển thị một số nội dung để xác nhận trang đã chuyển sang nội dung chính
     st.markdown("<h2 style='color: white; text-align: center; margin-top: 15vh;'>NỘI DUNG CHÍNH CỦA ỨNG DỤNG</h2>", unsafe_allow_html=True)
     
@@ -279,12 +261,9 @@ if st.session_state.video_ended or st.session_state.get('ran_once', False):
     )
     
     st.warning("⚠️ Nếu nhạc không tự động phát, điều đó xác nhận TRÌNH DUYỆT ĐANG CHẶN AUTOPLAY. Vui lòng nhấn nút Play trên player màu đen.")
-    
-    # Đặt cờ để tránh lỗi rerunning
-    st.session_state.ran_once = True
-    
-# Logic Rerunning (Cần thiết để kích hoạt lại Python sau khi JS kết thúc)
-if not st.session_state.video_ended and not st.session_state.get('ran_once', False):
-    st.session_state.rerun_done = True
-    # st.rerun() # Thay vì rerun, ta dùng cách kích hoạt click giả lập trong JS
 
+    # Xóa Query Param để ngăn loop
+    if st.session_state.get('ran_once', False) == False:
+         del query_params['video_ended']
+         st.experimental_set_query_params(**query_params)
+         st.session_state.ran_once = True
