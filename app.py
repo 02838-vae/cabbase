@@ -112,6 +112,19 @@ iframe:first-of-type {{
     height: 1px !important; 
 }}
 
+/* Ẩn music player ban đầu */
+iframe:nth-of-type(2) {{
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 2s ease-in-out, visibility 2s ease-in-out;
+}}
+
+/* Hiển thị music player sau khi video kết thúc */
+.video-finished iframe:nth-of-type(2) {{
+    opacity: 1;
+    visibility: visible;
+}}
+
 .stApp {{
     --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
@@ -238,6 +251,12 @@ js_callback_video = f"""
     function sendBackToStreamlit() {{
         window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
         initRevealEffect();
+        
+        // Gửi signal cho music player để hiển thị
+        const musicPlayerIframe = window.parent.document.querySelectorAll('iframe')[1]; // iframe thứ 2 là music player
+        if (musicPlayerIframe && musicPlayerIframe.contentWindow) {{
+            musicPlayerIframe.contentWindow.postMessage('show-music-player', '*');
+        }}
     }}
     
     function initRevealEffect() {{
@@ -489,7 +508,8 @@ music_player_full_html = f"""
         transition: opacity 2s ease-in-out, visibility 2s ease-in-out;
     }}
     
-    .player-visible #music-player-container {{
+    /* Hiển thị music player khi video intro kết thúc */
+    body.show-player #music-player-container {{
         opacity: 1;
         visibility: visible;
     }}
@@ -657,12 +677,24 @@ music_player_full_html = f"""
     
     loadSong(currentSongIndex);
     
-    // Auto-play khi user tương tác
-    document.body.addEventListener('click', () => {{
-         if (!isPlaying && audioPlayer.paused && audioPlayer.src) {{
-             playSong();
-         }}
-    }}, {{ once: true }});
+    // Lắng nghe sự kiện từ parent window để hiển thị player
+    window.addEventListener('message', (event) => {{
+        if (event.data === 'show-music-player') {{
+            document.body.classList.add('show-player');
+            // Auto-play khi hiển thị (tùy chọn)
+            setTimeout(() => {{
+                if (!isPlaying) playSong();
+            }}, 500);
+        }}
+    }});
+    
+    // Kiểm tra xem video intro đã kết thúc chưa (fallback)
+    setTimeout(() => {{
+        const parentHasClass = window.parent.document.querySelector('.stApp.video-finished');
+        if (parentHasClass) {{
+            document.body.classList.add('show-player');
+        }}
+    }}, 1000);
 </script>
 </body>
 </html>
