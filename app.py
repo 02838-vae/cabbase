@@ -1,7 +1,9 @@
 import streamlit as st
 import base64
+import random # Thêm thư viện random để chọn ngẫu nhiên bài hát khi trang load
 
 # --- CẤU HÌNH BAN ĐẦU ---
+
 st.set_page_config(
     page_title="Tổ Bảo Dưỡng Số 1",
     layout="wide",
@@ -21,31 +23,49 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
+        # Thay đổi thông báo lỗi để chỉ ra file nào bị thiếu
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
+# --- MÃ HÓA CÁC FILE MEDIA (CẬP NHẬT PHẦN NÀY) ---
 
-# Mã hóa các file media
 try:
+    # Media Intro (Giữ nguyên)
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
-    audio_base64 = get_base64_encoded_file("plane_fly.mp3")
     
+    # Audio Intro (Giữ nguyên)
+    audio_intro_base64 = get_base64_encoded_file("plane_fly.mp3") 
+    
+    # Backgrounds (Giữ nguyên)
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
+
+    # === DỰ ÁN MỚI: MÃ HÓA CÁC FILE NHẠC NỀN TRANG CHÍNH ===
+    audio_files = {
+        "background1": get_base64_encoded_file("background1.mp3"),
+        "background2": get_base64_encoded_file("background2.mp3"),
+        "background3": get_base64_encoded_file("background3.mp3"),
+    }
+    
+    # Tạo danh sách các data URL cho player sau này
+    # Định dạng: data:audio/mp3;base64,...
+    audio_urls = [f'data:audio/mp3;base64,{b64_data}' for b64_data in audio_files.values()]
+    audio_urls_js = ",".join([f"'{url}'" for url in audio_urls]) # Dùng cho JS
+    
 except FileNotFoundError as e:
     st.error(e)
     st.stop()
 
-
 # --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
+# (GIỮ NGUYÊN)
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 """
 st.markdown(font_links, unsafe_allow_html=True)
 
-
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
+# (GIỮ NGUYÊN)
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -199,10 +219,9 @@ iframe:first-of-type {{
 # Thêm CSS vào trang chính
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (GIỮ NGUYÊN) ---
-
-# JavaScript (GIỮ NGUYÊN)
+# JavaScript (Cập nhật audio intro)
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
@@ -213,9 +232,18 @@ js_callback_video = f"""
     function initRevealEffect() {{
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
         const mainTitle = window.parent.document.getElementById('main-title-container');
+        // Kích hoạt player nhạc chính sau khi intro kết thúc
+        const mainAudioPlayer = window.parent.document.getElementById('main-audio-player'); 
+        if (mainAudioPlayer) {{
+            // Streamlit components không cho phép autoplay trực tiếp, cần kích hoạt
+            // Sau khi user tương tác (như click để xem video) thì có thể play.
+            // Nếu không được, user sẽ phải tự click vào controls.
+            mainAudioPlayer.play().catch(e => console.log("Main Audio Play failed (user action required):", e)); 
+        }}
+
 
         if (mainTitle) {{
-             mainTitle.style.opacity = 1; 
+            mainTitle.style.opacity = 1; 
         }}
 
         if (!revealGrid) {{ return; }}
@@ -230,15 +258,17 @@ js_callback_video = f"""
         }});
         
         setTimeout(() => {{
-             revealGrid.remove();
+            revealGrid.remove();
         }}, shuffledCells.length * 10 + 1000);
     }}
 
+
     document.addEventListener("DOMContentLoaded", function() {{
         const video = document.getElementById('intro-video');
-        const audio = document.getElementById('background-audio');
+        const audio = document.getElementById('background-audio'); // Audio intro
         const introTextContainer = document.getElementById('intro-text-container'); 
         const isMobile = window.innerWidth <= 768;
+
 
         if (isMobile) {{
             video.src = 'data:video/mp4;base64,{video_mobile_base64}';
@@ -246,7 +276,7 @@ js_callback_video = f"""
             video.src = 'data:video/mp4;base64,{video_pc_base64}';
         }}
         
-        audio.src = 'data:audio/mp3;base64,{audio_base64}';
+        audio.src = 'data:audio/mp3;base64,{audio_intro_base64}'; // Tên audio intro đã đổi
 
         const playMedia = () => {{
             video.load();
@@ -261,8 +291,9 @@ js_callback_video = f"""
             audio.volume = 0.5;
             audio.loop = true; 
             audio.play().catch(e => {{
+                // Fallback cho autoplay thất bại
                 document.body.addEventListener('click', () => {{
-                    audio.play().catch(err => console.error("Audio playback error on click:", err));
+                    audio.play().catch(err => console.error("Audio intro playback error on click:", err));
                 }}, {{ once: true }});
             }});
         }};
@@ -271,20 +302,22 @@ js_callback_video = f"""
         
         video.onended = () => {{
             video.style.opacity = 0;
-            audio.pause();
+            audio.pause(); // Tắt nhạc intro
             audio.currentTime = 0;
             introTextContainer.style.opacity = 0; 
             
             sendBackToStreamlit(); 
         }};
 
+        // Kích hoạt video/audio khi user click bất kỳ đâu
         document.body.addEventListener('click', () => {{
-             video.play().catch(e => {{}});
-             audio.play().catch(e => {{}});
+            video.play().catch(e => {{}});
+            audio.play().catch(e => {{}});
         }}, {{ once: true }});
     }});
 </script>
 """
+
 
 # Mã HTML/CSS cho Video (GIỮ NGUYÊN)
 html_content_modified = f"""
@@ -310,6 +343,7 @@ html_content_modified = f"""
             z-index: -100;
             transition: opacity 1s; 
         }}
+
 
         /* === TIÊU ĐỀ INTRO (FONT SACRAMENTO - Chữ Ký) === */
         #intro-text-container {{ 
@@ -340,6 +374,7 @@ html_content_modified = f"""
             animation-timing-function: ease-out; 
         }}
 
+
         @keyframes charDropIn {{
             from {{
                 opacity: 0;
@@ -351,9 +386,11 @@ html_content_modified = f"""
             }}
         }}
 
+
         .intro-char.char-shown {{
             animation-name: charDropIn;
         }}
+
 
         @media (max-width: 768px) {{
             #intro-text-container {{
@@ -365,16 +402,19 @@ html_content_modified = f"""
 </head>
 <body>
 
+
     <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
     
     <video id="intro-video" muted playsinline></video>
     
     <audio id="background-audio"></audio>
 
+
     {js_callback_video}
 </body>
 </html>
 """
+
 
 # Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
 intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
@@ -387,13 +427,15 @@ html_content_modified = html_content_modified.replace(
     f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
 )
 
+
 # Hiển thị thành phần HTML (video)
 st.components.v1.html(html_content_modified, height=10, scrolling=False)
 
 
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
+# (GIỮ NGUYÊN)
 
-# Tạo Lưới Reveal (Giữ nguyên)
+# Tạo Lưới Reveal 
 grid_cells_html = ""
 for i in range(240): 
     grid_cells_html += f'<div class="grid-cell"></div>'
@@ -407,6 +449,7 @@ st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
 
 # --- NỘI DUNG CHÍNH (TIÊU ĐỀ ĐƠN, ĐỔI MÀU) ---
+# (GIỮ NGUYÊN)
 
 # Tiêu đề đơn
 main_title_text = "TỔ BẢO DƯỠNG SỐ 1" 
@@ -417,3 +460,65 @@ st.markdown(f"""
     <h1>{main_title_text}</h1>
 </div>
 """, unsafe_allow_html=True)
+
+# ------------------------------------------------------------------
+# --- PHẦN BỔ SUNG: MUSIC PLAYER CHO TRANG CHÍNH (3 BÀI HÁT) ---
+# ------------------------------------------------------------------
+
+# JavaScript để xử lý danh sách phát và tự động chuyển bài
+# Điều này là cần thiết vì thẻ <audio> HTML mặc định không hỗ trợ playlist.
+# Player sẽ được ẩn (display:none) để chỉ dùng làm bộ xử lý (processor).
+# Vì Streamlit chỉ cho phép nhúng một lần, ta dùng cách này để chèn JS.
+
+player_script_js = f"""
+<script>
+    const audioUrls = [{audio_urls_js}];
+    let currentTrackIndex = 0;
+    
+    const player = document.getElementById('main-audio-player');
+    
+    if (player) {{
+        // Khởi tạo bài hát đầu tiên
+        // Chọn ngẫu nhiên một bài hát khi trang load lần đầu
+        currentTrackIndex = Math.floor(Math.random() * audioUrls.length);
+        player.src = audioUrls[currentTrackIndex];
+        
+        // Xử lý tự động chuyển bài khi bài hát kết thúc
+        player.addEventListener('ended', () => {{
+            currentTrackIndex = (currentTrackIndex + 1) % audioUrls.length; // Chuyển sang bài tiếp theo
+            player.src = audioUrls[currentTrackIndex];
+            player.load();
+            
+            // Cố gắng tự động phát bài tiếp theo (cần user tương tác ban đầu)
+            player.play().catch(e => console.log("Playlist Play failed:", e));
+        }});
+        
+        // Thêm hàm để điều khiển Player bên ngoài (ví dụ từ Console hoặc JS khác)
+        window.playerControl = {{
+            play: () => player.play(),
+            pause: () => player.pause(),
+            next: () => {{
+                currentTrackIndex = (currentTrackIndex + 1) % audioUrls.length;
+                player.src = audioUrls[currentTrackIndex];
+                player.load();
+                player.play();
+            }}
+        }};
+    }}
+</script>
+"""
+
+# HTML Audio Player (Hiển thị Controls)
+# Dùng controls để người dùng tương tác, đặt vị trí cố định (fixed)
+audio_player_html = f"""
+<div style="position: fixed; bottom: 20px; right: 20px; z-index: 10000; opacity: 0.8; border-radius: 5px; background: rgba(0,0,0,0.5); padding: 5px;">
+    <audio id="main-audio-player" controls>
+        Trình duyệt của bạn không hỗ trợ phần tử audio.
+    </audio>
+</div>
+
+{player_script_js}
+"""
+
+# Chèn player vào trang chính sau phần nội dung chính
+st.markdown(audio_player_html, unsafe_allow_html=True)
