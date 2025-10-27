@@ -1,8 +1,7 @@
 import streamlit as st
 import base64
 import random 
-# ⚠️ IMPORT MỚI: Thư viện Streamlit Player
-from streamlit_player import st_player 
+# KHÔNG DÙNG THƯ VIỆN streamlit_player NỮA
 
 # --- CẤU HÌNH BAN ĐẦU ---
 
@@ -12,9 +11,8 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- KHỞI TẠO STATE & CỜ KIỂM TRA (SỬ DỤNG st.query_params) ---
-
-# Đọc cờ từ query params
+# --- KHỞI TẠO STATE & CỜ KIỂM TRA ---
+# (Logic này vẫn giữ nguyên để kiểm soát Intro Video)
 query_params = st.query_params
 video_ended_flag = query_params.get('video_ended_flag') == 'true'
 
@@ -127,6 +125,37 @@ iframe:first-of-type {{
     #main-title-container {{ height: 8vh; width: 100%; left: 0; }}
     #main-title-container h1 {{ font-size: 6.5vw; animation-duration: 8s; }}
 }}
+
+/* CSS DÀNH RIÊNG CHO ST.AUDIO */
+/* Tìm container chứa st.audio (vì st.audio không có data-testid="stPlayer" nữa) */
+/* Container của st.audio là một div chứa thẻ <audio> */
+div.stAudio + div { /* Chọn div liền kề sau stAudio container */
+    position: fixed !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    z-index: 10000 !important;
+    width: 300px !important; 
+    border-radius: 8px !important;
+    overflow: hidden !important;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.3) !important;
+    opacity: 0.9 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    
+    /* Làm cho Player st.audio ẩn đi khi intro chưa kết thúc */
+    visibility: hidden;
+    transition: visibility 0s, opacity 0.5s linear;
+}
+
+.main-content-revealed div.stAudio + div {
+    visibility: visible;
+    opacity: 1;
+}
+
+/* Đảm bảo thẻ audio bên trong lấp đầy container */
+div.stAudio + div audio {
+    width: 100%;
+}
 </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -135,7 +164,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 ## PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (FIXED)
 # ------------------------------------------------------------------
 
-# JavaScript (FIXED: Logic reload)
+# JavaScript (Giữ nguyên logic reload)
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
@@ -211,8 +240,6 @@ js_callback_video = f"""
 </script>
 """
 
-# ... (Mã HTML/CSS/Intro Text Generation giữ nguyên) ...
-
 # Mã HTML/CSS cho Video 
 html_content_modified = f"""
 <!DOCTYPE html>
@@ -278,55 +305,14 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-## PHẦN BỔ SUNG: STREAMLIT PLAYER COMPONENT (FIXED)
+## PHẦN BỔ SUNG: ST.AUDIO (TỆP ĐƠN)
 # ------------------------------------------------------------------
 
-# ⚠️ CHỈ render Player khi video intro đã kết thúc (sau khi reload)
-if st.session_state.video_ended:
+# ⚠️ BẠN PHẢI THAY THẾ URL NÀY BẰNG URL MP3 CÔNG KHAI CỦA BẠN
+# KHÔNG DÙNG LINK PLAYLIST SOUNDCLOUD.
+# Ví dụ: link trực tiếp tới 1 tệp MP3 công khai trên Dropbox/Google Drive/S3...
+# Link dưới đây chỉ là placeholder (có thể không hoạt động)
+audio_url = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" 
 
-    soundcloud_playlist_url = "https://on.soundcloud.com/nSYcGjjP8uDv0EwBAL"
-    
-    # KHÔNG DÙNG st.columns nữa, sử dụng st.container để đặt Player vào đó
-    # Player sẽ được render ở đầu container, nhưng CSS sẽ cố định vị trí
-    player_container = st.container()
-
-    with player_container:
-        st.markdown("""
-            <style>
-            /* CSS Ghi đè Mạnh hơn */
-            /* Tìm container chính của Streamlit Player (div[data-testid="stPlayer"]) 
-               và container của nó (div[data-testid^="stHorizontalBlock"]) */
-
-            div[data-testid^="stHorizontalBlock"] > div:first-child > div:first-child div[data-testid="stPlayer"] {
-                position: fixed !important;
-                bottom: 20px !important;
-                right: 20px !important;
-                z-index: 10000 !important;
-                width: 300px !important;
-                height: 150px !important;
-                border-radius: 8px !important;
-                overflow: hidden !important;
-                box-shadow: 0 4px 8px rgba(0,0,0,0.3) !important;
-                background: #f2f2f2 !important;
-                opacity: 0.9 !important;
-                margin: 0 !important;
-                padding: 0 !important;
-            }
-            
-            /* Đảm bảo iframe bên trong cũng có kích thước phù hợp */
-            div[data-testid="stPlayer"] iframe {
-                width: 100% !important;
-                height: 100% !important;
-            }
-            </style>
-        """, unsafe_allow_html=True)
-
-        # Hiển thị Streamlit Player
-        st_player(
-            soundcloud_playlist_url,
-            playing=False,         
-            loop=True,             
-            width=300,             
-            height=150,            
-            key="soundcloud_playlist_player"
-        )
+# st.audio() sẽ tự động render Player, và CSS ở trên sẽ cố định nó.
+st.audio(audio_url, format="audio/mp3", loop=True)
