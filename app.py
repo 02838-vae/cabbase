@@ -1,6 +1,8 @@
 import streamlit as st
 import base64
 import random 
+# ⚠️ IMPORT MỚI: Thư viện Streamlit Player
+from streamlit_player import st_player 
 
 # --- CẤU HÌNH BAN ĐẦU ---
 
@@ -37,8 +39,6 @@ try:
     # Backgrounds
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
-    
-    # KHÔNG CẦN mã hóa plane_fly.mp3 hay backgroundX.mp3 nữa
     
 except FileNotFoundError as e:
     st.error(e)
@@ -82,8 +82,6 @@ iframe:first-of-type {{
     --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
 }}
-/* ... (Giữ nguyên CSS còn lại cho Reveal Grid, main-content-revealed và Tiêu đề chạy) ... */
-
 @keyframes scrollText {{ 0% {{ transform: translate(100vw, 0); }} 100% {{ transform: translate(-100%, 0); }} }}
 @keyframes colorShift {{ 0% {{ background-position: 0% 50%; }} 50% {{ background-position: 100% 50%; }} 100% {{ background-position: 0% 50%; }} }}
 
@@ -100,24 +98,9 @@ iframe:first-of-type {{
     #main-title-container {{ height: 8vh; width: 100%; left: 0; }}
     #main-title-container h1 {{ font-size: 6.5vw; animation-duration: 8s; }}
 }}
-/* CSS cho player cố định (quan trọng) */
-.soundcloud-player-fixed {{
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    z-index: 10000;
-    width: 300px; /* Chiều rộng cố định cho Player */
-    height: 150px; /* Chiều cao cố định cho Player */
-    background: white;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.3);
-    transition: opacity 1s;
-    opacity: 0; /* Ẩn player lúc đầu */
-}}
-.video-finished .soundcloud-player-fixed {{
-    opacity: 1; /* Hiển thị player sau khi video intro kết thúc */
-}}
+
+/* Thêm CSS ẩn Player lúc đầu, Streamlit Player sẽ nằm trong container mặc định của Streamlit */
+/* Chúng ta sẽ dùng Python để ẩn/hiện Player */
 .reveal-grid {{
     position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
     display: grid; grid-template-columns: repeat(20, 1fr); grid-template-rows: repeat(12, 1fr);
@@ -131,15 +114,17 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-## PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (ĐÃ BỎ NHẠC)
+## PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO 
 # ------------------------------------------------------------------
 
-# JavaScript (Đã BỎ hoàn toàn logic nhạc intro)
+# JavaScript (Đã gỡ bỏ logic kích hoạt player chính để tránh xung đột)
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
-        // Thêm class 'video-finished' để kích hoạt hiệu ứng CSS (ví dụ: hiển thị SoundCloud player)
+        // Thêm class 'video-finished'
         window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
+        // Kích hoạt lại Streamlit để render nội dung chính/player
+        window.parent.document.dispatchEvent(new Event('refresh')); 
         initRevealEffect();
     }}
     
@@ -147,13 +132,10 @@ js_callback_video = f"""
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
         const mainTitle = window.parent.document.getElementById('main-title-container');
         
-        if (mainTitle) {{
-            mainTitle.style.opacity = 1; 
-        }}
+        if (mainTitle) {{ mainTitle.style.opacity = 1; }}
 
         if (!revealGrid) {{ return; }}
         
-        // Logic Reveal Grid (Giữ nguyên)
         const cells = revealGrid.querySelectorAll('.grid-cell');
         const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
         shuffledCells.forEach((cell, index) => {{
@@ -270,23 +252,49 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ------------------------------------------------------------------
-## PHẦN BỔ SUNG: SOUNDCLOUD EMBED PLAYER (ĐẢM BẢO HOẠT ĐỘNG)
+## PHẦN BỔ SUNG: STREAMLIT PLAYER COMPONENT (GIẢI PHÁP CHUYÊN NGHIỆP)
 # ------------------------------------------------------------------
 
-# Mã nhúng của Playlist SoundCloud bạn cung cấp
-# Đã điều chỉnh autoplay=false để tuân thủ quy tắc trình duyệt, nhưng nó sẽ hiện controls
-SOUNDCLOUD_EMBED_CODE = """
-<iframe width="100%" height="150" scrolling="no" frameborder="no" allow="autoplay" 
-src="https://w.soundcloud.com/player/?url=https%3A//api.soundcloud.com/playlists/1879007623&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true">
-</iframe>
-"""
+# ⚠️ Điều kiện hiển thị Player: CHỈ hiển thị khi video đã kết thúc
+if st.session_state.video_ended:
+    # URL Playlist SoundCloud của bạn
+    soundcloud_playlist_url = "https://on.soundcloud.com/nSYcGjjP8uDv0EwBAL"
+    
+    st.markdown("""
+        <style>
+        /* CSS để cố định vị trí Player của Streamlit Player */
+        /* Tìm container chứa Streamlit Player và cố định nó */
+        div[data-testid="stPlayer"] {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 10000;
+            width: 300px !important; /* Đặt chiều rộng cố định */
+            height: 150px !important; /* Đặt chiều cao cố định */
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+            background: #f2f2f2; /* Nền player */
+        }
+        /* Đảm bảo Player bên trong cũng có kích thước phù hợp */
+        div[data-testid="stPlayer"] iframe {
+            width: 100% !important;
+            height: 100% !important;
+        }
+        </style>
+    """, unsafe_allow_html=True)
 
-# HTML để cố định Player và ẩn/hiện bằng CSS (dùng class 'soundcloud-player-fixed' đã định nghĩa ở trên)
-soundcloud_player_html = f"""
-<div class="soundcloud-player-fixed">
-    {SOUNDCLOUD_EMBED_CODE}
-</div>
-"""
 
-# Chèn player vào trang chính
-st.markdown(soundcloud_player_html, unsafe_allow_html=True)
+    st_player(
+        soundcloud_playlist_url,
+        playing=False,         # Không tự động phát (do quy tắc trình duyệt)
+        loop=True,             # Lặp lại toàn bộ Playlist
+        width=300,             # Kích thước sẽ được điều chỉnh bởi CSS
+        height=150,            # Kích thước sẽ được điều chỉnh bởi CSS
+        key="soundcloud_playlist_player"
+    )
+
+# Cập nhật session state sau khi video kết thúc (logic từ JS sẽ kích hoạt lần chạy này)
+# Nếu bạn muốn player xuất hiện ngay, bạn có thể xóa toàn bộ phần if/else cho video intro
+if 'video_finished' in st.session_state and st.session_state.video_finished:
+    st.session_state.video_ended = True
