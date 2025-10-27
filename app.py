@@ -1,6 +1,6 @@
 import streamlit as st
 import base64
-from streamlit_player import st_player # Thêm thư viện streamlit-player
+from streamlit_player import st_player # Thư viện cho Music Player
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
@@ -45,14 +45,11 @@ try:
         if b64_data:
             # Dùng định dạng URL Data cho file Base64
             bg_music_urls.append(f'data:audio/mp3;base64,{b64_data}')
-        # else: st.warning(f"Cảnh báo: Không tìm thấy file nhạc nền: {f}. Sẽ bị bỏ qua.")
 
 except FileNotFoundError as e:
     st.error(e)
     st.stop()
     
-# ------------------------------------------------------------------
-
 # --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
@@ -144,8 +141,8 @@ iframe:first-of-type {{
 
 /* Keyframes cho hiệu ứng chữ chạy đơn (từ phải sang trái, lặp lại) */
 @keyframes scrollText {{
-    0% {{ transform: translate(100vw, 0); }} /* Bắt đầu từ ngoài cùng bên phải */
-    100% {{ transform: translate(-100%, 0); }} /* Chạy sang trái (độ rộng của chữ) */
+    0% {{ transform: translate(100vw, 0); }} 
+    100% {{ transform: translate(-100%, 0); }} 
 }}
 
 /* Keyframes cho hiệu ứng Đổi Màu Gradient */
@@ -182,18 +179,13 @@ iframe:first-of-type {{
     
     display: inline-block; 
 
-    /* 1. Hiệu ứng chữ chạy - Tăng tốc độ */
-    animation: scrollText 15s linear infinite; 
+    animation: colorShift 10s ease infinite, scrollText 15s linear infinite; 
     
-    /* 2. Hiệu ứng đổi màu */
     background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3); 
     background-size: 400% 400%; 
     -webkit-background-clip: text; 
     -webkit-text-fill-color: transparent; 
     color: transparent; 
-    animation: colorShift 10s ease infinite, scrollText 15s linear infinite; 
-    
-    /* Thiết lập bóng đổ cổ điển */
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
 }}
 
@@ -218,26 +210,28 @@ iframe:first-of-type {{
     z-index: 50; 
     opacity: 0;
     transition: opacity 1s ease-in;
-    /* Dùng pointer-events: none; trên container để ẩn luôn Player khi video chưa kết thúc */
 }}
 
 .video-finished .music-player-container {{
     opacity: 1;
 }}
 
-/* === STYLES CHO HIDDEN TRIGGER BUTTON (Sửa lỗi TypeError) === */
-/* Streamlit tạo một DIV wrapper xung quanh button. Ta ẩn wrapper này. */
-[data-testid="stButton"] button#video-ended-trigger {{
-    position: fixed !important;
-    top: -100px !important; /* Đẩy ra khỏi viewport */
-    left: -100px !important; 
+/* === KHẮC PHỤC: ẨN NÚT TRIGGER MỘT CÁCH TRIỆT ĐỂ BẰNG CONTAINER CSS === */
+.hidden-trigger-container {{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    opacity: 0;
+    pointer-events: none; /* Rất quan trọng để không cản trở click */
+    z-index: 9999;
+}}
+/* Dù đã ẩn container, vẫn đảm bảo nút bên trong bị disable tương tác */
+.hidden-trigger-container button {{
     visibility: hidden !important;
     pointer-events: none !important;
-    width: 1px !important; 
-    height: 1px !important;
-    padding: 0 !important;
-    border: none !important;
-    background: none !important;
 }}
 </style>
 """
@@ -248,7 +242,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
-# JavaScript (Đã CHỈNH SỬA để CẬP NHẬT Session State)
+# JavaScript (Đã CHỈNH SỬA để KÍCH HOẠT RERUN và CẬP NHẬT Session State)
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
@@ -256,11 +250,10 @@ js_callback_video = f"""
         window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
         initRevealEffect();
 
-        // 2. Gửi lệnh cập nhật Streamlit Session State (quan trọng cho Music Player)
+        // 2. Gửi lệnh cập nhật Streamlit Session State 
         // Tìm button ẩn do Streamlit tạo và click nó để kích hoạt Rerun
         const hiddenButton = window.parent.document.getElementById('video-ended-trigger');
         if (hiddenButton) {{
-            // Sử dụng click() trên DOM element
             hiddenButton.click(); 
         }}
     }}
@@ -305,7 +298,6 @@ js_callback_video = f"""
 
         const playMedia = () => {{
             video.load();
-            // Lỗi autoplay luôn xảy ra, nên cần catch
             video.play().catch(e => console.log("Video playback failed:", e));
                 
             const chars = introTextContainer.querySelectorAll('.intro-char');
@@ -317,7 +309,6 @@ js_callback_video = f"""
             audio.volume = 0.5;
             audio.loop = true; 
             audio.play().catch(e => {{
-                // Fallback: lắng nghe click để play audio
                 document.body.addEventListener('click', () => {{
                     audio.play().catch(err => console.error("Audio playback error on click:", err));
                 }}, {{ once: true }});
@@ -335,7 +326,6 @@ js_callback_video = f"""
             sendBackToStreamlit(); 
         }};
 
-        // Thêm lắng nghe click tổng quát để bypass autoplay policy
         document.body.addEventListener('click', () => {{
              video.play().catch(e => {{}});
              audio.play().catch(e => {{}});
@@ -449,19 +439,22 @@ html_content_modified = html_content_modified.replace(
 st.components.v1.html(html_content_modified, height=10, scrolling=False)
 
 
+# ----------------------------------------------------------------------------------
 # --- LOGIC CẬP NHẬT STATE VÀ NỘI DUNG CHÍNH ---
+# ----------------------------------------------------------------------------------
 
 # Hàm callback để cập nhật state sau khi video kết thúc
 def set_video_ended():
     st.session_state.video_ended = True
 
-# Button ẩn để kích hoạt Rerun và cập nhật Session State
-# Quan trọng: Đã loại bỏ label_visibility="hidden" để tránh TypeError và thay vào đó ẩn bằng CSS.
+# --- KHẮC PHỤC: Ẩn nút Trigger bằng cách bọc trong container CSS ---
+st.markdown('<div class="hidden-trigger-container">', unsafe_allow_html=True)
 st.button(
     "Video Ended Trigger", 
     key="video-ended-trigger", 
     on_click=set_video_ended, 
 )
+st.markdown('</div>', unsafe_allow_html=True)
 
 
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
@@ -493,32 +486,31 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # ----------------------------------------------------------------------------------
-# THÊM MUSIC PLAYER DÙNG streamlit-player (CHỈ HIỂN THỊ KHI VIDEO ENDED LÀ TRUE)
+# THÊM MUSIC PLAYER DÙNG streamlit-player 
 # ----------------------------------------------------------------------------------
 
 if st.session_state.video_ended and bg_music_urls:
-    # Sử dụng một container để áp dụng CSS cố định vị trí
-    # Dùng st.empty() để tạo không gian và sử dụng markdown để wrap
-    player_placeholder = st.empty()
-    with player_placeholder:
-        st.markdown('<div class="music-player-container">', unsafe_allow_html=True)
-        
-        st_player(
-            url=bg_music_urls,
-            playing=True,
-            loop=True,
-            controls=True,
-            config={
-                "file": {
-                    "forceAudio": True
-                }
-            },
-            height=60, # Chiều cao tối thiểu cho audio player
-            width=280, # Chiều rộng hợp lý
-            key="bg_music_player"
-        )
+    # 1. Tạo container cố định vị trí bằng CSS
+    st.markdown('<div class="music-player-container">', unsafe_allow_html=True)
+    
+    # 2. Gọi st_player
+    st_player(
+        url=bg_music_urls,
+        playing=True,
+        loop=True,
+        controls=True,
+        config={ # Config cần thiết cho Base64 URLs
+            "file": {
+                "forceAudio": True
+            }
+        },
+        height=60, # Chiều cao tối thiểu cho audio player
+        width=280, # Chiều rộng hợp lý
+        key="bg_music_player"
+    )
 
-        st.markdown('</div>', unsafe_allow_html=True)
+    # 3. Đóng container
+    st.markdown('</div>', unsafe_allow_html=True)
 
 # --- NỘI DUNG TRANG CHÍNH KHÁC ---
 if st.session_state.video_ended:
@@ -526,9 +518,8 @@ if st.session_state.video_ended:
     st.markdown('<br>' * 8, unsafe_allow_html=True) 
 
     st.header("Chào mừng đến với Trang Chủ! 👋")
-    st.write("Đây là nội dung chính của ứng dụng.")
+    st.write("Đây là nội dung chính của ứng dụng. Trang đã được reveal và nhạc nền đã được tự động phát.")
     
-    # Ví dụ nội dung thêm
     st.markdown("---")
     col1, col2 = st.columns(2)
     with col1:
