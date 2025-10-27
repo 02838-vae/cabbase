@@ -1,5 +1,6 @@
 import streamlit as st
 import base64
+from streamlit_player import st_player # Thêm thư viện streamlit-player
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
@@ -21,8 +22,11 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
-        raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
-
+        # Thay đổi để chỉ raise lỗi nếu file quan trọng bị thiếu
+        # Các file nhạc nền sẽ được xử lý riêng
+        if not file_path.startswith("background"):
+            raise FileNotFoundError(f"Lỗi: Không tìm thấy file media quan trọng. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
+        return None # Trả về None nếu file nhạc nền không có
 
 # Mã hóa các file media
 try:
@@ -32,20 +36,36 @@ try:
     
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
+
+    # MÃ HÓA CÁC FILE NHẠC NỀN
+    background_music_files = [f"background{i}.mp3" for i in range(1, 7)]
+    # Danh sách các URL Base64 hợp lệ của file nhạc nền
+    bg_music_urls = []
+    for f in background_music_files:
+        b64_data = get_base64_encoded_file(f)
+        if b64_data:
+            # Dùng định dạng URL Data cho file Base64
+            bg_music_urls.append(f'data:audio/mp3;base64,{b64_data}')
+        else:
+            st.warning(f"Cảnh báo: Không tìm thấy file nhạc nền: {f}. Sẽ bị bỏ qua.")
+
 except FileNotFoundError as e:
     st.error(e)
     st.stop()
+    
+# Nếu không tìm thấy file nhạc nào, có thể fallback hoặc thông báo
+if not bg_music_urls:
+    st.warning("Không tìm thấy file nhạc nền nào (background1.mp3 - background6.mp3). Trình phát nhạc sẽ không hiển thị.")
+# ------------------------------------------------------------------
 
-
-# --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
+# --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY (GIỮ NGUYÊN) ---
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 """
 st.markdown(font_links, unsafe_allow_html=True)
 
-
-# --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
+# --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) (GIỮ NGUYÊN CSS) ---
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -64,6 +84,7 @@ div.block-container {{
     max-width: 100% !important;
 }}
 
+/* Điều khiển Video Intro */
 iframe:first-of-type {{
     transition: opacity 1s ease-out, visibility 1s ease-out;
     opacity: 1;
@@ -193,6 +214,28 @@ iframe:first-of-type {{
         animation-duration: 8s; /* Tăng tốc độ trên mobile */
     }}
 }}
+
+/* === STYLES CHO MUSIC PLAYER === */
+.music-player-container {{
+    position: fixed;
+    bottom: 20px; 
+    right: 20px;
+    z-index: 50; 
+    opacity: 0;
+    transition: opacity 1s ease-in;
+    pointer-events: none; 
+}}
+
+.video-finished .music-player-container {{
+    opacity: 1;
+    pointer-events: all; 
+}}
+
+.st-emotion-cache-12ttj9q > iframe, .st-emotion-cache-12ttj9q > div > iframe {{ /* Selector nhắm vào iframe của st_player */
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5); 
+    border-radius: 8px;
+    overflow: hidden;
+}}
 </style>
 """
 
@@ -200,14 +243,22 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (GIỮ NGUYÊN) ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
-# JavaScript (GIỮ NGUYÊN)
+# JavaScript (Cần CHỈNH SỬA để CẬP NHẬT Session State)
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
+        // 1. Gửi lệnh CSS để ẩn video và reveal nội dung chính
         window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
         initRevealEffect();
+
+        // 2. Gửi lệnh cập nhật Streamlit Session State (quan trọng cho Music Player)
+        // Tìm button ẩn do Streamlit tạo và click nó để kích hoạt Rerun
+        const hiddenButton = window.parent.document.getElementById('video-ended-trigger');
+        if (hiddenButton) {{
+            hiddenButton.click();
+        }}
     }}
     
     function initRevealEffect() {{
@@ -286,7 +337,7 @@ js_callback_video = f"""
 </script>
 """
 
-# Mã HTML/CSS cho Video (GIỮ NGUYÊN)
+# Mã HTML/CSS cho Video (GIỮ NGUYÊN HTML, thay thế JS)
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -391,22 +442,34 @@ html_content_modified = html_content_modified.replace(
 st.components.v1.html(html_content_modified, height=10, scrolling=False)
 
 
+# --- LOGIC CẬP NHẬT STATE VÀ NỘI DUNG CHÍNH ---
+
+# Hàm callback để cập nhật state sau khi video kết thúc
+def set_video_ended():
+    st.session_state.video_ended = True
+
+# Button ẩn để kích hoạt Rerun và cập nhật Session State
+# Thêm một Button ẩn (zero height) với ID đã định nghĩa trong JS
+st.button("Video Ended Trigger", key="video-ended-trigger", on_click=set_video_ended, help="", label_visibility="hidden")
+
+
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
 
 # Tạo Lưới Reveal (Giữ nguyên)
-grid_cells_html = ""
-for i in range(240): 
-    grid_cells_html += f'<div class="grid-cell"></div>'
+if not st.session_state.video_ended:
+    grid_cells_html = ""
+    for i in range(240): 
+        grid_cells_html += f'<div class="grid-cell"></div>'
 
-reveal_grid_html = f"""
-<div class="reveal-grid">
-    {grid_cells_html}
-</div>
-"""
-st.markdown(reveal_grid_html, unsafe_allow_html=True)
+    reveal_grid_html = f"""
+    <div class="reveal-grid">
+        {grid_cells_html}
+    </div>
+    """
+    st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
 
-# --- NỘI DUNG CHÍNH (TIÊU ĐỀ ĐƠN, ĐỔI MÀU) ---
+# --- NỘI DUNG CHÍNH (TIÊU ĐỀ ĐƠN, ĐỔI MÀU & MUSIC PLAYER) ---
 
 # Tiêu đề đơn
 main_title_text = "TỔ BẢO DƯỠNG SỐ 1" 
@@ -417,3 +480,46 @@ st.markdown(f"""
     <h1>{main_title_text}</h1>
 </div>
 """, unsafe_allow_html=True)
+
+# ----------------------------------------------------------------------------------
+# THÊM MUSIC PLAYER DÙNG streamlit-player (CHỈ HIỂN THỊ KHI VIDEO ENDED LÀ TRUE)
+# ----------------------------------------------------------------------------------
+
+if st.session_state.video_ended and bg_music_urls:
+    # Sử dụng một container để áp dụng CSS cố định vị trí
+    with st.container():
+        # Thêm CSS class cho container
+        st.markdown('<div class="music-player-container">', unsafe_allow_html=True)
+        
+        # st_player được đặt trong container để dễ dàng định vị
+        # url: Danh sách các đường dẫn (URLs) của các file nhạc nền
+        # loop: True để tự động lặp lại danh sách phát
+        # playing: True để tự động phát khi hiển thị
+        # height/width: Thiết lập kích thước nhỏ gọn
+        st_player(
+            url=bg_music_urls,
+            playing=True,
+            loop=True,
+            controls=True,
+            # Cấu hình cho React Player, đặc biệt là Playlist
+            config={
+                "file": {
+                    "forceAudio": True
+                }
+            },
+            height=60, # Chiều cao tối thiểu cho audio player
+            width=280, # Chiều rộng hợp lý
+            key="bg_music_player"
+        )
+
+        st.markdown('</div>', unsafe_allow_html=True)
+
+# --- THÊM CÁC THÀNH PHẦN NỘI DUNG TRANG CHÍNH KHÁC Ở ĐÂY ---
+# Ví dụ:
+if st.session_state.video_ended:
+    # Dùng st.empty() để tạo không gian ảo, sau đó markdown với CSS để tạo khoảng trống cho tiêu đề
+    st.empty() # Không cần thiết nếu bạn đặt tiêu đề fixed
+    st.markdown('<br><br><br><br><br><br><br><br>', unsafe_allow_html=True) # Khoảng trống cho tiêu đề cố định
+
+    st.header("Chào mừng đến với Trang Chủ! 👋")
+    st.write("Đây là nội dung chính của ứng dụng.")
