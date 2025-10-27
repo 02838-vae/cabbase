@@ -17,7 +17,6 @@ if 'rerun_done' not in st.session_state:
 def get_base64_encoded_file(file_path):
     """Đọc file và trả về byte data và Base64 encoded string."""
     try:
-        # Đường dẫn tuyệt đối an toàn hơn trong môi trường Streamlit Cloud
         abs_path = os.path.join(os.getcwd(), file_path)
         with open(abs_path, "rb") as f:
             data = f.read()
@@ -28,7 +27,6 @@ def get_base64_encoded_file(file_path):
     except Exception as e:
         st.error(f"Lỗi đọc file {file_path}: {e}")
         st.stop()
-
 
 # --- 2. BIẾN TOÀN CỤC VÀ TẢI DỮ LIỆU ---
 
@@ -45,7 +43,6 @@ try:
     base64_data_url = f"data:audio/mp3;base64,{base64.b64encode(audio_bg_data).decode('utf-8')}"
 
 except Exception:
-    # Lỗi đã được xử lý trong hàm tiện ích
     pass 
 
 # --- 3. CẤU HÌNH BAN ĐẦU & CSS ---
@@ -62,8 +59,7 @@ font_links = """
 """
 st.markdown(font_links, unsafe_allow_html=True)
 
-
-# Khối CSS (Đảm bảo tất cả CSS và biến Base64 được nhúng)
+# Khối CSS (Sử dụng các biến Base64 cho background)
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -157,7 +153,7 @@ iframe:first-of-type {{
     #main-title-container h1 {{ font-size: 6.5vw; animation-duration: 8s; }}
 }}
 
-/* CSS cho Player - Tùy chỉnh vị trí và kiểu dáng */
+/* CSS cho Player - Đảm bảo nó nổi trên nội dung */
 [data-testid="stComponentV1"] {{
     position: fixed !important; 
     bottom: 20px !important; 
@@ -170,13 +166,16 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- 4. VIDEO INTRO & LOGIC RERUNING ---
+# --- 4. VIDEO INTRO & LOGIC RERUNING ĐÃ SỬA LỖI REVEAL ---
 
 # JavaScript Callback cho Video Intro 
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
-        // Gửi lệnh SET_QUERY_PARAMS để kích hoạt rerun Streamlit
+        // 1. Kích hoạt hiệu ứng Reveal nhanh (immediate=true)
+        initRevealEffect(true); 
+        
+        // 2. Gửi lệnh SET_QUERY_PARAMS để kích hoạt rerun Streamlit
         window.parent.postMessage({{
             streamlit: {{
                 command: 'SET_QUERY_PARAMS',
@@ -185,13 +184,22 @@ js_callback_video = f"""
         }}, '*');
     }}
     
-    function initRevealEffect() {{
+    function initRevealEffect(immediate = false) {{
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
         const mainTitle = window.parent.document.getElementById('main-title-container');
+        
         if (mainTitle) {{ mainTitle.style.opacity = 1; }}
 
         if (!revealGrid) {{ return; }}
 
+        if (immediate) {{
+            // Nếu gọi ngay lập tức, xóa/ẩn nhanh
+            revealGrid.style.opacity = 0;
+            setTimeout(() => {{ revealGrid.remove(); }}, 1000);
+            return;
+        }}
+        
+        // Logic hiệu ứng Reveal từng ô (chạy khi trang chính hiện lên)
         const cells = revealGrid.querySelectorAll('.grid-cell');
         const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
 
@@ -215,9 +223,16 @@ js_callback_video = f"""
         
         var urlParams = new URLSearchParams(window.location.search);
         const videoEnded = urlParams.get('video_ended') === 'true';
+        
+        // Đặt các lớp CSS cho nội dung chính ngay lập tức cho lần chạy thứ 2
+        window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
 
         if (!videoEnded) {{
-            // Logic chạy video intro
+            // Lần chạy đầu: Chạy video intro và gửi tín hiệu
+            
+            // Xóa lớp reveal cho lần đầu chạy (quan trọng)
+            window.parent.document.querySelector('.stApp').classList.remove('video-finished', 'main-content-revealed');
+
             const playMedia = () => {{
                 video.load();
                 video.play().catch(e => console.log("Video playback failed:", e));
@@ -250,11 +265,10 @@ js_callback_video = f"""
             }}, {{ once: true }});
             
         }} else {{
-            // Nếu đã kết thúc, ẩn video ngay lập tức và gọi hiệu ứng reveal
+            // Lần chạy lại (Sau khi RERUN): Ẩn video/audio và gọi hiệu ứng Reveal chậm
             video.style.opacity = 0;
             video.style.display = 'none';
-            window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
-            initRevealEffect();
+            initRevealEffect(); 
         }}
     }});
 </script>
@@ -335,11 +349,11 @@ if video_ended_from_js:
             controls=True,      # Cho phép người dùng điều khiển
             key="streamlit_music_player" 
         )
-        st.info("✅ Player đã được nhúng thành công. Vui lòng kiểm tra trên trình duyệt di động.")
+        st.info("✅ Player đã được nhúng thành công.")
     except Exception as e:
         st.error(f"Lỗi khi tải St Player: {e}")
     
-    st.warning("⚠️ Nếu nhạc không tự động phát, vui lòng nhấn nút Play trên player màu đen/trắng. Đây là giới hạn bảo mật của trình duyệt di động.")
+    st.warning("⚠️ Nếu nhạc không tự động phát, vui lòng nhấn nút Play trên player. Đây là giới hạn bảo mật của trình duyệt di động.")
 
     # Xóa Query Param để ngăn loop
     if not st.session_state.ran_once:
