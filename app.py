@@ -1,7 +1,7 @@
 import streamlit as st
 import base64
 import random 
-# KHÔNG DÙNG THƯ VIỆN streamlit_player NỮA
+# KHÔNG CẦN IMPORT streamlit_player NỮA
 
 # --- CẤU HÌNH BAN ĐẦU ---
 
@@ -11,8 +11,9 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# --- KHỞI TẠO STATE & CỜ KIỂM TRA ---
-# (Logic này vẫn giữ nguyên để kiểm soát Intro Video)
+# --- KHỞI TẠO STATE & CỜ KIỂM TRA (SỬ DỤNG st.query_params) ---
+
+# Đọc cờ từ query params
 query_params = st.query_params
 video_ended_flag = query_params.get('video_ended_flag') == 'true'
 
@@ -32,6 +33,7 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
+        # Nếu đang chạy trên Streamlit Cloud, các file này phải tồn tại
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
 # ------------------------------------------------------------------
@@ -51,7 +53,7 @@ except FileNotFoundError as e:
     st.error(e)
     st.stop()
 
-# --- PHẦN 1: NHÚNG FONT & CSS CHUNG ---
+# --- PHẦN 1: NHÚNG FONT & CSS CHUNG (ĐÃ SỬA LỖI CÚ PHÁP) ---
 
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
@@ -126,10 +128,8 @@ iframe:first-of-type {{
     #main-title-container h1 {{ font-size: 6.5vw; animation-duration: 8s; }}
 }}
 
-/* CSS DÀNH RIÊNG CHO ST.AUDIO */
-/* Tìm container chứa st.audio (vì st.audio không có data-testid="stPlayer" nữa) */
-/* Container của st.audio là một div chứa thẻ <audio> */
-div.stAudio + div { /* Chọn div liền kề sau stAudio container */
+/* CSS DÀNH RIÊNG CHO ST.AUDIO (ĐÃ SỬA LỖI CÚ PHÁP) */
+div.stAudio + div {{ /* Chọn div liền kề sau stAudio container */
     position: fixed !important;
     bottom: 20px !important;
     right: 20px !important;
@@ -145,17 +145,17 @@ div.stAudio + div { /* Chọn div liền kề sau stAudio container */
     /* Làm cho Player st.audio ẩn đi khi intro chưa kết thúc */
     visibility: hidden;
     transition: visibility 0s, opacity 0.5s linear;
-}
+}}
 
-.main-content-revealed div.stAudio + div {
+.main-content-revealed div.stAudio + div {{
     visibility: visible;
     opacity: 1;
-}
+}}
 
 /* Đảm bảo thẻ audio bên trong lấp đầy container */
-div.stAudio + div audio {
+div.stAudio + div audio {{
     width: 100%;
-}
+}}
 </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -310,9 +310,9 @@ st.markdown(f"""
 
 # ⚠️ BẠN PHẢI THAY THẾ URL NÀY BẰNG URL MP3 CÔNG KHAI CỦA BẠN
 # KHÔNG DÙNG LINK PLAYLIST SOUNDCLOUD.
-# Ví dụ: link trực tiếp tới 1 tệp MP3 công khai trên Dropbox/Google Drive/S3...
-# Link dưới đây chỉ là placeholder (có thể không hoạt động)
-audio_url = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" 
+audio_url = "https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" # URL MP3 mẫu
 
-# st.audio() sẽ tự động render Player, và CSS ở trên sẽ cố định nó.
-st.audio(audio_url, format="audio/mp3", loop=True)
+# st.audio() sẽ tự động render Player
+if st.session_state.video_ended:
+    # Player sẽ được render ở vị trí này, và CSS sẽ cố định nó
+    st.audio(audio_url, format="audio/mp3", loop=True)
