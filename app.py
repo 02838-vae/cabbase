@@ -17,13 +17,11 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
-        # Tăng cường thông báo lỗi để người dùng dễ dàng tìm ra file bị thiếu
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
 
 # Mã hóa các file media
 try:
-    # Bạn cần đảm bảo các file này tồn tại trong cùng thư mục
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
@@ -43,7 +41,7 @@ font_links = """
 st.markdown(font_links, unsafe_allow_html=True)
 
 
-# --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
+# --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ĐÃ SỬA CHO MUSIC PLAYER ---
 
 hide_streamlit_style = f"""
 <style>
@@ -193,14 +191,14 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === SOUNDCLOUD MUSIC PLAYER (ĐÃ SỬA LỖI TƯƠNG TÁC) === */
+/* === SOUNDCLOUD MUSIC PLAYER (ĐÃ SỬA LỖI CUỐI CÙNG) === */
 #soundcloud-player-container {{
     position: fixed; 
     bottom: 20px; 
     right: 20px; 
     width: 300px; 
-    height: 100px; /* Sửa thành 100px cho trình phát gọn */
-    z-index: 100; /* Đảm bảo nổi trên nội dung */
+    /* Đã bỏ height để iframe bên trong tự quyết định */
+    z-index: 100;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); 
     border-radius: 8px;
     overflow: hidden; 
@@ -216,7 +214,7 @@ iframe:first-of-type {{
 
 #soundcloud-player-container iframe {{
     width: 100%;
-    height: 100%;
+    height: 100px; /* Chiều cao cố định của trình phát nhỏ */
     border: none;
 }}
 
@@ -226,6 +224,8 @@ iframe:first-of-type {{
         left: 5%;
         right: auto;
         bottom: 10px;
+    }}
+    #soundcloud-player-container iframe {{
         height: 81px; /* Chiều cao tối thiểu cho mobile */
     }}
 }}
@@ -456,23 +456,20 @@ st.markdown(f"""
 
 
 # ----------------------------------------------------------------------
-# --- PHẦN BỔ SUNG: SOUNDCLOUD MUSIC PLAYER ---
+# --- PHẦN BỔ SUNG: SOUNDCLOUD MUSIC PLAYER (SỬ DỤNG st.components) ---
 # ----------------------------------------------------------------------
 
-# Đã dùng ''' để tránh lỗi cú pháp
-# Đã thêm sandbox và đổi visual=false để đảm bảo khả năng tương tác
-soundcloud_embed_code = '''
-<iframe width="100%" height="100" scrolling="no" frameborder="no" allow="autoplay" 
-sandbox="allow-scripts allow-same-origin allow-popups"
-src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/thang/sets/nhac-khong-loi&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=false"></iframe>
+# Tạo mã HTML cho Music Player (với height inline cố định)
+soundcloud_embed_code_html = f'''
+<div id="soundcloud-player-container">
+    <iframe width="100%" height="100" scrolling="no" frameborder="no" allow="autoplay" 
+    sandbox="allow-scripts allow-same-origin allow-popups"
+    src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/thang/sets/nhac-khong-loi&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=false"></iframe>
+</div>
 ''' 
 
-soundcloud_player_html = f"""
-<div id="soundcloud-player-container">
-    {soundcloud_embed_code}
-</div>
-"""
-
-st.markdown(soundcloud_player_html, unsafe_allow_html=True)
+# Nhúng Music Player như một component riêng biệt, 
+# đặt chiều cao và chiều rộng cố định cho Streamlit component.
+st.components.v1.html(soundcloud_embed_code_html, height=100, width=300, scrolling=False)
 
 # ----------------------------------------------------------------------
