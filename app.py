@@ -228,67 +228,67 @@ iframe:first-of-type {{
     }}
 }}
 
-
-/* 🌟 KEYFRAMES MỚI: HIỆU ỨNG NHÁY SÁNG 7 BƯỚC (CHU KỲ 28S) 🌟 */
-@keyframes pulse-border {{
-    /* Cấu hình cơ bản (Viền mờ - Base) */
+/* 🌟 KEYFRAMES MỚI: HIỆU ỨNG CHUYỂN ĐỘNG THEO VIỀN (BORDER FLOW) 🌟 */
+@keyframes flow-border {{
+    /* Vệt sáng di chuyển */
+    --flow-glow: 0 0 15px 2px rgba(255, 215, 0, 1);
+    /* Viền mờ cố định (nền) */
     --base-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
-    /* Cấu hình sáng (Vệt sáng vàng - Light) */
-    --light-shadow: 20px 3px rgba(255, 215, 0, 0.9);
     
-    /* TRẠNG THÁI NGHỈ/TẮT */
-    0%, 4%, 11%, 18%, 25%, 32%, 39%, 100% {{
-        box-shadow: var(--base-shadow);
-    }}
-    
-    /* 1. CẠNH TRÊN (Sáng 1% = 0.28s) */
-    1% {{
-        box-shadow: 0 -3px var(--light-shadow), var(--base-shadow);
-    }}
-    
-    /* 2. CẠNH PHẢI (Sáng 8% = 2.24s) */
-    8% {{
-        box-shadow: 3px 0 var(--light-shadow), var(--base-shadow);
-    }}
-    
-    /* 3. CẠNH DƯỚI (Sáng 15% = 4.20s) */
-    15% {{
-        box-shadow: 0 3px var(--light-shadow), var(--base-shadow);
-    }}
-    
-    /* 4. CẠNH TRÁI (Sáng 22% = 6.16s) */
-    22% {{
-        box-shadow: -3px 0 var(--light-shadow), var(--base-shadow);
+    /* TRẠNG THÁI NGHỈ và KHỞI TẠO (0%, 12.5%, 25%, 37.5%, 50%, 100%) */
+    /* Vệt sáng tắt hoặc ở vị trí dừng giữa các cạnh */
+    0%, 12.5%, 25%, 37.5%, 50%, 100% {{
+        box-shadow: 
+            var(--base-shadow), 
+            /* Vệt sáng mờ ở góc trên bên trái */
+            -15px -15px 0 0 rgba(255, 215, 0, 0.1); 
     }}
 
-    /* 5. TRÊN & DƯỚI (Sáng 29% = 8.12s) */
-    29% {{
-        box-shadow: 
-            0 -3px var(--light-shadow), 
-            0 3px var(--light-shadow), 
-            var(--base-shadow);
+    /* 1. CẠNH TRÊN (0% -> 10%) */
+    0% {{
+        /* Góc trên trái */
+        box-shadow: var(--base-shadow), -15px -15px var(--flow-glow);
+    }}
+    10% {{
+        /* Góc trên phải */
+        box-shadow: var(--base-shadow), 15px -15px var(--flow-glow);
+    }}
+
+    /* 2. CẠNH PHẢI (12.5% -> 22.5%) */
+    12.5% {{
+        /* Vị trí nghỉ (Góc trên phải) */
+        box-shadow: var(--base-shadow), 15px -15px var(--flow-glow);
+    }}
+    22.5% {{
+        /* Góc dưới phải */
+        box-shadow: var(--base-shadow), 15px 15px var(--flow-glow);
+    }}
+
+    /* 3. CẠNH DƯỚI (25% -> 35%) */
+    25% {{
+        /* Vị trí nghỉ (Góc dưới phải) */
+        box-shadow: var(--base-shadow), 15px 15px var(--flow-glow);
+    }}
+    35% {{
+        /* Góc dưới trái */
+        box-shadow: var(--base-shadow), -15px 15px var(--flow-glow);
+    }}
+
+    /* 4. CẠNH TRÁI (37.5% -> 47.5%) */
+    37.5% {{
+        /* Vị trí nghỉ (Góc dưới trái) */
+        box-shadow: var(--base-shadow), -15px 15px var(--flow-glow);
+    }}
+    47.5% {{
+        /* Góc trên trái */
+        box-shadow: var(--base-shadow), -15px -15px var(--flow-glow);
     }}
     
-    /* 6. TRÁI & PHẢI (Sáng 36% = 10.08s) */
-    36% {{
-        box-shadow: 
-            -3px 0 var(--light-shadow), 
-            3px 0 var(--light-shadow), 
-            var(--base-shadow);
-    }}
-    
-    /* 7. CẢ 4 CẠNH (Bùng nổ - Sáng 43% = 12.04s) */
-    43% {{
-        box-shadow: 
-            0 -3px 25px 4px rgba(255, 215, 0, 1), 
-            0 3px 25px 4px rgba(255, 215, 0, 1), 
-            -3px 0 25px 4px rgba(255, 215, 0, 1),
-            3px 0 25px 4px rgba(255, 215, 0, 1);
-    }}
+    /* 50% - 100%: KHOẢNG NGHỈ DÀI ĐỂ ĐẢM BẢO CHU KỲ 8S */
 }}
 
 
-/* === MUSIC PLAYER STYLES (ĐÃ CẬP NHẬT HIỆU ỨNG NHÁY SÁNG) === */
+/* === MUSIC PLAYER STYLES (ĐÃ CẬP NHẬT HIỆU ỨNG CHUYỂN ĐỘNG) === */
 #music-player-container {{
     position: fixed;
     bottom: 20px;
@@ -305,7 +305,7 @@ iframe:first-of-type {{
     position: fixed;	
 }}
 
-/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO VÀ HIỆU ỨNG NHÁY SÁNG 🌟 */
+/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO VÀ HIỆU ỨNG CHUYỂN ĐỘNG 🌟 */
 #music-player-container::before {{
     content: '';
     position: absolute;
@@ -328,10 +328,10 @@ iframe:first-of-type {{
     
     border-radius: 12px;
     
-    /* ✅ ÁP DỤNG HIỆU ỨNG NHÁY SÁNG VÀO BOX-SHADOW CỦA LỚP GIẢ NÀY */
+    /* ✅ ÁP DỤNG HIỆU ỨNG CHUYỂN ĐỘNG VÀO BOX-SHADOW */
     box-sizing: border-box; 
-    /* ✅ Đặt chu kỳ 28 giây cho 7 bước */
-    animation: pulse-border 28s ease-in-out infinite; 
+    /* ✅ Đặt chu kỳ 8 giây */
+    animation: flow-border 8s linear infinite; 
 }}
 
 
