@@ -235,16 +235,18 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === MUSIC PLAYER STYLES (ĐÃ CẬP NHẬT THEO YÊU CẦU MỚI) === */
+/* === MUSIC PLAYER STYLES (ĐÃ CẬP NHẬT THEO YÊU CẦU MỚI VỀ KÍCH THƯỚC) === */
 #music-player-container {{
     position: fixed;
     bottom: 20px;
     right: 20px;
-    width: 280px;
+    /* ✅ Tăng chiều rộng trên PC */
+    width: 350px; 
+    /* ✅ Thu nhỏ padding để giảm chiều cao tổng thể */
+    padding: 8px 16px; 
     /* Giữ nguyên transparent để dùng background image */
     background: transparent; 
     border-radius: 12px;
-    padding: 12px 16px;
     /* Tăng cường bóng đổ để nổi bật */
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7); 
     z-index: 999;
@@ -297,54 +299,55 @@ iframe:first-of-type {{
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 12px;
-    margin-bottom: 10px;
+    /* Giảm gap giữa các nút để tiết kiệm không gian */
+    gap: 8px;
+    margin-bottom: 6px; 
 }}
 
-/* 🌟 NÚT ĐIỀU KHIỂN MỚI: VIỀN TRẮNG SÁNG, ICON VÀNG KIM 🌟 */
+/* NÚT ĐIỀU KHIỂN MỚI */
 #music-player-container .control-btn {{
-    background: rgba(255, 255, 255, 0.2); /* Nền trắng mờ */
-    border: 2px solid #FFFFFF; /* Viền TRẮNG SÁNG */
-    color: #FFD700; /* Icon màu VÀNG KIM */
-    width: 36px; /* Tăng kích thước nhẹ */
-    height: 36px;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid #FFFFFF; 
+    color: #FFD700;
+    /* Giảm kích thước nút */
+    width: 32px; 
+    height: 32px;
     border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
-    font-size: 16px; /* Tăng kích thước icon nhẹ */
+    font-size: 14px; 
 }}
 
 #music-player-container .control-btn:hover {{
-    background: rgba(255, 215, 0, 0.5); /* Hover chuyển sang nền VÀNG nổi bật */
-    transform: scale(1.15); /* Tăng hiệu ứng hover */
+    background: rgba(255, 215, 0, 0.5);
+    transform: scale(1.15);
 }}
 
 #music-player-container .control-btn.play-pause {{
-    width: 44px; /* Tăng kích thước nút Play/Pause */
-    height: 44px;
-    font-size: 20px;
+    /* Giảm kích thước nút Play/Pause */
+    width: 40px; 
+    height: 40px;
+    font-size: 18px;
 }}
 
-/* 🌟 PROGRESS CONTAINER MỚI: VIỀN XÁM MỜ RÕ RÀNG HƠN 🌟 */
+/* PROGRESS CONTAINER MỚI */
 #music-player-container .progress-container {{
     width: 100%;
-    height: 6px; /* Tăng độ dày */
-    background: rgba(0, 0, 0, 0.5); /* Nền tối hơn */
+    height: 5px; /* Giảm độ dày một chút */
+    background: rgba(0, 0, 0, 0.5);
     border-radius: 3px;
     cursor: pointer;
-    margin-bottom: 6px;
+    margin-bottom: 4px; /* Giảm margin */
     position: relative;
     overflow: hidden;
-    /* Viền nhẹ quanh thanh tiến trình */
     border: 1px solid rgba(255, 255, 255, 0.4); 
 }}
 
 #music-player-container .progress-bar {{
     height: 100%;
-    /* Giữ gradient vàng */
     background: linear-gradient(90deg, #FFD700, #FFA500); 
     border-radius: 3px;
     width: 0%;
@@ -354,17 +357,32 @@ iframe:first-of-type {{
 #music-player-container .time-info {{
     display: flex;
     justify-content: space-between;
-    color: rgba(255, 255, 255, 1); /* Trắng rõ ràng */
-    font-size: 11px;
+    color: rgba(255, 255, 255, 1);
+    font-size: 10px; /* Giảm font size một chút */
     font-family: monospace;
 }}
 
+/* ✅ ĐIỀU CHỈNH TRÊN MOBILE */
 @media (max-width: 768px) {{
     #music-player-container {{
         width: calc(100% - 40px);
         right: 20px;
         left: 20px;
         bottom: 15px;
+        /* ✅ Giảm padding để thu nhỏ chiều cao trên mobile */
+        padding: 8px 12px;
+    }}
+    /* Giữ nguyên kích thước nút trên mobile để dễ thao tác hơn */
+    #music-player-container .control-btn,
+    #music-player-container .control-btn.play-pause {{
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }}
+    #music-player-container .control-btn.play-pause {{
+        width: 44px;
+        height: 44px;
+        font-size: 20px;
     }}
 }}
 </style>
