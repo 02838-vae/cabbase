@@ -228,64 +228,84 @@ iframe:first-of-type {{
     }}
 }}
 
-/* 🌟 KEYFRAMES MỚI: HIỆU ỨNG CHUYỂN ĐỘNG THEO VIỀN (BORDER FLOW) 🌟 */
-@keyframes flow-border {{
-    /* Vệt sáng di chuyển */
-    --flow-glow: 0 0 15px 2px rgba(255, 215, 0, 1);
-    /* Viền mờ cố định (nền) */
-    --base-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
-    
-    /* TRẠNG THÁI NGHỈ và KHỞI TẠO (0%, 12.5%, 25%, 37.5%, 50%, 100%) */
-    /* Vệt sáng tắt hoặc ở vị trí dừng giữa các cạnh */
-    0%, 12.5%, 25%, 37.5%, 50%, 100% {{
+/* 🌟 KEYFRAMES MỚI: HIỆU ỨNG CHUYỂN ĐỘNG CHẠY VÀ DỪNG (8 giây/chu kỳ) 🌟 */
+@keyframes flow-border-cycle {
+    /* Khai báo các biến màu và độ mờ cho Keyframes */
+    --flow-glow: 0 0 15px 2px rgba(255, 215, 0, 1); /* Vệt sáng chính */
+    --base-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3); /* Viền mờ nền */
+
+    /* 0% - Bắt đầu (Góc trên trái) */
+    0% {
+        /* Vệt sáng ở vị trí Top Left */
         box-shadow: 
-            var(--base-shadow), 
-            /* Vệt sáng mờ ở góc trên bên trái */
-            -15px -15px 0 0 rgba(255, 215, 0, 0.1); 
-    }}
+            var(--base-shadow) inset, 
+            -15px -15px 0 0 var(--flow-glow); 
+    }
 
-    /* 1. CẠNH TRÊN (0% -> 10%) */
-    0% {{
-        /* Góc trên trái */
-        box-shadow: var(--base-shadow), -15px -15px var(--flow-glow);
-    }}
-    10% {{
-        /* Góc trên phải */
-        box-shadow: var(--base-shadow), 15px -15px var(--flow-glow);
-    }}
+    /* 12.5% - Chạy hết cạnh trên (1 giây) */
+    12.5% {
+        /* Vệt sáng ở vị trí Top Right */
+        box-shadow: 
+            var(--base-shadow) inset, 
+            15px -15px 0 0 var(--flow-glow);
+    }
 
-    /* 2. CẠNH PHẢI (12.5% -> 22.5%) */
-    12.5% {{
-        /* Vị trí nghỉ (Góc trên phải) */
-        box-shadow: var(--base-shadow), 15px -15px var(--flow-glow);
-    }}
-    22.5% {{
-        /* Góc dưới phải */
-        box-shadow: var(--base-shadow), 15px 15px var(--flow-glow);
-    }}
+    /* 25% - Nghỉ cạnh trên (1 giây) */
+    25% {
+        /* Vệt sáng vẫn ở vị trí Top Right */
+        box-shadow: 
+            var(--base-shadow) inset, 
+            15px -15px 0 0 var(--flow-glow);
+    }
 
-    /* 3. CẠNH DƯỚI (25% -> 35%) */
-    25% {{
-        /* Vị trí nghỉ (Góc dưới phải) */
-        box-shadow: var(--base-shadow), 15px 15px var(--flow-glow);
-    }}
-    35% {{
-        /* Góc dưới trái */
-        box-shadow: var(--base-shadow), -15px 15px var(--flow-glow);
-    }}
+    /* 37.5% - Chạy hết cạnh phải (1 giây) */
+    37.5% {
+        /* Vệt sáng ở vị trí Bottom Right */
+        box-shadow: 
+            var(--base-shadow) inset, 
+            15px 15px 0 0 var(--flow-glow);
+    }
 
-    /* 4. CẠNH TRÁI (37.5% -> 47.5%) */
-    37.5% {{
-        /* Vị trí nghỉ (Góc dưới trái) */
-        box-shadow: var(--base-shadow), -15px 15px var(--flow-glow);
-    }}
-    47.5% {{
-        /* Góc trên trái */
-        box-shadow: var(--base-shadow), -15px -15px var(--flow-glow);
-    }}
+    /* 50% - Nghỉ cạnh phải (1 giây) */
+    50% {
+        /* Vệt sáng vẫn ở vị trí Bottom Right */
+        box-shadow: 
+            var(--base-shadow) inset, 
+            15px 15px 0 0 var(--flow-glow);
+    }
     
-    /* 50% - 100%: KHOẢNG NGHỈ DÀI ĐỂ ĐẢM BẢO CHU KỲ 8S */
-}}
+    /* 62.5% - Chạy hết cạnh dưới (1 giây) */
+    62.5% {
+        /* Vệt sáng ở vị trí Bottom Left */
+        box-shadow: 
+            var(--base-shadow) inset, 
+            -15px 15px 0 0 var(--flow-glow);
+    }
+
+    /* 75% - Nghỉ cạnh dưới (1 giây) */
+    75% {
+        /* Vệt sáng vẫn ở vị trí Bottom Left */
+        box-shadow: 
+            var(--base-shadow) inset, 
+            -15px 15px 0 0 var(--flow-glow);
+    }
+
+    /* 87.5% - Chạy hết cạnh trái (1 giây) */
+    87.5% {
+        /* Vệt sáng ở vị trí Top Left */
+        box-shadow: 
+            var(--base-shadow) inset, 
+            -15px -15px 0 0 var(--flow-glow);
+    }
+
+    /* 100% - Nghỉ cạnh trái (1 giây, quay lại 0%) */
+    100% {
+        /* Vệt sáng vẫn ở vị trí Top Left (giống 0%) */
+        box-shadow: 
+            var(--base-shadow) inset, 
+            -15px -15px 0 0 var(--flow-glow);
+    }
+}
 
 
 /* === MUSIC PLAYER STYLES (ĐÃ CẬP NHẬT HIỆU ỨNG CHUYỂN ĐỘNG) === */
@@ -303,9 +323,10 @@ iframe:first-of-type {{
     transform: translateY(100px);
     transition: opacity 1s ease-out 2s, transform 1s ease-out 2s;
     position: fixed;	
+    overflow: hidden; /* QUAN TRỌNG: Giữ box-shadow không tràn ra ngoài */
 }}
 
-/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO VÀ HIỆU ỨNG CHUYỂN ĐỘNG 🌟 */
+/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO VÀ VIỀN CHUYỂN ĐỘNG 🌟 */
 #music-player-container::before {{
     content: '';
     position: absolute;
@@ -313,10 +334,6 @@ iframe:first-of-type {{
     left: 0;
     width: 100%;
     height: 100%;
-    /* Thêm padding/margin âm để mở rộng lớp giả ra ngoài một chút */
-    margin: -3px; 
-    width: calc(100% + 6px);
-    height: calc(100% + 6px);
     
     background-image: var(--logo-bg-url);
     background-size: cover;
@@ -324,21 +341,26 @@ iframe:first-of-type {{
     background-repeat: no-repeat;
     filter: contrast(110%) brightness(90%); 
     opacity: 0.4; 
-    z-index: -1; 
+    z-index: 1; 
     
+    border: none; /* Xóa border cứng */
     border-radius: 12px;
-    
-    /* ✅ ÁP DỤNG HIỆU ỨNG CHUYỂN ĐỘNG VÀO BOX-SHADOW */
     box-sizing: border-box; 
-    /* ✅ Đặt chu kỳ 8 giây */
-    animation: flow-border 8s linear infinite; 
+    
+    /* ✅ ÁP DỤNG KEYFRAMES MỚI (8S LINEAR) */
+    animation: flow-border-cycle 8s linear infinite; 
+}}
+
+/* ❌ XÓA HOÀN TOÀN LỚP GIẢ ::after (cách làm cũ) */
+#music-player-container::after {{
+    display: none; 
 }}
 
 
 /* Đảm bảo các thành phần con ở trên lớp giả */
 #music-player-container * {{
     position: relative;
-    z-index: 5; 	
+    z-index: 5; /* ✅ Nội dung luôn ở trên cùng */	
 }}
 
 .video-finished #music-player-container {{
