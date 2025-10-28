@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Khởi tạo session state
+# Khởi tạo session state (Giữ nguyên, mặc dù không dùng để bỏ qua video khi refresh)
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
@@ -76,7 +76,6 @@ st.markdown(font_links, unsafe_allow_html=True)
 
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
-# SỬ DỤNG base64 strings ĐÃ ĐƯỢC ĐỌC
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -95,7 +94,7 @@ div.block-container {{
     max-width: 100% !important;
 }}
 
-/* Đảm bảo iframe video intro chiếm toàn màn hình và có độ ưu tiên cao */
+/* Điều chỉnh IFRAME video intro để chiếm toàn màn hình */
 iframe:first-of-type {{
     transition: opacity 1s ease-out, visibility 1s ease-out;
     opacity: 1;
@@ -339,29 +338,19 @@ js_callback_video = f"""
 <script>
     console.log("Script loaded");
     
-    // Hàm được gọi khi video kết thúc (trong iframe)
     function sendBackToStreamlit() {{
         console.log("Video ended, revealing main content");
         const stApp = window.parent.document.querySelector('.stApp');
         if (stApp) {{
-            // Thêm class để kích hoạt CSS Transition cho các thành phần chính
             stApp.classList.add('video-finished', 'main-content-revealed');
         }}
         initRevealEffect();
         setTimeout(initMusicPlayer, 100);
-        
-        // Cần truyền tín hiệu trở lại Streamlit để tránh load video lần sau
-        // Tuy nhiên, việc này phức tạp với st.components.v1.html và không bắt buộc
-        // nếu chỉ dùng CSS để ẩn video.
     }}
     
     function initRevealEffect() {{
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
         const mainTitle = window.parent.document.getElementById('main-title-container');
-
-        if (mainTitle) {{
-             // Không cần set opacity ở đây vì CSS đã có .video-finished #main-title-container
-        }}
 
         if (!revealGrid) {{ return; }}
 
@@ -380,7 +369,6 @@ js_callback_video = f"""
     }}
     
     function initMusicPlayer() {{
-        // Logic Music Player (Không thay đổi)
         console.log("Initializing music player");
         
         const musicSources = [{music_sources_js}];
@@ -403,7 +391,6 @@ js_callback_video = f"""
         const progressContainer = window.parent.document.getElementById('progress-container');
         const currentTimeEl = window.parent.document.getElementById('current-time');
         const durationEl = window.parent.document.getElementById('duration');
-        // const trackTitle = window.parent.document.getElementById('track-title'); // track-title không có trong HTML
         
         if (!playPauseBtn || !prevBtn || !nextBtn) {{
             console.error("Music player elements not found in parent document");
@@ -507,12 +494,11 @@ js_callback_video = f"""
                 video.load();
                 console.log("Video loaded, attempting to play...");
                 
-                // Play video
+                // Play video (muted playsinline giúp tự động chạy tốt hơn)
                 video.play().then(() => {{
                     console.log("✅ Video is playing!");
                 }}).catch(e => {{
-                    console.error("❌ Video autoplay blocked:", e);
-                    console.log("Click anywhere to start video");
+                    console.warn("❌ Video autoplay blocked. Waiting for user interaction:", e);
                 }});
                 
                 // Animate text
@@ -529,17 +515,13 @@ js_callback_video = f"""
                     console.log("Audio autoplay blocked (normal)");
                 }});
                 
-                // Click handler để play nếu bị block
+                // Click handler để play nếu bị block (Video/Audio)
                 const clickHandler = () => {{
                     console.log("User clicked, trying to play...");
                     video.play().then(() => {{
                         console.log("✅ Video playing after click");
                     }}).catch(err => console.error("Still can't play:", err));
                     audio.play().catch(e => {{}});
-                    
-                    // Xóa event listener sau lần tương tác đầu tiên
-                    document.removeEventListener('click', clickHandler);
-                    document.removeEventListener('touchstart', clickHandler);
                 }};
                 
                 document.addEventListener('click', clickHandler, {{ once: true }});
@@ -559,18 +541,13 @@ js_callback_video = f"""
                 }});
                 
                 // Debug: log video state
-                video.addEventListener('loadstart', () => console.log("Video loadstart"));
-                video.addEventListener('loadeddata', () => console.log("Video loadeddata"));
-                video.addEventListener('canplay', () => console.log("Video canplay"));
-                video.addEventListener('playing', () => console.log("Video playing event"));
                 video.addEventListener('error', (e) => console.error("Video error:", e));
             }}
         }}, 100);
         
-        // Timeout sau 5 giây
+        // Timeout sau 5 giây để tránh vòng lặp vô tận nếu có lỗi
         setTimeout(() => {{
             clearInterval(waitForElements);
-            console.log("Timeout waiting for elements");
         }}, 5000);
     }});
 </script>
@@ -678,9 +655,8 @@ html_content_modified = html_content_modified.replace(
     f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
 )
 
-# --- KHẮC PHỤC LỖI QUAN TRỌNG NHẤT ---
-# Tăng height lên giá trị lớn để Streamlit cấp đủ không gian cho iframe
-# trước khi CSS can thiệp, tránh màn hình đen.
+# --- HIỂN THỊ IFRAME VIDEO (Đã sửa lỗi kích thước) ---
+# Đặt height lớn hơn (ví dụ 1000) để đảm bảo Streamlit cấp đủ không gian cho iframe
 st.components.v1.html(html_content_modified, height=1000, scrolling=False)
 
 
@@ -688,7 +664,7 @@ st.components.v1.html(html_content_modified, height=1000, scrolling=False)
 
 # Tạo Lưới Reveal
 grid_cells_html = ""
-for i in range(240): # 20 columns * 12 rows = 240 cells
+for i in range(240): 
     grid_cells_html += f'<div class="grid-cell"></div>'
 
 reveal_grid_html = f"""
@@ -734,4 +710,3 @@ if len(music_files) > 0:
 st.markdown("<br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
 st.markdown("<h2 style='text-align: center; color: white; opacity: 0;'>Nội dung chính của Trang</h2>", unsafe_allow_html=True)
 st.markdown("<h2 style='text-align: center; color: white; opacity: 0; transition: opacity 2s 3s;'>Khu vực này sẽ xuất hiện sau 3 giây</h2>", unsafe_allow_html=True)
-
