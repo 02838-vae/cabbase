@@ -229,40 +229,61 @@ iframe:first-of-type {{
 }}
 
 
-/* 🌟 KEYFRAMES MỚI: HIỆU ỨNG NHÁY SÁNG THEO CẶP 🌟 */
+/* 🌟 KEYFRAMES MỚI: HIỆU ỨNG NHÁY SÁNG 7 BƯỚC 🌟 */
 @keyframes pulse-border {{
-    0%, 50%, 100% {{
-        /* Trạng thái nghỉ/tối */
-        box-shadow: 
-            0 0 0 0 rgba(255, 215, 0, 0), /* Viền ngang */
-            0 0 0 0 rgba(255, 215, 0, 0), /* Viền dọc */
-            0 0 0 3px rgba(255, 215, 0, 0.3); /* Viền mờ cố định */
+    /* Cấu hình cơ bản (Viền mờ) */
+    --base-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
+    /* Cấu hình sáng (Vệt sáng vàng) */
+    --light-shadow: 20px 3px rgba(255, 215, 0, 0.9);
+    
+    /* 0%, 100%: TRẠNG THÁI NGHỈ */
+    0%, 100% {{
+        box-shadow: var(--base-shadow);
     }}
     
-    25% {{
-        /* Sáng cạnh TRÊN và cạnh DƯỚI */
-        box-shadow: 
-            /* Cạnh trên */
-            0 -3px 20px 3px rgba(255, 215, 0, 0.9), 
-            /* Cạnh dưới */
-            0 3px 20px 3px rgba(255, 215, 0, 0.9), 
-            /* Viền dọc: Tắt */
-            0 0 0 0 rgba(255, 215, 0, 0),
-            /* Viền mờ cố định (base) */
-            0 0 0 3px rgba(255, 215, 0, 0.3); 
+    /* 14%: 1. CẠNH TRÊN */
+    14% {{
+        box-shadow: 0 -3px var(--light-shadow), var(--base-shadow);
+    }}
+    
+    /* 28%: 2. CẠNH PHẢI */
+    28% {{
+        box-shadow: 3px 0 var(--light-shadow), var(--base-shadow);
+    }}
+    
+    /* 42%: 3. CẠNH DƯỚI */
+    42% {{
+        box-shadow: 0 3px var(--light-shadow), var(--base-shadow);
+    }}
+    
+    /* 56%: 4. CẠNH TRÁI */
+    56% {{
+        box-shadow: -3px 0 var(--light-shadow), var(--base-shadow);
     }}
 
-    75% {{
-        /* Sáng cạnh TRÁI và cạnh PHẢI */
+    /* 70%: 5. TRÊN & DƯỚI */
+    70% {{
         box-shadow: 
-            /* Viền ngang: Tắt */
-            0 0 0 0 rgba(255, 215, 0, 0), 
-            /* Cạnh trái */
-            -3px 0 20px 3px rgba(255, 215, 0, 0.9), 
-            /* Cạnh phải */
-            3px 0 20px 3px rgba(255, 215, 0, 0.9),
-            /* Viền mờ cố định (base) */
-            0 0 0 3px rgba(255, 215, 0, 0.3);
+            0 -3px var(--light-shadow), 
+            0 3px var(--light-shadow), 
+            var(--base-shadow);
+    }}
+    
+    /* 84%: 6. TRÁI & PHẢI */
+    84% {{
+        box-shadow: 
+            -3px 0 var(--light-shadow), 
+            3px 0 var(--light-shadow), 
+            var(--base-shadow);
+    }}
+    
+    /* 98%: 7. CẢ 4 CẠNH (Bùng nổ) */
+    98% {{
+        box-shadow: 
+            0 -3px 25px 4px rgba(255, 215, 0, 1), 
+            0 3px 25px 4px rgba(255, 215, 0, 1), 
+            -3px 0 25px 4px rgba(255, 215, 0, 1),
+            3px 0 25px 4px rgba(255, 215, 0, 1);
     }}
 }}
 
@@ -282,7 +303,6 @@ iframe:first-of-type {{
     transform: translateY(100px);
     transition: opacity 1s ease-out 2s, transform 1s ease-out 2s;
     position: fixed;	
-    /* Không cần overflow: hidden nữa */
 }}
 
 /* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO VÀ HIỆU ỨNG NHÁY SÁNG 🌟 */
@@ -310,10 +330,9 @@ iframe:first-of-type {{
     
     /* ✅ ÁP DỤNG HIỆU ỨNG NHÁY SÁNG VÀO BOX-SHADOW CỦA LỚP GIẢ NÀY */
     box-sizing: border-box; 
-    animation: pulse-border 2s ease-in-out infinite; /* 2s cho 1 chu kỳ nháy */
+    /* ✅ Đặt chu kỳ 7 giây cho 7 bước */
+    animation: pulse-border 7s ease-in-out infinite; 
 }}
-
-/* ❌ XÓA LỚP GIẢ ::after (VIỀN CHẠY) KHỎI KHỐI CSS NÀY */
 
 
 /* Đảm bảo các thành phần con ở trên lớp giả */
