@@ -229,56 +229,56 @@ iframe:first-of-type {{
 }}
 
 
-/* 🌟 KEYFRAMES MỚI: HIỆU ỨNG NHÁY SÁNG 7 BƯỚC (FIXED) 🌟 */
+/* 🌟 KEYFRAMES MỚI: HIỆU ỨNG NHÁY SÁNG 7 BƯỚC (CHU KỲ 28S) 🌟 */
 @keyframes pulse-border {{
     /* Cấu hình cơ bản (Viền mờ - Base) */
     --base-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
     /* Cấu hình sáng (Vệt sáng vàng - Light) */
     --light-shadow: 20px 3px rgba(255, 215, 0, 0.9);
     
-    /* 0%, 17%, 31%, 45%, 59%, 73%, 87%, 100%: TRẠNG THÁI NGHỈ/TẮT */
-    0%, 17%, 31%, 45%, 59%, 73%, 87%, 100% {{
+    /* TRẠNG THÁI NGHỈ/TẮT */
+    0%, 4%, 11%, 18%, 25%, 32%, 39%, 100% {{
         box-shadow: var(--base-shadow);
     }}
     
-    /* 12%: 1. CẠNH TRÊN */
-    12% {{
+    /* 1. CẠNH TRÊN (Sáng 1% = 0.28s) */
+    1% {{
         box-shadow: 0 -3px var(--light-shadow), var(--base-shadow);
     }}
     
-    /* 26%: 2. CẠNH PHẢI */
-    26% {{
+    /* 2. CẠNH PHẢI (Sáng 8% = 2.24s) */
+    8% {{
         box-shadow: 3px 0 var(--light-shadow), var(--base-shadow);
     }}
     
-    /* 40%: 3. CẠNH DƯỚI */
-    40% {{
+    /* 3. CẠNH DƯỚI (Sáng 15% = 4.20s) */
+    15% {{
         box-shadow: 0 3px var(--light-shadow), var(--base-shadow);
     }}
     
-    /* 54%: 4. CẠNH TRÁI */
-    54% {{
+    /* 4. CẠNH TRÁI (Sáng 22% = 6.16s) */
+    22% {{
         box-shadow: -3px 0 var(--light-shadow), var(--base-shadow);
     }}
 
-    /* 68%: 5. TRÊN & DƯỚI */
-    68% {{
+    /* 5. TRÊN & DƯỚI (Sáng 29% = 8.12s) */
+    29% {{
         box-shadow: 
             0 -3px var(--light-shadow), 
             0 3px var(--light-shadow), 
             var(--base-shadow);
     }}
     
-    /* 82%: 6. TRÁI & PHẢI */
-    82% {{
+    /* 6. TRÁI & PHẢI (Sáng 36% = 10.08s) */
+    36% {{
         box-shadow: 
             -3px 0 var(--light-shadow), 
             3px 0 var(--light-shadow), 
             var(--base-shadow);
     }}
     
-    /* 96%: 7. CẢ 4 CẠNH (Bùng nổ) */
-    96% {{
+    /* 7. CẢ 4 CẠNH (Bùng nổ - Sáng 43% = 12.04s) */
+    43% {{
         box-shadow: 
             0 -3px 25px 4px rgba(255, 215, 0, 1), 
             0 3px 25px 4px rgba(255, 215, 0, 1), 
@@ -330,8 +330,8 @@ iframe:first-of-type {{
     
     /* ✅ ÁP DỤNG HIỆU ỨNG NHÁY SÁNG VÀO BOX-SHADOW CỦA LỚP GIẢ NÀY */
     box-sizing: border-box; 
-    /* ✅ Đặt chu kỳ 7 giây cho 7 bước */
-    animation: pulse-border 7s ease-in-out infinite; 
+    /* ✅ Đặt chu kỳ 28 giây cho 7 bước */
+    animation: pulse-border 28s ease-in-out infinite; 
 }}
 
 
