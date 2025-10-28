@@ -1,5 +1,6 @@
 import streamlit as st
 import base64
+import os
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
@@ -20,31 +21,41 @@ def get_base64_encoded_file(file_path):
         with open(file_path, "rb") as f:
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
-    except FileNotFoundError as e:
-        raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
+    except FileNotFoundError:
+        return None
 
 
-# Mã hóa các file media
+# Mã hóa các file media chính (bắt buộc)
 try:
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
-    
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
     
-    # Mã hóa các file nhạc nền
-    music_files = []
-    for i in range(1, 7):
-        try:
-            music_base64 = get_base64_encoded_file(f"background{i}.mp3")
-            music_files.append(music_base64)
-        except FileNotFoundError:
-            st.warning(f"Không tìm thấy file background{i}.mp3")
-            
-except FileNotFoundError as e:
-    st.error(e)
+    # Kiểm tra file bắt buộc
+    if not all([video_pc_base64, video_mobile_base64, audio_base64, bg_pc_base64, bg_mobile_base64]):
+        st.error("⚠️ Thiếu các file media cần thiết. Vui lòng kiểm tra lại các file sau trong thư mục:")
+        st.write("- airplane.mp4")
+        st.write("- mobile.mp4")
+        st.write("- plane_fly.mp3")
+        st.write("- cabbase.jpg")
+        st.write("- mobile.jpg")
+        st.stop()
+    
+except Exception as e:
+    st.error(f"❌ Lỗi khi đọc file: {str(e)}")
     st.stop()
+
+# Mã hóa các file nhạc nền (không bắt buộc)
+music_files = []
+for i in range(1, 7):
+    music_base64 = get_base64_encoded_file(f"background{i}.mp3")
+    if music_base64:
+        music_files.append(music_base64)
+
+if len(music_files) == 0:
+    st.info("ℹ️ Không tìm thấy file nhạc nền (background1.mp3 - background6.mp3). Music player sẽ không hoạt động.")
 
 
 # --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
@@ -311,15 +322,21 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 # --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
 # Tạo danh sách music sources cho JavaScript
-music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files])
+if len(music_files) > 0:
+    music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files])
+else:
+    music_sources_js = ""
 
 # JavaScript
 js_callback_video = f"""
 <script>
+    console.log("Script loaded");
+    
     function sendBackToStreamlit() {{
+        console.log("Video ended, revealing main content");
         window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
         initRevealEffect();
-        initMusicPlayer();
+        setTimeout(initMusicPlayer, 100);
     }}
     
     function initRevealEffect() {{
@@ -347,9 +364,14 @@ js_callback_video = f"""
     }}
     
     function initMusicPlayer() {{
-        const musicSources = [
-            {music_sources_js}
-        ];
+        console.log("Initializing music player");
+        
+        const musicSources = [{music_sources_js}];
+        
+        if (musicSources.length === 0) {{
+            console.log("No music files available");
+            return;
+        }}
         
         let currentTrack = 0;
         let isPlaying = false;
@@ -366,8 +388,13 @@ js_callback_video = f"""
         const durationEl = window.parent.document.getElementById('duration');
         const trackTitle = window.parent.document.getElementById('track-title');
         
+        if (!playPauseBtn || !prevBtn || !nextBtn) {{
+            console.error("Music player elements not found");
+            return;
+        }}
+        
         function loadTrack(index) {{
-            if (musicSources.length === 0) return;
+            console.log("Loading track", index + 1);
             audio.src = musicSources[index];
             trackTitle.textContent = `Track ${{index + 1}} / ${{musicSources.length}}`;
             audio.load();
@@ -378,7 +405,7 @@ js_callback_video = f"""
                 audio.pause();
                 playPauseBtn.textContent = '▶';
             }} else {{
-                audio.play();
+                audio.play().catch(e => console.error("Play error:", e));
                 playPauseBtn.textContent = '⏸';
             }}
             isPlaying = !isPlaying;
@@ -388,7 +415,7 @@ js_callback_video = f"""
             currentTrack = (currentTrack + 1) % musicSources.length;
             loadTrack(currentTrack);
             if (isPlaying) {{
-                audio.play();
+                audio.play().catch(e => console.error("Play error:", e));
             }}
         }}
         
@@ -396,11 +423,12 @@ js_callback_video = f"""
             currentTrack = (currentTrack - 1 + musicSources.length) % musicSources.length;
             loadTrack(currentTrack);
             if (isPlaying) {{
-                audio.play();
+                audio.play().catch(e => console.error("Play error:", e));
             }}
         }}
         
         function formatTime(seconds) {{
+            if (isNaN(seconds)) return '0:00';
             const mins = Math.floor(seconds / 60);
             const secs = Math.floor(seconds % 60);
             return `${{mins}}:${{secs.toString().padStart(2, '0')}}`;
@@ -431,9 +459,11 @@ js_callback_video = f"""
         }});
         
         loadTrack(0);
+        console.log("Music player initialized successfully");
     }}
 
     document.addEventListener("DOMContentLoaded", function() {{
+        console.log("DOM loaded");
         const video = document.getElementById('intro-video');
         const audio = document.getElementById('background-audio');
         const introTextContainer = document.getElementById('intro-text-container'); 
@@ -460,6 +490,7 @@ js_callback_video = f"""
             audio.volume = 0.5;
             audio.loop = true; 
             audio.play().catch(e => {{
+                console.log("Audio needs user interaction");
                 document.body.addEventListener('click', () => {{
                     audio.play().catch(err => console.error("Audio playback error on click:", err));
                 }}, {{ once: true }});
@@ -469,6 +500,7 @@ js_callback_video = f"""
         playMedia();
         
         video.onended = () => {{
+            console.log("Video ended");
             video.style.opacity = 0;
             audio.pause();
             audio.currentTime = 0;
@@ -497,6 +529,7 @@ html_content_modified = f"""
             overflow: hidden;
             height: 100vh;
             width: 100vw;
+            background-color: #000;
         }}
         
         #intro-video {{
@@ -617,9 +650,10 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # --- MUSIC PLAYER ---
-st.markdown("""
+if len(music_files) > 0:
+    st.markdown(f"""
 <div id="music-player-container">
-    <div class="player-title" id="track-title">Track 1 / 6</div>
+    <div class="player-title" id="track-title">Track 1 / {len(music_files)}</div>
     <div class="controls">
         <button class="control-btn" id="prev-btn">⏮</button>
         <button class="control-btn play-pause" id="play-pause-btn">▶</button>
