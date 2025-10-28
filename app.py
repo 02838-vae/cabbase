@@ -229,18 +229,33 @@ iframe:first-of-type {{
 }}
 
 
-/* 🌟 KEYFRAMES MỚI: Dải ánh sáng chạy dọc theo viền */
+/* 🌟 KEYFRAMES MỚI: Dải ánh sáng chạy dọc theo viền (8s/chu kỳ) 🌟 */
 @keyframes border-light-run {{
+    /* Cạnh TRÊN: Chạy từ Trái (0%) sang Phải (100%) */
     0% {{ transform: translateX(0%) translateY(0) rotate(0deg); }}
     25% {{ transform: translateX(100%) translateY(0) rotate(0deg); }}
     
-    25.1% {{ transform: translateX(100%) translateY(0) rotate(90deg); }}
-    50% {{ transform: translateX(100%) translateY(100%) rotate(90deg); }}
+    /* Nghỉ (25% - 30%) - Dừng ở góc trên phải */
+    30% {{ transform: translateX(100%) translateY(0) rotate(0deg); }}
+
+    /* Cạnh PHẢI: Chạy từ Trên (0%) xuống Dưới (100%) */
+    30.1% {{ transform: translateX(100%) translateY(0) rotate(90deg); }} /* Xoay ở góc */
+    55% {{ transform: translateX(100%) translateY(100%) rotate(90deg); }}
     
-    50.1% {{ transform: translateX(100%) translateY(100%) rotate(180deg); }}
-    75% {{ transform: translateX(0%) translateY(100%) rotate(180deg); }}
+    /* Nghỉ (55% - 60%) - Dừng ở góc dưới phải */
+    60% {{ transform: translateX(100%) translateY(100%) rotate(90deg); }}
+
+    /* Cạnh DƯỚI: Chạy từ Phải (100%) sang Trái (0%) */
+    60.1% {{ transform: translateX(100%) translateY(100%) rotate(180deg); }} /* Xoay ở góc */
+    85% {{ transform: translateX(0%) translateY(100%) rotate(180deg); }}
+
+    /* Nghỉ (85% - 90%) - Dừng ở góc dưới trái */
+    90% {{ transform: translateX(0%) translateY(100%) rotate(180deg); }}
+
+    /* Cạnh TRÁI: Chạy từ Dưới (100%) lên Trên (0%) */
+    90.1% {{ transform: translateX(0%) translateY(100%) rotate(270deg); }} /* Xoay ở góc */
+    99.9% {{ transform: translateX(0%) translateY(0%) rotate(270deg); }}
     
-    75.1% {{ transform: translateX(0%) translateY(100%) rotate(270deg); }}
     100% {{ transform: translateX(0%) translateY(0%) rotate(270deg); }}
 }}
 
@@ -290,11 +305,11 @@ iframe:first-of-type {{
     content: '';
     position: absolute;
     
-    /* ĐIỀU CHỈNH KÍCH THƯỚC: Tạo dải ánh sáng dài, hẹp */
+    /* ĐIỀU CHỈNH KÍCH THƯỚC: Dải ánh sáng dài, hẹp */
     width: 50px; 
     height: 3px; 
     
-    /* Thiết lập vị trí ban đầu (góc trên trái, ngay ngoài viền) */
+    /* Vị trí ban đầu: Góc trên trái */
     top: -1.5px; /* Chiều cao / 2 */
     left: 0; 
     
@@ -304,13 +319,11 @@ iframe:first-of-type {{
     /* TĂNG CƯỜNG HIỆU ỨNG PHÁT SÁNG */
     box-shadow: 0 0 10px 5px rgba(255, 255, 0, 0.9);
     
-    /* KHÔNG DÙNG border-radius: 50% nữa, để tạo dải sáng (stroke) */
+    /* transform-origin: Thiết lập điểm quay/chuyển động tại góc trên trái (0% 0%) */
+    transform-origin: 0% 0%; 
     
-    /* Dùng translate(X) thay vì top/left để làm mượt chuyển động */
-    transform-origin: 0 0; /* Quan trọng để xoay quanh góc */
-    
-    /* Áp dụng Keyframes mới */
-    animation: border-light-run 6s linear infinite; 
+    /* Tốc độ Linear để chuyển động đồng đều hơn */
+    animation: border-light-run 8s linear infinite; 
     z-index: 4; 
 }}
 
