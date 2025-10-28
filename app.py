@@ -268,8 +268,8 @@ iframe:first-of-type {{
     background-position: center;
     background-repeat: no-repeat;
     /* HIỆU ỨNG LÀM MỜ VÀ GIẢM ĐỘ TRONG SUỐT */
-    filter: blur(5px) brightness(80%) grayscale(50%); 
-    opacity: 0.7; 
+    filter: blur(2px) brightness(90%) grayscale(30%); 
+    opacity: 0.8; 
     z-index: -1; /* Đặt sau nội dung player */
 }}
 
