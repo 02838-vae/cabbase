@@ -107,7 +107,7 @@ iframe:first-of-type {{
     opacity: 1;
     visibility: visible;
     width: 100vw !important;
-    height: 100vh !important; 
+    height: 100vh !important;	
     position: fixed;
     top: 0;
     left: 0;
@@ -118,7 +118,7 @@ iframe:first-of-type {{
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
-    height: 1px !important; 
+    height: 1px !important;	
     width: 1px !important;
 }}
 
@@ -136,14 +136,14 @@ iframe:first-of-type {{
     width: 100vw;
     height: 100vh;
     display: grid;
-    grid-template-columns: repeat(20, 1fr); 
+    grid-template-columns: repeat(20, 1fr);	
     grid-template-rows: repeat(12, 1fr);
-    z-index: 500; 
-    pointer-events: none; 
+    z-index: 500;	
+    pointer-events: none;	
 }}
 
 .grid-cell {{
-    background-color: white; 
+    background-color: white;	
     opacity: 1;
     transition: opacity 0.5s ease-out;
 }}
@@ -153,8 +153,8 @@ iframe:first-of-type {{
     background-size: cover;
     background-position: center;
     background-attachment: fixed;
-    filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%); 
-    transition: filter 2s ease-out; 
+    filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%);	
+    transition: filter 2s ease-out;	
 }}
 
 @media (max-width: 768px) {{
@@ -183,15 +183,15 @@ iframe:first-of-type {{
 /* === TIÊU ĐỀ TRANG CHÍNH (ĐƠN, CHẠY VÀ ĐỔI MÀU) === */
 #main-title-container {{
     position: fixed;
-    top: 5vh; 
-    left: 0; 
-    width: 100%; 
-    height: 10vh; 
-    overflow: hidden; 
-    z-index: 20; 
-    pointer-events: none; 
+    top: 5vh;	
+    left: 0;	
+    width: 100%;	
+    height: 10vh;	
+    overflow: hidden;	
+    z-index: 20;	
+    pointer-events: none;	
     
-    opacity: 0; 
+    opacity: 0;	
     transition: opacity 2s;
 }}
 
@@ -200,15 +200,15 @@ iframe:first-of-type {{
 }}
 
 #main-title-container h1 {{
-    font-family: 'Playfair Display', serif; 
-    font-size: 3.5vw; 
+    font-family: 'Playfair Display', serif;	
+    font-size: 3.5vw;	
     margin: 0;
-    font-weight: 900; 
-    font-feature-settings: "lnum" 1; 
-    letter-spacing: 5px; 
-    white-space: nowrap; 
+    font-weight: 900;	
+    font-feature-settings: "lnum" 1;	
+    letter-spacing: 5px;	
+    white-space: nowrap;	
     
-    display: inline-block; 
+    display: inline-block;	
 
     animation: scrollText 15s linear infinite;
     
@@ -225,37 +225,39 @@ iframe:first-of-type {{
 @media (max-width: 768px) {{
     #main-title-container {{
         height: 8vh;
-        width: 100%; 
+        width: 100%;	
         left: 0;
     }}
     
     #main-title-container h1 {{
-        font-size: 6.5vw; 
+        font-size: 6.5vw;	
         animation-duration: 8s;
     }}
 }}
 
-/* === MUSIC PLAYER STYLES (ĐÃ CHỈNH SỬA) === */
+/* === MUSIC PLAYER STYLES (ĐÃ CẬP NHẬT THEO YÊU CẦU MỚI) === */
 #music-player-container {{
     position: fixed;
     bottom: 20px;
     right: 20px;
     width: 280px;
-    /* 🌟 Loại bỏ background/backdrop-filter gốc để dùng background image */
-    background: transparent;
+    /* Giữ nguyên transparent để dùng background image */
+    background: transparent; 
     border-radius: 12px;
     padding: 12px 16px;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    /* Tăng cường bóng đổ để nổi bật */
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7); 
     z-index: 999;
     opacity: 0;
     transform: translateY(100px);
     transition: opacity 1s ease-out 2s, transform 1s ease-out 2s;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    position: fixed; 
-    overflow: hidden; /* Quan trọng cho border-radius của ::before */
+    /* Viền trắng mờ bao quanh player */
+    border: 1px solid rgba(255, 255, 255, 0.3); 
+    position: fixed;	
+    overflow: hidden; 
 }}
 
-/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO MỜ */
+/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO MỚI (Ngả Vàng) 🌟 */
 #music-player-container::before {{
     content: '';
     position: absolute;
@@ -267,10 +269,10 @@ iframe:first-of-type {{
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    /* HIỆU ỨNG LÀM MỜ VÀ GIẢM ĐỘ TRONG SUỐT */
-    filter: blur(2px) brightness(90%) grayscale(30%); 
-    opacity: 0.8; 
-    z-index: -1; /* Đặt sau nội dung player */
+    /* ✅ Chỉ dùng sepia(100%) để ngả màu vàng */
+    filter: sepia(100%) contrast(120%) brightness(80%);
+    opacity: 0.5; /* Giảm opacity để nội dung rõ hơn */
+    z-index: -1; 
 }}
 
 .video-finished #music-player-container {{
@@ -281,14 +283,14 @@ iframe:first-of-type {{
 /* Đảm bảo các thành phần con ở trên lớp giả */
 #music-player-container * {{
     position: relative;
-    z-index: 1; 
+    z-index: 1;	
 }}
 
 #music-player-container .controls,
 #music-player-container .time-info {{
-    /* Tăng độ tương phản cho text/icon */
+    /* Màu trắng cho text/icon */
     color: #fff; 
-    text-shadow: 0 0 5px #000;
+    text-shadow: 0 0 7px #000;
 }}
 
 #music-player-container .controls {{
@@ -299,46 +301,51 @@ iframe:first-of-type {{
     margin-bottom: 10px;
 }}
 
+/* 🌟 NÚT ĐIỀU KHIỂN MỚI: VIỀN TRẮNG SÁNG, ICON VÀNG KIM 🌟 */
 #music-player-container .control-btn {{
-    background: rgba(255, 215, 0, 0.2);
-    border: 2px solid #FFD700;
-    color: #FFD700;
-    width: 32px;
-    height: 32px;
+    background: rgba(255, 255, 255, 0.2); /* Nền trắng mờ */
+    border: 2px solid #FFFFFF; /* Viền TRẮNG SÁNG */
+    color: #FFD700; /* Icon màu VÀNG KIM */
+    width: 36px; /* Tăng kích thước nhẹ */
+    height: 36px;
     border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
-    font-size: 14px;
+    font-size: 16px; /* Tăng kích thước icon nhẹ */
 }}
 
 #music-player-container .control-btn:hover {{
-    background: rgba(255, 215, 0, 0.4);
-    transform: scale(1.1);
+    background: rgba(255, 215, 0, 0.5); /* Hover chuyển sang nền VÀNG nổi bật */
+    transform: scale(1.15); /* Tăng hiệu ứng hover */
 }}
 
 #music-player-container .control-btn.play-pause {{
-    width: 40px;
-    height: 40px;
-    font-size: 18px;
+    width: 44px; /* Tăng kích thước nút Play/Pause */
+    height: 44px;
+    font-size: 20px;
 }}
 
+/* 🌟 PROGRESS CONTAINER MỚI: VIỀN XÁM MỜ RÕ RÀNG HƠN 🌟 */
 #music-player-container .progress-container {{
     width: 100%;
-    height: 5px;
-    background: rgba(255, 255, 255, 0.2);
+    height: 6px; /* Tăng độ dày */
+    background: rgba(0, 0, 0, 0.5); /* Nền tối hơn */
     border-radius: 3px;
     cursor: pointer;
     margin-bottom: 6px;
     position: relative;
     overflow: hidden;
+    /* Viền nhẹ quanh thanh tiến trình */
+    border: 1px solid rgba(255, 255, 255, 0.4); 
 }}
 
 #music-player-container .progress-bar {{
     height: 100%;
-    background: linear-gradient(90deg, #FFD700, #FFA500);
+    /* Giữ gradient vàng */
+    background: linear-gradient(90deg, #FFD700, #FFA500); 
     border-radius: 3px;
     width: 0%;
     transition: width 0.1s linear;
@@ -347,8 +354,8 @@ iframe:first-of-type {{
 #music-player-container .time-info {{
     display: flex;
     justify-content: space-between;
-    color: rgba(255, 255, 255, 0.9); /* Đã tăng độ tương phản */
-    font-size: 10px;
+    color: rgba(255, 255, 255, 1); /* Trắng rõ ràng */
+    font-size: 11px;
     font-family: monospace;
 }}
 
@@ -401,7 +408,7 @@ js_callback_video = f"""
 
         shuffledCells.forEach((cell, index) => {{
             setTimeout(() => {{
-                cell.style.opacity = 0; 
+                cell.style.opacity = 0;	
             }}, index * 10);
         }});
         
@@ -540,7 +547,7 @@ js_callback_video = f"""
                         console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
                         
                         // Nếu không thể phát, chuyển sang nội dung chính sau 2 giây
-                        setTimeout(sendBackToStreamlit, 2000); 
+                        setTimeout(sendBackToStreamlit, 2000);	
                     }});
 
                     // 2. Thử phát audio (có thể bị chặn)
@@ -558,7 +565,7 @@ js_callback_video = f"""
                     video.style.opacity = 0;
                     audio.pause();
                     audio.currentTime = 0;
-                    introTextContainer.style.opacity = 0; 
+                    introTextContainer.style.opacity = 0;	
                     setTimeout(sendBackToStreamlit, 500);
                 }});
 
@@ -582,13 +589,13 @@ js_callback_video = f"""
                 document.addEventListener('touchstart', clickHandler, {{ once: true }});
                 
                 // Load video
-                video.load(); 
+                video.load();	
                 
                 // Animate text
                 const chars = introTextContainer.querySelectorAll('.intro-char');
                 chars.forEach((char, index) => {{
-                    char.style.animationDelay = `${{index * 0.1}}s`; 
-                    char.classList.add('char-shown'); 
+                    char.style.animationDelay = `${{index * 0.1}}s`;	
+                    char.classList.add('char-shown');	
                 }});
             }}
         }}, 100);
@@ -630,36 +637,36 @@ html_content_modified = f"""
             height: 100%;
             object-fit: cover;
             z-index: 0;
-            transition: opacity 1s; 
+            transition: opacity 1s;	
         }}
 
-        #intro-text-container {{ 
+        #intro-text-container {{	
             position: fixed;
             top: 5vh;
             width: 100%;
             text-align: center;
-            color: #FFD700; 
-            font-size: 3vw; 
+            color: #FFD700;	
+            font-size: 3vw;	
             
-            font-family: 'Sacramento', cursive; 
-            font-weight: 400; 
+            font-family: 'Sacramento', cursive;	
+            font-weight: 400;	
             
-            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8); 
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);	
             z-index: 100;
             pointer-events: none;
-            display: flex; 
+            display: flex;	
             justify-content: center;
-            opacity: 1; 
+            opacity: 1;	
             transition: opacity 0.5s;
         }}
         
         .intro-char {{
-            display: inline-block; 
+            display: inline-block;	
             opacity: 0;
-            transform: translateY(-50px); 
-            animation-fill-mode: forwards; 
-            animation-duration: 0.8s; 
-            animation-timing-function: ease-out; 
+            transform: translateY(-50px);	
+            animation-fill-mode: forwards;	
+            animation-duration: 0.8s;	
+            animation-timing-function: ease-out;	
         }}
 
         @keyframes charDropIn {{
@@ -679,7 +686,7 @@ html_content_modified = f"""
 
         @media (max-width: 768px) {{
             #intro-text-container {{
-                font-size: 6vw; 
+                font-size: 6vw;	
             }}
         }}
         
@@ -701,7 +708,7 @@ html_content_modified = f"""
 # Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
 intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
-    f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>' 
+    f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'	
     for char in intro_title
 ])
 html_content_modified = html_content_modified.replace(
@@ -718,7 +725,7 @@ st.components.v1.html(html_content_modified, height=1080, scrolling=False)
 
 # Tạo Lưới Reveal
 grid_cells_html = ""
-for i in range(240): 
+for i in range(240):	
     grid_cells_html += f'<div class="grid-cell"></div>'
 
 reveal_grid_html = f"""
@@ -732,7 +739,7 @@ st.markdown(reveal_grid_html, unsafe_allow_html=True)
 # --- NỘI DUNG CHÍNH (TIÊU ĐỀ ĐƠN, ĐỔI MÀU) ---
 
 # Tiêu đề đơn
-main_title_text = "TỔ BẢO DƯỠNG SỐ 1" 
+main_title_text = "TỔ BẢO DƯỠNG SỐ 1"	
 
 # Nhúng tiêu đề
 st.markdown(f"""
