@@ -36,6 +36,7 @@ try:
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
+    logo_base64 = get_base64_encoded_file("logo.jpg")
     
     # Kiểm tra file bắt buộc
     if not all([video_pc_base64, video_mobile_base64, audio_base64, bg_pc_base64, bg_mobile_base64]):
@@ -226,12 +227,19 @@ iframe:first-of-type {{
 }}
 
 /* === MUSIC PLAYER STYLES === */
-#music-player-container {{
+#music-player-container {
     position: fixed;
     bottom: 20px;
     right: 20px;
     width: 280px;
-    background: rgba(0, 0, 0, 0.85);
+
+    /* --- nền là logo mờ --- */
+    background: rgba(0, 0, 0, 0.75);
+    background-image: url("data:image/jpeg;base64,{logo_base64}");
+    background-size: cover;
+    background-position: center;
+    background-blend-mode: overlay;
+
     backdrop-filter: blur(10px);
     border-radius: 12px;
     padding: 12px 16px;
@@ -257,6 +265,7 @@ iframe:first-of-type {{
 }}
 
 #music-player-container .control-btn {{
+    box-shadow: 0 0 6px rgba(255, 215, 0, 0.5);
     background: rgba(255, 215, 0, 0.2);
     border: 2px solid #FFD700;
     color: #FFD700;
