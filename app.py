@@ -84,14 +84,6 @@ st.markdown(font_links, unsafe_allow_html=True)
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
 
-# Tạo 4 màu ngẫu nhiên cho Keyframes
-colors = [
-    f'#{random.randint(0, 0xFFFFFF):06x}',
-    f'#{random.randint(0, 0xFFFFFF):06x}',
-    f'#{random.randint(0, 0xFFFFFF):06x}',
-    f'#{random.randint(0, 0xFFFFFF):06x}'
-]
-
 # Tổng chu kỳ 5s: 1s nháy -> 3s nghỉ -> 1s nháy
 hide_streamlit_style = f"""
 <style>
@@ -240,48 +232,181 @@ iframe:first-of-type {{
 }}
 
 
-/* 🌟 KEYFRAMES MỚI: Nháy 4 cạnh đồng bộ (Màu ngẫu nhiên, nghỉ 3s) 🌟 */
-@keyframes border-flash {{
-    /* 1. Nháy Lần 1 (0% -> 10%) - Nhanh */
-    0% {{ box-shadow: 0 0 1px 1px {colors[0]}; }}
-    5% {{ box-shadow: 0 0 10px 5px {colors[1]}; }}
-    10% {{ box-shadow: 0 0 1px 1px {colors[2]}; }}
-
-    /* 2. Nghỉ 3s (10% -> 70%) */
-    10.01% {{ border-color: rgba(255, 215, 0, 0.3); box-shadow: none; }}
-    70% {{ border-color: rgba(255, 215, 0, 0.3); box-shadow: none; }}
-
-    /* 3. Nháy Lần 2 (70% -> 80%) - Nhanh */
-    70.01% {{ box-shadow: 0 0 1px 1px {colors[3]}; }}
-    75% {{ box-shadow: 0 0 10px 5px {colors[0]}; }}
-    80% {{ box-shadow: 0 0 1px 1px {colors[1]}; }}
-
-    /* 4. Nghỉ (80% -> 100%) */
-    80.01% {{ border-color: rgba(255, 215, 0, 0.3); box-shadow: none; }}
-    100% {{ border-color: rgba(255, 215, 0, 0.3); box-shadow: none; }}
+/* 🌟 KEYFRAMES MỚI: Ánh sáng vàng chạy như con rắn theo viền 🌟 */
+@keyframes snake-border {{
+    /* Cạnh trên (0% - 20%) */
+    0% {{
+        box-shadow: 
+            -350px 0 0 0 transparent,
+            350px 0 0 0 transparent,
+            0 -110px 0 0 transparent,
+            0 110px 0 0 transparent;
+    }}
+    5% {{
+        box-shadow: 
+            -175px 0 0 0 #FFD700,
+            350px 0 0 0 transparent,
+            0 -110px 0 0 transparent,
+            0 110px 0 0 transparent;
+    }}
+    10% {{
+        box-shadow: 
+            0 0 0 0 #FFD700,
+            350px 0 0 0 transparent,
+            0 -110px 0 0 transparent,
+            0 110px 0 0 transparent;
+    }}
+    15% {{
+        box-shadow: 
+            175px 0 0 0 #FFD700,
+            350px 0 0 0 transparent,
+            0 -110px 0 0 transparent,
+            0 110px 0 0 transparent;
+    }}
+    20% {{
+        box-shadow: 
+            350px 0 0 0 #FFD700,
+            350px 0 0 0 transparent,
+            0 -110px 0 0 transparent,
+            0 110px 0 0 transparent;
+    }}
+    
+    /* Nghỉ 3s (20% - 40%) */
+    20.1%, 40% {{
+        box-shadow: 
+            0 0 0 0 transparent,
+            0 0 0 0 transparent,
+            0 0 0 0 transparent,
+            0 0 0 0 transparent;
+    }}
+    
+    /* Cạnh phải (40% - 60%) */
+    40.1% {{
+        box-shadow: 
+            350px -110px 0 0 transparent,
+            350px 110px 0 0 transparent,
+            -350px 110px 0 0 transparent,
+            -350px -110px 0 0 transparent;
+    }}
+    45% {{
+        box-shadow: 
+            350px -55px 0 0 #FFD700,
+            350px 110px 0 0 transparent,
+            -350px 110px 0 0 transparent,
+            -350px -110px 0 0 transparent;
+    }}
+    50% {{
+        box-shadow: 
+            350px 0 0 0 #FFD700,
+            350px 110px 0 0 transparent,
+            -350px 110px 0 0 transparent,
+            -350px -110px 0 0 transparent;
+    }}
+    55% {{
+        box-shadow: 
+            350px 55px 0 0 #FFD700,
+            350px 110px 0 0 transparent,
+            -350px 110px 0 0 transparent,
+            -350px -110px 0 0 transparent;
+    }}
+    60% {{
+        box-shadow: 
+            350px 110px 0 0 #FFD700,
+            350px 110px 0 0 transparent,
+            -350px 110px 0 0 transparent,
+            -350px -110px 0 0 transparent;
+    }}
+    
+    /* Nghỉ 3s (60% - 80%) */
+    60.1%, 80% {{
+        box-shadow: 
+            0 0 0 0 transparent,
+            0 0 0 0 transparent,
+            0 0 0 0 transparent,
+            0 0 0 0 transparent;
+    }}
+    
+    /* Cạnh dưới (80% - 100%) - CHẠY NGƯỢC */
+    80.1% {{
+        box-shadow: 
+            350px 110px 0 0 transparent,
+            -350px 110px 0 0 transparent,
+            -350px -110px 0 0 transparent,
+            350px -110px 0 0 transparent;
+    }}
+    85% {{
+        box-shadow: 
+            175px 110px 0 0 #FFD700,
+            -350px 110px 0 0 transparent,
+            -350px -110px 0 0 transparent,
+            350px -110px 0 0 transparent;
+    }}
+    90% {{
+        box-shadow: 
+            0 110px 0 0 #FFD700,
+            -350px 110px 0 0 transparent,
+            -350px -110px 0 0 transparent,
+            350px -110px 0 0 transparent;
+    }}
+    95% {{
+        box-shadow: 
+            -175px 110px 0 0 #FFD700,
+            -350px 110px 0 0 transparent,
+            -350px -110px 0 0 transparent,
+            350px -110px 0 0 transparent;
+    }}
+    100% {{
+        box-shadow: 
+            -350px 110px 0 0 #FFD700,
+            -350px 110px 0 0 transparent,
+            -350px -110px 0 0 transparent,
+            350px -110px 0 0 transparent;
+    }}
 }}
 
-/* === MUSIC PLAYER STYLES (Kích thước và hiệu ứng mới) === */
+/* Keyframe cho cạnh trái */
+@keyframes snake-border-left {{
+    /* Cạnh trái (0% - 20%) */
+    0% {{
+        box-shadow: -350px 110px 0 0 transparent;
+    }}
+    5% {{
+        box-shadow: -350px 55px 0 0 #FFD700;
+    }}
+    10% {{
+        box-shadow: -350px 0 0 0 #FFD700;
+    }}
+    15% {{
+        box-shadow: -350px -55px 0 0 #FFD700;
+    }}
+    20% {{
+        box-shadow: -350px -110px 0 0 #FFD700;
+    }}
+    
+    /* Nghỉ và reset */
+    20.1%, 100% {{
+        box-shadow: 0 0 0 0 transparent;
+    }}
+}}
+
+/* === MUSIC PLAYER STYLES === */
 #music-player-container {{
     position: fixed;
     bottom: 20px;
     right: 20px;
     width: 350px; 
-    /* Đã resize lại height */
     height: 110px; 
     padding: 8px 16px; 
     background: rgba(0, 0, 0, 0.7); 
     border-radius: 12px;
-    
     z-index: 999;
     opacity: 0;
     transform: translateY(100px);
     transition: opacity 1s ease-out 2s, transform 1s ease-out 2s;
-    position: fixed;	
     overflow: hidden; 
 }}
 
-/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO VÀ VIỀN MỜ CỐ ĐỊNH 🌟 */
+/* Lớp giả cho hình nền logo và viền cố định */
 #music-player-container::before {{
     content: '';
     position: absolute;
@@ -296,25 +421,32 @@ iframe:first-of-type {{
     filter: contrast(110%) brightness(90%); 
     opacity: 0.4; 
     z-index: 1; 
-    /* Viền mờ nền (border cố định) */
-    border: 3px solid rgba(255, 215, 0, 0.3); 
+    border: 3px solid rgba(255, 215, 0, 0.2); 
     border-radius: 12px;
     box-sizing: border-box; 
-    transition: box-shadow 0.1s; /* Dùng transition để hiệu ứng nháy mượt hơn */
     
-    /* Áp dụng Keyframes nháy sáng */
-    animation: border-flash 5s linear infinite; 
+    /* Áp dụng hiệu ứng con rắn chạy theo viền */
+    animation: snake-border 16s linear infinite;
 }}
 
-/* Loại bỏ ::after vì không cần thiết cho hiệu ứng nháy đồng bộ */
+/* Lớp giả thứ 2 cho cạnh trái (delay để tạo hiệu ứng tuần hoàn) */
 #music-player-container::after {{
-    content: none;
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 2;
+    border-radius: 12px;
+    animation: snake-border-left 16s linear infinite;
+    animation-delay: 12s;
 }}
 
 /* Đảm bảo các thành phần con ở trên lớp giả */
 #music-player-container * {{
     position: relative;
-    z-index: 5; /* ✅ Nội dung luôn ở trên cùng */	
+    z-index: 5;
 }}
 
 .video-finished #music-player-container {{
@@ -322,7 +454,7 @@ iframe:first-of-type {{
     transform: translateY(0);
 }}
 
-/* Các style khác của player (giữ nguyên) */
+/* Các style khác của player */
 #music-player-container .controls,
 #music-player-container .time-info {{
     color: #fff; 
@@ -394,7 +526,7 @@ iframe:first-of-type {{
 @media (max-width: 768px) {{
     #music-player-container {{
         width: calc(100% - 40px);
-        height: 100px; /* Resize cho mobile */
+        height: 100px;
         right: 20px;
         left: 20px;
         bottom: 15px;
@@ -420,7 +552,6 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
 # --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
-# (Phần này giữ nguyên)
 intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
     f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'	
@@ -584,32 +715,23 @@ js_callback_video = f"""
 
                 console.log("Video/Audio source set. Loading metadata...");
                 
-                // --- LOGIC CHƠI VIDEO/AUDIO ĐƯỢC CẢI TIẾN ---
-                
                 const tryToPlay = () => {{
                     console.log("Attempting to play video (User interaction or Canplay event)");
                     
-                    // 1. Thử phát video (còn muted)
                     video.play().then(() => {{
                         console.log("✅ Video is playing!");
                     }}).catch(err => {{
-                        // Thất bại lần 2 (ngay cả sau tương tác). Có thể do lỗi tệp.
                         console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
-                        
-                        // Nếu không thể phát, chuyển sang nội dung chính sau 2 giây
                         setTimeout(sendBackToStreamlit, 2000);	
                     }});
 
-                    // 2. Thử phát audio (có thể bị chặn)
                     audio.play().catch(e => {{
                         console.log("Audio autoplay blocked (normal), waiting for video end.");
                     }});
                 }};
 
-                // Lắng nghe sự kiện video sẵn sàng (đáng tin cậy hơn)
                 video.addEventListener('canplaythrough', tryToPlay, {{ once: true }});
                 
-                // Event khi video kết thúc
                 video.addEventListener('ended', () => {{
                     console.log("Video ended, transitioning...");
                     video.style.opacity = 0;
@@ -619,18 +741,14 @@ js_callback_video = f"""
                     setTimeout(sendBackToStreamlit, 500);
                 }});
 
-                // Xử lý lỗi tệp video (RẤT QUAN TRỌNG VỚI BASE64)
                 video.addEventListener('error', (e) => {{
                     console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
                     sendBackToStreamlit();
                 }});
 
-
-                // Click/Touch handler để kích hoạt 'tryToPlay' nếu Autoplay bị chặn
                 const clickHandler = () => {{
                     console.log("User interaction detected, forcing play attempt.");
                     tryToPlay();
-                    // Xóa listener sau lần tương tác đầu tiên
                     document.removeEventListener('click', clickHandler);
                     document.removeEventListener('touchstart', clickHandler);
                 }};
@@ -638,10 +756,8 @@ js_callback_video = f"""
                 document.addEventListener('click', clickHandler, {{ once: true }});
                 document.addEventListener('touchstart', clickHandler, {{ once: true }});
                 
-                // Load video
                 video.load();	
                 
-                // Animate text
                 const chars = introTextContainer.querySelectorAll('.intro-char');
                 chars.forEach((char, index) => {{
                     char.style.animationDelay = `${{index * 0.1}}s`;	
@@ -650,7 +766,6 @@ js_callback_video = f"""
             }}
         }}, 100);
         
-        // Timeout sau 5 giây (nếu video không load được)
         setTimeout(() => {{
             clearInterval(waitForElements);
             const video = document.getElementById('intro-video');
