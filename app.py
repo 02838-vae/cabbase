@@ -329,7 +329,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 # Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
     # Ngoặc nhọn trong f-string JavaScript (Template Literal) cần được nhân đôi
-    music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files[:3]])
+    music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files])
 else:
     music_sources_js = ""
 
