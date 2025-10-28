@@ -229,34 +229,37 @@ iframe:first-of-type {{
 }}
 
 
-/* 🌟 KEYFRAMES MỚI: Dải ánh sáng chạy dọc theo viền (8s/chu kỳ) 🌟 */
+/* 🌟 KEYFRAMES MỚI: Tách rõ hành động chạy (20%) và nghỉ (5%) - Tổng 10s/chu kỳ 🌟 */
 @keyframes border-light-run {{
-    /* Cạnh TRÊN: Chạy từ Trái (0%) sang Phải (100%) */
-    0% {{ transform: translateX(0%) translateY(0) rotate(0deg); }}
-    25% {{ transform: translateX(100%) translateY(0) rotate(0deg); }}
+    /* 1. START (Góc trên trái) */
+    0% {{ transform: translate(0%, 0%) rotate(0deg); }}
     
-    /* Nghỉ (25% - 30%) - Dừng ở góc trên phải */
-    30% {{ transform: translateX(100%) translateY(0) rotate(0deg); }}
-
-    /* Cạnh PHẢI: Chạy từ Trên (0%) xuống Dưới (100%) */
-    30.1% {{ transform: translateX(100%) translateY(0) rotate(90deg); }} /* Xoay ở góc */
-    55% {{ transform: translateX(100%) translateY(100%) rotate(90deg); }}
+    /* 2. Cạnh TRÊN: Chạy (20%) */
+    20% {{ transform: translate(100%, 0%) rotate(0deg); }}
     
-    /* Nghỉ (55% - 60%) - Dừng ở góc dưới phải */
-    60% {{ transform: translateX(100%) translateY(100%) rotate(90deg); }}
-
-    /* Cạnh DƯỚI: Chạy từ Phải (100%) sang Trái (0%) */
-    60.1% {{ transform: translateX(100%) translateY(100%) rotate(180deg); }} /* Xoay ở góc */
-    85% {{ transform: translateX(0%) translateY(100%) rotate(180deg); }}
-
-    /* Nghỉ (85% - 90%) - Dừng ở góc dưới trái */
-    90% {{ transform: translateX(0%) translateY(100%) rotate(180deg); }}
-
-    /* Cạnh TRÁI: Chạy từ Dưới (100%) lên Trên (0%) */
-    90.1% {{ transform: translateX(0%) translateY(100%) rotate(270deg); }} /* Xoay ở góc */
-    99.9% {{ transform: translateX(0%) translateY(0%) rotate(270deg); }}
+    /* 3. Nghỉ (20% - 25%): Chờ ở góc trên phải */
+    25% {{ transform: translate(100%, 0%) rotate(0deg); }}
     
-    100% {{ transform: translateX(0%) translateY(0%) rotate(270deg); }}
+    /* 4. Chuyển sang Cạnh PHẢI (25% - 45%) */
+    25.01% {{ transform: translate(100%, 0%) rotate(90deg); }}
+    45% {{ transform: translate(100%, 100%) rotate(90deg); }}
+    
+    /* 5. Nghỉ (45% - 50%): Chờ ở góc dưới phải */
+    50% {{ transform: translate(100%, 100%) rotate(90deg); }}
+    
+    /* 6. Chuyển sang Cạnh DƯỚI (50% - 70%) */
+    50.01% {{ transform: translate(100%, 100%) rotate(180deg); }}
+    70% {{ transform: translate(0%, 100%) rotate(180deg); }}
+    
+    /* 7. Nghỉ (70% - 75%): Chờ ở góc dưới trái */
+    75% {{ transform: translate(0%, 100%) rotate(180deg); }}
+
+    /* 8. Chuyển sang Cạnh TRÁI (75% - 95%) */
+    75.01% {{ transform: translate(0%, 100%) rotate(270deg); }}
+    95% {{ transform: translate(0%, 0%) rotate(270deg); }}
+
+    /* 9. Quay về START (95% - 100%): Chờ ở góc trên trái */
+    100% {{ transform: translate(0%, 0%) rotate(270deg); }} 
 }}
 
 
@@ -322,8 +325,8 @@ iframe:first-of-type {{
     /* transform-origin: Thiết lập điểm quay/chuyển động tại góc trên trái (0% 0%) */
     transform-origin: 0% 0%; 
     
-    /* Tốc độ Linear để chuyển động đồng đều hơn */
-    animation: border-light-run 8s linear infinite; 
+    /* Tốc độ Linear, chu kỳ 10s */
+    animation: border-light-run 10s linear infinite; 
     z-index: 4; 
 }}
 
