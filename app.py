@@ -8,10 +8,6 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Khởi tạo session state (Không dùng trong code đã sửa, nhưng giữ lại nếu cần)
-# if 'video_ended' not in st.session_state:
-#     st.session_state.video_ended = False
-
 # --- CÁC HÀM TIỆN ÍCH ---
 
 def get_base64_encoded_file(file_path):
@@ -45,9 +41,8 @@ font_links = """
 st.markdown(font_links, unsafe_allow_html=True)
 
 
-# --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
+# --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ĐÃ SỬA LỖI HIỂN THỊ SOUNDCLOUD ---
 
-# Thêm CSS cho SoundCloud Player vào đây
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -196,24 +191,25 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === SOUNDCLOUD MUSIC PLAYER (MÃ CSS MỚI) === */
+/* === SOUNDCLOUD MUSIC PLAYER (ĐÃ SỬA LỖI HIỂN THỊ) === */
 #soundcloud-player-container {
-    position: fixed; /* Cố định vị trí */
-    bottom: 20px; /* Cách đáy 20px */
-    right: 20px; /* Cách phải 20px */
-    width: 300px; /* Chiều rộng cố định */
-    height: 150px; /* Chiều cao cố định */
-    z-index: 1000; 
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); /* Tạo bóng đổ */
+    position: fixed; 
+    bottom: 20px; 
+    right: 20px; 
+    width: 300px; 
+    height: 150px; 
+    z-index: 100; /* Đảm bảo nổi trên nội dung */
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); 
     border-radius: 8px;
-    overflow: hidden; /* Cần thiết để iframe không tràn ra ngoài */
-    opacity: 0; /* Mặc định ẩn */
-    transition: opacity 2s ease-out 2s; /* Hiển thị sau 2 giây kể từ khi main-content-revealed */
+    overflow: hidden; 
+    opacity: 0; 
+    transition: opacity 2s ease-out; /* Bỏ delay */
 }
 
 /* Hiển thị khi nội dung chính được reveal */
 .main-content-revealed #soundcloud-player-container {
     opacity: 1; 
+    transition-delay: 1s; /* Thêm delay 1s để chờ hiệu ứng reveal */
 }
 
 #soundcloud-player-container iframe {
@@ -228,7 +224,7 @@ iframe:first-of-type {{
         left: 5%;
         right: auto;
         bottom: 10px;
-        height: 100px; /* Giảm chiều cao trên mobile */
+        height: 100px; 
     }
 }
 </style>
@@ -251,14 +247,10 @@ js_callback_video = f"""
     function initRevealEffect() {{
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
         const mainTitle = window.parent.document.getElementById('main-title-container');
-        const musicPlayer = window.parent.document.getElementById('soundcloud-player-container'); // Chọn Music Player
 
         if (mainTitle) {{
              mainTitle.style.opacity = 1; 
         }}
-
-        // Không cần làm gì với musicPlayer ở đây, nó sẽ tự hiện bằng CSS transition
-        // khi class 'main-content-revealed' được thêm vào .stApp
 
         if (!revealGrid) {{ return; }}
 
@@ -462,11 +454,11 @@ st.markdown(f"""
 
 
 # ----------------------------------------------------------------------
-# --- PHẦN BỔ SUNG: SOUNDCLOUD MUSIC PLAYER (MỚI) ---
+# --- PHẦN BỔ SUNG: SOUNDCLOUD MUSIC PLAYER (ĐÃ SỬA MÃ NHÚNG) ---
 # ----------------------------------------------------------------------
 
 # Mã iframe của playlist Soundcloud "Nhac khong loi". 
-# Đã sửa lỗi và sử dụng link đầy đủ được mã hóa.
+# Đảm bảo width="100%" và height="100%" để nó khớp với div cha
 soundcloud_embed_code = """
 <iframe width="100%" height="100%" scrolling="no" frameborder="no" allow="autoplay" 
 src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/thang/sets/nhac-khong-loi&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true"></iframe>
