@@ -241,6 +241,8 @@ iframe:first-of-type {{
         top: -3px; 
         left: -3px; 
         transform: rotate(0deg); 
+        /* ✅ Thêm animation-timing-function cho điểm bắt đầu (làm mượt) */
+        animation-timing-function: cubic-bezier(0.8, 0, 0.2, 1); 
     }} 
 
     25% {{ 
@@ -252,31 +254,36 @@ iframe:first-of-type {{
     40% {{ 
         top: -3px; 
         left: calc(100% - 3px); 
-        transform: rotate(90deg); /* Bắt đầu xoay dọc */
+        transform: rotate(90deg); 
+        animation-timing-function: cubic-bezier(0.8, 0, 0.2, 1); 
     }}
 
     50% {{ 
         top: calc(100% - 3px); 
         left: calc(100% - 3px); 
         transform: rotate(90deg); 
+        animation-timing-function: cubic-bezier(0.8, 0, 0.2, 1); 
     }} 
 
     65% {{ 
         top: calc(100% - 3px); 
         left: calc(100% - 3px); 
-        transform: rotate(180deg); /* Bắt đầu xoay ngang */
+        transform: rotate(180deg); 
+        animation-timing-function: cubic-bezier(0.8, 0, 0.2, 1); 
     }}
     
     75% {{ 
         top: calc(100% - 3px); 
         left: -3px; 
         transform: rotate(180deg); 
+        animation-timing-function: cubic-bezier(0.8, 0, 0.2, 1); 
     }} 
     
     85% {{ 
         top: calc(100% - 3px); 
         left: -3px; 
-        transform: rotate(270deg); /* Bắt đầu xoay dọc */
+        transform: rotate(270deg); 
+        animation-timing-function: cubic-bezier(0.8, 0, 0.2, 1); 
     }}
 
     99% {{ 
@@ -288,11 +295,11 @@ iframe:first-of-type {{
     100% {{ 
         top: -3px; 
         left: -100%; 
-        transform: rotate(360deg); /* Hoặc 0deg */
+        transform: rotate(360deg);
     }} 
 }}
 
-/* === MUSIC PLAYER STYLES (CẬP NHẬT HIỆU ỨNG VIỀN CHẠY CHÍNH XÁC) === */
+/* === MUSIC PLAYER STYLES (ĐÃ LÀM MƯỢT HIỆU ỨNG VIỀN CHẠY) === */
 #music-player-container {{
     position: fixed;
     bottom: 20px;
@@ -324,39 +331,37 @@ iframe:first-of-type {{
     background-repeat: no-repeat;
     filter: contrast(110%) brightness(90%); 
     opacity: 0.4; 
-    z-index: -1; 
-    /* Thêm viền mờ cố định để định hình */
+    z-index: 1; 
     border: 3px solid rgba(255, 215, 0, 0.3); 
     border-radius: 12px;
-    box-sizing: border-box; /* Quan trọng */
+    box-sizing: border-box; 
 }}
 
 /* 🌟 HIỆU ỨNG VIỀN SÁNG VÀNG CHẠY 🌟 */
 #music-player-container::after {{
     content: '';
     position: absolute;
-    /* Kích thước của chấm sáng */
     width: 25px; 
     height: 6px; 
-    /* Gradient vàng theo chiều ngang */
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 1), transparent);
-    background-color: #FFD700;
     
-    /* Dùng box-shadow để mô phỏng ánh sáng tỏa ra */
-    box-shadow: 0 0 10px rgba(255, 215, 0, 0.8), 0 0 20px rgba(255, 215, 0, 0.4);
+    /* ✅ Dùng radial-gradient để tạo chấm sáng mềm mại */
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 1) 0%, rgba(255, 215, 0, 0.9) 30%, transparent 100%);
     
-    border-radius: 3px;
-    /* Điều chỉnh animation để chạy 8s/vòng */
-    animation: border-light-run 8s linear infinite; 
+    /* ✅ Tăng cường độ mờ của box-shadow */
+    box-shadow: 0 0 15px rgba(255, 215, 0, 1), 0 0 30px rgba(255, 215, 0, 0.7);
+    
+    border-radius: 50%; /* Dùng hình tròn để dễ xoay mượt mà hơn */
+    
+    /* ✅ Thay đổi tốc độ animation từ 'linear' thành 'ease-in-out' để mượt mà hơn */
+    animation: border-light-run 8s ease-in-out infinite; 
     z-index: 4; 
     transform-origin: center center;
-    /* Ánh sáng ban đầu sẽ được điều chỉnh bởi keyframes */
 }}
 
 /* Đảm bảo các thành phần con ở trên lớp giả */
 #music-player-container * {{
     position: relative;
-    z-index: 5; /* Đảm bảo nội dung player nằm trên ánh sáng và viền */	
+    z-index: 5; /* ✅ Nội dung luôn ở trên cùng */	
 }}
 
 .video-finished #music-player-container {{
@@ -364,7 +369,7 @@ iframe:first-of-type {{
     transform: translateY(0);
 }}
 
-/* Các style khác của player (không đổi) */
+/* Các style khác của player (giữ nguyên) */
 #music-player-container .controls,
 #music-player-container .time-info {{
     color: #fff; 
