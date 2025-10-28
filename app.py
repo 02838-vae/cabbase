@@ -18,13 +18,14 @@ if 'video_ended' not in st.session_state:
 def get_base64_encoded_file(file_path):
     """Đọc file và trả về Base64 encoded string."""
     if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
+        # print(f"File not found or empty: {file_path}") # Debugging
         return None
     try:
         with open(file_path, "rb") as f:
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except Exception as e:
-        st.error(f"Lỗi khi đọc file {{file_path}}: {{str(e)}}")
+        # print(f"Error reading file {file_path}: {str(e)}") # Debugging
         return None
 
 
@@ -36,8 +37,6 @@ try:
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
-    
-    # MÃ HÓA CHO LOGO
     logo_base64 = get_base64_encoded_file("logo.jpg")
 
     # Kiểm tra file bắt buộc
@@ -54,7 +53,7 @@ try:
         st.stop()
         
 except Exception as e:
-    st.error(f"❌ Lỗi khi đọc file: {{str(e)}}")
+    st.error(f"❌ Lỗi khi đọc file: {str(e)}")
     st.stop()
 
 # Đảm bảo logo_base64 được khởi tạo nếu file không tồn tại
@@ -66,7 +65,7 @@ if not 'logo_base64' in locals() or not logo_base64:
 # Mã hóa các file nhạc nền (không bắt buộc)
 music_files = []
 for i in range(1, 7):
-    music_base64 = get_base64_encoded_file(f"background{{i}}.mp3")
+    music_base64 = get_base64_encoded_file(f"background{i}.mp3")
     if music_base64:
         music_files.append(music_base64)
 
@@ -82,6 +81,7 @@ font_links = """
 st.markdown(font_links, unsafe_allow_html=True)
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
+# SỬA LỖI F-STRING: NHÂN ĐÔI TẤT CẢ NGOẶC NHỌN CSS
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -473,6 +473,9 @@ if len(music_files) > 0:
 else:
     music_sources_js = ""
 
+# Tiêu đề video intro đã khôi phục
+INTRO_TITLE = "TỔ BẢO DƯỠNG SỐ 1"
+
 # JavaScript 
 js_callback_video = f"""
 <script>
@@ -783,7 +786,7 @@ html_content_modified = f"""
 </head>
 <body>
 
-    <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+    <div id="intro-text-container">{INTRO_TITLE}</div>
     
     <video id="intro-video" muted playsinline></video>
     
@@ -795,14 +798,13 @@ html_content_modified = f"""
 """
 
 # Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
-intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
-    f'<span class="intro-char">{{char}}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'	
-    for char in intro_title
+    f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'	
+    for char in INTRO_TITLE
 ])
 html_content_modified = html_content_modified.replace(
-    "<div id=\"intro-text-container\">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>",
-    f"<div id=\"intro-text-container\">{{intro_chars_html}}</div>"
+    f"<div id=\"intro-text-container\">{INTRO_TITLE}</div>",
+    f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
 )
 
 # --- HIỂN THỊ IFRAME VIDEO ---
