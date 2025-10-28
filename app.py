@@ -586,7 +586,7 @@ html_content_modified = f"""
             width: 100%;
             height: 100%;
             object-fit: cover;
-            z-index: -100;
+            z-index: 0;
             transition: opacity 1s; 
         }}
 
