@@ -18,14 +18,13 @@ if 'video_ended' not in st.session_state:
 def get_base64_encoded_file(file_path):
     """Đọc file và trả về Base64 encoded string."""
     if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
-        # print(f"File not found or empty: {file_path}") # Debugging
         return None
     try:
         with open(file_path, "rb") as f:
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except Exception as e:
-        # print(f"Error reading file {file_path}: {str(e)}") # Debugging
+        st.error(f"Lỗi khi đọc file {file_path}: {str(e)}")
         return None
 
 
@@ -228,7 +227,7 @@ iframe:first-of-type {{
     }}
 }}
 
-/* 🌟 KEYFRAMES MỚI: HIỆU ỨNG CHUYỂN ĐỘNG CHẠY VÀ DỪNG (8 giây/chu kỳ) 🌟 */
+/* 🌟 KEYFRAMES: HIỆU ỨNG CHUYỂN ĐỘNG CHẠY VÀ DỪNG (8 giây/chu kỳ) 🌟 */
 @keyframes flow-border-cycle {{
     /* Khai báo các biến màu và độ mờ cho Keyframes */
     --flow-glow: 0 0 15px 2px rgba(255, 215, 0, 1); /* Vệt sáng chính */
@@ -468,13 +467,13 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
-    # Ngoặc nhọn trong f-string JavaScript (Template Literal) cần được nhân đôi
-    music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{{music}}'" for music in music_files])
+    # SỬA LỖI: Chỉ cần dấu ngoặc kép bên ngoài và ngoặc đơn bên trong string
+    music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files])
 else:
     music_sources_js = ""
 
 # Tiêu đề video intro đã khôi phục
-INTRO_TITLE = "TỔ BẢO DƯỠNG SỐ 1"
+INTRO_TITLE = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 
 # JavaScript 
 js_callback_video = f"""
@@ -526,6 +525,7 @@ js_callback_video = f"""
         const audio = new Audio();
         audio.volume = 0.3;
         
+        // SỬA LỖI: Lấy phần tử từ DOM gốc (parent.document)
         const playPauseBtn = window.parent.document.getElementById('play-pause-btn');
         const prevBtn = window.parent.document.getElementById('prev-btn');
         const nextBtn = window.parent.document.getElementById('next-btn');
@@ -543,6 +543,10 @@ js_callback_video = f"""
             console.log("Loading track", index + 1);
             audio.src = musicSources[index];
             audio.load();
+            if (isPlaying) {{
+                // Tự động phát khi track mới được tải và đang ở trạng thái Playing
+                audio.play().catch(e => console.error("Play error on loadTrack:", e));
+            }}
         }}
         
         function togglePlayPause() {{
@@ -550,8 +554,15 @@ js_callback_video = f"""
                 audio.pause();
                 playPauseBtn.textContent = '▶';
             }} else {{
-                audio.play().catch(e => console.error("Play error:", e));
-                playPauseBtn.textContent = '⏸';
+                // Thử phát và bắt lỗi nếu autoplay bị chặn
+                audio.play().then(() => {{
+                    playPauseBtn.textContent = '⏸';
+                }}).catch(e => {{
+                    console.error("Play error:", e);
+                    // Nếu lỗi (bị chặn), không đổi trạng thái isPlaying
+                    // Streamlit thường không có tương tác click để kích hoạt Play, nên lỗi này phổ biến
+                }});
+                playPauseBtn.textContent = '⏸'; // Đổi tạm thời
             }}
             isPlaying = !isPlaying;
         }}
@@ -559,17 +570,11 @@ js_callback_video = f"""
         function nextTrack() {{
             currentTrack = (currentTrack + 1) % musicSources.length;
             loadTrack(currentTrack);
-            if (isPlaying) {{
-                audio.play().catch(e => console.error("Play error:", e));
-            }}
         }}
         
         function prevTrack() {{
             currentTrack = (currentTrack - 1 + musicSources.length) % musicSources.length;
             loadTrack(currentTrack);
-            if (isPlaying) {{
-                audio.play().catch(e => console.error("Play error:", e));
-            }}
         }}
         
         function formatTime(seconds) {{
@@ -579,6 +584,7 @@ js_callback_video = f"""
             return `${{mins}}:${{secs.toString().padStart(2, '0')}}`;
         }}
         
+        // --- LISTENERS ---
         audio.addEventListener('timeupdate', () => {{
             const progress = (audio.currentTime / audio.duration) * 100;
             progressBar.style.width = progress + '%';
@@ -603,6 +609,7 @@ js_callback_video = f"""
             audio.currentTime = percent * audio.duration;
         }});
         
+        // Khởi tạo
         loadTrack(0);
         console.log("Music player initialized successfully");
     }}
@@ -798,6 +805,7 @@ html_content_modified = f"""
 """
 
 # Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
+# KHÔI PHỤC HIỆU ỨNG CHỮ THẢ VÀ TIÊU ĐỀ ĐÚNG
 intro_chars_html = ''.join([
     f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'	
     for char in INTRO_TITLE
