@@ -668,7 +668,7 @@ html_content_modified = html_content_modified.replace(
 
 # --- HIỂN THỊ IFRAME VIDEO (Đã sửa lỗi kích thước) ---
 # Đảm bảo chiều cao lớn để iframe hiển thị đúng, tránh màn hình đen
-st.components.v1.html(html_content_modified, height=1000, scrolling=False)
+st.components.v1.html(html_content_modified, height=0, scrolling=False)
 
 
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
