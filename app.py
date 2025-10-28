@@ -24,7 +24,7 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except Exception as e:
-        st.error(f"Lỗi khi đọc file {file_path}: {str(e)}")
+        st.error(f"Lỗi khi đọc file {{file_path}}: {{str(e)}}")
         return None
 
 
@@ -54,7 +54,7 @@ try:
         st.stop()
         
 except Exception as e:
-    st.error(f"❌ Lỗi khi đọc file: {str(e)}")
+    st.error(f"❌ Lỗi khi đọc file: {{str(e)}}")
     st.stop()
 
 # Đảm bảo logo_base64 được khởi tạo nếu file không tồn tại
@@ -66,7 +66,7 @@ if not 'logo_base64' in locals() or not logo_base64:
 # Mã hóa các file nhạc nền (không bắt buộc)
 music_files = []
 for i in range(1, 7):
-    music_base64 = get_base64_encoded_file(f"background{i}.mp3")
+    music_base64 = get_base64_encoded_file(f"background{{i}}.mp3")
     if music_base64:
         music_files.append(music_base64)
 
@@ -229,83 +229,83 @@ iframe:first-of-type {{
 }}
 
 /* 🌟 KEYFRAMES MỚI: HIỆU ỨNG CHUYỂN ĐỘNG CHẠY VÀ DỪNG (8 giây/chu kỳ) 🌟 */
-@keyframes flow-border-cycle {
+@keyframes flow-border-cycle {{
     /* Khai báo các biến màu và độ mờ cho Keyframes */
     --flow-glow: 0 0 15px 2px rgba(255, 215, 0, 1); /* Vệt sáng chính */
     --base-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3); /* Viền mờ nền */
 
     /* 0% - Bắt đầu (Góc trên trái) */
-    0% {
+    0% {{
         /* Vệt sáng ở vị trí Top Left */
         box-shadow: 
             var(--base-shadow) inset, 
             -15px -15px 0 0 var(--flow-glow); 
-    }
+    }}
 
     /* 12.5% - Chạy hết cạnh trên (1 giây) */
-    12.5% {
+    12.5% {{
         /* Vệt sáng ở vị trí Top Right */
         box-shadow: 
             var(--base-shadow) inset, 
             15px -15px 0 0 var(--flow-glow);
-    }
+    }}
 
     /* 25% - Nghỉ cạnh trên (1 giây) */
-    25% {
+    25% {{
         /* Vệt sáng vẫn ở vị trí Top Right */
         box-shadow: 
             var(--base-shadow) inset, 
             15px -15px 0 0 var(--flow-glow);
-    }
+    }}
 
     /* 37.5% - Chạy hết cạnh phải (1 giây) */
-    37.5% {
+    37.5% {{
         /* Vệt sáng ở vị trí Bottom Right */
         box-shadow: 
             var(--base-shadow) inset, 
             15px 15px 0 0 var(--flow-glow);
-    }
+    }}
 
     /* 50% - Nghỉ cạnh phải (1 giây) */
-    50% {
+    50% {{
         /* Vệt sáng vẫn ở vị trí Bottom Right */
         box-shadow: 
             var(--base-shadow) inset, 
             15px 15px 0 0 var(--flow-glow);
-    }
+    }}
     
     /* 62.5% - Chạy hết cạnh dưới (1 giây) */
-    62.5% {
+    62.5% {{
         /* Vệt sáng ở vị trí Bottom Left */
         box-shadow: 
             var(--base-shadow) inset, 
             -15px 15px 0 0 var(--flow-glow);
-    }
+    }}
 
     /* 75% - Nghỉ cạnh dưới (1 giây) */
-    75% {
+    75% {{
         /* Vệt sáng vẫn ở vị trí Bottom Left */
         box-shadow: 
             var(--base-shadow) inset, 
             -15px 15px 0 0 var(--flow-glow);
-    }
+    }}
 
     /* 87.5% - Chạy hết cạnh trái (1 giây) */
-    87.5% {
+    87.5% {{
         /* Vệt sáng ở vị trí Top Left */
         box-shadow: 
             var(--base-shadow) inset, 
             -15px -15px 0 0 var(--flow-glow);
-    }
+    }}
 
     /* 100% - Nghỉ cạnh trái (1 giây, quay lại 0%) */
-    100% {
+    100% {{
         /* Vệt sáng vẫn ở vị trí Top Left (giống 0%) */
         box-shadow: 
             var(--base-shadow) inset, 
             -15px -15px 0 0 var(--flow-glow);
-    }
-}
+    }}
+}}
 
 
 /* === MUSIC PLAYER STYLES (ĐÃ CẬP NHẬT HIỆU ỨNG CHUYỂN ĐỘNG) === */
@@ -469,7 +469,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 # Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
     # Ngoặc nhọn trong f-string JavaScript (Template Literal) cần được nhân đôi
-    music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files])
+    music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{{music}}'" for music in music_files])
 else:
     music_sources_js = ""
 
@@ -797,12 +797,12 @@ html_content_modified = f"""
 # Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
 intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
-    f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'	
+    f'<span class="intro-char">{{char}}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'	
     for char in intro_title
 ])
 html_content_modified = html_content_modified.replace(
     "<div id=\"intro-text-container\">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>",
-    f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
+    f"<div id=\"intro-text-container\">{{intro_chars_html}}</div>"
 )
 
 # --- HIỂN THỊ IFRAME VIDEO ---
