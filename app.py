@@ -17,11 +17,13 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError as e:
+        # Tăng cường thông báo lỗi để người dùng dễ dàng tìm ra file bị thiếu
         raise FileNotFoundError(f"Lỗi: Không tìm thấy file media. Vui lòng kiểm tra lại đường dẫn: {e.filename}")
 
 
 # Mã hóa các file media
 try:
+    # Bạn cần đảm bảo các file này tồn tại trong cùng thư mục
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
@@ -41,7 +43,7 @@ font_links = """
 st.markdown(font_links, unsafe_allow_html=True)
 
 
-# --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ĐÃ SỬA LỖI HIỂN THỊ SOUNDCLOUD ---
+# --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
 
 hide_streamlit_style = f"""
 <style>
@@ -191,13 +193,13 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === SOUNDCLOUD MUSIC PLAYER (ĐÃ SỬA LỖI HIỂN THỊ) === */
+/* === SOUNDCLOUD MUSIC PLAYER (ĐÃ SỬA LỖI TƯƠNG TÁC) === */
 #soundcloud-player-container {{
     position: fixed; 
     bottom: 20px; 
     right: 20px; 
     width: 300px; 
-    height: 150px; 
+    height: 100px; /* Sửa thành 100px cho trình phát gọn */
     z-index: 100; /* Đảm bảo nổi trên nội dung */
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); 
     border-radius: 8px;
@@ -224,7 +226,7 @@ iframe:first-of-type {{
         left: 5%;
         right: auto;
         bottom: 10px;
-        height: 100px; 
+        height: 81px; /* Chiều cao tối thiểu cho mobile */
     }}
 }}
 </style>
@@ -454,14 +456,15 @@ st.markdown(f"""
 
 
 # ----------------------------------------------------------------------
-# --- PHẦN BỔ SUNG: SOUNDCLOUD MUSIC PLAYER (ĐÃ SỬA LỖI CÚ PHÁP) ---
+# --- PHẦN BỔ SUNG: SOUNDCLOUD MUSIC PLAYER ---
 # ----------------------------------------------------------------------
 
-# SỬ DỤNG BA DẤU NGOẶC KÉP ĐƠN (''') THAY VÌ BA DẤU NGOẶC KÉP ĐÔI (""")
-# ĐỂ TRÁNH XUNG ĐỘT CÚ PHÁP VỚI F-STRING CHÍNH CỦA STREAMLIT
+# Đã dùng ''' để tránh lỗi cú pháp
+# Đã thêm sandbox và đổi visual=false để đảm bảo khả năng tương tác
 soundcloud_embed_code = '''
-<iframe width="100%" height="100%" scrolling="no" frameborder="no" allow="autoplay" 
-src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/thang/sets/nhac-khong-loi&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true"></iframe>
+<iframe width="100%" height="100" scrolling="no" frameborder="no" allow="autoplay" 
+sandbox="allow-scripts allow-same-origin allow-popups"
+src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/thang/sets/nhac-khong-loi&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=false"></iframe>
 ''' 
 
 soundcloud_player_html = f"""
