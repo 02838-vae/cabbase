@@ -321,9 +321,9 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
-# Tạo danh sách music sources cho JavaScript
+# Tạo danh sách music sources cho JavaScript (chỉ lấy 3 file đầu để tăng tốc độ load)
 if len(music_files) > 0:
-    music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files])
+    music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files[:3]])
 else:
     music_sources_js = ""
 
@@ -334,7 +334,10 @@ js_callback_video = f"""
     
     function sendBackToStreamlit() {{
         console.log("Video ended, revealing main content");
-        window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
+        const stApp = window.parent.document.querySelector('.stApp');
+        if (stApp) {{
+            stApp.classList.add('video-finished', 'main-content-revealed');
+        }}
         initRevealEffect();
         setTimeout(initMusicPlayer, 100);
     }}
