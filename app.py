@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Khởi tạo session state (Giữ nguyên, mặc dù không dùng để bỏ qua video khi refresh)
+# Khởi tạo session state (Giữ nguyên)
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
@@ -17,15 +17,12 @@ if 'video_ended' not in st.session_state:
 
 def get_base64_encoded_file(file_path):
     """Đọc file và trả về Base64 encoded string."""
-    # Kiểm tra xem file có tồn tại và có dữ liệu không
     if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
         return None
     try:
         with open(file_path, "rb") as f:
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
-    except FileNotFoundError:
-        return None
     except Exception as e:
         st.error(f"Lỗi khi đọc file {file_path}: {str(e)}")
         return None
@@ -94,13 +91,13 @@ div.block-container {{
     max-width: 100% !important;
 }}
 
-/* Điều chỉnh IFRAME video intro để chiếm toàn màn hình */
+/* Đã sửa: Đảm bảo iframe video intro chiếm toàn màn hình và có độ ưu tiên cao */
 iframe:first-of-type {{
     transition: opacity 1s ease-out, visibility 1s ease-out;
     opacity: 1;
     visibility: visible;
     width: 100vw !important;
-    height: 100vh !important; /* Ghi đè lên chiều cao mặc định của Streamlit */
+    height: 100vh !important; 
     position: fixed;
     top: 0;
     left: 0;
@@ -327,19 +324,19 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
-# Tạo danh sách music sources cho JavaScript (chỉ lấy 3 file đầu để tăng tốc độ load)
+# Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
     music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files[:3]])
 else:
     music_sources_js = ""
 
-# JavaScript
+# JavaScript (Đã SỬA ĐỔI)
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
     
     function sendBackToStreamlit() {{
-        console.log("Video ended, revealing main content");
+        console.log("Video ended or skipped, revealing main content");
         const stApp = window.parent.document.querySelector('.stApp');
         if (stApp) {{
             stApp.classList.add('video-finished', 'main-content-revealed');
@@ -350,7 +347,6 @@ js_callback_video = f"""
     
     function initRevealEffect() {{
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
-        const mainTitle = window.parent.document.getElementById('main-title-container');
 
         if (!revealGrid) {{ return; }}
 
@@ -478,54 +474,37 @@ js_callback_video = f"""
                 console.log("All elements found, initializing...");
                 
                 const isMobile = window.innerWidth <= 768;
+                const videoSource = isMobile ? 'data:video/mp4;base64,{video_mobile_base64}' : 'data:video/mp4;base64,{video_pc_base64}';
 
-                // Set video source
-                if (isMobile) {{
-                    video.src = 'data:video/mp4;base64,{video_mobile_base64}';
-                    console.log("Loading mobile video");
-                }} else {{
-                    video.src = 'data:video/mp4;base64,{video_pc_base64}';
-                    console.log("Loading PC video");
-                }}
-                
+                video.src = videoSource;
                 audio.src = 'data:audio/mp3;base64,{audio_base64}';
 
-                // Load video
-                video.load();
-                console.log("Video loaded, attempting to play...");
+                console.log("Video/Audio source set. Loading metadata...");
                 
-                // Play video (muted playsinline giúp tự động chạy tốt hơn)
-                video.play().then(() => {{
-                    console.log("✅ Video is playing!");
-                }}).catch(e => {{
-                    console.warn("❌ Video autoplay blocked. Waiting for user interaction:", e);
-                }});
+                // --- LOGIC CHƠI VIDEO/AUDIO ĐƯỢC CẢI TIẾN ---
                 
-                // Animate text
-                const chars = introTextContainer.querySelectorAll('.intro-char');
-                chars.forEach((char, index) => {{
-                    char.style.animationDelay = `${{index * 0.1}}s`; 
-                    char.classList.add('char-shown'); 
-                }});
-
-                // Play audio
-                audio.volume = 0.5;
-                audio.loop = true; 
-                audio.play().catch(e => {{
-                    console.log("Audio autoplay blocked (normal)");
-                }});
-                
-                // Click handler để play nếu bị block (Video/Audio)
-                const clickHandler = () => {{
-                    console.log("User clicked, trying to play...");
+                const tryToPlay = () => {{
+                    console.log("Attempting to play video (User interaction or Canplay event)");
+                    
+                    // 1. Thử phát video (còn muted)
                     video.play().then(() => {{
-                        console.log("✅ Video playing after click");
-                    }}).catch(err => console.error("Still can't play:", err));
-                    audio.play().catch(e => {{}});
+                        console.log("✅ Video is playing!");
+                    }}).catch(err => {{
+                        // Thất bại lần 2 (ngay cả sau tương tác). Có thể do lỗi tệp.
+                        console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
+                        
+                        // Nếu không thể phát, chuyển sang nội dung chính sau 2 giây
+                        setTimeout(sendBackToStreamlit, 2000); 
+                    }});
+
+                    // 2. Thử phát audio (có thể bị chặn)
+                    audio.play().catch(e => {{
+                        console.log("Audio autoplay blocked (normal), waiting for video end.");
+                    }});
                 }};
-                
-                document.addEventListener('click', clickHandler, {{ once: true }});
-                document.addEventListener('touchstart', clickHandler, {{ once: true }});
+
+                // Lắng nghe sự kiện video sẵn sàng (đáng tin cậy hơn)
+                video.addEventListener('canplaythrough', tryToPlay, {{ once: true }});
                 
                 // Event khi video kết thúc
                 video.addEventListener('ended', () => {{
@@ -534,22 +513,50 @@ js_callback_video = f"""
                     audio.pause();
                     audio.currentTime = 0;
                     introTextContainer.style.opacity = 0; 
-                    
-                    setTimeout(() => {{
-                        sendBackToStreamlit();
-                    }}, 500);
+                    setTimeout(sendBackToStreamlit, 500);
                 }});
+
+                // Xử lý lỗi tệp video (RẤT QUAN TRỌNG VỚI BASE64)
+                video.addEventListener('error', (e) => {{
+                    console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
+                    sendBackToStreamlit();
+                }});
+
+
+                // Click/Touch handler để kích hoạt 'tryToPlay' nếu Autoplay bị chặn
+                const clickHandler = () => {{
+                    console.log("User interaction detected, forcing play attempt.");
+                    tryToPlay();
+                    // Xóa listener sau lần tương tác đầu tiên
+                    document.removeEventListener('click', clickHandler);
+                    document.removeEventListener('touchstart', clickHandler);
+                }};
                 
-                // Debug: log video state
-                video.addEventListener('error', (e) => console.error("Video error:", e));
+                document.addEventListener('click', clickHandler, {{ once: true }});
+                document.addEventListener('touchstart', clickHandler, {{ once: true }});
+                
+                // Load video
+                video.load(); 
+                
+                // Animate text
+                const chars = introTextContainer.querySelectorAll('.intro-char');
+                chars.forEach((char, index) => {{
+                    char.style.animationDelay = `${{index * 0.1}}s`; 
+                    char.classList.add('char-shown'); 
+                }});
             }}
         }}, 100);
         
-        // Timeout sau 5 giây để tránh vòng lặp vô tận nếu có lỗi
+        // Timeout sau 5 giây (nếu video không load được)
         setTimeout(() => {{
             clearInterval(waitForElements);
+            const video = document.getElementById('intro-video');
+            if (video && !video.src) {{
+                console.warn("Timeout before video source set. Force transitioning to main content.");
+                sendBackToStreamlit();
+            }}
         }}, 5000);
-    }});
+    });
 </script>
 """
 
@@ -656,7 +663,7 @@ html_content_modified = html_content_modified.replace(
 )
 
 # --- HIỂN THỊ IFRAME VIDEO (Đã sửa lỗi kích thước) ---
-# Đặt height lớn hơn (ví dụ 1000) để đảm bảo Streamlit cấp đủ không gian cho iframe
+# Đảm bảo chiều cao lớn để iframe hiển thị đúng, tránh màn hình đen
 st.components.v1.html(html_content_modified, height=1000, scrolling=False)
 
 
