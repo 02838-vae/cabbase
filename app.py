@@ -8,9 +8,9 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Khởi tạo session state
-if 'video_ended' not in st.session_state:
-    st.session_state.video_ended = False
+# Khởi tạo session state (Không dùng trong code đã sửa, nhưng giữ lại nếu cần)
+# if 'video_ended' not in st.session_state:
+#     st.session_state.video_ended = False
 
 # --- CÁC HÀM TIỆN ÍCH ---
 
@@ -46,6 +46,8 @@ st.markdown(font_links, unsafe_allow_html=True)
 
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
+
+# Thêm CSS cho SoundCloud Player vào đây
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -167,18 +169,18 @@ iframe:first-of-type {{
     display: inline-block; 
 
     /* 1. Hiệu ứng chữ chạy - Tăng tốc độ */
-    animation: scrollText 15s linear infinite; /* Giảm từ 25s xuống 15s */
+    animation: scrollText 15s linear infinite; 
     
     /* 2. Hiệu ứng đổi màu */
     background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3); /* Cầu vồng */
-    background-size: 400% 400%; /* Cần kích thước lớn để tạo hiệu ứng chuyển màu mượt */
-    -webkit-background-clip: text; /* Clip màu nền theo hình dạng chữ */
-    -webkit-text-fill-color: transparent; /* Ẩn màu chữ gốc */
-    color: transparent; /* Dành cho các trình duyệt khác */
-    animation: colorShift 10s ease infinite, scrollText 15s linear infinite; /* Áp dụng đồng thời 2 animation */
+    background-size: 400% 400%; 
+    -webkit-background-clip: text; 
+    -webkit-text-fill-color: transparent; 
+    color: transparent; 
+    animation: colorShift 10s ease infinite, scrollText 15s linear infinite; 
     
     /* Thiết lập bóng đổ cổ điển */
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Giảm độ đậm của bóng để màu sắc nổi bật */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
 }}
 
 @media (max-width: 768px) {{
@@ -193,6 +195,42 @@ iframe:first-of-type {{
         animation-duration: 8s; /* Tăng tốc độ trên mobile */
     }}
 }}
+
+/* === SOUNDCLOUD MUSIC PLAYER (MÃ CSS MỚI) === */
+#soundcloud-player-container {
+    position: fixed; /* Cố định vị trí */
+    bottom: 20px; /* Cách đáy 20px */
+    right: 20px; /* Cách phải 20px */
+    width: 300px; /* Chiều rộng cố định */
+    height: 150px; /* Chiều cao cố định */
+    z-index: 1000; 
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); /* Tạo bóng đổ */
+    border-radius: 8px;
+    overflow: hidden; /* Cần thiết để iframe không tràn ra ngoài */
+    opacity: 0; /* Mặc định ẩn */
+    transition: opacity 2s ease-out 2s; /* Hiển thị sau 2 giây kể từ khi main-content-revealed */
+}
+
+/* Hiển thị khi nội dung chính được reveal */
+.main-content-revealed #soundcloud-player-container {
+    opacity: 1; 
+}
+
+#soundcloud-player-container iframe {
+    width: 100%;
+    height: 100%;
+    border: none;
+}
+
+@media (max-width: 768px) {
+    #soundcloud-player-container {
+        width: 90%; 
+        left: 5%;
+        right: auto;
+        bottom: 10px;
+        height: 100px; /* Giảm chiều cao trên mobile */
+    }
+}
 </style>
 """
 
@@ -213,10 +251,14 @@ js_callback_video = f"""
     function initRevealEffect() {{
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
         const mainTitle = window.parent.document.getElementById('main-title-container');
+        const musicPlayer = window.parent.document.getElementById('soundcloud-player-container'); // Chọn Music Player
 
         if (mainTitle) {{
              mainTitle.style.opacity = 1; 
         }}
+
+        // Không cần làm gì với musicPlayer ở đây, nó sẽ tự hiện bằng CSS transition
+        // khi class 'main-content-revealed' được thêm vào .stApp
 
         if (!revealGrid) {{ return; }}
 
@@ -417,3 +459,25 @@ st.markdown(f"""
     <h1>{main_title_text}</h1>
 </div>
 """, unsafe_allow_html=True)
+
+
+# ----------------------------------------------------------------------
+# --- PHẦN BỔ SUNG: SOUNDCLOUD MUSIC PLAYER (MỚI) ---
+# ----------------------------------------------------------------------
+
+# Mã iframe của playlist Soundcloud "Nhac khong loi". 
+# Đã sửa lỗi và sử dụng link đầy đủ được mã hóa.
+soundcloud_embed_code = """
+<iframe width="100%" height="100%" scrolling="no" frameborder="no" allow="autoplay" 
+src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/thang/sets/nhac-khong-loi&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true"></iframe>
+""" 
+
+soundcloud_player_html = f"""
+<div id="soundcloud-player-container">
+    {soundcloud_embed_code}
+</div>
+"""
+
+st.markdown(soundcloud_player_html, unsafe_allow_html=True)
+
+# ----------------------------------------------------------------------
