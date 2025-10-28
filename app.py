@@ -229,56 +229,56 @@ iframe:first-of-type {{
 }}
 
 
-/* 🌟 KEYFRAMES MỚI: HIỆU ỨNG NHÁY SÁNG 7 BƯỚC 🌟 */
+/* 🌟 KEYFRAMES MỚI: HIỆU ỨNG NHÁY SÁNG 7 BƯỚC (FIXED) 🌟 */
 @keyframes pulse-border {{
-    /* Cấu hình cơ bản (Viền mờ) */
+    /* Cấu hình cơ bản (Viền mờ - Base) */
     --base-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
-    /* Cấu hình sáng (Vệt sáng vàng) */
+    /* Cấu hình sáng (Vệt sáng vàng - Light) */
     --light-shadow: 20px 3px rgba(255, 215, 0, 0.9);
     
-    /* 0%, 100%: TRẠNG THÁI NGHỈ */
-    0%, 100% {{
+    /* 0%, 17%, 31%, 45%, 59%, 73%, 87%, 100%: TRẠNG THÁI NGHỈ/TẮT */
+    0%, 17%, 31%, 45%, 59%, 73%, 87%, 100% {{
         box-shadow: var(--base-shadow);
     }}
     
-    /* 14%: 1. CẠNH TRÊN */
-    14% {{
+    /* 12%: 1. CẠNH TRÊN */
+    12% {{
         box-shadow: 0 -3px var(--light-shadow), var(--base-shadow);
     }}
     
-    /* 28%: 2. CẠNH PHẢI */
-    28% {{
+    /* 26%: 2. CẠNH PHẢI */
+    26% {{
         box-shadow: 3px 0 var(--light-shadow), var(--base-shadow);
     }}
     
-    /* 42%: 3. CẠNH DƯỚI */
-    42% {{
+    /* 40%: 3. CẠNH DƯỚI */
+    40% {{
         box-shadow: 0 3px var(--light-shadow), var(--base-shadow);
     }}
     
-    /* 56%: 4. CẠNH TRÁI */
-    56% {{
+    /* 54%: 4. CẠNH TRÁI */
+    54% {{
         box-shadow: -3px 0 var(--light-shadow), var(--base-shadow);
     }}
 
-    /* 70%: 5. TRÊN & DƯỚI */
-    70% {{
+    /* 68%: 5. TRÊN & DƯỚI */
+    68% {{
         box-shadow: 
             0 -3px var(--light-shadow), 
             0 3px var(--light-shadow), 
             var(--base-shadow);
     }}
     
-    /* 84%: 6. TRÁI & PHẢI */
-    84% {{
+    /* 82%: 6. TRÁI & PHẢI */
+    82% {{
         box-shadow: 
             -3px 0 var(--light-shadow), 
             3px 0 var(--light-shadow), 
             var(--base-shadow);
     }}
     
-    /* 98%: 7. CẢ 4 CẠNH (Bùng nổ) */
-    98% {{
+    /* 96%: 7. CẢ 4 CẠNH (Bùng nổ) */
+    96% {{
         box-shadow: 
             0 -3px 25px 4px rgba(255, 215, 0, 1), 
             0 3px 25px 4px rgba(255, 215, 0, 1), 
