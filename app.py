@@ -9,7 +9,7 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Khởi tạo session state (Giữ nguyên)
+# Khởi tạo session state
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
@@ -73,6 +73,7 @@ st.markdown(font_links, unsafe_allow_html=True)
 
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
+# Đã sửa lỗi f-string bằng cách sử dụng {{ và }} cho các khối CSS
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -326,11 +327,12 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
+    # Ngoặc nhọn trong f-string JavaScript (Template Literal) cần được nhân đôi
     music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files[:3]])
 else:
     music_sources_js = ""
 
-# JavaScript (Đã SỬA ĐỔI)
+# JavaScript (Đã SỬA LỖI f-string)
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
