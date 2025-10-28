@@ -9,7 +9,7 @@ def get_base64_encoded_file(path):
 # ============ ĐỌC CÁC FILE CẦN THIẾT =============
 video_base64 = get_base64_encoded_file("airplane.mp4")
 video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
-audio_base64 = get_base64_encoded_file("music.mp3")
+audio_base64 = get_base64_encoded_file("plane_fly.mp3")
 logo_base64 = get_base64_encoded_file("logo.jpg")
 
 # ============ CSS TÙY CHỈNH =============
