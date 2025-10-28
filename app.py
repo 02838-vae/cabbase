@@ -36,6 +36,8 @@ try:
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
+    
+    # MÃ HÓA CHO LOGO
     logo_base64 = get_base64_encoded_file("logo.jpg")
 
     # Kiểm tra file bắt buộc
@@ -80,7 +82,6 @@ font_links = """
 st.markdown(font_links, unsafe_allow_html=True)
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
-# SỬA LỖI F-STRING: NHÂN ĐÔI TẤT CẢ NGOẶC NHỌN CSS
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -227,78 +228,24 @@ iframe:first-of-type {{
     }}
 }}
 
-/* 🌟 KEYFRAMES: HIỆU ỨNG CHUYỂN ĐỘNG CHẠY VÀ DỪNG (8 giây/chu kỳ) 🌟 */
-@keyframes flow-border-cycle {{
-    /* ĐIỀU CHỈNH: Tăng độ sáng và kích thước vệt sáng */
-    --flow-glow: 0 0 20px 3px rgba(255, 255, 0, 1); /* Vệt sáng chính (Vàng) */
-    --base-shadow: 0 0 0 2px rgba(255, 215, 0, 0.5); /* Viền mờ nền */
 
-    /* 0% - Bắt đầu (Góc trên trái) */
-    0% {{
-        box-shadow: 
-            var(--base-shadow) inset, 
-            -15px -15px 0 0 var(--flow-glow); 
-    }}
-
-    /* 12.5% - Chạy hết cạnh trên */
-    12.5% {{
-        box-shadow: 
-            var(--base-shadow) inset, 
-            15px -15px 0 0 var(--flow-glow);
-    }}
-
-    /* 25% - Nghỉ cạnh trên */
-    25% {{
-        box-shadow: 
-            var(--base-shadow) inset, 
-            15px -15px 0 0 var(--flow-glow);
-    }}
-
-    /* 37.5% - Chạy hết cạnh phải */
-    37.5% {{
-        box-shadow: 
-            var(--base-shadow) inset, 
-            15px 15px 0 0 var(--flow-glow);
-    }}
-
-    /* 50% - Nghỉ cạnh phải */
-    50% {{
-        box-shadow: 
-            var(--base-shadow) inset, 
-            15px 15px 0 0 var(--flow-glow);
-    }}
+/* 🌟 KEYFRAMES MỚI: Dải ánh sáng chạy dọc theo viền */
+@keyframes border-light-run {{
+    0% {{ transform: translateX(0%) translateY(0) rotate(0deg); }}
+    25% {{ transform: translateX(100%) translateY(0) rotate(0deg); }}
     
-    /* 62.5% - Chạy hết cạnh dưới */
-    62.5% {{
-        box-shadow: 
-            var(--base-shadow) inset, 
-            -15px 15px 0 0 var(--flow-glow);
-    }}
-
-    /* 75% - Nghỉ cạnh dưới */
-    75% {{
-        box-shadow: 
-            var(--base-shadow) inset, 
-            -15px 15px 0 0 var(--flow-glow);
-    }}
-
-    /* 87.5% - Chạy hết cạnh trái */
-    87.5% {{
-        box-shadow: 
-            var(--base-shadow) inset, 
-            -15px -15px 0 0 var(--flow-glow);
-    }}
-
-    /* 100% - Quay lại 0% */
-    100% {{
-        box-shadow: 
-            var(--base-shadow) inset, 
-            -15px -15px 0 0 var(--flow-glow);
-    }}
+    25.1% {{ transform: translateX(100%) translateY(0) rotate(90deg); }}
+    50% {{ transform: translateX(100%) translateY(100%) rotate(90deg); }}
+    
+    50.1% {{ transform: translateX(100%) translateY(100%) rotate(180deg); }}
+    75% {{ transform: translateX(0%) translateY(100%) rotate(180deg); }}
+    
+    75.1% {{ transform: translateX(0%) translateY(100%) rotate(270deg); }}
+    100% {{ transform: translateX(0%) translateY(0%) rotate(270deg); }}
 }}
 
 
-/* === MUSIC PLAYER STYLES (ĐÃ CẬP NHẬT HIỆU ỨNG VIỀN) === */
+/* === MUSIC PLAYER STYLES (ĐÃ LÀM MƯỢT HIỆU ỨNG VIỀN CHẠY) === */
 #music-player-container {{
     position: fixed;
     bottom: 20px;
@@ -313,19 +260,18 @@ iframe:first-of-type {{
     transform: translateY(100px);
     transition: opacity 1s ease-out 2s, transform 1s ease-out 2s;
     position: fixed;	
-    overflow: hidden; /* QUAN TRỌNG: Giữ box-shadow không tràn ra ngoài */
+    /* QUAN TRỌNG: Thiết lập overflow: hidden để vệt sáng không tràn ra ngoài */
+    overflow: hidden; 
 }}
 
-/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO VÀ VIỀN CHUYỂN ĐỘNG 🌟 */
+/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO VÀ VIỀN MỜ CỐ ĐỊNH 🌟 */
 #music-player-container::before {{
     content: '';
     position: absolute;
-    /* DỊCH CHUYỂN VÀ MỞ RỘNG MỘT CHÚT để viền ngoài không bị cắt */
-    top: -5px; 
-    left: -5px;
-    width: calc(100% + 10px);
-    height: calc(100% + 10px);
-    
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     background-image: var(--logo-bg-url);
     background-size: cover;
     background-position: center;
@@ -333,17 +279,40 @@ iframe:first-of-type {{
     filter: contrast(110%) brightness(90%); 
     opacity: 0.4; 
     z-index: 1; 
-    
-    border-radius: 15px; /* Tăng border radius để khớp với kích thước mở rộng */
+    /* Viền mờ nền */
+    border: 3px solid rgba(255, 215, 0, 0.3); 
+    border-radius: 12px;
     box-sizing: border-box; 
-    
-    /* ĐIỀU CHỈNH THÊM: Viền cứng màu vàng để làm nổi bật khung */
-    border: 2px solid #FFD700; 
-
-    /* ✅ ÁP DỤNG KEYFRAMES */
-    animation: flow-border-cycle 8s linear infinite; 
 }}
 
+/* 🌟 HIỆU ỨNG VIỀN SÁNG VÀNG CHẠY 🌟 */
+#music-player-container::after {{
+    content: '';
+    position: absolute;
+    
+    /* ĐIỀU CHỈNH KÍCH THƯỚC: Tạo dải ánh sáng dài, hẹp */
+    width: 50px; 
+    height: 3px; 
+    
+    /* Thiết lập vị trí ban đầu (góc trên trái, ngay ngoài viền) */
+    top: -1.5px; /* Chiều cao / 2 */
+    left: 0; 
+    
+    /* Tạo dải màu vàng */
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 0, 0.8) 50%, transparent 100%);
+    
+    /* TĂNG CƯỜNG HIỆU ỨNG PHÁT SÁNG */
+    box-shadow: 0 0 10px 5px rgba(255, 255, 0, 0.9);
+    
+    /* KHÔNG DÙNG border-radius: 50% nữa, để tạo dải sáng (stroke) */
+    
+    /* Dùng translate(X) thay vì top/left để làm mượt chuyển động */
+    transform-origin: 0 0; /* Quan trọng để xoay quanh góc */
+    
+    /* Áp dụng Keyframes mới */
+    animation: border-light-run 6s linear infinite; 
+    z-index: 4; 
+}}
 
 /* Đảm bảo các thành phần con ở trên lớp giả */
 #music-player-container * {{
@@ -456,13 +425,10 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
-    # Sửa lỗi: Chỉ cần dấu ngoặc kép bên ngoài và ngoặc đơn bên trong string
+    # Ngoặc nhọn trong f-string JavaScript (Template Literal) cần được nhân đôi
     music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files])
 else:
     music_sources_js = ""
-
-# Tiêu đề video intro đã khôi phục
-INTRO_TITLE = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 
 # JavaScript 
 js_callback_video = f"""
@@ -514,7 +480,6 @@ js_callback_video = f"""
         const audio = new Audio();
         audio.volume = 0.3;
         
-        // Sửa lỗi: Lấy phần tử từ DOM gốc (parent.document)
         const playPauseBtn = window.parent.document.getElementById('play-pause-btn');
         const prevBtn = window.parent.document.getElementById('prev-btn');
         const nextBtn = window.parent.document.getElementById('next-btn');
@@ -532,10 +497,6 @@ js_callback_video = f"""
             console.log("Loading track", index + 1);
             audio.src = musicSources[index];
             audio.load();
-            if (isPlaying) {{
-                // Tự động phát khi track mới được tải và đang ở trạng thái Playing
-                audio.play().catch(e => console.error("Play error on loadTrack:", e));
-            }}
         }}
         
         function togglePlayPause() {{
@@ -543,13 +504,8 @@ js_callback_video = f"""
                 audio.pause();
                 playPauseBtn.textContent = '▶';
             }} else {{
-                // Thử phát và bắt lỗi nếu autoplay bị chặn
-                audio.play().then(() => {{
-                    playPauseBtn.textContent = '⏸';
-                }}).catch(e => {{
-                    console.log("Play blocked, attempting again on next interaction.");
-                    playPauseBtn.textContent = '▶';
-                }});
+                audio.play().catch(e => console.error("Play error:", e));
+                playPauseBtn.textContent = '⏸';
             }}
             isPlaying = !isPlaying;
         }}
@@ -557,11 +513,17 @@ js_callback_video = f"""
         function nextTrack() {{
             currentTrack = (currentTrack + 1) % musicSources.length;
             loadTrack(currentTrack);
+            if (isPlaying) {{
+                audio.play().catch(e => console.error("Play error:", e));
+            }}
         }}
         
         function prevTrack() {{
             currentTrack = (currentTrack - 1 + musicSources.length) % musicSources.length;
             loadTrack(currentTrack);
+            if (isPlaying) {{
+                audio.play().catch(e => console.error("Play error:", e));
+            }}
         }}
         
         function formatTime(seconds) {{
@@ -571,7 +533,6 @@ js_callback_video = f"""
             return `${{mins}}:${{secs.toString().padStart(2, '0')}}`;
         }}
         
-        // --- LISTENERS ---
         audio.addEventListener('timeupdate', () => {{
             const progress = (audio.currentTime / audio.duration) * 100;
             progressBar.style.width = progress + '%';
@@ -596,7 +557,6 @@ js_callback_video = f"""
             audio.currentTime = percent * audio.duration;
         }});
         
-        // Khởi tạo
         loadTrack(0);
         console.log("Music player initialized successfully");
     }}
@@ -701,6 +661,12 @@ js_callback_video = f"""
 """
 
 # Mã HTML/CSS cho Video
+intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
+intro_chars_html = ''.join([
+    f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'	
+    for char in intro_title
+])
+
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -780,7 +746,7 @@ html_content_modified = f"""
 </head>
 <body>
 
-    <div id="intro-text-container">{INTRO_TITLE}</div>
+    <div id="intro-text-container">{intro_chars_html}</div>
     
     <video id="intro-video" muted playsinline></video>
     
@@ -790,17 +756,6 @@ html_content_modified = f"""
 </body>
 </html>
 """
-
-# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
-# KHÔI PHỤC HIỆU ỨNG CHỮ THẢ VÀ TIÊU ĐỀ ĐÚNG
-intro_chars_html = ''.join([
-    f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'	
-    for char in INTRO_TITLE
-])
-html_content_modified = html_content_modified.replace(
-    f"<div id=\"intro-text-container\">{INTRO_TITLE}</div>",
-    f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
-)
 
 # --- HIỂN THỊ IFRAME VIDEO ---
 st.components.v1.html(html_content_modified, height=1080, scrolling=False)
