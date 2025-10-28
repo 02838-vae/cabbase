@@ -8,6 +8,10 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# Khởi tạo session state
+if 'video_ended' not in st.session_state:
+    st.session_state.video_ended = False
+
 # --- CÁC HÀM TIỆN ÍCH ---
 
 def get_base64_encoded_file(file_path):
@@ -41,8 +45,7 @@ font_links = """
 st.markdown(font_links, unsafe_allow_html=True)
 
 
-# --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ĐÃ SỬA CHO MUSIC PLAYER ---
-
+# --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -164,18 +167,18 @@ iframe:first-of-type {{
     display: inline-block; 
 
     /* 1. Hiệu ứng chữ chạy - Tăng tốc độ */
-    animation: scrollText 15s linear infinite; 
+    animation: scrollText 15s linear infinite; /* Giảm từ 25s xuống 15s */
     
     /* 2. Hiệu ứng đổi màu */
     background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3); /* Cầu vồng */
-    background-size: 400% 400%; 
-    -webkit-background-clip: text; 
-    -webkit-text-fill-color: transparent; 
-    color: transparent; 
-    animation: colorShift 10s ease infinite, scrollText 15s linear infinite; 
+    background-size: 400% 400%; /* Cần kích thước lớn để tạo hiệu ứng chuyển màu mượt */
+    -webkit-background-clip: text; /* Clip màu nền theo hình dạng chữ */
+    -webkit-text-fill-color: transparent; /* Ẩn màu chữ gốc */
+    color: transparent; /* Dành cho các trình duyệt khác */
+    animation: colorShift 10s ease infinite, scrollText 15s linear infinite; /* Áp dụng đồng thời 2 animation */
     
     /* Thiết lập bóng đổ cổ điển */
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Giảm độ đậm của bóng để màu sắc nổi bật */
 }}
 
 @media (max-width: 768px) {{
@@ -188,45 +191,6 @@ iframe:first-of-type {{
     #main-title-container h1 {{
         font-size: 6.5vw; 
         animation-duration: 8s; /* Tăng tốc độ trên mobile */
-    }}
-}}
-
-/* === SOUNDCLOUD MUSIC PLAYER (ĐÃ SỬA LỖI CUỐI CÙNG) === */
-#soundcloud-player-container {{
-    position: fixed; 
-    bottom: 20px; 
-    right: 20px; 
-    width: 300px; 
-    /* Đã bỏ height để iframe bên trong tự quyết định */
-    z-index: 100;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5); 
-    border-radius: 8px;
-    overflow: hidden; 
-    opacity: 0; 
-    transition: opacity 2s ease-out;
-}}
-
-/* Hiển thị khi nội dung chính được reveal */
-.main-content-revealed #soundcloud-player-container {{
-    opacity: 1; 
-    transition-delay: 1s; /* Thêm delay 1s để chờ hiệu ứng reveal */
-}}
-
-#soundcloud-player-container iframe {{
-    width: 100%;
-    height: 100px; /* Chiều cao cố định của trình phát nhỏ */
-    border: none;
-}}
-
-@media (max-width: 768px) {{
-    #soundcloud-player-container {{
-        width: 90%; 
-        left: 5%;
-        right: auto;
-        bottom: 10px;
-    }}
-    #soundcloud-player-container iframe {{
-        height: 81px; /* Chiều cao tối thiểu cho mobile */
     }}
 }}
 </style>
@@ -453,23 +417,3 @@ st.markdown(f"""
     <h1>{main_title_text}</h1>
 </div>
 """, unsafe_allow_html=True)
-
-
-# ----------------------------------------------------------------------
-# --- PHẦN BỔ SUNG: SOUNDCLOUD MUSIC PLAYER (SỬ DỤNG st.components) ---
-# ----------------------------------------------------------------------
-
-# Tạo mã HTML cho Music Player (với height inline cố định)
-soundcloud_embed_code_html = f'''
-<div id="soundcloud-player-container">
-    <iframe width="100%" height="100" scrolling="no" frameborder="no" allow="autoplay" 
-    sandbox="allow-scripts allow-same-origin allow-popups"
-    src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/thang/sets/nhac-khong-loi&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=false"></iframe>
-</div>
-''' 
-
-# Nhúng Music Player như một component riêng biệt, 
-# đặt chiều cao và chiều rộng cố định cho Streamlit component.
-st.components.v1.html(soundcloud_embed_code_html, height=100, width=300, scrolling=False)
-
-# ----------------------------------------------------------------------
