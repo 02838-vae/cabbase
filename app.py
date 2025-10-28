@@ -216,11 +216,11 @@ iframe:first-of-type {{
     position: fixed;
     bottom: 20px;
     right: 20px;
-    width: 350px;
+    width: 280px;
     background: rgba(0, 0, 0, 0.85);
     backdrop-filter: blur(10px);
-    border-radius: 15px;
-    padding: 15px 20px;
+    border-radius: 12px;
+    padding: 12px 16px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
     z-index: 999;
     opacity: 0;
@@ -234,36 +234,27 @@ iframe:first-of-type {{
     transform: translateY(0);
 }}
 
-#music-player-container .player-title {{
-    color: #FFD700;
-    font-size: 14px;
-    font-weight: 600;
-    margin-bottom: 10px;
-    text-align: center;
-    font-family: 'Playfair Display', serif;
-}}
-
 #music-player-container .controls {{
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 15px;
-    margin-bottom: 12px;
+    gap: 12px;
+    margin-bottom: 10px;
 }}
 
 #music-player-container .control-btn {{
     background: rgba(255, 215, 0, 0.2);
     border: 2px solid #FFD700;
     color: #FFD700;
-    width: 40px;
-    height: 40px;
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     transition: all 0.3s ease;
-    font-size: 16px;
+    font-size: 14px;
 }}
 
 #music-player-container .control-btn:hover {{
@@ -272,18 +263,18 @@ iframe:first-of-type {{
 }}
 
 #music-player-container .control-btn.play-pause {{
-    width: 50px;
-    height: 50px;
-    font-size: 20px;
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
 }}
 
 #music-player-container .progress-container {{
     width: 100%;
-    height: 6px;
+    height: 5px;
     background: rgba(255, 255, 255, 0.2);
     border-radius: 3px;
     cursor: pointer;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
     position: relative;
     overflow: hidden;
 }}
@@ -300,7 +291,7 @@ iframe:first-of-type {{
     display: flex;
     justify-content: space-between;
     color: rgba(255, 255, 255, 0.7);
-    font-size: 11px;
+    font-size: 10px;
     font-family: monospace;
 }}
 
@@ -399,7 +390,6 @@ js_callback_video = f"""
         function loadTrack(index) {{
             console.log("Loading track", index + 1);
             audio.src = musicSources[index];
-            trackTitle.textContent = `Track ${{index + 1}} / ${{musicSources.length}}`;
             audio.load();
         }}
         
@@ -466,56 +456,96 @@ js_callback_video = f"""
     }}
 
     document.addEventListener("DOMContentLoaded", function() {{
-        console.log("DOM loaded");
-        const video = document.getElementById('intro-video');
-        const audio = document.getElementById('background-audio');
-        const introTextContainer = document.getElementById('intro-text-container'); 
-        const isMobile = window.innerWidth <= 768;
-
-        if (isMobile) {{
-            video.src = 'data:video/mp4;base64,{video_mobile_base64}';
-        }} else {{
-            video.src = 'data:video/mp4;base64,{video_pc_base64}';
-        }}
+        console.log("DOM loaded, waiting for elements...");
         
-        audio.src = 'data:audio/mp3;base64,{audio_base64}';
-
-        const playMedia = () => {{
-            video.load();
-            video.play().catch(e => console.log("Video playback failed:", e));
+        // Chờ elements xuất hiện
+        const waitForElements = setInterval(() => {{
+            const video = document.getElementById('intro-video');
+            const audio = document.getElementById('background-audio');
+            const introTextContainer = document.getElementById('intro-text-container');
+            
+            if (video && audio && introTextContainer) {{
+                clearInterval(waitForElements);
+                console.log("All elements found, initializing...");
                 
-            const chars = introTextContainer.querySelectorAll('.intro-char');
-            chars.forEach((char, index) => {{
-                char.style.animationDelay = `${{index * 0.1}}s`; 
-                char.classList.add('char-shown'); 
-            }});
+                const isMobile = window.innerWidth <= 768;
 
-            audio.volume = 0.5;
-            audio.loop = true; 
-            audio.play().catch(e => {{
-                console.log("Audio needs user interaction");
-                document.body.addEventListener('click', () => {{
-                    audio.play().catch(err => console.error("Audio playback error on click:", err));
-                }}, {{ once: true }});
-            }});
-        }};
-            
-        playMedia();
+                // Set video source
+                if (isMobile) {{
+                    video.src = 'data:video/mp4;base64,{video_mobile_base64}';
+                    console.log("Loading mobile video");
+                }} else {{
+                    video.src = 'data:video/mp4;base64,{video_pc_base64}';
+                    console.log("Loading PC video");
+                }}
+                
+                audio.src = 'data:audio/mp3;base64,{audio_base64}';
+
+                // Load video trước
+                video.load();
+                console.log("Video loaded, attempting to play...");
+                
+                // Play video
+                video.play().then(() => {{
+                    console.log("✅ Video is playing!");
+                }}).catch(e => {{
+                    console.error("❌ Video autoplay blocked:", e);
+                    console.log("Click anywhere to start video");
+                }});
+                
+                // Animate text
+                const chars = introTextContainer.querySelectorAll('.intro-char');
+                chars.forEach((char, index) => {{
+                    char.style.animationDelay = `${{index * 0.1}}s`; 
+                    char.classList.add('char-shown'); 
+                }});
+
+                // Play audio
+                audio.volume = 0.5;
+                audio.loop = true; 
+                audio.play().catch(e => {{
+                    console.log("Audio autoplay blocked (normal)");
+                }});
+                
+                // Click handler để play nếu bị block
+                const clickHandler = () => {{
+                    console.log("User clicked, trying to play...");
+                    video.play().then(() => {{
+                        console.log("✅ Video playing after click");
+                    }}).catch(err => console.error("Still can't play:", err));
+                    audio.play().catch(e => {{}});
+                }};
+                
+                document.addEventListener('click', clickHandler, {{ once: true }});
+                document.addEventListener('touchstart', clickHandler, {{ once: true }});
+                
+                // Event khi video kết thúc
+                video.addEventListener('ended', () => {{
+                    console.log("Video ended, transitioning...");
+                    video.style.opacity = 0;
+                    audio.pause();
+                    audio.currentTime = 0;
+                    introTextContainer.style.opacity = 0; 
+                    
+                    setTimeout(() => {{
+                        sendBackToStreamlit();
+                    }}, 500);
+                }});
+                
+                // Debug: log video state
+                video.addEventListener('loadstart', () => console.log("Video loadstart"));
+                video.addEventListener('loadeddata', () => console.log("Video loadeddata"));
+                video.addEventListener('canplay', () => console.log("Video canplay"));
+                video.addEventListener('playing', () => console.log("Video playing event"));
+                video.addEventListener('error', (e) => console.error("Video error:", e));
+            }}
+        }}, 100);
         
-        video.onended = () => {{
-            console.log("Video ended");
-            video.style.opacity = 0;
-            audio.pause();
-            audio.currentTime = 0;
-            introTextContainer.style.opacity = 0; 
-            
-            sendBackToStreamlit(); 
-        }};
-
-        document.body.addEventListener('click', () => {{
-             video.play().catch(e => {{}});
-             audio.play().catch(e => {{}});
-        }}, {{ once: true }});
+        // Timeout sau 5 giây
+        setTimeout(() => {{
+            clearInterval(waitForElements);
+            console.log("Timeout waiting for elements");
+        }}, 5000);
     }});
 </script>
 """
@@ -654,9 +684,8 @@ st.markdown(f"""
 
 # --- MUSIC PLAYER ---
 if len(music_files) > 0:
-    st.markdown(f"""
+    st.markdown("""
 <div id="music-player-container">
-    <div class="player-title" id="track-title">Track 1 / {len(music_files)}</div>
     <div class="controls">
         <button class="control-btn" id="prev-btn">⏮</button>
         <button class="control-btn play-pause" id="play-pause-btn">▶</button>
