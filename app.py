@@ -32,6 +32,16 @@ try:
     
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
+    
+    # Mã hóa các file nhạc nền
+    music_files = []
+    for i in range(1, 7):
+        try:
+            music_base64 = get_base64_encoded_file(f"background{i}.mp3")
+            music_files.append(music_base64)
+        except FileNotFoundError:
+            st.warning(f"Không tìm thấy file background{i}.mp3")
+            
 except FileNotFoundError as e:
     st.error(e)
     st.stop()
@@ -128,8 +138,8 @@ iframe:first-of-type {{
 
 /* Keyframes cho hiệu ứng chữ chạy đơn (từ phải sang trái, lặp lại) */
 @keyframes scrollText {{
-    0% {{ transform: translate(100vw, 0); }} /* Bắt đầu từ ngoài cùng bên phải */
-    100% {{ transform: translate(-100%, 0); }} /* Chạy sang trái (độ rộng của chữ) */
+    0% {{ transform: translate(100vw, 0); }}
+    100% {{ transform: translate(-100%, 0); }}
 }}
 
 /* Keyframes cho hiệu ứng Đổi Màu Gradient */
@@ -138,7 +148,6 @@ iframe:first-of-type {{
     50% {{ background-position: 100% 50%; }}
     100% {{ background-position: 0% 50%; }}
 }}
-
 
 /* === TIÊU ĐỀ TRANG CHÍNH (ĐƠN, CHẠY VÀ ĐỔI MÀU) === */
 #main-title-container {{
@@ -166,19 +175,16 @@ iframe:first-of-type {{
     
     display: inline-block; 
 
-    /* 1. Hiệu ứng chữ chạy - Tăng tốc độ */
-    animation: scrollText 15s linear infinite; /* Giảm từ 25s xuống 15s */
+    animation: scrollText 15s linear infinite;
     
-    /* 2. Hiệu ứng đổi màu */
-    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3); /* Cầu vồng */
-    background-size: 400% 400%; /* Cần kích thước lớn để tạo hiệu ứng chuyển màu mượt */
-    -webkit-background-clip: text; /* Clip màu nền theo hình dạng chữ */
-    -webkit-text-fill-color: transparent; /* Ẩn màu chữ gốc */
-    color: transparent; /* Dành cho các trình duyệt khác */
-    animation: colorShift 10s ease infinite, scrollText 15s linear infinite; /* Áp dụng đồng thời 2 animation */
+    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
+    background-size: 400% 400%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: colorShift 10s ease infinite, scrollText 15s linear infinite;
     
-    /* Thiết lập bóng đổ cổ điển */
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Giảm độ đậm của bóng để màu sắc nổi bật */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }}
 
 @media (max-width: 768px) {{
@@ -190,7 +196,109 @@ iframe:first-of-type {{
     
     #main-title-container h1 {{
         font-size: 6.5vw; 
-        animation-duration: 8s; /* Tăng tốc độ trên mobile */
+        animation-duration: 8s;
+    }}
+}}
+
+/* === MUSIC PLAYER STYLES === */
+#music-player-container {{
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    width: 350px;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 15px 20px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+    z-index: 999;
+    opacity: 0;
+    transform: translateY(100px);
+    transition: opacity 1s ease-out 2s, transform 1s ease-out 2s;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}}
+
+.video-finished #music-player-container {{
+    opacity: 1;
+    transform: translateY(0);
+}}
+
+#music-player-container .player-title {{
+    color: #FFD700;
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 10px;
+    text-align: center;
+    font-family: 'Playfair Display', serif;
+}}
+
+#music-player-container .controls {{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+    margin-bottom: 12px;
+}}
+
+#music-player-container .control-btn {{
+    background: rgba(255, 215, 0, 0.2);
+    border: 2px solid #FFD700;
+    color: #FFD700;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+    font-size: 16px;
+}}
+
+#music-player-container .control-btn:hover {{
+    background: rgba(255, 215, 0, 0.4);
+    transform: scale(1.1);
+}}
+
+#music-player-container .control-btn.play-pause {{
+    width: 50px;
+    height: 50px;
+    font-size: 20px;
+}}
+
+#music-player-container .progress-container {{
+    width: 100%;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 3px;
+    cursor: pointer;
+    margin-bottom: 8px;
+    position: relative;
+    overflow: hidden;
+}}
+
+#music-player-container .progress-bar {{
+    height: 100%;
+    background: linear-gradient(90deg, #FFD700, #FFA500);
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.1s linear;
+}}
+
+#music-player-container .time-info {{
+    display: flex;
+    justify-content: space-between;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 11px;
+    font-family: monospace;
+}}
+
+@media (max-width: 768px) {{
+    #music-player-container {{
+        width: calc(100% - 40px);
+        right: 20px;
+        left: 20px;
+        bottom: 15px;
     }}
 }}
 </style>
@@ -200,14 +308,18 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (GIỮ NGUYÊN) ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
-# JavaScript (GIỮ NGUYÊN)
+# Tạo danh sách music sources cho JavaScript
+music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files])
+
+# JavaScript
 js_callback_video = f"""
 <script>
     function sendBackToStreamlit() {{
         window.parent.document.querySelector('.stApp').classList.add('video-finished', 'main-content-revealed');
         initRevealEffect();
+        initMusicPlayer();
     }}
     
     function initRevealEffect() {{
@@ -232,6 +344,93 @@ js_callback_video = f"""
         setTimeout(() => {{
              revealGrid.remove();
         }}, shuffledCells.length * 10 + 1000);
+    }}
+    
+    function initMusicPlayer() {{
+        const musicSources = [
+            {music_sources_js}
+        ];
+        
+        let currentTrack = 0;
+        let isPlaying = false;
+        
+        const audio = new Audio();
+        audio.volume = 0.3;
+        
+        const playPauseBtn = window.parent.document.getElementById('play-pause-btn');
+        const prevBtn = window.parent.document.getElementById('prev-btn');
+        const nextBtn = window.parent.document.getElementById('next-btn');
+        const progressBar = window.parent.document.getElementById('progress-bar');
+        const progressContainer = window.parent.document.getElementById('progress-container');
+        const currentTimeEl = window.parent.document.getElementById('current-time');
+        const durationEl = window.parent.document.getElementById('duration');
+        const trackTitle = window.parent.document.getElementById('track-title');
+        
+        function loadTrack(index) {{
+            if (musicSources.length === 0) return;
+            audio.src = musicSources[index];
+            trackTitle.textContent = `Track ${{index + 1}} / ${{musicSources.length}}`;
+            audio.load();
+        }}
+        
+        function togglePlayPause() {{
+            if (isPlaying) {{
+                audio.pause();
+                playPauseBtn.textContent = '▶';
+            }} else {{
+                audio.play();
+                playPauseBtn.textContent = '⏸';
+            }}
+            isPlaying = !isPlaying;
+        }}
+        
+        function nextTrack() {{
+            currentTrack = (currentTrack + 1) % musicSources.length;
+            loadTrack(currentTrack);
+            if (isPlaying) {{
+                audio.play();
+            }}
+        }}
+        
+        function prevTrack() {{
+            currentTrack = (currentTrack - 1 + musicSources.length) % musicSources.length;
+            loadTrack(currentTrack);
+            if (isPlaying) {{
+                audio.play();
+            }}
+        }}
+        
+        function formatTime(seconds) {{
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${{mins}}:${{secs.toString().padStart(2, '0')}}`;
+        }}
+        
+        audio.addEventListener('timeupdate', () => {{
+            const progress = (audio.currentTime / audio.duration) * 100;
+            progressBar.style.width = progress + '%';
+            currentTimeEl.textContent = formatTime(audio.currentTime);
+        }});
+        
+        audio.addEventListener('loadedmetadata', () => {{
+            durationEl.textContent = formatTime(audio.duration);
+        }});
+        
+        audio.addEventListener('ended', () => {{
+            nextTrack();
+        }});
+        
+        playPauseBtn.addEventListener('click', togglePlayPause);
+        nextBtn.addEventListener('click', nextTrack);
+        prevBtn.addEventListener('click', prevTrack);
+        
+        progressContainer.addEventListener('click', (e) => {{
+            const rect = progressContainer.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            audio.currentTime = percent * audio.duration;
+        }});
+        
+        loadTrack(0);
     }}
 
     document.addEventListener("DOMContentLoaded", function() {{
@@ -286,7 +485,7 @@ js_callback_video = f"""
 </script>
 """
 
-# Mã HTML/CSS cho Video (GIỮ NGUYÊN)
+# Mã HTML/CSS cho Video
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -311,7 +510,6 @@ html_content_modified = f"""
             transition: opacity 1s; 
         }}
 
-        /* === TIÊU ĐỀ INTRO (FONT SACRAMENTO - Chữ Ký) === */
         #intro-text-container {{ 
             position: fixed;
             top: 5vh;
@@ -393,7 +591,7 @@ st.components.v1.html(html_content_modified, height=10, scrolling=False)
 
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
 
-# Tạo Lưới Reveal (Giữ nguyên)
+# Tạo Lưới Reveal
 grid_cells_html = ""
 for i in range(240): 
     grid_cells_html += f'<div class="grid-cell"></div>'
@@ -415,5 +613,24 @@ main_title_text = "TỔ BẢO DƯỠNG SỐ 1"
 st.markdown(f"""
 <div id="main-title-container">
     <h1>{main_title_text}</h1>
+</div>
+""", unsafe_allow_html=True)
+
+# --- MUSIC PLAYER ---
+st.markdown("""
+<div id="music-player-container">
+    <div class="player-title" id="track-title">Track 1 / 6</div>
+    <div class="controls">
+        <button class="control-btn" id="prev-btn">⏮</button>
+        <button class="control-btn play-pause" id="play-pause-btn">▶</button>
+        <button class="control-btn" id="next-btn">⏭</button>
+    </div>
+    <div class="progress-container" id="progress-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+    <div class="time-info">
+        <span id="current-time">0:00</span>
+        <span id="duration">0:00</span>
+    </div>
 </div>
 """, unsafe_allow_html=True)
