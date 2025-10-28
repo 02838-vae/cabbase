@@ -37,7 +37,7 @@ try:
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
     
-    # 🌟 THÊM MÃ HÓA CHO LOGO
+    # MÃ HÓA CHO LOGO
     logo_base64 = get_base64_encoded_file("logo.jpg")
 
     # Kiểm tra file bắt buộc
@@ -82,7 +82,6 @@ font_links = """
 st.markdown(font_links, unsafe_allow_html=True)
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
-# Đảm bảo tất cả các khối CSS {} đều là {{}}
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -101,7 +100,7 @@ div.block-container {{
     max-width: 100% !important;
 }}
 
-/* Đã sửa: Đảm bảo iframe video intro chiếm toàn màn hình và có độ ưu tiên cao */
+/* Iframe Video Intro */
 iframe:first-of-type {{
     transition: opacity 1s ease-out, visibility 1s ease-out;
     opacity: 1;
@@ -125,7 +124,6 @@ iframe:first-of-type {{
 .stApp {{
     --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
-    /* 🌟 THÊM BIẾN CSS CHO LOGO */
     --logo-bg-url: url('data:image/jpeg;base64,{logo_base64}');
 }}
 
@@ -167,7 +165,7 @@ iframe:first-of-type {{
     }}
 }}
 
-/* Keyframes cho hiệu ứng chữ chạy đơn (từ phải sang trái, lặp lại) */
+/* Keyframes cho hiệu ứng chữ chạy đơn */
 @keyframes scrollText {{
     0% {{ transform: translate(100vw, 0); }}
     100% {{ transform: translate(-100%, 0); }}
@@ -180,7 +178,7 @@ iframe:first-of-type {{
     100% {{ background-position: 0% 50%; }}
 }}
 
-/* === TIÊU ĐỀ TRANG CHÍNH (ĐƠN, CHẠY VÀ ĐỔI MÀU) === */
+/* === TIÊU ĐỀ TRANG CHÍNH === */
 #main-title-container {{
     position: fixed;
     top: 5vh;	
@@ -190,7 +188,6 @@ iframe:first-of-type {{
     overflow: hidden;	
     z-index: 20;	
     pointer-events: none;	
-    
     opacity: 0;	
     transition: opacity 2s;
 }}
@@ -207,18 +204,14 @@ iframe:first-of-type {{
     font-feature-settings: "lnum" 1;	
     letter-spacing: 5px;	
     white-space: nowrap;	
-    
     display: inline-block;	
-
     animation: scrollText 15s linear infinite;
-    
     background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
     background-size: 400% 400%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
     animation: colorShift 10s ease infinite, scrollText 15s linear infinite;
-    
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }}
 
@@ -235,31 +228,59 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === MUSIC PLAYER STYLES (ĐÃ CẬP NHẬT THEO YÊU CẦU MỚI VỀ KÍCH THƯỚC) === */
+
+/* Keyframes cho hiệu ứng ánh sáng chạy quanh viền */
+@keyframes border-light-run {{
+    0% {{
+        top: -100%;
+        left: 0;
+        transform: rotate(0deg);
+    }}
+    25% {{
+        top: 0;
+        left: 100%;
+        transform: rotate(90deg);
+    }}
+    50% {{
+        top: 100%;
+        left: 0;
+        transform: rotate(180deg);
+    }}
+    75% {{
+        top: 0;
+        left: -100%;
+        transform: rotate(270deg);
+    }}
+    100% {{
+        top: -100%;
+        left: 0;
+        transform: rotate(360deg);
+    }}
+}}
+
+/* === MUSIC PLAYER STYLES (ĐÃ CẬP NHẬT VỚI HIỆU ỨNG VIỀN SÁNG VÀ KÍCH THƯỚC) === */
 #music-player-container {{
     position: fixed;
     bottom: 20px;
     right: 20px;
-    /* ✅ Tăng chiều rộng trên PC */
+    /* ✅ Chiều rộng lớn hơn trên PC */
     width: 350px; 
-    /* ✅ Thu nhỏ padding để giảm chiều cao tổng thể */
+    /* ✅ Padding nhỏ hơn để giảm chiều cao tổng thể */
     padding: 8px 16px; 
-    /* Giữ nguyên transparent để dùng background image */
-    background: transparent; 
+    /* Thêm nền hơi tối để hiệu ứng nổi bật */
+    background: rgba(0, 0, 0, 0.7); 
     border-radius: 12px;
-    /* Tăng cường bóng đổ để nổi bật */
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7); 
     z-index: 999;
     opacity: 0;
     transform: translateY(100px);
     transition: opacity 1s ease-out 2s, transform 1s ease-out 2s;
-    /* Viền trắng mờ bao quanh player */
-    border: 1px solid rgba(255, 255, 255, 0.3); 
     position: fixed;	
+    /* Rất quan trọng để cắt ánh sáng thừa */
     overflow: hidden; 
 }}
 
-/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO MỚI (MÀU GỐC) 🌟 */
+/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO MÀU GỐC 🌟 */
 #music-player-container::before {{
     content: '';
     position: absolute;
@@ -271,11 +292,37 @@ iframe:first-of-type {{
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    /* ❌ Đã loại bỏ tất cả các hiệu ứng filter để giữ màu gốc */
-    /* Tuy nhiên, vẫn giữ độ sáng và độ tương phản nếu cần để hòa hợp */
+    /* ✅ Loại bỏ sepia, giữ contrast và brightness nhẹ */
     filter: contrast(110%) brightness(90%); 
-    opacity: 0.4; /* Có thể điều chỉnh opacity nếu bạn muốn logo nổi bật hơn hoặc mờ hơn */
+    opacity: 0.4; /* Độ mờ cho logo nền */
     z-index: -1; 
+}}
+
+/* 🌟 HIỆU ỨNG VIỀN SÁNG VÀNG CHẠY 🌟 */
+#music-player-container::after {{
+    content: '';
+    position: absolute;
+    /* Kích thước của vệt sáng */
+    width: 100px; 
+    height: 100px; 
+    background: conic-gradient(
+        transparent 0deg, 
+        transparent 180deg, 
+        rgba(255, 215, 0, 0.8) 180deg, /* Vàng kim */
+        rgba(255, 215, 0, 0) 270deg,
+        transparent 360deg
+    );
+    /* Tốc độ chạy 8 giây/vòng */
+    animation: border-light-run 8s linear infinite; 
+    z-index: 2; /* Đảm bảo ánh sáng nằm trên logo nền nhưng dưới nội dung */
+    border-radius: 50%; /* Làm cho vệt sáng có dạng tròn */
+    filter: blur(5px); /* Làm mờ ánh sáng để trông mềm mại hơn */
+}}
+
+/* Đảm bảo các thành phần con ở trên lớp giả */
+#music-player-container * {{
+    position: relative;
+    z-index: 3; /* Đảm bảo nội dung player nằm trên ánh sáng */	
 }}
 
 .video-finished #music-player-container {{
@@ -283,15 +330,8 @@ iframe:first-of-type {{
     transform: translateY(0);
 }}
 
-/* Đảm bảo các thành phần con ở trên lớp giả */
-#music-player-container * {{
-    position: relative;
-    z-index: 1;	
-}}
-
 #music-player-container .controls,
 #music-player-container .time-info {{
-    /* Màu trắng cho text/icon */
     color: #fff; 
     text-shadow: 0 0 7px #000;
 }}
@@ -300,17 +340,14 @@ iframe:first-of-type {{
     display: flex;
     align-items: center;
     justify-content: center;
-    /* Giảm gap giữa các nút để tiết kiệm không gian */
     gap: 8px;
     margin-bottom: 6px; 
 }}
 
-/* NÚT ĐIỀU KHIỂN MỚI */
 #music-player-container .control-btn {{
     background: rgba(255, 255, 255, 0.2);
     border: 2px solid #FFFFFF; 
     color: #FFD700;
-    /* Giảm kích thước nút */
     width: 32px; 
     height: 32px;
     border-radius: 50%;
@@ -328,20 +365,18 @@ iframe:first-of-type {{
 }}
 
 #music-player-container .control-btn.play-pause {{
-    /* Giảm kích thước nút Play/Pause */
     width: 40px; 
     height: 40px;
     font-size: 18px;
 }}
 
-/* PROGRESS CONTAINER MỚI */
 #music-player-container .progress-container {{
     width: 100%;
-    height: 5px; /* Giảm độ dày một chút */
+    height: 5px; 
     background: rgba(0, 0, 0, 0.5);
     border-radius: 3px;
     cursor: pointer;
-    margin-bottom: 4px; /* Giảm margin */
+    margin-bottom: 4px; 
     position: relative;
     overflow: hidden;
     border: 1px solid rgba(255, 255, 255, 0.4); 
@@ -359,7 +394,7 @@ iframe:first-of-type {{
     display: flex;
     justify-content: space-between;
     color: rgba(255, 255, 255, 1);
-    font-size: 10px; /* Giảm font size một chút */
+    font-size: 10px; 
     font-family: monospace;
 }}
 
@@ -402,7 +437,7 @@ if len(music_files) > 0:
 else:
     music_sources_js = ""
 
-# JavaScript (Đã SỬA LỖI f-string)
+# JavaScript 
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
@@ -633,7 +668,6 @@ js_callback_video = f"""
 """
 
 # Mã HTML/CSS cho Video
-# Đảm bảo tất cả các khối CSS {} đều là {{}}
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -735,8 +769,7 @@ html_content_modified = html_content_modified.replace(
     f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
 )
 
-# --- HIỂN THỊ IFRAME VIDEO (Đã sửa lỗi kích thước) ---
-# Đảm bảo chiều cao lớn để iframe hiển thị đúng, tránh màn hình đen
+# --- HIỂN THỊ IFRAME VIDEO ---
 st.components.v1.html(html_content_modified, height=1080, scrolling=False)
 
 
@@ -756,8 +789,6 @@ st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
 
 # --- NỘI DUNG CHÍNH (TIÊU ĐỀ ĐƠN, ĐỔI MÀU) ---
-
-# Tiêu đề đơn
 main_title_text = "TỔ BẢO DƯỠNG SỐ 1"	
 
 # Nhúng tiêu đề
