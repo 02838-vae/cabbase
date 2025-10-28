@@ -1,6 +1,7 @@
 import streamlit as st
 import base64
 import os
+# ... (Phần code Python phía trên giữ nguyên) ...
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
@@ -16,6 +17,7 @@ if 'video_ended' not in st.session_state:
 # --- CÁC HÀM TIỆN ÍCH ---
 
 def get_base64_encoded_file(file_path):
+    # ... (Hàm này giữ nguyên) ...
     """Đọc file và trả về Base64 encoded string."""
     if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
         return None
@@ -229,37 +231,60 @@ iframe:first-of-type {{
 }}
 
 
-/* 🌟 KEYFRAMES MỚI: Tách rõ hành động chạy (20%) và nghỉ (5%) - Tổng 10s/chu kỳ 🌟 */
-@keyframes border-light-run {{
-    /* 1. START (Góc trên trái) */
-    0% {{ transform: translate(0%, 0%) rotate(0deg); }}
-    
-    /* 2. Cạnh TRÊN: Chạy (20%) */
-    20% {{ transform: translate(100%, 0%) rotate(0deg); }}
-    
-    /* 3. Nghỉ (20% - 25%): Chờ ở góc trên phải */
-    25% {{ transform: translate(100%, 0%) rotate(0deg); }}
-    
-    /* 4. Chuyển sang Cạnh PHẢI (25% - 45%) */
-    25.01% {{ transform: translate(100%, 0%) rotate(90deg); }}
-    45% {{ transform: translate(100%, 100%) rotate(90deg); }}
-    
-    /* 5. Nghỉ (45% - 50%): Chờ ở góc dưới phải */
-    50% {{ transform: translate(100%, 100%) rotate(90deg); }}
-    
-    /* 6. Chuyển sang Cạnh DƯỚI (50% - 70%) */
-    50.01% {{ transform: translate(100%, 100%) rotate(180deg); }}
-    70% {{ transform: translate(0%, 100%) rotate(180deg); }}
-    
-    /* 7. Nghỉ (70% - 75%): Chờ ở góc dưới trái */
-    75% {{ transform: translate(0%, 100%) rotate(180deg); }}
+/* 🌟 KEYFRAMES MỚI: Chỉ dùng translate (Tốc độ 10 giây/vòng) 🌟 */
 
-    /* 8. Chuyển sang Cạnh TRÁI (75% - 95%) */
-    75.01% {{ transform: translate(0%, 100%) rotate(270deg); }}
-    95% {{ transform: translate(0%, 0%) rotate(270deg); }}
+/* Cạnh TRÊN -> DƯỚI */
+@keyframes border-horizontal-run {{
+    /* Cạnh TRÊN */
+    0% {{ top: 0; left: -50px; opacity: 1; }}
+    20% {{ top: 0; left: 100%; opacity: 1; }} /* Chạy 2s */
+    
+    /* Nghỉ */
+    20.1% {{ opacity: 0; }}
+    25% {{ opacity: 0; }} /* Nghỉ 0.5s */
+    
+    /* Ẩn (Chờ cạnh dọc chạy) */
+    25.1% {{ opacity: 0; }}
+    49.9% {{ opacity: 0; }}
 
-    /* 9. Quay về START (95% - 100%): Chờ ở góc trên trái */
-    100% {{ transform: translate(0%, 0%) rotate(270deg); }} 
+    /* Cạnh DƯỚI */
+    50% {{ top: 100%; left: 100%; opacity: 1; transform: translateX(-100%); }}
+    70% {{ top: 100%; left: 0%; opacity: 1; transform: translateX(-0%); }} /* Chạy 2s */
+    
+    /* Nghỉ */
+    70.1% {{ opacity: 0; }}
+    75% {{ opacity: 0; }} /* Nghỉ 0.5s */
+
+    /* Ẩn (Chờ cạnh dọc chạy) */
+    75.1% {{ opacity: 0; }}
+    99.9% {{ opacity: 0; }}
+}}
+
+/* Cạnh PHẢI -> TRÁI */
+@keyframes border-vertical-run {{
+    /* Cạnh PHẢI */
+    0% {{ left: 100%; top: -50px; opacity: 0; }} 
+    25% {{ left: 100%; top: -50px; opacity: 0; }} 
+
+    /* Bắt đầu chạy */
+    25.1% {{ left: 100%; top: 0%; opacity: 1; transform: translateY(-0%); }}
+    45% {{ left: 100%; top: 100%; opacity: 1; transform: translateY(-100%); }} /* Chạy 2s */
+    
+    /* Nghỉ */
+    45.1% {{ opacity: 0; }}
+    50% {{ opacity: 0; }} /* Nghỉ 0.5s */
+
+    /* Cạnh TRÁI */
+    50.1% {{ opacity: 0; }}
+    75% {{ opacity: 0; }} 
+
+    /* Bắt đầu chạy */
+    75.1% {{ left: 0; top: 100%; opacity: 1; transform: translateY(-100%); }}
+    95% {{ left: 0; top: 0%; opacity: 1; transform: translateY(-0%); }} /* Chạy 2s */
+
+    /* Nghỉ */
+    95.1% {{ opacity: 0; }}
+    100% {{ opacity: 0; }} 
 }}
 
 
@@ -282,7 +307,7 @@ iframe:first-of-type {{
     overflow: hidden; 
 }}
 
-/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO VÀ VIỀN MỜ CỐ ĐỊNH 🌟 */
+/* Lớp giả cho hình nền logo và viền mờ cố định */
 #music-player-container::before {{
     content: '';
     position: absolute;
@@ -303,37 +328,69 @@ iframe:first-of-type {{
     box-sizing: border-box; 
 }}
 
-/* 🌟 HIỆU ỨNG VIỀN SÁNG VÀNG CHẠY 🌟 */
+/* === CẠNH TRÊN VÀ DƯỚI (PHẦN TỬ GIẢ ::after) === */
 #music-player-container::after {{
     content: '';
     position: absolute;
     
-    /* ĐIỀU CHỈNH KÍCH THƯỚC: Dải ánh sáng dài, hẹp */
+    /* Dải ánh sáng ngang (chiều dài 50px) */
+    width: 50px; 
+    height: 3px; 
+    top: -1.5px; 
+    left: 0; 
+    
+    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 0, 0.8) 50%, transparent 100%);
+    box-shadow: 0 0 10px 5px rgba(255, 255, 0, 0.9);
+    
+    /* CHỈ CHẠY THEO PHƯƠNG NGANG */
+    animation: border-horizontal-run 10s linear infinite; 
+    z-index: 4; 
+    transform: none !important; /* Đảm bảo không bị rotate */
+}}
+
+
+/* === CẠNH TRÁI VÀ PHẢI (SỬ DỤNG THẺ <span> BÊN TRONG) === */
+/* Thêm 2 thẻ <span> vào HTML để có đủ 4 phần tử có thể điều khiển */
+#music-player-container span.vertical-border-light-1,
+#music-player-container span.vertical-border-light-2 {{
+    content: '';
+    position: absolute;
+    display: block;
+    
+    /* Dải ánh sáng dọc (chiều dài 50px, xoay 90 độ) */
     width: 50px; 
     height: 3px; 
     
-    /* Vị trí ban đầu: Góc trên trái */
-    top: -1.5px; /* Chiều cao / 2 */
-    left: 0; 
-    
-    /* Tạo dải màu vàng */
+    /* Màu và bóng */
     background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 0, 0.8) 50%, transparent 100%);
-    
-    /* TĂNG CƯỜNG HIỆU ỨNG PHÁT SÁNG */
     box-shadow: 0 0 10px 5px rgba(255, 255, 0, 0.9);
     
-    /* transform-origin: Thiết lập điểm quay/chuyển động tại góc trên trái (0% 0%) */
-    transform-origin: 0% 0%; 
-    
-    /* Tốc độ Linear, chu kỳ 10s */
-    animation: border-light-run 10s linear infinite; 
+    /* Quay 90 độ để chạy dọc */
+    transform: rotate(90deg); 
+    /* Điều chỉnh vị trí sau khi quay */
+    transform-origin: 0 0; 
+
     z-index: 4; 
 }}
+
+/* Vị trí ban đầu của phần tử dọc */
+#music-player-container span.vertical-border-light-1 {{
+    /* Cạnh phải */
+    left: calc(100% - 1.5px); /* = right: 0; top: 0; */
+    top: 0; 
+    animation: border-vertical-run 10s linear infinite;
+}}
+
+/* Vị trí ban đầu của phần tử dọc (Không dùng cái này, ta chỉ dùng 1 animation cho 2 cạnh dọc) */
+#music-player-container span.vertical-border-light-2 {{
+    display: none; /* Chỉ cần dùng 1 animation cho 2 cạnh dọc để đơn giản hóa */
+}}
+
 
 /* Đảm bảo các thành phần con ở trên lớp giả */
 #music-player-container * {{
     position: relative;
-    z-index: 5; /* ✅ Nội dung luôn ở trên cùng */	
+    z-index: 5; 
 }}
 
 .video-finished #music-player-container {{
@@ -806,6 +863,8 @@ st.markdown(f"""
 if len(music_files) > 0:
     st.markdown("""
 <div id="music-player-container">
+    <span class="vertical-border-light-1"></span>
+    <span class="vertical-border-light-2"></span>
     <div class="controls">
         <button class="control-btn" id="prev-btn">⏮</button>
         <button class="control-btn play-pause" id="play-pause-btn">▶</button>
