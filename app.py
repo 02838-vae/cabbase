@@ -229,77 +229,45 @@ iframe:first-of-type {{
 }}
 
 
-/* Keyframes cho hiệu ứng ánh sáng chạy dọc theo viền */
-@keyframes border-light-run {{
-    0% {{ 
-        top: -3px; 
-        left: -100%; 
-        transform: rotate(0deg); 
-    }} 
-    
-    10% {{ 
-        top: -3px; 
-        left: -3px; 
-        transform: rotate(0deg); 
-        /* ✅ Thêm animation-timing-function cho điểm bắt đầu (làm mượt) */
-        animation-timing-function: cubic-bezier(0.8, 0, 0.2, 1); 
-    }} 
-
-    25% {{ 
-        top: -3px; 
-        left: calc(100% - 3px); 
-        transform: rotate(0deg); 
-    }} 
-    
-    40% {{ 
-        top: -3px; 
-        left: calc(100% - 3px); 
-        transform: rotate(90deg); 
-        animation-timing-function: cubic-bezier(0.8, 0, 0.2, 1); 
-    }}
-
-    50% {{ 
-        top: calc(100% - 3px); 
-        left: calc(100% - 3px); 
-        transform: rotate(90deg); 
-        animation-timing-function: cubic-bezier(0.8, 0, 0.2, 1); 
-    }} 
-
-    65% {{ 
-        top: calc(100% - 3px); 
-        left: calc(100% - 3px); 
-        transform: rotate(180deg); 
-        animation-timing-function: cubic-bezier(0.8, 0, 0.2, 1); 
+/* 🌟 KEYFRAMES MỚI: HIỆU ỨNG NHÁY SÁNG THEO CẶP 🌟 */
+@keyframes pulse-border {{
+    0%, 50%, 100% {{
+        /* Trạng thái nghỉ/tối */
+        box-shadow: 
+            0 0 0 0 rgba(255, 215, 0, 0), /* Viền ngang */
+            0 0 0 0 rgba(255, 215, 0, 0), /* Viền dọc */
+            0 0 0 3px rgba(255, 215, 0, 0.3); /* Viền mờ cố định */
     }}
     
-    75% {{ 
-        top: calc(100% - 3px); 
-        left: -3px; 
-        transform: rotate(180deg); 
-        animation-timing-function: cubic-bezier(0.8, 0, 0.2, 1); 
-    }} 
-    
-    85% {{ 
-        top: calc(100% - 3px); 
-        left: -3px; 
-        transform: rotate(270deg); 
-        animation-timing-function: cubic-bezier(0.8, 0, 0.2, 1); 
+    25% {{
+        /* Sáng cạnh TRÊN và cạnh DƯỚI */
+        box-shadow: 
+            /* Cạnh trên */
+            0 -3px 20px 3px rgba(255, 215, 0, 0.9), 
+            /* Cạnh dưới */
+            0 3px 20px 3px rgba(255, 215, 0, 0.9), 
+            /* Viền dọc: Tắt */
+            0 0 0 0 rgba(255, 215, 0, 0),
+            /* Viền mờ cố định (base) */
+            0 0 0 3px rgba(255, 215, 0, 0.3); 
     }}
 
-    99% {{ 
-        top: -3px; 
-        left: -3px; 
-        transform: rotate(270deg);
+    75% {{
+        /* Sáng cạnh TRÁI và cạnh PHẢI */
+        box-shadow: 
+            /* Viền ngang: Tắt */
+            0 0 0 0 rgba(255, 215, 0, 0), 
+            /* Cạnh trái */
+            -3px 0 20px 3px rgba(255, 215, 0, 0.9), 
+            /* Cạnh phải */
+            3px 0 20px 3px rgba(255, 215, 0, 0.9),
+            /* Viền mờ cố định (base) */
+            0 0 0 3px rgba(255, 215, 0, 0.3);
     }}
-    
-    100% {{ 
-        top: -3px; 
-        left: -100%; 
-        transform: rotate(360deg);
-    }} 
 }}
 
-/* === MUSIC PLAYER STYLES (ĐÃ LÀM MƯỢT HIỆU ỨNG VIỀN CHẠY) === */
+
+/* === MUSIC PLAYER STYLES (ĐÃ CẬP NHẬT HIỆU ỨNG NHÁY SÁNG) === */
 #music-player-container {{
     position: fixed;
     bottom: 20px;
@@ -314,10 +282,10 @@ iframe:first-of-type {{
     transform: translateY(100px);
     transition: opacity 1s ease-out 2s, transform 1s ease-out 2s;
     position: fixed;	
-    overflow: hidden; 
+    /* Không cần overflow: hidden nữa */
 }}
 
-/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO VÀ VIỀN MỜ CỐ ĐỊNH 🌟 */
+/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO VÀ HIỆU ỨNG NHÁY SÁNG 🌟 */
 #music-player-container::before {{
     content: '';
     position: absolute;
@@ -325,43 +293,33 @@ iframe:first-of-type {{
     left: 0;
     width: 100%;
     height: 100%;
+    /* Thêm padding/margin âm để mở rộng lớp giả ra ngoài một chút */
+    margin: -3px; 
+    width: calc(100% + 6px);
+    height: calc(100% + 6px);
+    
     background-image: var(--logo-bg-url);
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     filter: contrast(110%) brightness(90%); 
     opacity: 0.4; 
-    z-index: 1; 
-    border: 3px solid rgba(255, 215, 0, 0.3); 
+    z-index: -1; 
+    
     border-radius: 12px;
+    
+    /* ✅ ÁP DỤNG HIỆU ỨNG NHÁY SÁNG VÀO BOX-SHADOW CỦA LỚP GIẢ NÀY */
     box-sizing: border-box; 
+    animation: pulse-border 2s ease-in-out infinite; /* 2s cho 1 chu kỳ nháy */
 }}
 
-/* 🌟 HIỆU ỨNG VIỀN SÁNG VÀNG CHẠY 🌟 */
-#music-player-container::after {{
-    content: '';
-    position: absolute;
-    width: 25px; 
-    height: 6px; 
-    
-    /* ✅ Dùng radial-gradient để tạo chấm sáng mềm mại */
-    background: radial-gradient(circle at center, rgba(255, 255, 255, 1) 0%, rgba(255, 215, 0, 0.9) 30%, transparent 100%);
-    
-    /* ✅ Tăng cường độ mờ của box-shadow */
-    box-shadow: 0 0 15px rgba(255, 215, 0, 1), 0 0 30px rgba(255, 215, 0, 0.7);
-    
-    border-radius: 50%; /* Dùng hình tròn để dễ xoay mượt mà hơn */
-    
-    /* ✅ Thay đổi tốc độ animation từ 'linear' thành 'ease-in-out' để mượt mà hơn */
-    animation: border-light-run 8s ease-in-out infinite; 
-    z-index: 4; 
-    transform-origin: center center;
-}}
+/* ❌ XÓA LỚP GIẢ ::after (VIỀN CHẠY) KHỎI KHỐI CSS NÀY */
+
 
 /* Đảm bảo các thành phần con ở trên lớp giả */
 #music-player-container * {{
     position: relative;
-    z-index: 5; /* ✅ Nội dung luôn ở trên cùng */	
+    z-index: 5; 	
 }}
 
 .video-finished #music-player-container {{
