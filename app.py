@@ -241,6 +241,7 @@ iframe:first-of-type {{
     bottom: 20px;
     right: 20px;
     width: 280px;
+    /* 🌟 Loại bỏ background/backdrop-filter gốc để dùng background image */
     background: transparent;
     border-radius: 12px;
     padding: 12px 16px;
@@ -250,11 +251,11 @@ iframe:first-of-type {{
     transform: translateY(100px);
     transition: opacity 1s ease-out 2s, transform 1s ease-out 2s;
     border: 1px solid rgba(255, 255, 255, 0.1);
-    position: relative; /* 🌟 QUAN TRỌNG ĐỂ ::after ĐỊNH VỊ TƯƠNG ĐỐI */
-    overflow: hidden; 
+    position: fixed; 
+    overflow: hidden; /* Quan trọng cho border-radius của ::before */
 }}
 
-/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO */
+/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO MỜ */
 #music-player-container::before {{
     content: '';
     position: absolute;
@@ -266,48 +267,11 @@ iframe:first-of-type {{
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    /* 🌟 ĐIỀU CHỈNH HIỆU ỨNG LÀM MỜ VÀ ĐỘ TRONG SUỐT CHO LOGO */
-    filter: blur(2px) brightness(90%) grayscale(30%); 
-    opacity: 0.8; 
-    z-index: -1; 
+    /* HIỆU ỨNG LÀM MỜ VÀ GIẢM ĐỘ TRONG SUỐT */
+    filter: blur(5px) brightness(80%) grayscale(50%); 
+    opacity: 0.7; 
+    z-index: -1; /* Đặt sau nội dung player */
 }}
-
-/* 🌟 LỚP GIẢ (::after) CHO DẢI ÁNH SÁNG VIỀN CHẠY */
-#music-player-container::after {{
-    content: '';
-    position: absolute;
-    top: -2px; 
-    left: -2px;
-    right: -2px;
-    bottom: -2px;
-    background: linear-gradient(
-        45deg, 
-        #ff00cc, /* Magenta */
-        #3333ff, /* Blue */
-        #00ffcc, /* Cyan */
-        #ffcc00, /* Gold */
-        #ff00cc /* Lặp lại màu đầu để tạo hiệu ứng mượt */
-    );
-    background-size: 400% 400%; 
-    border-radius: 12px; 
-    z-index: -2; /* Đặt dưới cả ::before (logo) và nội dung chính */
-    animation: gradientBorder 8s ease infinite; 
-    pointer-events: none; 
-}}
-
-/* 🌟 KEYFRAMES CHO HIỆU ỨNG DẢI ÁNH SÁNG CHẠY */
-@keyframes gradientBorder {{
-    0% {{
-        background-position: 0% 50%;
-    }}
-    50% {{
-        background-position: 100% 50%;
-    }}
-    100% {{
-        background-position: 0% 50%;
-    }}
-}}
-
 
 .video-finished #music-player-container {{
     opacity: 1;
@@ -383,7 +347,7 @@ iframe:first-of-type {{
 #music-player-container .time-info {{
     display: flex;
     justify-content: space-between;
-    color: rgba(255, 255, 255, 0.9); 
+    color: rgba(255, 255, 255, 0.9); /* Đã tăng độ tương phản */
     font-size: 10px;
     font-family: monospace;
 }}
@@ -799,3 +763,4 @@ if len(music_files) > 0:
 # Thêm nội dung chính của ứng dụng ở đây (sẽ được hiển thị sau khi video kết thúc)
 st.markdown("<br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
 st.markdown("<h2 style='text-align: center; color: white; opacity: 0; transition: opacity 2s 3s;'>Nội dung chính của Trang</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align: center; color: white; opacity: 0; transition: opacity 2s 3s;'>Khu vực này sẽ xuất hiện sau 3 giây</h2>", unsafe_allow_html=True)
