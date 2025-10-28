@@ -229,45 +229,76 @@ iframe:first-of-type {{
 }}
 
 
-/* Keyframes cho hiệu ứng ánh sáng chạy quanh viền */
+/* Keyframes cho hiệu ứng ánh sáng chạy dọc theo viền */
 @keyframes border-light-run {{
-    0% {{
-        top: -100%;
-        left: 0;
-        transform: rotate(0deg);
+    0% {{ 
+        top: -3px; 
+        left: -100%; 
+        transform: rotate(0deg); 
+    }} 
+    
+    10% {{ 
+        top: -3px; 
+        left: -3px; 
+        transform: rotate(0deg); 
+    }} 
+
+    25% {{ 
+        top: -3px; 
+        left: calc(100% - 3px); 
+        transform: rotate(0deg); 
+    }} 
+    
+    40% {{ 
+        top: -3px; 
+        left: calc(100% - 3px); 
+        transform: rotate(90deg); /* Bắt đầu xoay dọc */
     }}
-    25% {{
-        top: 0;
-        left: 100%;
-        transform: rotate(90deg);
+
+    50% {{ 
+        top: calc(100% - 3px); 
+        left: calc(100% - 3px); 
+        transform: rotate(90deg); 
+    }} 
+
+    65% {{ 
+        top: calc(100% - 3px); 
+        left: calc(100% - 3px); 
+        transform: rotate(180deg); /* Bắt đầu xoay ngang */
     }}
-    50% {{
-        top: 100%;
-        left: 0;
-        transform: rotate(180deg);
+    
+    75% {{ 
+        top: calc(100% - 3px); 
+        left: -3px; 
+        transform: rotate(180deg); 
+    }} 
+    
+    85% {{ 
+        top: calc(100% - 3px); 
+        left: -3px; 
+        transform: rotate(270deg); /* Bắt đầu xoay dọc */
     }}
-    75% {{
-        top: 0;
-        left: -100%;
+
+    99% {{ 
+        top: -3px; 
+        left: -3px; 
         transform: rotate(270deg);
     }}
-    100% {{
-        top: -100%;
-        left: 0;
-        transform: rotate(360deg);
-    }}
+    
+    100% {{ 
+        top: -3px; 
+        left: -100%; 
+        transform: rotate(360deg); /* Hoặc 0deg */
+    }} 
 }}
 
-/* === MUSIC PLAYER STYLES (ĐÃ CẬP NHẬT VỚI HIỆU ỨNG VIỀN SÁNG VÀ KÍCH THƯỚC) === */
+/* === MUSIC PLAYER STYLES (CẬP NHẬT HIỆU ỨNG VIỀN CHẠY CHÍNH XÁC) === */
 #music-player-container {{
     position: fixed;
     bottom: 20px;
     right: 20px;
-    /* ✅ Chiều rộng lớn hơn trên PC */
     width: 350px; 
-    /* ✅ Padding nhỏ hơn để giảm chiều cao tổng thể */
     padding: 8px 16px; 
-    /* Thêm nền hơi tối để hiệu ứng nổi bật */
     background: rgba(0, 0, 0, 0.7); 
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7); 
@@ -276,11 +307,10 @@ iframe:first-of-type {{
     transform: translateY(100px);
     transition: opacity 1s ease-out 2s, transform 1s ease-out 2s;
     position: fixed;	
-    /* Rất quan trọng để cắt ánh sáng thừa */
     overflow: hidden; 
 }}
 
-/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO MÀU GỐC 🌟 */
+/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO VÀ VIỀN MỜ CỐ ĐỊNH 🌟 */
 #music-player-container::before {{
     content: '';
     position: absolute;
@@ -292,37 +322,41 @@ iframe:first-of-type {{
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    /* ✅ Loại bỏ sepia, giữ contrast và brightness nhẹ */
     filter: contrast(110%) brightness(90%); 
-    opacity: 0.4; /* Độ mờ cho logo nền */
+    opacity: 0.4; 
     z-index: -1; 
+    /* Thêm viền mờ cố định để định hình */
+    border: 3px solid rgba(255, 215, 0, 0.3); 
+    border-radius: 12px;
+    box-sizing: border-box; /* Quan trọng */
 }}
 
 /* 🌟 HIỆU ỨNG VIỀN SÁNG VÀNG CHẠY 🌟 */
 #music-player-container::after {{
     content: '';
     position: absolute;
-    /* Kích thước của vệt sáng */
-    width: 100px; 
-    height: 100px; 
-    background: conic-gradient(
-        transparent 0deg, 
-        transparent 180deg, 
-        rgba(255, 215, 0, 0.8) 180deg, /* Vàng kim */
-        rgba(255, 215, 0, 0) 270deg,
-        transparent 360deg
-    );
-    /* Tốc độ chạy 8 giây/vòng */
+    /* Kích thước của chấm sáng */
+    width: 25px; 
+    height: 6px; 
+    /* Gradient vàng theo chiều ngang */
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 1), transparent);
+    background-color: #FFD700;
+    
+    /* Dùng box-shadow để mô phỏng ánh sáng tỏa ra */
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.8), 0 0 20px rgba(255, 215, 0, 0.4);
+    
+    border-radius: 3px;
+    /* Điều chỉnh animation để chạy 8s/vòng */
     animation: border-light-run 8s linear infinite; 
-    z-index: 2; /* Đảm bảo ánh sáng nằm trên logo nền nhưng dưới nội dung */
-    border-radius: 50%; /* Làm cho vệt sáng có dạng tròn */
-    filter: blur(5px); /* Làm mờ ánh sáng để trông mềm mại hơn */
+    z-index: 4; 
+    transform-origin: center center;
+    /* Ánh sáng ban đầu sẽ được điều chỉnh bởi keyframes */
 }}
 
 /* Đảm bảo các thành phần con ở trên lớp giả */
 #music-player-container * {{
     position: relative;
-    z-index: 3; /* Đảm bảo nội dung player nằm trên ánh sáng */	
+    z-index: 5; /* Đảm bảo nội dung player nằm trên ánh sáng và viền */	
 }}
 
 .video-finished #music-player-container {{
@@ -330,6 +364,7 @@ iframe:first-of-type {{
     transform: translateY(0);
 }}
 
+/* Các style khác của player (không đổi) */
 #music-player-container .controls,
 #music-player-container .time-info {{
     color: #fff; 
@@ -398,17 +433,14 @@ iframe:first-of-type {{
     font-family: monospace;
 }}
 
-/* ✅ ĐIỀU CHỈNH TRÊN MOBILE */
 @media (max-width: 768px) {{
     #music-player-container {{
         width: calc(100% - 40px);
         right: 20px;
         left: 20px;
         bottom: 15px;
-        /* ✅ Giảm padding để thu nhỏ chiều cao trên mobile */
         padding: 8px 12px;
     }}
-    /* Giữ nguyên kích thước nút trên mobile để dễ thao tác hơn */
     #music-player-container .control-btn,
     #music-player-container .control-btn.play-pause {{
         width: 36px;
