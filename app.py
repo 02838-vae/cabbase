@@ -229,77 +229,68 @@ iframe:first-of-type {{
 
 /* 🌟 KEYFRAMES: HIỆU ỨNG CHUYỂN ĐỘNG CHẠY VÀ DỪNG (8 giây/chu kỳ) 🌟 */
 @keyframes flow-border-cycle {{
-    /* Khai báo các biến màu và độ mờ cho Keyframes */
-    --flow-glow: 0 0 15px 2px rgba(255, 215, 0, 1); /* Vệt sáng chính */
-    --base-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3); /* Viền mờ nền */
+    /* ĐIỀU CHỈNH: Tăng độ sáng và kích thước vệt sáng */
+    --flow-glow: 0 0 20px 3px rgba(255, 255, 0, 1); /* Vệt sáng chính (Vàng) */
+    --base-shadow: 0 0 0 2px rgba(255, 215, 0, 0.5); /* Viền mờ nền */
 
     /* 0% - Bắt đầu (Góc trên trái) */
     0% {{
-        /* Vệt sáng ở vị trí Top Left */
         box-shadow: 
             var(--base-shadow) inset, 
             -15px -15px 0 0 var(--flow-glow); 
     }}
 
-    /* 12.5% - Chạy hết cạnh trên (1 giây) */
+    /* 12.5% - Chạy hết cạnh trên */
     12.5% {{
-        /* Vệt sáng ở vị trí Top Right */
         box-shadow: 
             var(--base-shadow) inset, 
             15px -15px 0 0 var(--flow-glow);
     }}
 
-    /* 25% - Nghỉ cạnh trên (1 giây) */
+    /* 25% - Nghỉ cạnh trên */
     25% {{
-        /* Vệt sáng vẫn ở vị trí Top Right */
         box-shadow: 
             var(--base-shadow) inset, 
             15px -15px 0 0 var(--flow-glow);
     }}
 
-    /* 37.5% - Chạy hết cạnh phải (1 giây) */
+    /* 37.5% - Chạy hết cạnh phải */
     37.5% {{
-        /* Vệt sáng ở vị trí Bottom Right */
         box-shadow: 
             var(--base-shadow) inset, 
             15px 15px 0 0 var(--flow-glow);
     }}
 
-    /* 50% - Nghỉ cạnh phải (1 giây) */
+    /* 50% - Nghỉ cạnh phải */
     50% {{
-        /* Vệt sáng vẫn ở vị trí Bottom Right */
         box-shadow: 
             var(--base-shadow) inset, 
             15px 15px 0 0 var(--flow-glow);
     }}
     
-    /* 62.5% - Chạy hết cạnh dưới (1 giây) */
+    /* 62.5% - Chạy hết cạnh dưới */
     62.5% {{
-        /* Vệt sáng ở vị trí Bottom Left */
         box-shadow: 
             var(--base-shadow) inset, 
             -15px 15px 0 0 var(--flow-glow);
     }}
 
-    /* 75% - Nghỉ cạnh dưới (1 giây) */
+    /* 75% - Nghỉ cạnh dưới */
     75% {{
-        /* Vệt sáng vẫn ở vị trí Bottom Left */
         box-shadow: 
             var(--base-shadow) inset, 
             -15px 15px 0 0 var(--flow-glow);
     }}
 
-    /* 87.5% - Chạy hết cạnh trái (1 giây) */
+    /* 87.5% - Chạy hết cạnh trái */
     87.5% {{
-        /* Vệt sáng ở vị trí Top Left */
         box-shadow: 
             var(--base-shadow) inset, 
             -15px -15px 0 0 var(--flow-glow);
     }}
 
-    /* 100% - Nghỉ cạnh trái (1 giây, quay lại 0%) */
+    /* 100% - Quay lại 0% */
     100% {{
-        /* Vệt sáng vẫn ở vị trí Top Left (giống 0%) */
         box-shadow: 
             var(--base-shadow) inset, 
             -15px -15px 0 0 var(--flow-glow);
@@ -307,7 +298,7 @@ iframe:first-of-type {{
 }}
 
 
-/* === MUSIC PLAYER STYLES (ĐÃ CẬP NHẬT HIỆU ỨNG CHUYỂN ĐỘNG) === */
+/* === MUSIC PLAYER STYLES (ĐÃ CẬP NHẬT HIỆU ỨNG VIỀN) === */
 #music-player-container {{
     position: fixed;
     bottom: 20px;
@@ -329,10 +320,11 @@ iframe:first-of-type {{
 #music-player-container::before {{
     content: '';
     position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    /* DỊCH CHUYỂN VÀ MỞ RỘNG MỘT CHÚT để viền ngoài không bị cắt */
+    top: -5px; 
+    left: -5px;
+    width: calc(100% + 10px);
+    height: calc(100% + 10px);
     
     background-image: var(--logo-bg-url);
     background-size: cover;
@@ -342,17 +334,14 @@ iframe:first-of-type {{
     opacity: 0.4; 
     z-index: 1; 
     
-    border: none; /* Xóa border cứng */
-    border-radius: 12px;
+    border-radius: 15px; /* Tăng border radius để khớp với kích thước mở rộng */
     box-sizing: border-box; 
     
-    /* ✅ ÁP DỤNG KEYFRAMES MỚI (8S LINEAR) */
-    animation: flow-border-cycle 8s linear infinite; 
-}}
+    /* ĐIỀU CHỈNH THÊM: Viền cứng màu vàng để làm nổi bật khung */
+    border: 2px solid #FFD700; 
 
-/* ❌ XÓA HOÀN TOÀN LỚP GIẢ ::after (cách làm cũ) */
-#music-player-container::after {{
-    display: none; 
+    /* ✅ ÁP DỤNG KEYFRAMES */
+    animation: flow-border-cycle 8s linear infinite; 
 }}
 
 
@@ -467,7 +456,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
-    # SỬA LỖI: Chỉ cần dấu ngoặc kép bên ngoài và ngoặc đơn bên trong string
+    # Sửa lỗi: Chỉ cần dấu ngoặc kép bên ngoài và ngoặc đơn bên trong string
     music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files])
 else:
     music_sources_js = ""
@@ -525,7 +514,7 @@ js_callback_video = f"""
         const audio = new Audio();
         audio.volume = 0.3;
         
-        // SỬA LỖI: Lấy phần tử từ DOM gốc (parent.document)
+        // Sửa lỗi: Lấy phần tử từ DOM gốc (parent.document)
         const playPauseBtn = window.parent.document.getElementById('play-pause-btn');
         const prevBtn = window.parent.document.getElementById('prev-btn');
         const nextBtn = window.parent.document.getElementById('next-btn');
@@ -558,11 +547,9 @@ js_callback_video = f"""
                 audio.play().then(() => {{
                     playPauseBtn.textContent = '⏸';
                 }}).catch(e => {{
-                    console.error("Play error:", e);
-                    // Nếu lỗi (bị chặn), không đổi trạng thái isPlaying
-                    // Streamlit thường không có tương tác click để kích hoạt Play, nên lỗi này phổ biến
+                    console.log("Play blocked, attempting again on next interaction.");
+                    playPauseBtn.textContent = '▶';
                 }});
-                playPauseBtn.textContent = '⏸'; // Đổi tạm thời
             }}
             isPlaying = !isPlaying;
         }}
