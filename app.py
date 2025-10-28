@@ -1,6 +1,7 @@
 import streamlit as st
 import base64
 import os
+import random
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
@@ -82,6 +83,16 @@ font_links = """
 st.markdown(font_links, unsafe_allow_html=True)
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
+
+# Tạo 4 màu ngẫu nhiên cho Keyframes
+colors = [
+    f'#{random.randint(0, 0xFFFFFF):06x}',
+    f'#{random.randint(0, 0xFFFFFF):06x}',
+    f'#{random.randint(0, 0xFFFFFF):06x}',
+    f'#{random.randint(0, 0xFFFFFF):06x}'
+]
+
+# Tổng chu kỳ 5s: 1s nháy -> 3s nghỉ -> 1s nháy
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -229,58 +240,44 @@ iframe:first-of-type {{
 }}
 
 
-/* 🌟 KEYFRAMES MỚI: Kỹ thuật Scale và Translate (20s/chu kỳ, nghỉ 2s/cạnh) 🌟 */
-@keyframes border-light-run-v3 {{
-    /* 0. START (Góc trên trái) */
-    0% {{ transform: translateX(0) translateY(0) scaleX(0) scaleY(0); transform-origin: 0% 50%; }}
-    
-    /* 1. Cạnh TRÊN: Chạy (0% -> 15%) */
-    1% {{ transform: translateX(0) translateY(0) scaleX(0) scaleY(1); transform-origin: 0% 50%; }} /* Kích hoạt scaleY(1) */
-    15% {{ transform: translateX(0) translateY(0) scaleX(1) scaleY(1); }}
-    
-    /* 2. Nghỉ 2s (15% -> 25%) - Dừng ở góc trên phải (tổng 5s) */
-    25% {{ transform: translateX(100%) translateY(0) scaleX(0) scaleY(1); transform-origin: 100% 50%; }} /* Kết thúc chạy ngang, chuyển sang dịch chuyển 100% */
-    
-    /* 3. Cạnh PHẢI: Chạy (25% -> 40%) */
-    25.1% {{ transform: translateX(100%) translateY(0) scaleX(1) scaleY(0); transform-origin: 50% 0%; }} /* Kích hoạt scaleX(1) và dịch chuyển 100% ngang */
-    40% {{ transform: translateX(100%) translateY(0) scaleX(1) scaleY(100%); }}
-    
-    /* 4. Nghỉ 2s (40% -> 50%) - Dừng ở góc dưới phải (tổng 10s) */
-    50% {{ transform: translateX(100%) translateY(100%) scaleX(1) scaleY(0); transform-origin: 50% 100%; }}
+/* 🌟 KEYFRAMES MỚI: Nháy 4 cạnh đồng bộ (Màu ngẫu nhiên, nghỉ 3s) 🌟 */
+@keyframes border-flash {{
+    /* 1. Nháy Lần 1 (0% -> 10%) - Nhanh */
+    0% {{ box-shadow: 0 0 1px 1px {colors[0]}; }}
+    5% {{ box-shadow: 0 0 10px 5px {colors[1]}; }}
+    10% {{ box-shadow: 0 0 1px 1px {colors[2]}; }}
 
-    /* 5. Cạnh DƯỚI: Chạy ngược (50% -> 65%) */
-    50.1% {{ transform: translateX(100%) translateY(100%) scaleX(0) scaleY(1); transform-origin: 100% 50%; }}
-    65% {{ transform: translateX(0) translateY(100%) scaleX(1) scaleY(1); transform-origin: 0% 50%; }}
-    
-    /* 6. Nghỉ 2s (65% -> 75%) - Dừng ở góc dưới trái (tổng 15s) */
-    75% {{ transform: translateX(0) translateY(100%) scaleX(0) scaleY(1); transform-origin: 0% 50%; }}
+    /* 2. Nghỉ 3s (10% -> 70%) */
+    10.01% {{ border-color: rgba(255, 215, 0, 0.3); box-shadow: none; }}
+    70% {{ border-color: rgba(255, 215, 0, 0.3); box-shadow: none; }}
 
-    /* 7. Cạnh TRÁI: Chạy ngược (75% -> 90%) */
-    75.1% {{ transform: translateX(0) translateY(100%) scaleX(1) scaleY(0); transform-origin: 50% 100%; }}
-    90% {{ transform: translateX(0) translateY(0) scaleX(1) scaleY(1); transform-origin: 50% 0%; }}
+    /* 3. Nháy Lần 2 (70% -> 80%) - Nhanh */
+    70.01% {{ box-shadow: 0 0 1px 1px {colors[3]}; }}
+    75% {{ box-shadow: 0 0 10px 5px {colors[0]}; }}
+    80% {{ box-shadow: 0 0 1px 1px {colors[1]}; }}
 
-    /* 8. Nghỉ 2s (90% -> 100%) - Dừng ở góc trên trái (tổng 20s) */
-    100% {{ transform: translateX(0) translateY(0) scaleX(1) scaleY(0); transform-origin: 50% 0%; }}
+    /* 4. Nghỉ (80% -> 100%) */
+    80.01% {{ border-color: rgba(255, 215, 0, 0.3); box-shadow: none; }}
+    100% {{ border-color: rgba(255, 215, 0, 0.3); box-shadow: none; }}
 }}
 
-
-/* === MUSIC PLAYER STYLES (ĐÃ LÀM MƯỢT HIỆU ỨNG VIỀN CHẠY) === */
+/* === MUSIC PLAYER STYLES (Kích thước và hiệu ứng mới) === */
 #music-player-container {{
     position: fixed;
     bottom: 20px;
     right: 20px;
     width: 350px; 
-    height: 150px; /* Thêm height để căn chỉnh chính xác */
+    /* Đã resize lại height */
+    height: 110px; 
     padding: 8px 16px; 
     background: rgba(0, 0, 0, 0.7); 
     border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7); 
+    
     z-index: 999;
     opacity: 0;
     transform: translateY(100px);
     transition: opacity 1s ease-out 2s, transform 1s ease-out 2s;
     position: fixed;	
-    /* QUAN TRỌNG: Thiết lập overflow: hidden để vệt sáng không tràn ra ngoài */
     overflow: hidden; 
 }}
 
@@ -299,41 +296,19 @@ iframe:first-of-type {{
     filter: contrast(110%) brightness(90%); 
     opacity: 0.4; 
     z-index: 1; 
-    /* Viền mờ nền */
+    /* Viền mờ nền (border cố định) */
     border: 3px solid rgba(255, 215, 0, 0.3); 
     border-radius: 12px;
     box-sizing: border-box; 
+    transition: box-shadow 0.1s; /* Dùng transition để hiệu ứng nháy mượt hơn */
+    
+    /* Áp dụng Keyframes nháy sáng */
+    animation: border-flash 5s linear infinite; 
 }}
 
-/* 🌟 HIỆU ỨNG VIỀN SÁNG VÀNG CHẠY (CHỈ CẦN 1 PHẦN TỬ) 🌟 */
+/* Loại bỏ ::after vì không cần thiết cho hiệu ứng nháy đồng bộ */
 #music-player-container::after {{
-    content: '';
-    position: absolute;
-    
-    /* Kích thước ban đầu (1x1 pixel) */
-    width: 100%;
-    height: 100%;
-    
-    /* Vị trí ban đầu: Căn giữa border (3px) */
-    top: -1.5px; 
-    left: -1.5px; 
-    
-    /* Tạo dải màu vàng (sử dụng box-shadow để làm dải sáng) */
-    background: transparent;
-    
-    /* TĂNG CƯỜNG HIỆU ỨNG PHÁT SÁNG */
-    box-shadow: 0 0 10px 5px rgba(255, 255, 0, 0.9);
-    
-    /* Vệt sáng ban đầu là 1x1, sau đó được scale và translate theo Keyframes */
-    transform-origin: 0% 50%; /* Điểm gốc mặc định (sẽ bị Keyframes ghi đè) */
-    
-    /* Tốc độ Linear, chu kỳ 20s */
-    animation: border-light-run-v3 20s linear infinite; 
-    z-index: 4; 
-    
-    /* Đặt kích thước nhỏ để scale */
-    width: 3px; 
-    height: 3px;
+    content: none;
 }}
 
 /* Đảm bảo các thành phần con ở trên lớp giả */
@@ -419,7 +394,7 @@ iframe:first-of-type {{
 @media (max-width: 768px) {{
     #music-player-container {{
         width: calc(100% - 40px);
-        height: 140px;
+        height: 100px; /* Resize cho mobile */
         right: 20px;
         left: 20px;
         bottom: 15px;
@@ -445,10 +420,15 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
 # --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
+# (Phần này giữ nguyên)
+intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
+intro_chars_html = ''.join([
+    f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'	
+    for char in intro_title
+])
 
 # Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
-    # Ngoặc nhọn trong f-string JavaScript (Template Literal) cần được nhân đôi
     music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files])
 else:
     music_sources_js = ""
@@ -682,13 +662,6 @@ js_callback_video = f"""
     }});
 </script>
 """
-
-# Mã HTML/CSS cho Video
-intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
-intro_chars_html = ''.join([
-    f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'	
-    for char in intro_title
-])
 
 html_content_modified = f"""
 <!DOCTYPE html>
