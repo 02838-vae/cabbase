@@ -37,6 +37,9 @@ try:
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
     
+    # 🌟 THÊM MÃ HÓA CHO LOGO
+    logo_base64 = get_base64_encoded_file("logo.jpg")
+
     # Kiểm tra file bắt buộc
     if not all([video_pc_base64, video_mobile_base64, audio_base64, bg_pc_base64, bg_mobile_base64]):
         missing_files = []
@@ -49,10 +52,16 @@ try:
         st.error(f"⚠️ Thiếu các file media cần thiết hoặc file rỗng. Vui lòng kiểm tra lại các file sau trong thư mục:")
         st.write(" - " + "\n - ".join(missing_files))
         st.stop()
-    
+        
 except Exception as e:
     st.error(f"❌ Lỗi khi đọc file: {str(e)}")
     st.stop()
+
+# Đảm bảo logo_base64 được khởi tạo nếu file không tồn tại
+if not 'logo_base64' in locals() or not logo_base64:
+    logo_base64 = "" 
+    st.info("ℹ️ Không tìm thấy file logo.jpg. Music player sẽ không có hình nền logo.")
+
 
 # Mã hóa các file nhạc nền (không bắt buộc)
 music_files = []
@@ -71,7 +80,6 @@ font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 """
 st.markdown(font_links, unsafe_allow_html=True)
-
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
 # Đảm bảo tất cả các khối CSS {} đều là {{}}
@@ -117,6 +125,8 @@ iframe:first-of-type {{
 .stApp {{
     --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
     --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
+    /* 🌟 THÊM BIẾN CSS CHO LOGO */
+    --logo-bg-url: url('data:image/jpeg;base64,{logo_base64}');
 }}
 
 .reveal-grid {{
@@ -225,14 +235,14 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === MUSIC PLAYER STYLES === */
+/* === MUSIC PLAYER STYLES (ĐÃ CHỈNH SỬA) === */
 #music-player-container {{
     position: fixed;
     bottom: 20px;
     right: 20px;
     width: 280px;
-    background: rgba(0, 0, 0, 0.85);
-    backdrop-filter: blur(10px);
+    /* 🌟 Loại bỏ background/backdrop-filter gốc để dùng background image */
+    background: transparent;
     border-radius: 12px;
     padding: 12px 16px;
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
@@ -241,11 +251,44 @@ iframe:first-of-type {{
     transform: translateY(100px);
     transition: opacity 1s ease-out 2s, transform 1s ease-out 2s;
     border: 1px solid rgba(255, 255, 255, 0.1);
+    position: fixed; 
+    overflow: hidden; /* Quan trọng cho border-radius của ::before */
+}}
+
+/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO MỜ */
+#music-player-container::before {{
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-image: var(--logo-bg-url);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    /* HIỆU ỨNG LÀM MỜ VÀ GIẢM ĐỘ TRONG SUỐT */
+    filter: blur(5px) brightness(80%) grayscale(50%); 
+    opacity: 0.7; 
+    z-index: -1; /* Đặt sau nội dung player */
 }}
 
 .video-finished #music-player-container {{
     opacity: 1;
     transform: translateY(0);
+}}
+
+/* Đảm bảo các thành phần con ở trên lớp giả */
+#music-player-container * {{
+    position: relative;
+    z-index: 1; 
+}}
+
+#music-player-container .controls,
+#music-player-container .time-info {{
+    /* Tăng độ tương phản cho text/icon */
+    color: #fff; 
+    text-shadow: 0 0 5px #000;
 }}
 
 #music-player-container .controls {{
@@ -304,7 +347,7 @@ iframe:first-of-type {{
 #music-player-container .time-info {{
     display: flex;
     justify-content: space-between;
-    color: rgba(255, 255, 255, 0.7);
+    color: rgba(255, 255, 255, 0.9); /* Đã tăng độ tương phản */
     font-size: 10px;
     font-family: monospace;
 }}
@@ -719,5 +762,5 @@ if len(music_files) > 0:
 
 # Thêm nội dung chính của ứng dụng ở đây (sẽ được hiển thị sau khi video kết thúc)
 st.markdown("<br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
-st.markdown("<h2 style='text-align: center; color: white; opacity: 0;'>Nội dung chính của Trang</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align: center; color: white; opacity: 0; transition: opacity 2s 3s;'>Nội dung chính của Trang</h2>", unsafe_allow_html=True)
 st.markdown("<h2 style='text-align: center; color: white; opacity: 0; transition: opacity 2s 3s;'>Khu vực này sẽ xuất hiện sau 3 giây</h2>", unsafe_allow_html=True)
