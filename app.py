@@ -17,11 +17,17 @@ if 'video_ended' not in st.session_state:
 
 def get_base64_encoded_file(file_path):
     """Đọc file và trả về Base64 encoded string."""
+    # Kiểm tra xem file có tồn tại và có dữ liệu không
+    if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
+        return None
     try:
         with open(file_path, "rb") as f:
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except FileNotFoundError:
+        return None
+    except Exception as e:
+        st.error(f"Lỗi khi đọc file {file_path}: {str(e)}")
         return None
 
 
@@ -35,12 +41,15 @@ try:
     
     # Kiểm tra file bắt buộc
     if not all([video_pc_base64, video_mobile_base64, audio_base64, bg_pc_base64, bg_mobile_base64]):
-        st.error("⚠️ Thiếu các file media cần thiết. Vui lòng kiểm tra lại các file sau trong thư mục:")
-        st.write("- airplane.mp4")
-        st.write("- mobile.mp4")
-        st.write("- plane_fly.mp3")
-        st.write("- cabbase.jpg")
-        st.write("- mobile.jpg")
+        missing_files = []
+        if not video_pc_base64: missing_files.append("airplane.mp4")
+        if not video_mobile_base64: missing_files.append("mobile.mp4")
+        if not audio_base64: missing_files.append("plane_fly.mp3")
+        if not bg_pc_base64: missing_files.append("cabbase.jpg")
+        if not bg_mobile_base64: missing_files.append("mobile.jpg")
+        
+        st.error(f"⚠️ Thiếu các file media cần thiết hoặc file rỗng. Vui lòng kiểm tra lại các file sau trong thư mục:")
+        st.write(" - " + "\n - ".join(missing_files))
         st.stop()
     
 except Exception as e:
@@ -67,6 +76,7 @@ st.markdown(font_links, unsafe_allow_html=True)
 
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
+# SỬ DỤNG base64 strings ĐÃ ĐƯỢC ĐỌC
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -85,12 +95,13 @@ div.block-container {{
     max-width: 100% !important;
 }}
 
+/* Đảm bảo iframe video intro chiếm toàn màn hình và có độ ưu tiên cao */
 iframe:first-of-type {{
     transition: opacity 1s ease-out, visibility 1s ease-out;
     opacity: 1;
     visibility: visible;
     width: 100vw !important;
-    height: 100vh !important;
+    height: 100vh !important; /* Ghi đè lên chiều cao mặc định của Streamlit */
     position: fixed;
     top: 0;
     left: 0;
@@ -102,6 +113,7 @@ iframe:first-of-type {{
     visibility: hidden;
     pointer-events: none;
     height: 1px !important; 
+    width: 1px !important;
 }}
 
 .stApp {{
@@ -173,6 +185,10 @@ iframe:first-of-type {{
     
     opacity: 0; 
     transition: opacity 2s;
+}}
+
+.video-finished #main-title-container {{
+    opacity: 1;
 }}
 
 #main-title-container h1 {{
@@ -323,14 +339,20 @@ js_callback_video = f"""
 <script>
     console.log("Script loaded");
     
+    // Hàm được gọi khi video kết thúc (trong iframe)
     function sendBackToStreamlit() {{
         console.log("Video ended, revealing main content");
         const stApp = window.parent.document.querySelector('.stApp');
         if (stApp) {{
+            // Thêm class để kích hoạt CSS Transition cho các thành phần chính
             stApp.classList.add('video-finished', 'main-content-revealed');
         }}
         initRevealEffect();
         setTimeout(initMusicPlayer, 100);
+        
+        // Cần truyền tín hiệu trở lại Streamlit để tránh load video lần sau
+        // Tuy nhiên, việc này phức tạp với st.components.v1.html và không bắt buộc
+        // nếu chỉ dùng CSS để ẩn video.
     }}
     
     function initRevealEffect() {{
@@ -338,7 +360,7 @@ js_callback_video = f"""
         const mainTitle = window.parent.document.getElementById('main-title-container');
 
         if (mainTitle) {{
-             mainTitle.style.opacity = 1; 
+             // Không cần set opacity ở đây vì CSS đã có .video-finished #main-title-container
         }}
 
         if (!revealGrid) {{ return; }}
@@ -358,6 +380,7 @@ js_callback_video = f"""
     }}
     
     function initMusicPlayer() {{
+        // Logic Music Player (Không thay đổi)
         console.log("Initializing music player");
         
         const musicSources = [{music_sources_js}];
@@ -380,10 +403,10 @@ js_callback_video = f"""
         const progressContainer = window.parent.document.getElementById('progress-container');
         const currentTimeEl = window.parent.document.getElementById('current-time');
         const durationEl = window.parent.document.getElementById('duration');
-        const trackTitle = window.parent.document.getElementById('track-title');
+        // const trackTitle = window.parent.document.getElementById('track-title'); // track-title không có trong HTML
         
         if (!playPauseBtn || !prevBtn || !nextBtn) {{
-            console.error("Music player elements not found");
+            console.error("Music player elements not found in parent document");
             return;
         }}
         
@@ -458,7 +481,6 @@ js_callback_video = f"""
     document.addEventListener("DOMContentLoaded", function() {{
         console.log("DOM loaded, waiting for elements...");
         
-        // Chờ elements xuất hiện
         const waitForElements = setInterval(() => {{
             const video = document.getElementById('intro-video');
             const audio = document.getElementById('background-audio');
@@ -481,7 +503,7 @@ js_callback_video = f"""
                 
                 audio.src = 'data:audio/mp3;base64,{audio_base64}';
 
-                // Load video trước
+                // Load video
                 video.load();
                 console.log("Video loaded, attempting to play...");
                 
@@ -514,6 +536,10 @@ js_callback_video = f"""
                         console.log("✅ Video playing after click");
                     }}).catch(err => console.error("Still can't play:", err));
                     audio.play().catch(e => {{}});
+                    
+                    // Xóa event listener sau lần tương tác đầu tiên
+                    document.removeEventListener('click', clickHandler);
+                    document.removeEventListener('touchstart', clickHandler);
                 }};
                 
                 document.addEventListener('click', clickHandler, {{ once: true }});
@@ -593,6 +619,7 @@ html_content_modified = f"""
             display: flex; 
             justify-content: center;
             opacity: 1; 
+            transition: opacity 0.5s;
         }}
         
         .intro-char {{
@@ -651,15 +678,17 @@ html_content_modified = html_content_modified.replace(
     f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
 )
 
-# Hiển thị thành phần HTML (video)
-st.components.v1.html(html_content_modified, height=10, scrolling=False)
+# --- KHẮC PHỤC LỖI QUAN TRỌNG NHẤT ---
+# Tăng height lên giá trị lớn để Streamlit cấp đủ không gian cho iframe
+# trước khi CSS can thiệp, tránh màn hình đen.
+st.components.v1.html(html_content_modified, height=1000, scrolling=False)
 
 
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
 
 # Tạo Lưới Reveal
 grid_cells_html = ""
-for i in range(240): 
+for i in range(240): # 20 columns * 12 rows = 240 cells
     grid_cells_html += f'<div class="grid-cell"></div>'
 
 reveal_grid_html = f"""
@@ -700,3 +729,9 @@ if len(music_files) > 0:
     </div>
 </div>
 """, unsafe_allow_html=True)
+
+# Thêm nội dung chính của ứng dụng ở đây (sẽ được hiển thị sau khi video kết thúc)
+st.markdown("<br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align: center; color: white; opacity: 0;'>Nội dung chính của Trang</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align: center; color: white; opacity: 0; transition: opacity 2s 3s;'>Khu vực này sẽ xuất hiện sau 3 giây</h2>", unsafe_allow_html=True)
+
