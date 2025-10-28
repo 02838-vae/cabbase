@@ -259,7 +259,7 @@ iframe:first-of-type {{
     overflow: hidden; 
 }}
 
-/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO MỚI (Ngả Vàng) 🌟 */
+/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO MỚI (MÀU GỐC) 🌟 */
 #music-player-container::before {{
     content: '';
     position: absolute;
@@ -271,9 +271,10 @@ iframe:first-of-type {{
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
-    /* ✅ Chỉ dùng sepia(100%) để ngả màu vàng */
-    filter: sepia(100%) contrast(120%) brightness(80%);
-    opacity: 0.5; /* Giảm opacity để nội dung rõ hơn */
+    /* ❌ Đã loại bỏ tất cả các hiệu ứng filter để giữ màu gốc */
+    /* Tuy nhiên, vẫn giữ độ sáng và độ tương phản nếu cần để hòa hợp */
+    filter: contrast(110%) brightness(90%); 
+    opacity: 0.4; /* Có thể điều chỉnh opacity nếu bạn muốn logo nổi bật hơn hoặc mờ hơn */
     z-index: -1; 
 }}
 
