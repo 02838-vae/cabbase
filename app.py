@@ -1,7 +1,6 @@
 import streamlit as st
 import base64
 import os
-# ... (Phần code Python phía trên giữ nguyên) ...
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
@@ -17,7 +16,6 @@ if 'video_ended' not in st.session_state:
 # --- CÁC HÀM TIỆN ÍCH ---
 
 def get_base64_encoded_file(file_path):
-    # ... (Hàm này giữ nguyên) ...
     """Đọc file và trả về Base64 encoded string."""
     if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
         return None
@@ -231,60 +229,38 @@ iframe:first-of-type {{
 }}
 
 
-/* 🌟 KEYFRAMES MỚI: Chỉ dùng translate (Tốc độ 10 giây/vòng) 🌟 */
-
-/* Cạnh TRÊN -> DƯỚI */
-@keyframes border-horizontal-run {{
-    /* Cạnh TRÊN */
-    0% {{ top: 0; left: -50px; opacity: 1; }}
-    20% {{ top: 0; left: 100%; opacity: 1; }} /* Chạy 2s */
+/* 🌟 KEYFRAMES MỚI: Kỹ thuật Scale và Translate (20s/chu kỳ, nghỉ 2s/cạnh) 🌟 */
+@keyframes border-light-run-v3 {{
+    /* 0. START (Góc trên trái) */
+    0% {{ transform: translateX(0) translateY(0) scaleX(0) scaleY(0); transform-origin: 0% 50%; }}
     
-    /* Nghỉ */
-    20.1% {{ opacity: 0; }}
-    25% {{ opacity: 0; }} /* Nghỉ 0.5s */
+    /* 1. Cạnh TRÊN: Chạy (0% -> 15%) */
+    1% {{ transform: translateX(0) translateY(0) scaleX(0) scaleY(1); transform-origin: 0% 50%; }} /* Kích hoạt scaleY(1) */
+    15% {{ transform: translateX(0) translateY(0) scaleX(1) scaleY(1); }}
     
-    /* Ẩn (Chờ cạnh dọc chạy) */
-    25.1% {{ opacity: 0; }}
-    49.9% {{ opacity: 0; }}
-
-    /* Cạnh DƯỚI */
-    50% {{ top: 100%; left: 100%; opacity: 1; transform: translateX(-100%); }}
-    70% {{ top: 100%; left: 0%; opacity: 1; transform: translateX(-0%); }} /* Chạy 2s */
+    /* 2. Nghỉ 2s (15% -> 25%) - Dừng ở góc trên phải (tổng 5s) */
+    25% {{ transform: translateX(100%) translateY(0) scaleX(0) scaleY(1); transform-origin: 100% 50%; }} /* Kết thúc chạy ngang, chuyển sang dịch chuyển 100% */
     
-    /* Nghỉ */
-    70.1% {{ opacity: 0; }}
-    75% {{ opacity: 0; }} /* Nghỉ 0.5s */
-
-    /* Ẩn (Chờ cạnh dọc chạy) */
-    75.1% {{ opacity: 0; }}
-    99.9% {{ opacity: 0; }}
-}}
-
-/* Cạnh PHẢI -> TRÁI */
-@keyframes border-vertical-run {{
-    /* Cạnh PHẢI */
-    0% {{ left: 100%; top: -50px; opacity: 0; }} 
-    25% {{ left: 100%; top: -50px; opacity: 0; }} 
-
-    /* Bắt đầu chạy */
-    25.1% {{ left: 100%; top: 0%; opacity: 1; transform: translateY(-0%); }}
-    45% {{ left: 100%; top: 100%; opacity: 1; transform: translateY(-100%); }} /* Chạy 2s */
+    /* 3. Cạnh PHẢI: Chạy (25% -> 40%) */
+    25.1% {{ transform: translateX(100%) translateY(0) scaleX(1) scaleY(0); transform-origin: 50% 0%; }} /* Kích hoạt scaleX(1) và dịch chuyển 100% ngang */
+    40% {{ transform: translateX(100%) translateY(0) scaleX(1) scaleY(100%); }}
     
-    /* Nghỉ */
-    45.1% {{ opacity: 0; }}
-    50% {{ opacity: 0; }} /* Nghỉ 0.5s */
+    /* 4. Nghỉ 2s (40% -> 50%) - Dừng ở góc dưới phải (tổng 10s) */
+    50% {{ transform: translateX(100%) translateY(100%) scaleX(1) scaleY(0); transform-origin: 50% 100%; }}
 
-    /* Cạnh TRÁI */
-    50.1% {{ opacity: 0; }}
-    75% {{ opacity: 0; }} 
+    /* 5. Cạnh DƯỚI: Chạy ngược (50% -> 65%) */
+    50.1% {{ transform: translateX(100%) translateY(100%) scaleX(0) scaleY(1); transform-origin: 100% 50%; }}
+    65% {{ transform: translateX(0) translateY(100%) scaleX(1) scaleY(1); transform-origin: 0% 50%; }}
+    
+    /* 6. Nghỉ 2s (65% -> 75%) - Dừng ở góc dưới trái (tổng 15s) */
+    75% {{ transform: translateX(0) translateY(100%) scaleX(0) scaleY(1); transform-origin: 0% 50%; }}
 
-    /* Bắt đầu chạy */
-    75.1% {{ left: 0; top: 100%; opacity: 1; transform: translateY(-100%); }}
-    95% {{ left: 0; top: 0%; opacity: 1; transform: translateY(-0%); }} /* Chạy 2s */
+    /* 7. Cạnh TRÁI: Chạy ngược (75% -> 90%) */
+    75.1% {{ transform: translateX(0) translateY(100%) scaleX(1) scaleY(0); transform-origin: 50% 100%; }}
+    90% {{ transform: translateX(0) translateY(0) scaleX(1) scaleY(1); transform-origin: 50% 0%; }}
 
-    /* Nghỉ */
-    95.1% {{ opacity: 0; }}
-    100% {{ opacity: 0; }} 
+    /* 8. Nghỉ 2s (90% -> 100%) - Dừng ở góc trên trái (tổng 20s) */
+    100% {{ transform: translateX(0) translateY(0) scaleX(1) scaleY(0); transform-origin: 50% 0%; }}
 }}
 
 
@@ -294,6 +270,7 @@ iframe:first-of-type {{
     bottom: 20px;
     right: 20px;
     width: 350px; 
+    height: 150px; /* Thêm height để căn chỉnh chính xác */
     padding: 8px 16px; 
     background: rgba(0, 0, 0, 0.7); 
     border-radius: 12px;
@@ -307,7 +284,7 @@ iframe:first-of-type {{
     overflow: hidden; 
 }}
 
-/* Lớp giả cho hình nền logo và viền mờ cố định */
+/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO VÀ VIỀN MỜ CỐ ĐỊNH 🌟 */
 #music-player-container::before {{
     content: '';
     position: absolute;
@@ -328,69 +305,41 @@ iframe:first-of-type {{
     box-sizing: border-box; 
 }}
 
-/* === CẠNH TRÊN VÀ DƯỚI (PHẦN TỬ GIẢ ::after) === */
+/* 🌟 HIỆU ỨNG VIỀN SÁNG VÀNG CHẠY (CHỈ CẦN 1 PHẦN TỬ) 🌟 */
 #music-player-container::after {{
     content: '';
     position: absolute;
     
-    /* Dải ánh sáng ngang (chiều dài 50px) */
-    width: 50px; 
-    height: 3px; 
+    /* Kích thước ban đầu (1x1 pixel) */
+    width: 100%;
+    height: 100%;
+    
+    /* Vị trí ban đầu: Căn giữa border (3px) */
     top: -1.5px; 
-    left: 0; 
+    left: -1.5px; 
     
-    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 0, 0.8) 50%, transparent 100%);
+    /* Tạo dải màu vàng (sử dụng box-shadow để làm dải sáng) */
+    background: transparent;
+    
+    /* TĂNG CƯỜNG HIỆU ỨNG PHÁT SÁNG */
     box-shadow: 0 0 10px 5px rgba(255, 255, 0, 0.9);
     
-    /* CHỈ CHẠY THEO PHƯƠNG NGANG */
-    animation: border-horizontal-run 10s linear infinite; 
+    /* Vệt sáng ban đầu là 1x1, sau đó được scale và translate theo Keyframes */
+    transform-origin: 0% 50%; /* Điểm gốc mặc định (sẽ bị Keyframes ghi đè) */
+    
+    /* Tốc độ Linear, chu kỳ 20s */
+    animation: border-light-run-v3 20s linear infinite; 
     z-index: 4; 
-    transform: none !important; /* Đảm bảo không bị rotate */
-}}
-
-
-/* === CẠNH TRÁI VÀ PHẢI (SỬ DỤNG THẺ <span> BÊN TRONG) === */
-/* Thêm 2 thẻ <span> vào HTML để có đủ 4 phần tử có thể điều khiển */
-#music-player-container span.vertical-border-light-1,
-#music-player-container span.vertical-border-light-2 {{
-    content: '';
-    position: absolute;
-    display: block;
     
-    /* Dải ánh sáng dọc (chiều dài 50px, xoay 90 độ) */
-    width: 50px; 
-    height: 3px; 
-    
-    /* Màu và bóng */
-    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 0, 0.8) 50%, transparent 100%);
-    box-shadow: 0 0 10px 5px rgba(255, 255, 0, 0.9);
-    
-    /* Quay 90 độ để chạy dọc */
-    transform: rotate(90deg); 
-    /* Điều chỉnh vị trí sau khi quay */
-    transform-origin: 0 0; 
-
-    z-index: 4; 
+    /* Đặt kích thước nhỏ để scale */
+    width: 3px; 
+    height: 3px;
 }}
-
-/* Vị trí ban đầu của phần tử dọc */
-#music-player-container span.vertical-border-light-1 {{
-    /* Cạnh phải */
-    left: calc(100% - 1.5px); /* = right: 0; top: 0; */
-    top: 0; 
-    animation: border-vertical-run 10s linear infinite;
-}}
-
-/* Vị trí ban đầu của phần tử dọc (Không dùng cái này, ta chỉ dùng 1 animation cho 2 cạnh dọc) */
-#music-player-container span.vertical-border-light-2 {{
-    display: none; /* Chỉ cần dùng 1 animation cho 2 cạnh dọc để đơn giản hóa */
-}}
-
 
 /* Đảm bảo các thành phần con ở trên lớp giả */
 #music-player-container * {{
     position: relative;
-    z-index: 5; 
+    z-index: 5; /* ✅ Nội dung luôn ở trên cùng */	
 }}
 
 .video-finished #music-player-container {{
@@ -470,6 +419,7 @@ iframe:first-of-type {{
 @media (max-width: 768px) {{
     #music-player-container {{
         width: calc(100% - 40px);
+        height: 140px;
         right: 20px;
         left: 20px;
         bottom: 15px;
@@ -863,8 +813,6 @@ st.markdown(f"""
 if len(music_files) > 0:
     st.markdown("""
 <div id="music-player-container">
-    <span class="vertical-border-light-1"></span>
-    <span class="vertical-border-light-2"></span>
     <div class="controls">
         <button class="control-btn" id="prev-btn">⏮</button>
         <button class="control-btn play-pause" id="play-pause-btn">▶</button>
