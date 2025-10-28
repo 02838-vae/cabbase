@@ -30,6 +30,7 @@ def get_base64_encoded_file(file_path):
 
 # Mã hóa các file media chính (bắt buộc)
 try:
+    # Đảm bảo các file này nằm cùng thư mục với app.py
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
@@ -73,7 +74,7 @@ st.markdown(font_links, unsafe_allow_html=True)
 
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
-# Đã sửa lỗi f-string bằng cách sử dụng {{ và }} cho các khối CSS
+# Đảm bảo tất cả các khối CSS {} đều là {{}}
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -558,11 +559,12 @@ js_callback_video = f"""
                 sendBackToStreamlit();
             }}
         }}, 5000);
-    });
+    }});
 </script>
 """
 
 # Mã HTML/CSS cho Video
+# Đảm bảo tất cả các khối CSS {} đều là {{}}
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
