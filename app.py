@@ -192,7 +192,7 @@ iframe:first-of-type {{
 }}
 
 /* === SOUNDCLOUD MUSIC PLAYER (ĐÃ SỬA LỖI HIỂN THỊ) === */
-#soundcloud-player-container {
+#soundcloud-player-container {{
     position: fixed; 
     bottom: 20px; 
     right: 20px; 
@@ -203,30 +203,30 @@ iframe:first-of-type {{
     border-radius: 8px;
     overflow: hidden; 
     opacity: 0; 
-    transition: opacity 2s ease-out; /* Bỏ delay */
-}
+    transition: opacity 2s ease-out;
+}}
 
 /* Hiển thị khi nội dung chính được reveal */
-.main-content-revealed #soundcloud-player-container {
+.main-content-revealed #soundcloud-player-container {{
     opacity: 1; 
     transition-delay: 1s; /* Thêm delay 1s để chờ hiệu ứng reveal */
-}
+}}
 
-#soundcloud-player-container iframe {
+#soundcloud-player-container iframe {{
     width: 100%;
     height: 100%;
     border: none;
-}
+}}
 
-@media (max-width: 768px) {
-    #soundcloud-player-container {
+@media (max-width: 768px) {{
+    #soundcloud-player-container {{
         width: 90%; 
         left: 5%;
         right: auto;
         bottom: 10px;
         height: 100px; 
-    }
-}
+    }}
+}}
 </style>
 """
 
@@ -454,15 +454,15 @@ st.markdown(f"""
 
 
 # ----------------------------------------------------------------------
-# --- PHẦN BỔ SUNG: SOUNDCLOUD MUSIC PLAYER (ĐÃ SỬA MÃ NHÚNG) ---
+# --- PHẦN BỔ SUNG: SOUNDCLOUD MUSIC PLAYER (ĐÃ SỬA LỖI CÚ PHÁP) ---
 # ----------------------------------------------------------------------
 
-# Mã iframe của playlist Soundcloud "Nhac khong loi". 
-# Đảm bảo width="100%" và height="100%" để nó khớp với div cha
-soundcloud_embed_code = """
+# SỬ DỤNG BA DẤU NGOẶC KÉP ĐƠN (''') THAY VÌ BA DẤU NGOẶC KÉP ĐÔI (""")
+# ĐỂ TRÁNH XUNG ĐỘT CÚ PHÁP VỚI F-STRING CHÍNH CỦA STREAMLIT
+soundcloud_embed_code = '''
 <iframe width="100%" height="100%" scrolling="no" frameborder="no" allow="autoplay" 
 src="https://w.soundcloud.com/player/?url=https%3A//soundcloud.com/thang/sets/nhac-khong-loi&color=%23ff5500&auto_play=false&hide_related=false&show_comments=true&show_user=true&show_reposts=false&show_teaser=true&visual=true"></iframe>
-""" 
+''' 
 
 soundcloud_player_html = f"""
 <div id="soundcloud-player-container">
