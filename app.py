@@ -229,52 +229,56 @@ iframe:first-of-type {{
 }}
 
 
-/* 🌟 KEYFRAMES MỚI: HIỆU ỨNG TỎA SÁNG MÀU NGẪU NHIÊN (4s sáng, 3s nghỉ - chu kỳ 7s) 🌟 */
+/* 💖 KEYFRAMES MỚI: HIỆU ỨNG TỎA SÁNG LUNG LINH & NHẤP NHÁY NHẸ (7s) 💖 */
+/* Chu kỳ 7 giây (4s sáng + 3s nghỉ) */
 @keyframes glow-random-color {{
     /* TRẠNG THÁI NGHỈ/TẮT */
-    0%, 57.14% /* 4s / 7s = 57.14% */, 100% {{
-        box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3); /* Viền mờ/cơ bản */
+    0%, 57.14% /* 4s sáng */, 100% {{
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), /* Viền mỏng mờ */
+                    0 0 5px 1px rgba(255, 255, 255, 0.05); /* Lớp glow nền */
     }}
     
-    /* TRẠNG THÁI SÁNG (Chuyển màu từ 0% đến 57.14%) */
+    /* Giai đoạn SÁNG (0% -> 57.14%) */
     0% {{
         /* Màu ban đầu - Ví dụ: Đỏ */
         box-shadow: 
-            0 0 10px 4px rgba(255, 0, 0, 0.9), 
-            0 0 20px 8px rgba(255, 0, 0, 0.6), 
-            inset 0 0 5px 2px rgba(255, 0, 0, 0.9); 
+            0 0 15px 5px rgba(255, 0, 0, 0.8), 
+            0 0 30px 10px rgba(255, 0, 0, 0.4);
     }}
     
-    14.28% /* 1s / 7s = 14.28% */ {{ 
-        /* Màu 1s - Ví dụ: Xanh lá */
+    14.28% {{ 
+        /* Xanh lá cây (Cyan) */
         box-shadow: 
-            0 0 10px 4px rgba(0, 255, 0, 0.9), 
-            0 0 20px 8px rgba(0, 255, 0, 0.6), 
-            inset 0 0 5px 2px rgba(0, 255, 0, 0.9);
+            0 0 15px 5px rgba(0, 255, 255, 0.8), 
+            0 0 30px 10px rgba(0, 255, 255, 0.4);
     }}
     
-    28.56% /* 2s / 7s = 28.56% */ {{ 
-        /* Màu 2s - Ví dụ: Xanh dương */
+    28.56% {{ 
+        /* Xanh dương (Blue) */
         box-shadow: 
-            0 0 10px 4px rgba(0, 0, 255, 0.9), 
-            0 0 20px 8px rgba(0, 0, 255, 0.6), 
-            inset 0 0 5px 2px rgba(0, 0, 255, 0.9);
+            0 0 15px 5px rgba(0, 0, 255, 0.8), 
+            0 0 30px 10px rgba(0, 0, 255, 0.4);
     }}
 
-    42.84% /* 3s / 7s = 42.84% */ {{ 
-        /* Màu 3s - Ví dụ: Vàng */
+    42.84% {{ 
+        /* Tím (Magenta) */
         box-shadow: 
-            0 0 10px 4px rgba(255, 255, 0, 0.9), 
-            0 0 20px 8px rgba(255, 255, 0, 0.6), 
-            inset 0 0 5px 2px rgba(255, 255, 0, 0.9);
+            0 0 15px 5px rgba(255, 0, 255, 0.8), 
+            0 0 30px 10px rgba(255, 0, 255, 0.4);
     }}
     
-    57.14% /* 4s / 7s = 57.14% */ {{ 
-        /* Màu 4s - Ví dụ: Hồng - Kết thúc hiệu ứng sáng */
+    50% {{ /* Thêm bước này để tạo hiệu ứng nhấp nháy/bùng sáng nhẹ ở giữa */
+        /* Vàng sáng */
         box-shadow: 
-            0 0 10px 4px rgba(255, 0, 255, 0.9), 
-            0 0 20px 8px rgba(255, 0, 255, 0.6), 
-            inset 0 0 5px 2px rgba(255, 0, 255, 0.9);
+            0 0 20px 8px rgba(255, 255, 0, 1), 
+            0 0 40px 15px rgba(255, 255, 0, 0.6);
+    }}
+    
+    57.14% {{ 
+        /* Màu kết thúc giai đoạn sáng (Trở lại màu Đỏ) */
+        box-shadow: 
+            0 0 15px 5px rgba(255, 0, 0, 0.8), 
+            0 0 30px 10px rgba(255, 0, 0, 0.4);
     }}
 }}
 
@@ -319,7 +323,7 @@ iframe:first-of-type {{
     
     border-radius: 12px;
     
-    /* ✅ ÁP DỤNG HIỆU ỨNG TỎA SÁNG MỚI (Chu kỳ 7 giây = 4s sáng + 3s nghỉ) */
+    /* ✅ ÁP DỤNG HIỆU ỨNG TỎA SÁNG LUNG LINH MỚI */
     box-sizing: border-box; 
     animation: glow-random-color 7s linear infinite; 
 }}
@@ -351,6 +355,7 @@ iframe:first-of-type {{
     margin-bottom: 6px; 
 }}
 
+/* Cập nhật style nút điều khiển */
 #music-player-container .control-btn {{
     background: rgba(255, 255, 255, 0.2);
     border: 2px solid #FFFFFF; 
@@ -364,11 +369,17 @@ iframe:first-of-type {{
     justify-content: center;
     transition: all 0.3s ease;
     font-size: 14px; 
+    /* ✅ Thêm hiệu ứng sáng cho icon */
+    text-shadow: 0 0 8px #FFD700, 0 0 15px #FFA500; 
 }}
 
+/* Cập nhật hiệu ứng hover nút điều khiển */
 #music-player-container .control-btn:hover {{
     background: rgba(255, 215, 0, 0.5);
     transform: scale(1.15);
+    /* ✅ Thêm hiệu ứng box-shadow khi hover (làm nút phát sáng) */
+    box-shadow: 0 0 10px 3px rgba(255, 215, 0, 0.8),
+                0 0 20px 5px rgba(255, 215, 0, 0.4); 
 }}
 
 #music-player-container .control-btn.play-pause {{
