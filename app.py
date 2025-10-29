@@ -1,6 +1,7 @@
 import streamlit as st
 import base64
 import os
+import random
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
@@ -30,11 +31,14 @@ def get_base64_encoded_file(file_path):
 
 # Mã hóa các file media chính (bắt buộc)
 try:
+    # Đảm bảo các file này nằm cùng thư mục với app.py
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
+    
+    # MÃ HÓA CHO LOGO
     logo_base64 = get_base64_encoded_file("logo.jpg")
 
     # Kiểm tra file bắt buộc
@@ -54,11 +58,13 @@ except Exception as e:
     st.error(f"❌ Lỗi khi đọc file: {str(e)}")
     st.stop()
 
-if not logo_base64:
+# Đảm bảo logo_base64 được khởi tạo nếu file không tồn tại
+if not 'logo_base64' in locals() or not logo_base64:
     logo_base64 = "" 
     st.info("ℹ️ Không tìm thấy file logo.jpg. Music player sẽ không có hình nền logo.")
 
-# Mã hóa các file nhạc nền
+
+# Mã hóa các file nhạc nền (không bắt buộc)
 music_files = []
 for i in range(1, 7):
     music_base64 = get_base64_encoded_file(f"background{i}.mp3")
@@ -69,19 +75,21 @@ if len(music_files) == 0:
     st.info("ℹ️ Không tìm thấy file nhạc nền (background1.mp3 - background6.mp3). Music player sẽ không hoạt động.")
 
 
-# --- PHẦN 1: NHÚNG FONT ---
+# --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 """
 st.markdown(font_links, unsafe_allow_html=True)
 
-# --- PHẦN 2: CSS CHÍNH ---
+# --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
 
+# Tổng chu kỳ 5s: 1s nháy -> 3s nghỉ -> 1s nháy
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 
+/* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
 
 .main {{
@@ -95,6 +103,7 @@ div.block-container {{
     max-width: 100% !important;
 }}
 
+/* Iframe Video Intro */
 iframe:first-of-type {{
     transition: opacity 1s ease-out, visibility 1s ease-out;
     opacity: 1;
@@ -159,17 +168,20 @@ iframe:first-of-type {{
     }}
 }}
 
+/* Keyframes cho hiệu ứng chữ chạy đơn */
 @keyframes scrollText {{
     0% {{ transform: translate(100vw, 0); }}
     100% {{ transform: translate(-100%, 0); }}
 }}
 
+/* Keyframes cho hiệu ứng Đổi Màu Gradient */
 @keyframes colorShift {{
     0% {{ background-position: 0% 50%; }}
     50% {{ background-position: 100% 50%; }}
     100% {{ background-position: 0% 50%; }}
 }}
 
+/* === TIÊU ĐỀ TRANG CHÍNH === */
 #main-title-container {{
     position: fixed;
     top: 5vh;	
@@ -219,31 +231,6 @@ iframe:first-of-type {{
     }}
 }}
 
-/* 🌟 KEYFRAMES: Ánh sáng vàng chạy như con rắn 🌟 */
-@keyframes snake-top {{
-    0% {{ width: 0%; }}
-    6.25% {{ width: 100%; }}
-    6.26%, 100% {{ width: 0%; }}
-}}
-
-@keyframes snake-right {{
-    0%, 25% {{ height: 0%; }}
-    31.25% {{ height: 100%; }}
-    31.26%, 100% {{ height: 0%; }}
-}}
-
-@keyframes snake-bottom {{
-    0%, 50% {{ width: 0%; }}
-    56.25% {{ width: 100%; }}
-    56.26%, 100% {{ width: 0%; }}
-}}
-
-@keyframes snake-left {{
-    0%, 75% {{ height: 0%; }}
-    81.25% {{ height: 100%; }}
-    81.26%, 100% {{ height: 0%; }}
-}}
-
 /* === MUSIC PLAYER STYLES === */
 #music-player-container {{
     position: fixed;
@@ -258,9 +245,11 @@ iframe:first-of-type {{
     opacity: 0;
     transform: translateY(100px);
     transition: opacity 1s ease-out 2s, transform 1s ease-out 2s;
+    position: fixed;	
     overflow: hidden; 
 }}
 
+/* Lớp giả cho hình nền logo và viền mờ */
 #music-player-container::before {{
     content: '';
     position: absolute;
@@ -275,54 +264,16 @@ iframe:first-of-type {{
     filter: contrast(110%) brightness(90%); 
     opacity: 0.4; 
     z-index: 1; 
-    border: 2px solid rgba(255, 215, 0, 0.2); 
+    border: 3px solid rgba(255, 215, 0, 0.3); 
     border-radius: 12px;
     box-sizing: border-box;
 }}
 
-.snake-border-top,
-.snake-border-right,
-.snake-border-bottom,
-.snake-border-left {{
-    position: absolute;
-    background: linear-gradient(90deg, #FFD700, #FFA500);
-    box-shadow: 0 0 10px #FFD700, 0 0 20px rgba(255, 215, 0, 0.5);
-    z-index: 10;
-    border-radius: 2px;
+#music-player-container::after {{
+    content: none;
 }}
 
-.snake-border-top {{
-    top: 0;
-    left: 0;
-    width: 0;
-    height: 4px;
-    animation: snake-top 16s linear infinite;
-}}
-
-.snake-border-right {{
-    top: 0;
-    right: 0;
-    width: 4px;
-    height: 0;
-    animation: snake-right 16s linear infinite;
-}}
-
-.snake-border-bottom {{
-    bottom: 0;
-    right: 0;
-    width: 0;
-    height: 4px;
-    animation: snake-bottom 16s linear infinite;
-}}
-
-.snake-border-left {{
-    bottom: 0;
-    left: 0;
-    width: 4px;
-    height: 0;
-    animation: snake-left 16s linear infinite;
-}}
-
+/* Đảm bảo các thành phần con ở trên lớp giả */
 #music-player-container * {{
     position: relative;
     z-index: 5;
@@ -333,6 +284,7 @@ iframe:first-of-type {{
     transform: translateY(0);
 }}
 
+/* Các style khác của player */
 #music-player-container .controls,
 #music-player-container .time-info {{
     color: #fff; 
@@ -425,21 +377,24 @@ iframe:first-of-type {{
 </style>
 """
 
+# Thêm CSS vào trang chính
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: VIDEO INTRO ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
     f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'	
     for char in intro_title
 ])
 
+# Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
     music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files])
 else:
     music_sources_js = ""
 
+# JavaScript 
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
@@ -456,14 +411,18 @@ js_callback_video = f"""
     
     function initRevealEffect() {{
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
+
         if (!revealGrid) {{ return; }}
+
         const cells = revealGrid.querySelectorAll('.grid-cell');
         const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
+
         shuffledCells.forEach((cell, index) => {{
             setTimeout(() => {{
                 cell.style.opacity = 0;	
             }}, index * 10);
         }});
+        
         setTimeout(() => {{
              revealGrid.remove();
         }}, shuffledCells.length * 10 + 1000);
@@ -471,7 +430,9 @@ js_callback_video = f"""
     
     function initMusicPlayer() {{
         console.log("Initializing music player");
+        
         const musicSources = [{music_sources_js}];
+        
         if (musicSources.length === 0) {{
             console.log("No music files available");
             return;
@@ -479,6 +440,7 @@ js_callback_video = f"""
         
         let currentTrack = 0;
         let isPlaying = false;
+        
         const audio = new Audio();
         audio.volume = 0.3;
         
@@ -491,7 +453,7 @@ js_callback_video = f"""
         const durationEl = window.parent.document.getElementById('duration');
         
         if (!playPauseBtn || !prevBtn || !nextBtn) {{
-            console.error("Music player elements not found");
+            console.error("Music player elements not found in parent document");
             return;
         }}
         
@@ -560,11 +522,12 @@ js_callback_video = f"""
         }});
         
         loadTrack(0);
-        console.log("Music player initialized");
+        console.log("Music player initialized successfully");
     }}
 
     document.addEventListener("DOMContentLoaded", function() {{
-        console.log("DOM loaded");
+        console.log("DOM loaded, waiting for elements...");
+        
         const waitForElements = setInterval(() => {{
             const video = document.getElementById('intro-video');
             const audio = document.getElementById('background-audio');
@@ -572,30 +535,35 @@ js_callback_video = f"""
             
             if (video && audio && introTextContainer) {{
                 clearInterval(waitForElements);
-                console.log("All elements found");
+                console.log("All elements found, initializing...");
                 
                 const isMobile = window.innerWidth <= 768;
                 const videoSource = isMobile ? 'data:video/mp4;base64,{video_mobile_base64}' : 'data:video/mp4;base64,{video_pc_base64}';
+
                 video.src = videoSource;
                 audio.src = 'data:audio/mp3;base64,{audio_base64}';
+
+                console.log("Video/Audio source set. Loading metadata...");
                 
                 const tryToPlay = () => {{
-                    console.log("Attempting to play video");
+                    console.log("Attempting to play video (User interaction or Canplay event)");
+                    
                     video.play().then(() => {{
-                        console.log("✅ Video playing");
+                        console.log("✅ Video is playing!");
                     }}).catch(err => {{
-                        console.error("❌ Can't play video:", err);
+                        console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
                         setTimeout(sendBackToStreamlit, 2000);	
                     }});
+
                     audio.play().catch(e => {{
-                        console.log("Audio autoplay blocked");
+                        console.log("Audio autoplay blocked (normal), waiting for video end.");
                     }});
                 }};
 
                 video.addEventListener('canplaythrough', tryToPlay, {{ once: true }});
                 
                 video.addEventListener('ended', () => {{
-                    console.log("Video ended");
+                    console.log("Video ended, transitioning...");
                     video.style.opacity = 0;
                     audio.pause();
                     audio.currentTime = 0;
@@ -604,12 +572,12 @@ js_callback_video = f"""
                 }});
 
                 video.addEventListener('error', (e) => {{
-                    console.error("Video error:", e);
+                    console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
                     sendBackToStreamlit();
                 }});
 
                 const clickHandler = () => {{
-                    console.log("User interaction");
+                    console.log("User interaction detected, forcing play attempt.");
                     tryToPlay();
                     document.removeEventListener('click', clickHandler);
                     document.removeEventListener('touchstart', clickHandler);
@@ -632,7 +600,7 @@ js_callback_video = f"""
             clearInterval(waitForElements);
             const video = document.getElementById('intro-video');
             if (video && !video.src) {{
-                console.warn("Timeout");
+                console.warn("Timeout before video source set. Force transitioning to main content.");
                 sendBackToStreamlit();
             }}
         }}, 5000);
@@ -672,8 +640,10 @@ html_content_modified = f"""
             text-align: center;
             color: #FFD700;	
             font-size: 3vw;	
+            
             font-family: 'Sacramento', cursive;	
             font-weight: 400;	
+            
             text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);	
             z-index: 100;
             pointer-events: none;
@@ -712,20 +682,29 @@ html_content_modified = f"""
                 font-size: 6vw;	
             }}
         }}
+        
     </style>
 </head>
 <body>
+
     <div id="intro-text-container">{intro_chars_html}</div>
+    
     <video id="intro-video" muted playsinline></video>
+    
     <audio id="background-audio"></audio>
+
     {js_callback_video}
 </body>
 </html>
 """
 
+# --- HIỂN THỊ IFRAME VIDEO ---
 st.components.v1.html(html_content_modified, height=1080, scrolling=False)
 
-# --- REVEAL GRID ---
+
+# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
+
+# Tạo Lưới Reveal
 grid_cells_html = ""
 for i in range(240):	
     grid_cells_html += f'<div class="grid-cell"></div>'
@@ -737,9 +716,11 @@ reveal_grid_html = f"""
 """
 st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
-# --- TIÊU ĐỀ ---
+
+# --- NỘI DUNG CHÍNH (TIÊU ĐỀ ĐƠN, ĐỔI MÀU) ---
 main_title_text = "TỔ BẢO DƯỠNG SỐ 1"	
 
+# Nhúng tiêu đề
 st.markdown(f"""
 <div id="main-title-container">
     <h1>{main_title_text}</h1>
@@ -750,11 +731,6 @@ st.markdown(f"""
 if len(music_files) > 0:
     st.markdown("""
 <div id="music-player-container">
-    <div class="snake-border-top"></div>
-    <div class="snake-border-right"></div>
-    <div class="snake-border-bottom"></div>
-    <div class="snake-border-left"></div>
-    
     <div class="controls">
         <button class="control-btn" id="prev-btn">⏮</button>
         <button class="control-btn play-pause" id="play-pause-btn">▶</button>
@@ -770,7 +746,7 @@ if len(music_files) > 0:
 </div>
 """, unsafe_allow_html=True)
 
-# --- NỘI DUNG CHÍNH ---
+# Thêm nội dung chính của ứng dụng ở đây (sẽ được hiển thị sau khi video kết thúc)
 st.markdown("<br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
 st.markdown("<h2 style='text-align: center; color: white; opacity: 0; transition: opacity 2s 3s;'>Nội dung chính của Trang</h2>", unsafe_allow_html=True)
 st.markdown("<h2 style='text-align: center; color: white; opacity: 0; transition: opacity 2s 3s;'>Khu vực này sẽ xuất hiện sau 3 giây</h2>", unsafe_allow_html=True)
