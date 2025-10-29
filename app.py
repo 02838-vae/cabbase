@@ -9,11 +9,11 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Khởi tạo session state
+# Khởi tạo session state (Giữ nguyên)
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
-# --- CÁC HÀM TIỆN ÍCH ---
+# --- CÁC HÀM TIỆN ÍCH (Giữ nguyên) ---
 
 def get_base64_encoded_file(file_path):
     """Đọc file và trả về Base64 encoded string."""
@@ -24,19 +24,23 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except Exception as e:
-        # st.error(f"Lỗi khi đọc file {file_path}: {str(e)}")
+        st.error(f"Lỗi khi đọc file {file_path}: {str(e)}")
         return None
 
 
-# Mã hóa các file media chính
+# Mã hóa các file media chính (bắt buộc)
 try:
+    # Đảm bảo các file này nằm cùng thư mục với app.py
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
+    
+    # MÃ HÓA CHO LOGO
     logo_base64 = get_base64_encoded_file("logo.jpg")
 
+    # Kiểm tra file bắt buộc (Giữ nguyên)
     if not all([video_pc_base64, video_mobile_base64, audio_base64, bg_pc_base64, bg_mobile_base64]):
         missing_files = []
         if not video_pc_base64: missing_files.append("airplane.mp4")
@@ -53,10 +57,13 @@ except Exception as e:
     st.error(f"❌ Lỗi khi đọc file: {str(e)}")
     st.stop()
 
+# Đảm bảo logo_base64 được khởi tạo nếu file không tồn tại (Giữ nguyên)
 if not 'logo_base64' in locals() or not logo_base64:
     logo_base64 = "" 
     st.info("ℹ️ Không tìm thấy file logo.jpg. Music player sẽ không có hình nền logo.")
 
+
+# Mã hóa các file nhạc nền (Giữ nguyên)
 music_files = []
 for i in range(1, 7):
     music_base64 = get_base64_encoded_file(f"background{i}.mp3")
@@ -67,19 +74,19 @@ if len(music_files) == 0:
     st.info("ℹ️ Không tìm thấy file nhạc nền (background1.mp3 - background6.mp3). Music player sẽ không hoạt động.")
 
 
-# --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
+# --- PHẦN 1: NHÚNG FONT (Giữ nguyên) ---
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 """
 st.markdown(font_links, unsafe_allow_html=True)
 
-# --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
+# --- PHẦN 2: CSS CHÍNH (ĐÃ CẬP NHẬT) ---
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 
-/* Cấu hình chung */
+/* Ẩn các thành phần mặc định của Streamlit (Giữ nguyên) */
 #MainMenu, footer, header {{visibility: hidden;}}
 
 .main {{
@@ -88,7 +95,7 @@ hide_streamlit_style = f"""
 }}
 
 div.block-container {{
-    padding: 0 !important;
+    padding: 0;
     margin: 0;
     max-width: 100% !important;
 }}
@@ -120,7 +127,7 @@ iframe:first-of-type {{
     --logo-bg-url: url('data:image/jpeg;base64,{logo_base64}');
 }}
 
-/* Reveal Grid, Keyframes, Tiêu đề chính (Giữ nguyên) */
+/* Reveal Grid (Giữ nguyên) */
 .reveal-grid {{
     position: fixed;
     top: 0;
@@ -159,6 +166,7 @@ iframe:first-of-type {{
     }}
 }}
 
+/* Keyframes (Giữ nguyên) */
 @keyframes scrollText {{
     0% {{ transform: translate(100vw, 0); }}
     100% {{ transform: translate(-100%, 0); }}
@@ -170,6 +178,7 @@ iframe:first-of-type {{
     100% {{ background-position: 0% 50%; }}
 }}
 
+/* Tiêu đề chính (Giữ nguyên) */
 #main-title-container {{
     position: fixed;
     top: 5vh;	
@@ -219,6 +228,7 @@ iframe:first-of-type {{
     }}
 }}
 
+/* Keyframes Glow (Giữ nguyên) */
 @keyframes glow-random-color {{
     0%, 57.14% /* 4s sáng */, 100% {{
         box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1),
@@ -256,7 +266,7 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === MUSIC PLAYER STYLES (ĐÃ SỬA CĂN GIỮA) === */
+/* Music Player Styles (Giữ nguyên) */
 #music-player-container {{
     position: fixed;
     bottom: 20px;
@@ -307,12 +317,16 @@ iframe:first-of-type {{
     transform: translateY(0);
 }}
 
-/* **SỬA LỖI CĂN GIỮA** */
+#music-player-container .controls,
+#music-player-container .time-info {{
+    color: #fff; 
+    text-shadow: 0 0 7px #000;
+}}
+
 #music-player-container .controls {{
     display: flex;
     align-items: center;
-    /* DÒNG NÀY ĐỂ CĂN GIỮA CÁC NÚT */
-    justify-content: center; 
+    justify-content: center;
     gap: 8px;
     margin-bottom: 6px; 
 }}
@@ -339,7 +353,40 @@ iframe:first-of-type {{
     box-shadow: 0 0 10px 3px rgba(255, 215, 0, 0.8),
                 0 0 20px 5px rgba(255, 215, 0, 0.4); 
 }}
-/* ... (Giữ nguyên các style điều khiển nhạc còn lại) ... */
+
+#music-player-container .control-btn.play-pause {{
+    width: 40px; 
+    height: 40px;
+    font-size: 18px;
+}}
+
+#music-player-container .progress-container {{
+    width: 100%;
+    height: 5px; 
+    background: rgba(0, 0, 0, 0.5);
+    border-radius: 3px;
+    cursor: pointer;
+    margin-bottom: 4px; 
+    position: relative;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.4); 
+}}
+
+#music-player-container .progress-bar {{
+    height: 100%;
+    background: linear-gradient(90deg, #FFD700, #FFA500); 
+    border-radius: 3px;
+    width: 0%;
+    transition: width 0.1s linear;
+}}
+
+#music-player-container .time-info {{
+    display: flex;
+    justify-content: space-between;
+    color: rgba(255, 255, 255, 1);
+    font-size: 10px; 
+    font-family: monospace;
+}}
 
 @media (max-width: 768px) {{
     #music-player-container {{
@@ -349,39 +396,47 @@ iframe:first-of-type {{
         bottom: 15px;
         padding: 8px 12px;
     }}
+    #music-player-container .control-btn,
+    #music-player-container .control-btn.play-pause {{
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }}
+    #music-player-container .control-btn.play-pause {{
+        width: 44px;
+        height: 44px;
+        font-size: 20px;
+    }}
 }}
 
-/* === CSS CHO THẺ NỘI DUNG (INFO CARDS) - ĐÃ SỬA LỖI HIỂN THỊ === */
+/* === CSS MỚI CHO THẺ NỘI DUNG (INFO CARDS) - ĐÃ CẬP NHẬT THEO MẪU NEON/GLOW === */
 
-/* Container bọc 2 thẻ, dùng flex để căn giữa các thẻ */
+.info-card-wrapper {{
+    /* Định vị tuyệt đối để đặt thẻ ngay dưới tiêu đề cố định */
+    position: absolute; 
+    top: 20vh; /* Cách tiêu đề một khoảng */
+    width: 100%;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 2s 3s; 
+    pointer-events: none; 
+}}
+
+.video-finished .info-card-wrapper {{
+    opacity: 1;
+    pointer-events: auto; 
+}}
+
 .info-card-container {{
-    /* Quan trọng: Padding top LỚN để đẩy nội dung xuống dưới tiêu đề fixed */
-    padding: 15vh 5vw 5vw 5vw; 
+    padding: 0 5vw;
     display: flex;
     justify-content: center;
     gap: 50px; 
-    z-index: 10;
-    position: relative;
-    width: 100%; /* Đảm bảo nó chiếm đủ chiều rộng */
-    box-sizing: border-box;
-}}
-
-/* MỚI: Class để kích hoạt hiệu ứng xuất hiện sau khi video kết thúc (qua JS) */
-.info-card-visible .info-card {{
-    opacity: 1 !important;
-    transform: translateY(0) !important;
-}}
-
-/* **QUAN TRỌNG:** Áp dụng flex và căn giữa cho phần tử cha Streamlit bọc ngoài */
-div[data-testid="column"] > div {{
-    width: 100%;
-    display: flex;
-    justify-content: center;
 }}
 
 .info-card {{
-    background: rgba(0, 0, 0, 0.5); 
-    border: 3px solid #00FFFF; 
+    background: rgba(0, 0, 0, 0.5); /* Nền tối mờ */
+    border: 3px solid #00FFFF; /* Viền màu Cyan nổi bật */
     border-radius: 15px;
     width: 320px; 
     height: 180px; 
@@ -392,21 +447,19 @@ div[data-testid="column"] > div {{
     text-align: center;
     cursor: pointer;
     
+    /* Hiệu ứng Glow ban đầu (nhẹ) */
     box-shadow: 0 0 10px 2px #00FFFF, 
-                inset 0 0 10px 2px #00FFFF; 
+                inset 0 0 10px 2px #00FFFF; /* Glow bên trong */
     
-    color: #FFFFFF; 
-    /* Animation cho hiệu ứng dịch chuyển và mờ dần (xuất hiện) */
-    transition: transform 0.4s ease, box-shadow 0.4s ease, background 0.4s, opacity 1s ease 3s, transform 1s ease 3s;
-    
-    /* Ẩn thẻ ban đầu */
-    opacity: 0;
-    transform: translateY(50px);
+    color: #FFFFFF; /* Màu chữ sáng */
+    transition: transform 0.4s ease, box-shadow 0.4s ease, background 0.4s;
 }}
 
 .info-card:hover {{
+    /* Phóng to lên 8% khi hover/chạm */
     transform: scale(1.08); 
-    background: rgba(0, 50, 50, 0.7); 
+    background: rgba(0, 50, 50, 0.7); /* Nền đậm hơn khi hover */
+    /* Hiệu ứng sáng mạnh khi hover (Màu vàng/Neon) */
     border-color: #FFD700;
     box-shadow: 0 0 20px 5px #FFD700, 
                 0 0 40px 10px #FFD700,
@@ -418,20 +471,21 @@ div[data-testid="column"] > div {{
     font-family: 'Playfair Display', serif;
     margin-bottom: 10px;
     font-weight: 700;
-    color: #00FFFF; 
+    color: #00FFFF; /* Màu chữ Cyan */
+    /* Text Glow */
     text-shadow: 0 0 5px #00FFFF, 0 0 10px #00FFFF;
     transition: color 0.4s, text-shadow 0.4s;
 }}
 
 .info-card:hover h3 {{
-    color: #FFD700; 
+    color: #FFD700; /* Đổi màu chữ sang vàng khi hover */
     text-shadow: 0 0 5px #FFD700, 0 0 15px #FFD700;
 }}
 
 .info-card p {{
     font-size: 1em;
     font-weight: 300;
-    color: #E0FFFF; 
+    color: #E0FFFF; /* Màu chữ phụ */
     margin: 0;
     transition: color 0.4s;
 }}
@@ -445,11 +499,15 @@ div[data-testid="column"] > div {{
         flex-direction: column;
         align-items: center;
         gap: 25px;
-        padding-top: 25vh; /* Đảm bảo mobile cũng có đủ khoảng trống */
     }}
     .info-card {{
         width: 80%; 
         height: 160px;
+    }}
+    .info-card-wrapper {{
+        top: 25vh;
+        position: relative; 
+        margin-bottom: 15vh;
     }}
 }}
 </style>
@@ -459,7 +517,7 @@ div[data-testid="column"] > div {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (ĐÃ CẬP NHẬT JS) ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Giữ nguyên) ---
 
 # Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
@@ -467,7 +525,7 @@ if len(music_files) > 0:
 else:
     music_sources_js = ""
 
-# JavaScript (ĐÃ BỔ SUNG LỆNH THÊM CLASS 'info-card-visible')
+# JavaScript 
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
@@ -477,11 +535,6 @@ js_callback_video = f"""
         const stApp = window.parent.document.querySelector('.stApp');
         if (stApp) {{
             stApp.classList.add('video-finished', 'main-content-revealed');
-            // DÒNG NÀY ĐỂ KÍCH HOẠT HIỆN THỊ THẺ
-            const cardContainer = window.parent.document.querySelector('.info-card-container');
-            if (cardContainer) {{
-                cardContainer.classList.add('info-card-visible'); 
-            }}
         }}
         initRevealEffect();
         setTimeout(initMusicPlayer, 100);
@@ -602,7 +655,7 @@ js_callback_video = f"""
         loadTrack(0);
         console.log("Music player initialized successfully");
     }}
-    
+
     document.addEventListener("DOMContentLoaded", function() {{
         console.log("DOM loaded, waiting for elements...");
         
@@ -628,21 +681,27 @@ js_callback_video = f"""
                 const tryToPlay = () => {{
                     console.log("Attempting to play video (User interaction or Canplay event)");
                     
+                    // 1. Thử phát video (còn muted)
                     video.play().then(() => {{
                         console.log("✅ Video is playing!");
                     }}).catch(err => {{
+                        // Thất bại lần 2 (ngay cả sau tương tác). Có thể do lỗi tệp.
                         console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
                         
+                        // Nếu không thể phát, chuyển sang nội dung chính sau 2 giây
                         setTimeout(sendBackToStreamlit, 2000);	
                     }});
 
+                    // 2. Thử phát audio (có thể bị chặn)
                     audio.play().catch(e => {{
                         console.log("Audio autoplay blocked (normal), waiting for video end.");
                     }});
                 }};
 
+                // Lắng nghe sự kiện video sẵn sàng (đáng tin cậy hơn)
                 video.addEventListener('canplaythrough', tryToPlay, {{ once: true }});
                 
+                // Event khi video kết thúc
                 video.addEventListener('ended', () => {{
                     console.log("Video ended, transitioning...");
                     video.style.opacity = 0;
@@ -652,15 +711,18 @@ js_callback_video = f"""
                     setTimeout(sendBackToStreamlit, 500);
                 }});
 
+                // Xử lý lỗi tệp video (RẤT QUAN TRỌNG VỚI BASE64)
                 video.addEventListener('error', (e) => {{
                     console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
                     sendBackToStreamlit();
                 }});
 
 
+                // Click/Touch handler để kích hoạt 'tryToPlay' nếu Autoplay bị chặn
                 const clickHandler = () => {{
                     console.log("User interaction detected, forcing play attempt.");
                     tryToPlay();
+                    // Xóa listener sau lần tương tác đầu tiên
                     document.removeEventListener('click', clickHandler);
                     document.removeEventListener('touchstart', clickHandler);
                 }};
@@ -668,8 +730,10 @@ js_callback_video = f"""
                 document.addEventListener('click', clickHandler, {{ once: true }});
                 document.addEventListener('touchstart', clickHandler, {{ once: true }});
                 
+                // Load video
                 video.load();	
                 
+                // Animate text
                 const chars = introTextContainer.querySelectorAll('.intro-char');
                 chars.forEach((char, index) => {{
                     char.style.animationDelay = `${{index * 0.1}}s`;	
@@ -678,6 +742,7 @@ js_callback_video = f"""
             }}
         }}, 100);
         
+        // Timeout sau 5 giây (nếu video không load được)
         setTimeout(() => {{
             clearInterval(waitForElements);
             const video = document.getElementById('intro-video');
@@ -781,7 +846,7 @@ html_content_modified = f"""
 </html>
 """
 
-# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
+# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả (Giữ nguyên)
 intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
     f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'	
@@ -792,11 +857,11 @@ html_content_modified = html_content_modified.replace(
     f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
 )
 
-# --- HIỂN THỊ IFRAME VIDEO ---
+# --- HIỂN THỊ IFRAME VIDEO (Giữ nguyên) ---
 st.components.v1.html(html_content_modified, height=1080, scrolling=False)
 
 
-# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
+# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH (Giữ nguyên) ---
 
 # Tạo Lưới Reveal
 grid_cells_html = ""
@@ -811,7 +876,7 @@ reveal_grid_html = f"""
 st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
 
-# --- NỘI DUNG CHÍNH (TIÊU ĐỀ ĐƠN, ĐỔI MÀU) ---
+# --- NỘI DUNG CHÍNH (TIÊU ĐỀ ĐƠN, ĐỔI MÀU - Giữ nguyên) ---
 main_title_text = "TỔ BẢO DƯỠNG SỐ 1"	
 
 # Nhúng tiêu đề
@@ -821,7 +886,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- MUSIC PLAYER ---
+# --- MUSIC PLAYER (Giữ nguyên) ---
 if len(music_files) > 0:
     st.markdown("""
 <div id="music-player-container">
@@ -840,27 +905,24 @@ if len(music_files) > 0:
 </div>
 """, unsafe_allow_html=True)
 
-# --- NỘI DUNG CHÍNH: CÁC THẺ HỌC TẬP MỚI (SỬ DỤNG STREAMLIT COLUMN) ---
-
-# Tạo 3 cột để căn giữa 2 thẻ: Cột trái (trống), Cột chính giữa (chứa thẻ), Cột phải (trống)
-col1, col_center, col2 = st.columns([1, 4, 1])
-
-with col_center:
-    # Thẻ sẽ được căn giữa trong col_center nhờ CSS đã sửa
-    st.markdown("""
-<div class="info-card-container">
-    <div class="info-card">
-        <h3>Tra cứu Part number 🔎</h3>
-        <p>Tìm kiếm nhanh chóng mã phụ tùng</p>
-        <p>Thông tin kỹ thuật, sơ đồ chi tiết</p>
-    </div>
-    <div class="info-card">
-        <h3>Ngân hàng trắc nghiệm 🧠</h3>
-        <p>Ôn tập kiến thức chuyên môn</p>
-        <p>Làm bài kiểm tra mô phỏng</p>
+# --- NỘI DUNG CHÍNH: CÁC THẺ HỌC TẬP MỚI (ĐÃ SỬA VỊ TRÍ) ---
+# Sử dụng 'info-card-wrapper' với position: absolute để đặt thẻ đúng vị trí.
+st.markdown("""
+<div class="info-card-wrapper">
+    <div class="info-card-container">
+        <div class="info-card">
+            <h3>Tra cứu Part number 🔎</h3>
+            <p>Tìm kiếm nhanh chóng mã phụ tùng</p>
+            <p>Thông tin kỹ thuật, sơ đồ chi tiết</p>
+        </div>
+        <div class="info-card">
+            <h3>Ngân hàng trắc nghiệm 🧠</h3>
+            <p>Ôn tập kiến thức chuyên môn</p>
+            <p>Làm bài kiểm tra mô phỏng</p>
+        </div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# Thêm khoảng trống ở cuối trang (chỉ để đảm bảo cuộn được trên PC)
+# Thêm khoảng trống ở cuối trang để người dùng có thể cuộn xuống (chỉ hiển thị trên PC, mobile đã dùng relative)
 st.markdown("<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
