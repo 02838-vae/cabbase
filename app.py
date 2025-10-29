@@ -232,161 +232,33 @@ iframe:first-of-type {{
 }}
 
 
-/* 🌟 KEYFRAMES MỚI: Ánh sáng vàng chạy như con rắn theo viền 🌟 */
-@keyframes snake-border {{
-    /* Cạnh trên (0% - 20%) */
-    0% {{
-        box-shadow: 
-            -350px 0 0 0 transparent,
-            350px 0 0 0 transparent,
-            0 -110px 0 0 transparent,
-            0 110px 0 0 transparent;
-    }}
-    5% {{
-        box-shadow: 
-            -175px 0 0 0 #FFD700,
-            350px 0 0 0 transparent,
-            0 -110px 0 0 transparent,
-            0 110px 0 0 transparent;
-    }}
-    10% {{
-        box-shadow: 
-            0 0 0 0 #FFD700,
-            350px 0 0 0 transparent,
-            0 -110px 0 0 transparent,
-            0 110px 0 0 transparent;
-    }}
-    15% {{
-        box-shadow: 
-            175px 0 0 0 #FFD700,
-            350px 0 0 0 transparent,
-            0 -110px 0 0 transparent,
-            0 110px 0 0 transparent;
-    }}
-    20% {{
-        box-shadow: 
-            350px 0 0 0 #FFD700,
-            350px 0 0 0 transparent,
-            0 -110px 0 0 transparent,
-            0 110px 0 0 transparent;
-    }}
-    
-    /* Nghỉ 3s (20% - 40%) */
-    20.1%, 40% {{
-        box-shadow: 
-            0 0 0 0 transparent,
-            0 0 0 0 transparent,
-            0 0 0 0 transparent,
-            0 0 0 0 transparent;
-    }}
-    
-    /* Cạnh phải (40% - 60%) */
-    40.1% {{
-        box-shadow: 
-            350px -110px 0 0 transparent,
-            350px 110px 0 0 transparent,
-            -350px 110px 0 0 transparent,
-            -350px -110px 0 0 transparent;
-    }}
-    45% {{
-        box-shadow: 
-            350px -55px 0 0 #FFD700,
-            350px 110px 0 0 transparent,
-            -350px 110px 0 0 transparent,
-            -350px -110px 0 0 transparent;
-    }}
-    50% {{
-        box-shadow: 
-            350px 0 0 0 #FFD700,
-            350px 110px 0 0 transparent,
-            -350px 110px 0 0 transparent,
-            -350px -110px 0 0 transparent;
-    }}
-    55% {{
-        box-shadow: 
-            350px 55px 0 0 #FFD700,
-            350px 110px 0 0 transparent,
-            -350px 110px 0 0 transparent,
-            -350px -110px 0 0 transparent;
-    }}
-    60% {{
-        box-shadow: 
-            350px 110px 0 0 #FFD700,
-            350px 110px 0 0 transparent,
-            -350px 110px 0 0 transparent,
-            -350px -110px 0 0 transparent;
-    }}
-    
-    /* Nghỉ 3s (60% - 80%) */
-    60.1%, 80% {{
-        box-shadow: 
-            0 0 0 0 transparent,
-            0 0 0 0 transparent,
-            0 0 0 0 transparent,
-            0 0 0 0 transparent;
-    }}
-    
-    /* Cạnh dưới (80% - 100%) - CHẠY NGƯỢC */
-    80.1% {{
-        box-shadow: 
-            350px 110px 0 0 transparent,
-            -350px 110px 0 0 transparent,
-            -350px -110px 0 0 transparent,
-            350px -110px 0 0 transparent;
-    }}
-    85% {{
-        box-shadow: 
-            175px 110px 0 0 #FFD700,
-            -350px 110px 0 0 transparent,
-            -350px -110px 0 0 transparent,
-            350px -110px 0 0 transparent;
-    }}
-    90% {{
-        box-shadow: 
-            0 110px 0 0 #FFD700,
-            -350px 110px 0 0 transparent,
-            -350px -110px 0 0 transparent,
-            350px -110px 0 0 transparent;
-    }}
-    95% {{
-        box-shadow: 
-            -175px 110px 0 0 #FFD700,
-            -350px 110px 0 0 transparent,
-            -350px -110px 0 0 transparent,
-            350px -110px 0 0 transparent;
-    }}
-    100% {{
-        box-shadow: 
-            -350px 110px 0 0 #FFD700,
-            -350px 110px 0 0 transparent,
-            -350px -110px 0 0 transparent,
-            350px -110px 0 0 transparent;
-    }}
+/* 🌟 KEYFRAMES: Ánh sáng vàng chạy như con rắn - Cạnh trên 🌟 */
+@keyframes snake-top {{
+    0% {{ width: 0%; }}
+    6.25% {{ width: 100%; }}
+    /* Nghỉ đến khi chu kỳ mới bắt đầu */
+    6.26%, 100% {{ width: 0%; }}
 }}
 
-/* Keyframe cho cạnh trái */
-@keyframes snake-border-left {{
-    /* Cạnh trái (0% - 20%) */
-    0% {{
-        box-shadow: -350px 110px 0 0 transparent;
-    }}
-    5% {{
-        box-shadow: -350px 55px 0 0 #FFD700;
-    }}
-    10% {{
-        box-shadow: -350px 0 0 0 #FFD700;
-    }}
-    15% {{
-        box-shadow: -350px -55px 0 0 #FFD700;
-    }}
-    20% {{
-        box-shadow: -350px -110px 0 0 #FFD700;
-    }}
-    
-    /* Nghỉ và reset */
-    20.1%, 100% {{
-        box-shadow: 0 0 0 0 transparent;
-    }}
+/* Cạnh phải */
+@keyframes snake-right {{
+    0%, 25% {{ height: 0%; }}
+    31.25% {{ height: 100%; }}
+    31.26%, 100% {{ height: 0%; }}
+}}
+
+/* Cạnh dưới */
+@keyframes snake-bottom {{
+    0%, 50% {{ width: 0%; }}
+    56.25% {{ width: 100%; }}
+    56.26%, 100% {{ width: 0%; }}
+}}
+
+/* Cạnh trái */
+@keyframes snake-left {{
+    0%, 75% {{ height: 0%; }}
+    81.25% {{ height: 100%; }}
+    81.26%, 100% {{ height: 0%; }}
 }}
 
 /* === MUSIC PLAYER STYLES === */
@@ -406,19 +278,7 @@ iframe:first-of-type {{
     overflow: hidden; 
 }}
 
-/* Lớp giả cho hình nền logo và viền cố định */
-#music-player-container::before {{
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-image: var(--logo-bg-url);
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    filter: contrast(110%) brightness(90%); 
+%); 
     opacity: 0.4; 
     z-index: 1; 
     border: 3px solid rgba(255, 215, 0, 0.2); 
@@ -901,6 +761,11 @@ st.markdown(f"""
 if len(music_files) > 0:
     st.markdown("""
 <div id="music-player-container">
+    <div class="snake-border-top"></div>
+    <div class="snake-border-right"></div>
+    <div class="snake-border-bottom"></div>
+    <div class="snake-border-left"></div>
+    
     <div class="controls">
         <button class="control-btn" id="prev-btn">⏮</button>
         <button class="control-btn play-pause" id="play-pause-btn">▶</button>
