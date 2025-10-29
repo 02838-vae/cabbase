@@ -9,11 +9,11 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Khởi tạo session state
+# Khởi tạo session state (Giữ nguyên)
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
-# --- CÁC HÀM TIỆN ÍCH ---
+# --- CÁC HÀM TIỆN ÍCH (Giữ nguyên) ---
 
 def get_base64_encoded_file(file_path):
     """Đọc file và trả về Base64 encoded string."""
@@ -40,7 +40,7 @@ try:
     # MÃ HÓA CHO LOGO
     logo_base64 = get_base64_encoded_file("logo.jpg")
 
-    # Kiểm tra file bắt buộc
+    # Kiểm tra file bắt buộc (Giữ nguyên)
     if not all([video_pc_base64, video_mobile_base64, audio_base64, bg_pc_base64, bg_mobile_base64]):
         missing_files = []
         if not video_pc_base64: missing_files.append("airplane.mp4")
@@ -57,13 +57,13 @@ except Exception as e:
     st.error(f"❌ Lỗi khi đọc file: {str(e)}")
     st.stop()
 
-# Đảm bảo logo_base64 được khởi tạo nếu file không tồn tại
+# Đảm bảo logo_base64 được khởi tạo nếu file không tồn tại (Giữ nguyên)
 if not 'logo_base64' in locals() or not logo_base64:
     logo_base64 = "" 
     st.info("ℹ️ Không tìm thấy file logo.jpg. Music player sẽ không có hình nền logo.")
 
 
-# Mã hóa các file nhạc nền (không bắt buộc)
+# Mã hóa các file nhạc nền (Giữ nguyên)
 music_files = []
 for i in range(1, 7):
     music_base64 = get_base64_encoded_file(f"background{i}.mp3")
@@ -74,19 +74,19 @@ if len(music_files) == 0:
     st.info("ℹ️ Không tìm thấy file nhạc nền (background1.mp3 - background6.mp3). Music player sẽ không hoạt động.")
 
 
-# --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
+# --- PHẦN 1: NHÚNG FONT (Giữ nguyên) ---
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 """
 st.markdown(font_links, unsafe_allow_html=True)
 
-# --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
+# --- PHẦN 2: CSS CHÍNH (ĐÃ CẬP NHẬT) ---
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 
-/* Ẩn các thành phần mặc định của Streamlit */
+/* Ẩn các thành phần mặc định của Streamlit (Giữ nguyên) */
 #MainMenu, footer, header {{visibility: hidden;}}
 
 .main {{
@@ -100,7 +100,7 @@ div.block-container {{
     max-width: 100% !important;
 }}
 
-/* Iframe Video Intro */
+/* Iframe Video Intro (Giữ nguyên) */
 iframe:first-of-type {{
     transition: opacity 1s ease-out, visibility 1s ease-out;
     opacity: 1;
@@ -127,6 +127,7 @@ iframe:first-of-type {{
     --logo-bg-url: url('data:image/jpeg;base64,{logo_base64}');
 }}
 
+/* Reveal Grid (Giữ nguyên) */
 .reveal-grid {{
     position: fixed;
     top: 0;
@@ -165,20 +166,19 @@ iframe:first-of-type {{
     }}
 }}
 
-/* Keyframes cho hiệu ứng chữ chạy đơn */
+/* Keyframes (Giữ nguyên) */
 @keyframes scrollText {{
     0% {{ transform: translate(100vw, 0); }}
     100% {{ transform: translate(-100%, 0); }}
 }}
 
-/* Keyframes cho hiệu ứng Đổi Màu Gradient */
 @keyframes colorShift {{
     0% {{ background-position: 0% 50%; }}
     50% {{ background-position: 100% 50%; }}
     100% {{ background-position: 0% 50%; }}
 }}
 
-/* === TIÊU ĐỀ TRANG CHÍNH === */
+/* Tiêu đề chính (Giữ nguyên) */
 #main-title-container {{
     position: fixed;
     top: 5vh;	
@@ -228,62 +228,45 @@ iframe:first-of-type {{
     }}
 }}
 
-
-/* 💖 KEYFRAMES MỚI: HIỆU ỨNG TỎA SÁNG LUNG LINH & NHẤP NHÁY NHẸ (7s) 💖 */
-/* Chu kỳ 7 giây (4s sáng + 3s nghỉ) */
+/* Keyframes Glow (Giữ nguyên) */
 @keyframes glow-random-color {{
-    /* TRẠNG THÁI NGHỈ/TẮT */
     0%, 57.14% /* 4s sáng */, 100% {{
-        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1), /* Viền mỏng mờ */
-                    0 0 5px 1px rgba(255, 255, 255, 0.05); /* Lớp glow nền */
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1),
+                    0 0 5px 1px rgba(255, 255, 255, 0.05);
     }}
-    
-    /* Giai đoạn SÁNG (0% -> 57.14%) */
     0% {{
-        /* Màu ban đầu - Ví dụ: Đỏ */
         box-shadow: 
             0 0 15px 5px rgba(255, 0, 0, 0.8), 
             0 0 30px 10px rgba(255, 0, 0, 0.4);
     }}
-    
     14.28% {{ 
-        /* Xanh lá cây (Cyan) */
         box-shadow: 
             0 0 15px 5px rgba(0, 255, 255, 0.8), 
             0 0 30px 10px rgba(0, 255, 255, 0.4);
     }}
-    
     28.56% {{ 
-        /* Xanh dương (Blue) */
         box-shadow: 
             0 0 15px 5px rgba(0, 0, 255, 0.8), 
             0 0 30px 10px rgba(0, 0, 255, 0.4);
     }}
-
     42.84% {{ 
-        /* Tím (Magenta) */
         box-shadow: 
             0 0 15px 5px rgba(255, 0, 255, 0.8), 
             0 0 30px 10px rgba(255, 0, 255, 0.4);
     }}
-    
-    50% {{ /* Thêm bước này để tạo hiệu ứng nhấp nháy/bùng sáng nhẹ ở giữa */
-        /* Vàng sáng */
+    50% {{
         box-shadow: 
             0 0 20px 8px rgba(255, 255, 0, 1), 
             0 0 40px 15px rgba(255, 255, 0, 0.6);
     }}
-    
     57.14% {{ 
-        /* Màu kết thúc giai đoạn sáng (Trở lại màu Đỏ) */
         box-shadow: 
             0 0 15px 5px rgba(255, 0, 0, 0.8), 
             0 0 30px 10px rgba(255, 0, 0, 0.4);
     }}
 }}
 
-
-/* === MUSIC PLAYER STYLES === */
+/* Music Player Styles (Giữ nguyên) */
 #music-player-container {{
     position: fixed;
     bottom: 20px;
@@ -300,7 +283,6 @@ iframe:first-of-type {{
     position: fixed;	
 }}
 
-/* LỚP GIẢ (::before) CHO HÌNH NỀN LOGO VÀ HIỆU ỨNG TỎA SÁNG */
 #music-player-container::before {{
     content: '';
     position: absolute;
@@ -321,13 +303,10 @@ iframe:first-of-type {{
     z-index: -1; 
     
     border-radius: 12px;
-    
     box-sizing: border-box; 
     animation: glow-random-color 7s linear infinite; 
 }}
 
-
-/* Đảm bảo các thành phần con ở trên lớp giả */
 #music-player-container * {{
     position: relative;
     z-index: 5; 	
@@ -338,7 +317,6 @@ iframe:first-of-type {{
     transform: translateY(0);
 }}
 
-/* Các style khác của player (giữ nguyên) */
 #music-player-container .controls,
 #music-player-container .time-info {{
     color: #fff; 
@@ -353,7 +331,6 @@ iframe:first-of-type {{
     margin-bottom: 6px; 
 }}
 
-/* Cập nhật style nút điều khiển */
 #music-player-container .control-btn {{
     background: rgba(255, 255, 255, 0.2);
     border: 2px solid #FFFFFF; 
@@ -367,15 +344,12 @@ iframe:first-of-type {{
     justify-content: center;
     transition: all 0.3s ease;
     font-size: 14px; 
-    /* ✅ Thêm hiệu ứng sáng cho icon */
     text-shadow: 0 0 8px #FFD700, 0 0 15px #FFA500; 
 }}
 
-/* Cập nhật hiệu ứng hover nút điều khiển */
 #music-player-container .control-btn:hover {{
     background: rgba(255, 215, 0, 0.5);
     transform: scale(1.15);
-    /* ✅ Thêm hiệu ứng box-shadow khi hover (làm nút phát sáng) */
     box-shadow: 0 0 10px 3px rgba(255, 215, 0, 0.8),
                 0 0 20px 5px rgba(255, 215, 0, 0.4); 
 }}
@@ -435,51 +409,61 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === CSS MỚI CHO THẺ NỘI DUNG (INFO CARDS) === */
+/* === CSS MỚI CHO THẺ NỘI DUNG (INFO CARDS) - ĐÃ CẬP NHẬT THEO MẪU NEON/GLOW === */
+
+.info-card-wrapper {{
+    /* Định vị tuyệt đối để đặt thẻ ngay dưới tiêu đề cố định */
+    position: absolute; 
+    top: 20vh; /* Cách tiêu đề một khoảng */
+    width: 100%;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 2s 3s; 
+    pointer-events: none; 
+}}
+
+.video-finished .info-card-wrapper {{
+    opacity: 1;
+    pointer-events: auto; 
+}}
 
 .info-card-container {{
-    /* Đảm bảo container nằm sau tiêu đề */
-    margin-top: 20vh; 
     padding: 0 5vw;
     display: flex;
     justify-content: center;
-    gap: 40px;
-    z-index: 10;
-    position: relative;
-    /* Ẩn ban đầu, chỉ hiển thị sau khi video kết thúc (qua Streamlit) */
-    opacity: 0;
-    transition: opacity 2s 3s; 
-}}
-
-.video-finished .info-card-container {{
-    opacity: 1;
+    gap: 50px; 
 }}
 
 .info-card {{
-    background: rgba(255, 255, 255, 0.1); 
-    backdrop-filter: blur(10px); 
-    border: 2px solid rgba(255, 255, 255, 0.3); 
+    background: rgba(0, 0, 0, 0.5); /* Nền tối mờ */
+    border: 3px solid #00FFFF; /* Viền màu Cyan nổi bật */
     border-radius: 15px;
-    width: 350px; /* Chiều rộng thẻ */
-    height: 200px; /* Chiều cao thẻ */
+    width: 320px; 
+    height: 180px; 
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
     cursor: pointer;
-    color: #FFD700; /* Màu chữ Vàng */
-    text-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
-    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out, background 0.3s;
+    
+    /* Hiệu ứng Glow ban đầu (nhẹ) */
+    box-shadow: 0 0 10px 2px #00FFFF, 
+                inset 0 0 10px 2px #00FFFF; /* Glow bên trong */
+    
+    color: #FFFFFF; /* Màu chữ sáng */
+    transition: transform 0.4s ease, box-shadow 0.4s ease, background 0.4s;
 }}
 
 .info-card:hover {{
-    /* Phóng to lên 5% khi hover/chạm */
-    transform: scale(1.05); 
-    background: rgba(255, 255, 255, 0.2); 
-    /* Hiệu ứng sáng mờ khi hover */
-    box-shadow: 0 0 20px 5px rgba(255, 215, 0, 0.5), 
-                0 0 40px 10px rgba(255, 215, 0, 0.2);
+    /* Phóng to lên 8% khi hover/chạm */
+    transform: scale(1.08); 
+    background: rgba(0, 50, 50, 0.7); /* Nền đậm hơn khi hover */
+    /* Hiệu ứng sáng mạnh khi hover (Màu vàng/Neon) */
+    border-color: #FFD700;
+    box-shadow: 0 0 20px 5px #FFD700, 
+                0 0 40px 10px #FFD700,
+                inset 0 0 20px 5px #FFD700;
 }}
 
 .info-card h3 {{
@@ -487,25 +471,43 @@ iframe:first-of-type {{
     font-family: 'Playfair Display', serif;
     margin-bottom: 10px;
     font-weight: 700;
+    color: #00FFFF; /* Màu chữ Cyan */
+    /* Text Glow */
+    text-shadow: 0 0 5px #00FFFF, 0 0 10px #00FFFF;
+    transition: color 0.4s, text-shadow 0.4s;
+}}
+
+.info-card:hover h3 {{
+    color: #FFD700; /* Đổi màu chữ sang vàng khi hover */
+    text-shadow: 0 0 5px #FFD700, 0 0 15px #FFD700;
 }}
 
 .info-card p {{
     font-size: 1em;
     font-weight: 300;
-    color: #fff;
+    color: #E0FFFF; /* Màu chữ phụ */
     margin: 0;
+    transition: color 0.4s;
+}}
+
+.info-card:hover p {{
+    color: #FFFFFF;
 }}
 
 @media (max-width: 1000px) {{
     .info-card-container {{
         flex-direction: column;
         align-items: center;
-        gap: 20px;
-        padding: 0 20px;
+        gap: 25px;
     }}
     .info-card {{
-        width: 90%; 
-        height: 150px;
+        width: 80%; 
+        height: 160px;
+    }}
+    .info-card-wrapper {{
+        top: 25vh;
+        position: relative; 
+        margin-bottom: 15vh;
     }}
 }}
 </style>
@@ -515,11 +517,10 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Giữ nguyên) ---
 
 # Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
-    # Ngoặc nhọn trong f-string JavaScript (Template Literal) cần được nhân đôi
     music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files])
 else:
     music_sources_js = ""
@@ -754,7 +755,7 @@ js_callback_video = f"""
 </script>
 """
 
-# Mã HTML/CSS cho Video
+# Mã HTML/CSS cho Video (Giữ nguyên)
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -845,7 +846,7 @@ html_content_modified = f"""
 </html>
 """
 
-# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
+# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả (Giữ nguyên)
 intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
     f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'	
@@ -856,11 +857,11 @@ html_content_modified = html_content_modified.replace(
     f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
 )
 
-# --- HIỂN THỊ IFRAME VIDEO ---
+# --- HIỂN THỊ IFRAME VIDEO (Giữ nguyên) ---
 st.components.v1.html(html_content_modified, height=1080, scrolling=False)
 
 
-# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
+# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH (Giữ nguyên) ---
 
 # Tạo Lưới Reveal
 grid_cells_html = ""
@@ -875,7 +876,7 @@ reveal_grid_html = f"""
 st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
 
-# --- NỘI DUNG CHÍNH (TIÊU ĐỀ ĐƠN, ĐỔI MÀU) ---
+# --- NỘI DUNG CHÍNH (TIÊU ĐỀ ĐƠN, ĐỔI MÀU - Giữ nguyên) ---
 main_title_text = "TỔ BẢO DƯỠNG SỐ 1"	
 
 # Nhúng tiêu đề
@@ -885,7 +886,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- MUSIC PLAYER ---
+# --- MUSIC PLAYER (Giữ nguyên) ---
 if len(music_files) > 0:
     st.markdown("""
 <div id="music-player-container">
@@ -904,22 +905,24 @@ if len(music_files) > 0:
 </div>
 """, unsafe_allow_html=True)
 
-# --- NỘI DUNG CHÍNH: CÁC THẺ HỌC TẬP MỚI ---
+# --- NỘI DUNG CHÍNH: CÁC THẺ HỌC TẬP MỚI (ĐÃ SỬA VỊ TRÍ) ---
+# Sử dụng 'info-card-wrapper' với position: absolute để đặt thẻ đúng vị trí.
 st.markdown("""
-<div class="info-card-container">
-    <div class="info-card">
-        <h3>Tra cứu Part number 🔎</h3>
-        <p>Tìm kiếm nhanh chóng mã phụ tùng</p>
-        <p>Thông tin kỹ thuật, sơ đồ chi tiết</p>
-    </div>
-    <div class="info-card">
-        <h3>Ngân hàng trắc nghiệm 🧠</h3>
-        <p>Ôn tập kiến thức chuyên môn</p>
-        <p>Làm bài kiểm tra mô phỏng</p>
+<div class="info-card-wrapper">
+    <div class="info-card-container">
+        <div class="info-card">
+            <h3>Tra cứu Part number 🔎</h3>
+            <p>Tìm kiếm nhanh chóng mã phụ tùng</p>
+            <p>Thông tin kỹ thuật, sơ đồ chi tiết</p>
+        </div>
+        <div class="info-card">
+            <h3>Ngân hàng trắc nghiệm 🧠</h3>
+            <p>Ôn tập kiến thức chuyên môn</p>
+            <p>Làm bài kiểm tra mô phỏng</p>
+        </div>
     </div>
 </div>
 """, unsafe_allow_html=True)
 
-# Thêm khoảng trống cuối trang (giữ nguyên)
-st.markdown("<br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
-st.markdown("<h2 style='text-align: center; color: white; opacity: 0; transition: opacity 2s 3s;'>Khu vực này sẽ xuất hiện sau 3 giây</h2>", unsafe_allow_html=True)
+# Thêm khoảng trống ở cuối trang để người dùng có thể cuộn xuống (chỉ hiển thị trên PC, mobile đã dùng relative)
+st.markdown("<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
