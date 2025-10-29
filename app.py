@@ -432,12 +432,11 @@ iframe:first-of-type {{
     }}
 }}
 
-/* --- CSS MỚI CHO THẺ NỘI DUNG (INFO CARDS) - ĐÃ SỬA VỊ TRÍ --- */
+/* --- CSS MỚI CHO THẺ NỘI DUNG (INFO CARDS) - GIỐNG CODEPEN --- */
 
 .info-card-wrapper {{
-    /* Sử dụng margin/padding để đặt thẻ trong luồng nội dung */
-    margin-top: 20vh; /* Khoảng cách từ tiêu đề cố định */
-    margin-bottom: 5vh; /* Khoảng trống bên dưới thẻ */
+    margin-top: 20vh;
+    margin-bottom: 5vh;
     padding: 0 5vw;
     width: 100%;
     z-index: 10;
@@ -456,66 +455,128 @@ iframe:first-of-type {{
 .info-card-container {{
     display: flex;
     justify-content: center;
-    gap: 50px; 
+    gap: 40px;
+    perspective: 1000px;
 }}
 
 .info-card {{
-    background: rgba(0, 0, 0, 0.5); 
-    border: 3px solid #00FFFF; 
-    border-radius: 15px;
-    width: 320px; 
-    height: 180px; 
+    position: relative;
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    width: 350px; 
+    height: 220px;
+    padding: 30px;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
     text-align: center;
     cursor: pointer;
+    overflow: hidden;
     
-    /* Hiệu ứng Glow ban đầu (nhẹ) */
-    box-shadow: 0 0 10px 2px #00FFFF, 
-                inset 0 0 10px 2px #00FFFF; 
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
     
-    color: #FFFFFF; 
-    transition: transform 0.4s ease, box-shadow 0.4s ease, background 0.4s;
+    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+    transform-style: preserve-3d;
+}}
+
+/* Hiệu ứng làm mờ các card khác khi hover */
+.info-card-container:hover .info-card:not(:hover) {{
+    filter: blur(4px) brightness(0.7);
+    transform: scale(0.95);
+    opacity: 0.7;
 }}
 
 .info-card:hover {{
-    /* Phóng to lên 8% khi hover/chạm */
-    transform: scale(1.08); 
-    background: rgba(0, 50, 50, 0.7); 
-    /* Hiệu ứng sáng mạnh khi hover (Màu vàng/Neon) */
-    border-color: #FFD700;
-    box-shadow: 0 0 20px 5px #FFD700, 
-                0 0 40px 10px #FFD700,
-                inset 0 0 20px 5px #FFD700;
+    transform: translateY(-10px) scale(1.05);
+    background: rgba(255, 255, 255, 0.15);
+    border: 1px solid rgba(255, 215, 0, 0.6);
+    box-shadow: 0 20px 60px 0 rgba(255, 215, 0, 0.3),
+                0 0 40px 0 rgba(255, 215, 0, 0.2),
+                inset 0 0 30px 0 rgba(255, 215, 0, 0.1);
+}}
+
+/* Gradient overlay khi hover */
+.info-card::before {{
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(135deg, 
+        rgba(255, 215, 0, 0) 0%, 
+        rgba(255, 215, 0, 0.1) 50%, 
+        rgba(255, 215, 0, 0) 100%);
+    opacity: 0;
+    transition: opacity 0.5s ease;
+    pointer-events: none;
+}}
+
+.info-card:hover::before {{
+    opacity: 1;
 }}
 
 .info-card h3 {{
-    font-size: 1.8em;
+    font-size: 2em;
     font-family: 'Playfair Display', serif;
-    margin-bottom: 10px;
+    margin-bottom: 15px;
     font-weight: 700;
-    color: #00FFFF; 
-    text-shadow: 0 0 5px #00FFFF, 0 0 10px #00FFFF;
-    transition: color 0.4s, text-shadow 0.4s;
+    color: rgba(255, 255, 255, 0.6);
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    transition: all 0.5s ease;
+    position: relative;
+    z-index: 1;
 }}
 
 .info-card:hover h3 {{
-    color: #FFD700; 
-    text-shadow: 0 0 5px #FFD700, 0 0 15px #FFD700;
+    color: #FFD700;
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.8),
+                 0 0 40px rgba(255, 215, 0, 0.4);
+    transform: scale(1.1);
 }}
 
 .info-card p {{
-    font-size: 1em;
+    font-size: 1.05em;
     font-weight: 300;
-    color: #E0FFFF; 
-    margin: 0;
-    transition: color 0.4s;
+    line-height: 1.6;
+    color: rgba(255, 255, 255, 0.4);
+    margin: 5px 0;
+    transition: all 0.5s ease;
+    position: relative;
+    z-index: 1;
 }}
 
 .info-card:hover p {{
-    color: #FFFFFF;
+    color: rgba(255, 255, 255, 0.95);
+    transform: translateY(-2px);
+}}
+
+/* Hiệu ứng shine khi hover */
+.info-card::after {{
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent,
+        rgba(255, 255, 255, 0.1),
+        transparent
+    );
+    transform: rotate(45deg);
+    transition: all 0.6s ease;
+    opacity: 0;
+}}
+
+.info-card:hover::after {{
+    opacity: 1;
+    left: 100%;
 }}
 
 /* Media Query cho Card trên Mobile */
@@ -523,16 +584,22 @@ iframe:first-of-type {{
     .info-card-container {{
         flex-direction: column;
         align-items: center;
-        gap: 25px;
+        gap: 30px;
     }}
     .info-card {{
-        width: 90%; 
-        height: 160px;
+        width: 85%;
+        max-width: 400px;
+        height: 200px;
     }}
     .info-card-wrapper {{
-        /* Điều chỉnh margin top/bottom cho mobile */
         margin-top: 15vh;
         margin-bottom: 10vh;
+    }}
+    /* Tắt hiệu ứng blur trên mobile */
+    .info-card-container:hover .info-card:not(:hover) {{
+        filter: none;
+        transform: scale(1);
+        opacity: 1;
     }}
 }}
 </style>
