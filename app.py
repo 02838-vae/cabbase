@@ -439,17 +439,18 @@ iframe:first-of-type {{
     margin-bottom: 5vh;
     padding: 0 5vw;
     width: 100%;
-    z-index: 10;
+    z-index: 50 !important;
     opacity: 0;
     transition: opacity 2s 3s; 
     pointer-events: none; 
-    position: relative; 
-    min-height: 250px; 
+    position: relative !important; 
+    min-height: 250px;
+    display: block !important;
 }}
 
 .video-finished .info-card-wrapper {{
-    opacity: 1;
-    pointer-events: auto; 
+    opacity: 1 !important;
+    pointer-events: auto !important; 
 }}
 
 .info-card-container {{
