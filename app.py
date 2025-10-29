@@ -229,66 +229,57 @@ iframe:first-of-type {{
 }}
 
 
-/* 🌟 KEYFRAMES MỚI: HIỆU ỨNG NHÁY SÁNG 7 BƯỚC (CHU KỲ 28S) 🌟 */
-@keyframes pulse-border {{
-    /* Cấu hình cơ bản (Viền mờ - Base) */
-    --base-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
-    /* Cấu hình sáng (Vệt sáng vàng - Light) */
-    --light-shadow: 20px 3px rgba(255, 215, 0, 0.9);
-    
+/* 🌟 KEYFRAMES MỚI: HIỆU ỨNG TỎA SÁNG MÀU NGẪU NHIÊN (4s sáng, 3s nghỉ - chu kỳ 7s) 🌟 */
+@keyframes glow-random-color {{
     /* TRẠNG THÁI NGHỈ/TẮT */
-    0%, 4%, 11%, 18%, 25%, 32%, 39%, 100% {{
-        box-shadow: var(--base-shadow);
+    0%, 57.14% /* 4s / 7s = 57.14% */, 100% {{
+        box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3); /* Viền mờ/cơ bản */
     }}
     
-    /* 1. CẠNH TRÊN (Sáng 1% = 0.28s) */
-    1% {{
-        box-shadow: 0 -3px var(--light-shadow), var(--base-shadow);
+    /* TRẠNG THÁI SÁNG (Chuyển màu từ 0% đến 57.14%) */
+    0% {{
+        /* Màu ban đầu - Ví dụ: Đỏ */
+        box-shadow: 
+            0 0 10px 4px rgba(255, 0, 0, 0.9), 
+            0 0 20px 8px rgba(255, 0, 0, 0.6), 
+            inset 0 0 5px 2px rgba(255, 0, 0, 0.9); 
     }}
     
-    /* 2. CẠNH PHẢI (Sáng 8% = 2.24s) */
-    8% {{
-        box-shadow: 3px 0 var(--light-shadow), var(--base-shadow);
+    14.28% /* 1s / 7s = 14.28% */ {{ 
+        /* Màu 1s - Ví dụ: Xanh lá */
+        box-shadow: 
+            0 0 10px 4px rgba(0, 255, 0, 0.9), 
+            0 0 20px 8px rgba(0, 255, 0, 0.6), 
+            inset 0 0 5px 2px rgba(0, 255, 0, 0.9);
     }}
     
-    /* 3. CẠNH DƯỚI (Sáng 15% = 4.20s) */
-    15% {{
-        box-shadow: 0 3px var(--light-shadow), var(--base-shadow);
-    }}
-    
-    /* 4. CẠNH TRÁI (Sáng 22% = 6.16s) */
-    22% {{
-        box-shadow: -3px 0 var(--light-shadow), var(--base-shadow);
+    28.56% /* 2s / 7s = 28.56% */ {{ 
+        /* Màu 2s - Ví dụ: Xanh dương */
+        box-shadow: 
+            0 0 10px 4px rgba(0, 0, 255, 0.9), 
+            0 0 20px 8px rgba(0, 0, 255, 0.6), 
+            inset 0 0 5px 2px rgba(0, 0, 255, 0.9);
     }}
 
-    /* 5. TRÊN & DƯỚI (Sáng 29% = 8.12s) */
-    29% {{
+    42.84% /* 3s / 7s = 42.84% */ {{ 
+        /* Màu 3s - Ví dụ: Vàng */
         box-shadow: 
-            0 -3px var(--light-shadow), 
-            0 3px var(--light-shadow), 
-            var(--base-shadow);
+            0 0 10px 4px rgba(255, 255, 0, 0.9), 
+            0 0 20px 8px rgba(255, 255, 0, 0.6), 
+            inset 0 0 5px 2px rgba(255, 255, 0, 0.9);
     }}
     
-    /* 6. TRÁI & PHẢI (Sáng 36% = 10.08s) */
-    36% {{
+    57.14% /* 4s / 7s = 57.14% */ {{ 
+        /* Màu 4s - Ví dụ: Hồng - Kết thúc hiệu ứng sáng */
         box-shadow: 
-            -3px 0 var(--light-shadow), 
-            3px 0 var(--light-shadow), 
-            var(--base-shadow);
-    }}
-    
-    /* 7. CẢ 4 CẠNH (Bùng nổ - Sáng 43% = 12.04s) */
-    43% {{
-        box-shadow: 
-            0 -3px 25px 4px rgba(255, 215, 0, 1), 
-            0 3px 25px 4px rgba(255, 215, 0, 1), 
-            -3px 0 25px 4px rgba(255, 215, 0, 1),
-            3px 0 25px 4px rgba(255, 215, 0, 1);
+            0 0 10px 4px rgba(255, 0, 255, 0.9), 
+            0 0 20px 8px rgba(255, 0, 255, 0.6), 
+            inset 0 0 5px 2px rgba(255, 0, 255, 0.9);
     }}
 }}
 
 
-/* === MUSIC PLAYER STYLES (ĐÃ CẬP NHẬT HIỆU ỨNG NHÁY SÁNG) === */
+/* === MUSIC PLAYER STYLES (ĐÃ CẬP NHẬT HIỆU ỨNG TỎA SÁNG) === */
 #music-player-container {{
     position: fixed;
     bottom: 20px;
@@ -305,7 +296,7 @@ iframe:first-of-type {{
     position: fixed;	
 }}
 
-/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO VÀ HIỆU ỨNG NHÁY SÁNG 🌟 */
+/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO VÀ HIỆU ỨNG TỎA SÁNG 🌟 */
 #music-player-container::before {{
     content: '';
     position: absolute;
@@ -328,10 +319,9 @@ iframe:first-of-type {{
     
     border-radius: 12px;
     
-    /* ✅ ÁP DỤNG HIỆU ỨNG NHÁY SÁNG VÀO BOX-SHADOW CỦA LỚP GIẢ NÀY */
+    /* ✅ ÁP DỤNG HIỆU ỨNG TỎA SÁNG MỚI (Chu kỳ 7 giây = 4s sáng + 3s nghỉ) */
     box-sizing: border-box; 
-    /* ✅ Đặt chu kỳ 28 giây cho 7 bước */
-    animation: pulse-border 28s ease-in-out infinite; 
+    animation: glow-random-color 7s linear infinite; 
 }}
 
 
