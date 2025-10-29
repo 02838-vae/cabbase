@@ -283,7 +283,7 @@ iframe:first-of-type {{
 }}
 
 
-/* === MUSIC PLAYER STYLES (ĐÃ CẬP NHẬT HIỆU ỨNG TỎA SÁNG) === */
+/* === MUSIC PLAYER STYLES === */
 #music-player-container {{
     position: fixed;
     bottom: 20px;
@@ -300,7 +300,7 @@ iframe:first-of-type {{
     position: fixed;	
 }}
 
-/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO VÀ HIỆU ỨNG TỎA SÁNG 🌟 */
+/* LỚP GIẢ (::before) CHO HÌNH NỀN LOGO VÀ HIỆU ỨNG TỎA SÁNG */
 #music-player-container::before {{
     content: '';
     position: absolute;
@@ -308,7 +308,6 @@ iframe:first-of-type {{
     left: 0;
     width: 100%;
     height: 100%;
-    /* Thêm padding/margin âm để mở rộng lớp giả ra ngoài một chút */
     margin: -3px; 
     width: calc(100% + 6px);
     height: calc(100% + 6px);
@@ -323,7 +322,6 @@ iframe:first-of-type {{
     
     border-radius: 12px;
     
-    /* ✅ ÁP DỤNG HIỆU ỨNG TỎA SÁNG LUNG LINH MỚI */
     box-sizing: border-box; 
     animation: glow-random-color 7s linear infinite; 
 }}
@@ -434,6 +432,80 @@ iframe:first-of-type {{
         width: 44px;
         height: 44px;
         font-size: 20px;
+    }}
+}}
+
+/* === CSS MỚI CHO THẺ NỘI DUNG (INFO CARDS) === */
+
+.info-card-container {{
+    /* Đảm bảo container nằm sau tiêu đề */
+    margin-top: 20vh; 
+    padding: 0 5vw;
+    display: flex;
+    justify-content: center;
+    gap: 40px;
+    z-index: 10;
+    position: relative;
+    /* Ẩn ban đầu, chỉ hiển thị sau khi video kết thúc (qua Streamlit) */
+    opacity: 0;
+    transition: opacity 2s 3s; 
+}}
+
+.video-finished .info-card-container {{
+    opacity: 1;
+}}
+
+.info-card {{
+    background: rgba(255, 255, 255, 0.1); 
+    backdrop-filter: blur(10px); 
+    border: 2px solid rgba(255, 255, 255, 0.3); 
+    border-radius: 15px;
+    width: 350px; /* Chiều rộng thẻ */
+    height: 200px; /* Chiều cao thẻ */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    cursor: pointer;
+    color: #FFD700; /* Màu chữ Vàng */
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.7);
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out, background 0.3s;
+}}
+
+.info-card:hover {{
+    /* Phóng to lên 5% khi hover/chạm */
+    transform: scale(1.05); 
+    background: rgba(255, 255, 255, 0.2); 
+    /* Hiệu ứng sáng mờ khi hover */
+    box-shadow: 0 0 20px 5px rgba(255, 215, 0, 0.5), 
+                0 0 40px 10px rgba(255, 215, 0, 0.2);
+}}
+
+.info-card h3 {{
+    font-size: 1.8em;
+    font-family: 'Playfair Display', serif;
+    margin-bottom: 10px;
+    font-weight: 700;
+}}
+
+.info-card p {{
+    font-size: 1em;
+    font-weight: 300;
+    color: #fff;
+    margin: 0;
+}}
+
+@media (max-width: 1000px) {{
+    .info-card-container {{
+        flex-direction: column;
+        align-items: center;
+        gap: 20px;
+        padding: 0 20px;
+    }}
+    .info-card {{
+        width: 90%; 
+        height: 150px;
     }}
 }}
 </style>
@@ -832,7 +904,22 @@ if len(music_files) > 0:
 </div>
 """, unsafe_allow_html=True)
 
-# Thêm nội dung chính của ứng dụng ở đây (sẽ được hiển thị sau khi video kết thúc)
+# --- NỘI DUNG CHÍNH: CÁC THẺ HỌC TẬP MỚI ---
+st.markdown("""
+<div class="info-card-container">
+    <div class="info-card">
+        <h3>Tra cứu Part number 🔎</h3>
+        <p>Tìm kiếm nhanh chóng mã phụ tùng</p>
+        <p>Thông tin kỹ thuật, sơ đồ chi tiết</p>
+    </div>
+    <div class="info-card">
+        <h3>Ngân hàng trắc nghiệm 🧠</h3>
+        <p>Ôn tập kiến thức chuyên môn</p>
+        <p>Làm bài kiểm tra mô phỏng</p>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# Thêm khoảng trống cuối trang (giữ nguyên)
 st.markdown("<br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
-st.markdown("<h2 style='text-align: center; color: white; opacity: 0; transition: opacity 2s 3s;'>Nội dung chính của Trang</h2>", unsafe_allow_html=True)
 st.markdown("<h2 style='text-align: center; color: white; opacity: 0; transition: opacity 2s 3s;'>Khu vực này sẽ xuất hiện sau 3 giây</h2>", unsafe_allow_html=True)
