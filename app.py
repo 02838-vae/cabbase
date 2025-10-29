@@ -9,11 +9,11 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Khởi tạo session state (Giữ nguyên)
+# Khởi tạo session state
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
-# --- CÁC HÀM TIỆN ÍCH (Giữ nguyên) ---
+# --- CÁC HÀM TIỆN ÍCH ---
 
 def get_base64_encoded_file(file_path):
     """Đọc file và trả về Base64 encoded string."""
@@ -28,7 +28,7 @@ def get_base64_encoded_file(file_path):
         return None
 
 
-# Mã hóa các file media chính (bắt buộc)
+# Mã hóa các file media chính
 try:
     # Đảm bảo các file này nằm cùng thư mục với app.py
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
@@ -40,7 +40,7 @@ try:
     # MÃ HÓA CHO LOGO
     logo_base64 = get_base64_encoded_file("logo.jpg")
 
-    # Kiểm tra file bắt buộc (Giữ nguyên)
+    # Kiểm tra file bắt buộc
     if not all([video_pc_base64, video_mobile_base64, audio_base64, bg_pc_base64, bg_mobile_base64]):
         missing_files = []
         if not video_pc_base64: missing_files.append("airplane.mp4")
@@ -57,13 +57,13 @@ except Exception as e:
     st.error(f"❌ Lỗi khi đọc file: {str(e)}")
     st.stop()
 
-# Đảm bảo logo_base64 được khởi tạo nếu file không tồn tại (Giữ nguyên)
+# Đảm bảo logo_base64 được khởi tạo nếu file không tồn tại
 if not 'logo_base64' in locals() or not logo_base64:
     logo_base64 = "" 
     st.info("ℹ️ Không tìm thấy file logo.jpg. Music player sẽ không có hình nền logo.")
 
 
-# Mã hóa các file nhạc nền (Giữ nguyên)
+# Mã hóa các file nhạc nền
 music_files = []
 for i in range(1, 7):
     music_base64 = get_base64_encoded_file(f"background{i}.mp3")
@@ -74,7 +74,7 @@ if len(music_files) == 0:
     st.info("ℹ️ Không tìm thấy file nhạc nền (background1.mp3 - background6.mp3). Music player sẽ không hoạt động.")
 
 
-# --- PHẦN 1: NHÚNG FONT (Giữ nguyên) ---
+# --- PHẦN 1: NHÚNG FONT ---
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
@@ -86,7 +86,21 @@ hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 
-/* Ẩn các thành phần mặc định của Streamlit (Giữ nguyên) */
+/* SỬA LỖI TẢI TRANG: THÊM HIỆU ỨNG LOADING SCREEN ĐỂ CHE MÀN HÌNH ĐEN KHI TẢI BASE64 */
+#st-global-spinner {{ visibility: hidden; }}
+
+.stApp {{
+    /* Thêm animation vào body để báo hiệu Streamlit đã tải xong */
+    animation: fadein 0.5s forwards;
+}}
+
+/* Keyframes Tải trang (để xử lý màn hình đen) */
+@keyframes fadein {{
+    from {{ opacity: 0; }}
+    to {{ opacity: 1; }}
+}}
+
+/* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
 
 .main {{
@@ -100,7 +114,7 @@ div.block-container {{
     max-width: 100% !important;
 }}
 
-/* Iframe Video Intro (Giữ nguyên) */
+/* Iframe Video Intro */
 iframe:first-of-type {{
     transition: opacity 1s ease-out, visibility 1s ease-out;
     opacity: 1;
@@ -127,7 +141,6 @@ iframe:first-of-type {{
     --logo-bg-url: url('data:image/jpeg;base64,{logo_base64}');
 }}
 
-/* Reveal Grid (Giữ nguyên) */
 .reveal-grid {{
     position: fixed;
     top: 0;
@@ -166,19 +179,20 @@ iframe:first-of-type {{
     }}
 }}
 
-/* Keyframes (Giữ nguyên) */
+/* Keyframes cho hiệu ứng chữ chạy đơn */
 @keyframes scrollText {{
     0% {{ transform: translate(100vw, 0); }}
     100% {{ transform: translate(-100%, 0); }}
 }}
 
+/* Keyframes cho hiệu ứng Đổi Màu Gradient */
 @keyframes colorShift {{
     0% {{ background-position: 0% 50%; }}
     50% {{ background-position: 100% 50%; }}
     100% {{ background-position: 0% 50%; }}
 }}
 
-/* Tiêu đề chính (Giữ nguyên) */
+/* === TIÊU ĐỀ TRANG CHÍNH === */
 #main-title-container {{
     position: fixed;
     top: 5vh;	
@@ -228,7 +242,8 @@ iframe:first-of-type {{
     }}
 }}
 
-/* Keyframes Glow (Giữ nguyên) */
+
+/* 💖 KEYFRAMES MỚI: HIỆU ỨNG TỎA SÁNG LUNG LINH & NHẤP NHÁY NHẸ (7s) 💖 */
 @keyframes glow-random-color {{
     0%, 57.14% /* 4s sáng */, 100% {{
         box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1),
@@ -254,7 +269,7 @@ iframe:first-of-type {{
             0 0 15px 5px rgba(255, 0, 255, 0.8), 
             0 0 30px 10px rgba(255, 0, 255, 0.4);
     }}
-    50% {{
+    50% {{ 
         box-shadow: 
             0 0 20px 8px rgba(255, 255, 0, 1), 
             0 0 40px 15px rgba(255, 255, 0, 0.6);
@@ -266,7 +281,8 @@ iframe:first-of-type {{
     }}
 }}
 
-/* Music Player Styles (Giữ nguyên) */
+
+/* === MUSIC PLAYER STYLES === */
 #music-player-container {{
     position: fixed;
     bottom: 20px;
@@ -303,9 +319,11 @@ iframe:first-of-type {{
     z-index: -1; 
     
     border-radius: 12px;
+    
     box-sizing: border-box; 
     animation: glow-random-color 7s linear infinite; 
 }}
+
 
 #music-player-container * {{
     position: relative;
@@ -388,6 +406,7 @@ iframe:first-of-type {{
     font-family: monospace;
 }}
 
+/* SỬA LỖI MOBILE: CĂN GIỮA NÚT NHẠC */
 @media (max-width: 768px) {{
     #music-player-container {{
         width: calc(100% - 40px);
@@ -407,19 +426,26 @@ iframe:first-of-type {{
         height: 44px;
         font-size: 20px;
     }}
+    #music-player-container .controls {{
+        /* Đảm bảo căn giữa cho màn hình nhỏ */
+        justify-content: center !important; 
+    }}
 }}
 
-/* === CSS MỚI CHO THẺ NỘI DUNG (INFO CARDS) - ĐÃ CẬP NHẬT THEO MẪU NEON/GLOW === */
+/* --- CSS MỚI CHO THẺ NỘI DUNG (INFO CARDS) - ĐÃ SỬA VỊ TRÍ --- */
 
 .info-card-wrapper {{
-    /* Định vị tuyệt đối để đặt thẻ ngay dưới tiêu đề cố định */
-    position: absolute; 
-    top: 20vh; /* Cách tiêu đề một khoảng */
+    /* Sử dụng margin/padding để đặt thẻ trong luồng nội dung */
+    margin-top: 20vh; /* Khoảng cách từ tiêu đề cố định */
+    margin-bottom: 5vh; /* Khoảng trống bên dưới thẻ */
+    padding: 0 5vw;
     width: 100%;
     z-index: 10;
     opacity: 0;
     transition: opacity 2s 3s; 
     pointer-events: none; 
+    position: relative; 
+    min-height: 250px; 
 }}
 
 .video-finished .info-card-wrapper {{
@@ -428,15 +454,14 @@ iframe:first-of-type {{
 }}
 
 .info-card-container {{
-    padding: 0 5vw;
     display: flex;
     justify-content: center;
     gap: 50px; 
 }}
 
 .info-card {{
-    background: rgba(0, 0, 0, 0.5); /* Nền tối mờ */
-    border: 3px solid #00FFFF; /* Viền màu Cyan nổi bật */
+    background: rgba(0, 0, 0, 0.5); 
+    border: 3px solid #00FFFF; 
     border-radius: 15px;
     width: 320px; 
     height: 180px; 
@@ -449,16 +474,16 @@ iframe:first-of-type {{
     
     /* Hiệu ứng Glow ban đầu (nhẹ) */
     box-shadow: 0 0 10px 2px #00FFFF, 
-                inset 0 0 10px 2px #00FFFF; /* Glow bên trong */
+                inset 0 0 10px 2px #00FFFF; 
     
-    color: #FFFFFF; /* Màu chữ sáng */
+    color: #FFFFFF; 
     transition: transform 0.4s ease, box-shadow 0.4s ease, background 0.4s;
 }}
 
 .info-card:hover {{
     /* Phóng to lên 8% khi hover/chạm */
     transform: scale(1.08); 
-    background: rgba(0, 50, 50, 0.7); /* Nền đậm hơn khi hover */
+    background: rgba(0, 50, 50, 0.7); 
     /* Hiệu ứng sáng mạnh khi hover (Màu vàng/Neon) */
     border-color: #FFD700;
     box-shadow: 0 0 20px 5px #FFD700, 
@@ -471,21 +496,20 @@ iframe:first-of-type {{
     font-family: 'Playfair Display', serif;
     margin-bottom: 10px;
     font-weight: 700;
-    color: #00FFFF; /* Màu chữ Cyan */
-    /* Text Glow */
+    color: #00FFFF; 
     text-shadow: 0 0 5px #00FFFF, 0 0 10px #00FFFF;
     transition: color 0.4s, text-shadow 0.4s;
 }}
 
 .info-card:hover h3 {{
-    color: #FFD700; /* Đổi màu chữ sang vàng khi hover */
+    color: #FFD700; 
     text-shadow: 0 0 5px #FFD700, 0 0 15px #FFD700;
 }}
 
 .info-card p {{
     font-size: 1em;
     font-weight: 300;
-    color: #E0FFFF; /* Màu chữ phụ */
+    color: #E0FFFF; 
     margin: 0;
     transition: color 0.4s;
 }}
@@ -494,6 +518,7 @@ iframe:first-of-type {{
     color: #FFFFFF;
 }}
 
+/* Media Query cho Card trên Mobile */
 @media (max-width: 1000px) {{
     .info-card-container {{
         flex-direction: column;
@@ -501,13 +526,13 @@ iframe:first-of-type {{
         gap: 25px;
     }}
     .info-card {{
-        width: 80%; 
+        width: 90%; 
         height: 160px;
     }}
     .info-card-wrapper {{
-        top: 25vh;
-        position: relative; 
-        margin-bottom: 15vh;
+        /* Điều chỉnh margin top/bottom cho mobile */
+        margin-top: 15vh;
+        margin-bottom: 10vh;
     }}
 }}
 </style>
@@ -755,7 +780,7 @@ js_callback_video = f"""
 </script>
 """
 
-# Mã HTML/CSS cho Video (Giữ nguyên)
+# Mã HTML/CSS cho Video
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -846,7 +871,7 @@ html_content_modified = f"""
 </html>
 """
 
-# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả (Giữ nguyên)
+# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
 intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
     f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'	
@@ -857,11 +882,11 @@ html_content_modified = html_content_modified.replace(
     f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
 )
 
-# --- HIỂN THỊ IFRAME VIDEO (Giữ nguyên) ---
+# --- HIỂN THỊ IFRAME VIDEO ---
 st.components.v1.html(html_content_modified, height=1080, scrolling=False)
 
 
-# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH (Giữ nguyên) ---
+# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
 
 # Tạo Lưới Reveal
 grid_cells_html = ""
@@ -876,7 +901,7 @@ reveal_grid_html = f"""
 st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
 
-# --- NỘI DUNG CHÍNH (TIÊU ĐỀ ĐƠN, ĐỔI MÀU - Giữ nguyên) ---
+# --- NỘI DUNG CHÍNH (TIÊU ĐỀ ĐƠN, ĐỔI MÀU) ---
 main_title_text = "TỔ BẢO DƯỠNG SỐ 1"	
 
 # Nhúng tiêu đề
@@ -886,7 +911,7 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- MUSIC PLAYER (Giữ nguyên) ---
+# --- MUSIC PLAYER ---
 if len(music_files) > 0:
     st.markdown("""
 <div id="music-player-container">
@@ -906,7 +931,6 @@ if len(music_files) > 0:
 """, unsafe_allow_html=True)
 
 # --- NỘI DUNG CHÍNH: CÁC THẺ HỌC TẬP MỚI (ĐÃ SỬA VỊ TRÍ) ---
-# Sử dụng 'info-card-wrapper' với position: absolute để đặt thẻ đúng vị trí.
 st.markdown("""
 <div class="info-card-wrapper">
     <div class="info-card-container">
@@ -924,5 +948,5 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# Thêm khoảng trống ở cuối trang để người dùng có thể cuộn xuống (chỉ hiển thị trên PC, mobile đã dùng relative)
+# Thêm khoảng trống ở cuối trang 
 st.markdown("<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
