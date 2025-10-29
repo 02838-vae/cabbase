@@ -236,6 +236,7 @@ iframe:first-of-type {{
     transform: translateY(100px);
     transition: opacity 1s ease-out 2s, transform 1s ease-out 2s;
     overflow: hidden;
+    --flash-color: #FFD700;
 }}
 
 #music-player-container::before {{
@@ -252,51 +253,15 @@ iframe:first-of-type {{
     filter: contrast(110%) brightness(90%);
     opacity: 0.4;
     z-index: 1;
-    border: 2px solid rgba(255, 215, 0, 0.2);
+    border: 3px solid rgba(255, 215, 0, 0.3);
     border-radius: 12px;
     box-sizing: border-box;
+    --flash-color: #FFD700;
+    animation: flashBorder 4s ease-in-out infinite;
 }}
 
-.snake-border-top,
-.snake-border-right,
-.snake-border-bottom,
-.snake-border-left {{
-    position: absolute;
-    background: #FFD700;
-    box-shadow: 0 0 15px #FFD700, 0 0 30px #FFD700;
-    z-index: 10;
-}}
-
-.snake-border-top {{
-    top: 0;
-    left: 0;
-    width: 0%;
-    height: 5px;
-    animation: snakeBorderTop 4s ease-in-out infinite;
-}}
-
-.snake-border-right {{
-    top: 0;
-    right: 0;
-    width: 5px;
-    height: 0%;
-    animation: snakeBorderRight 4s ease-in-out infinite;
-}}
-
-.snake-border-bottom {{
-    bottom: 0;
-    right: 0;
-    width: 0%;
-    height: 5px;
-    animation: snakeBorderBottom 4s ease-in-out infinite;
-}}
-
-.snake-border-left {{
-    bottom: 0;
-    left: 0;
-    width: 5px;
-    height: 0%;
-    animation: snakeBorderLeft 4s ease-in-out infinite;
+#music-player-container::after {{
+    content: none;
 }}
 
 #music-player-container * {{
@@ -721,11 +686,6 @@ st.markdown(f"""
 if len(music_files) > 0:
     st.markdown("""
 <div id="music-player-container">
-    <div class="snake-border-top"></div>
-    <div class="snake-border-right"></div>
-    <div class="snake-border-bottom"></div>
-    <div class="snake-border-left"></div>
-    
     <div class="controls">
         <button class="control-btn" id="prev-btn">⏮</button>
         <button class="control-btn play-pause" id="play-pause-btn">▶</button>
@@ -739,6 +699,27 @@ if len(music_files) > 0:
         <span id="duration">0:00</span>
     </div>
 </div>
+""", unsafe_allow_html=True)
+    
+    # JavaScript rieng biet de thay doi mau
+    st.markdown("""
+<script>
+(function() {
+    const colors = ['#FF0000', '#00FF00', '#0000FF', '#FFD700', '#FF00FF', '#00FFFF', '#FF6600', '#FF0066'];
+    let currentColorIndex = 0;
+    
+    function changeFlashColor() {
+        const container = document.getElementById('music-player-container');
+        if (container) {
+            currentColorIndex = (currentColorIndex + 1) % colors.length;
+            container.style.setProperty('--flash-color', colors[currentColorIndex]);
+        }
+    }
+    
+    // Doi mau moi 4 giay
+    setInterval(changeFlashColor, 4000);
+})();
+</script>
 """, unsafe_allow_html=True)
 
 st.markdown("<br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
