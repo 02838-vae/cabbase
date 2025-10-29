@@ -207,51 +207,18 @@ iframe:first-of-type {{
     }}
 }}
 
-@keyframes snakeBorderTop {{
+@keyframes flashBorder {{
     0% {{
-        width: 0%;
+        box-shadow: 0 0 20px 5px transparent;
+    }}
+    5% {{
+        box-shadow: 0 0 20px 5px var(--flash-color);
     }}
     10% {{
-        width: 100%;
+        box-shadow: 0 0 20px 5px transparent;
     }}
     100% {{
-        width: 100%;
-    }}
-}}
-
-@keyframes snakeBorderRight {{
-    0%, 25% {{
-        height: 0%;
-    }}
-    35% {{
-        height: 100%;
-    }}
-    100% {{
-        height: 100%;
-    }}
-}}
-
-@keyframes snakeBorderBottom {{
-    0%, 50% {{
-        width: 0%;
-    }}
-    60% {{
-        width: 100%;
-    }}
-    100% {{
-        width: 100%;
-    }}
-}}
-
-@keyframes snakeBorderLeft {{
-    0%, 75% {{
-        height: 0%;
-    }}
-    85% {{
-        height: 100%;
-    }}
-    100% {{
-        height: 100%;
+        box-shadow: 0 0 20px 5px transparent;
     }}
 }}
 
@@ -295,8 +262,8 @@ iframe:first-of-type {{
 .snake-border-bottom,
 .snake-border-left {{
     position: absolute;
-    background: linear-gradient(90deg, #FFD700, #FFA500);
-    box-shadow: 0 0 10px #FFD700, 0 0 20px rgba(255, 215, 0, 0.5);
+    background: #FFD700;
+    box-shadow: 0 0 15px #FFD700, 0 0 30px #FFD700;
     z-index: 10;
 }}
 
@@ -304,32 +271,32 @@ iframe:first-of-type {{
     top: 0;
     left: 0;
     width: 0%;
-    height: 4px;
-    animation: snakeBorderTop 16s linear infinite;
+    height: 5px;
+    animation: snakeBorderTop 4s ease-in-out infinite;
 }}
 
 .snake-border-right {{
     top: 0;
     right: 0;
-    width: 4px;
+    width: 5px;
     height: 0%;
-    animation: snakeBorderRight 16s linear infinite;
+    animation: snakeBorderRight 4s ease-in-out infinite;
 }}
 
 .snake-border-bottom {{
     bottom: 0;
     right: 0;
     width: 0%;
-    height: 4px;
-    animation: snakeBorderBottom 16s linear infinite;
+    height: 5px;
+    animation: snakeBorderBottom 4s ease-in-out infinite;
 }}
 
 .snake-border-left {{
     bottom: 0;
     left: 0;
-    width: 4px;
+    width: 5px;
     height: 0%;
-    animation: snakeBorderLeft 16s linear infinite;
+    animation: snakeBorderLeft 4s ease-in-out infinite;
 }}
 
 #music-player-container * {{
