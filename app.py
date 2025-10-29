@@ -1,7 +1,6 @@
 import streamlit as st
 import base64
 import os
-import random
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
@@ -83,10 +82,6 @@ font_links = """
 st.markdown(font_links, unsafe_allow_html=True)
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
-
-# Chu kỳ animation: 16 giây.
-# 4 cạnh, mỗi cạnh chạy 3 giây, nghỉ 1 giây (Tổng: 4 * 4s = 16s)
-# Điểm Keyframes: 0%, 18.75%, 25%, 43.75%, 50%, 68.75%, 75%, 93.75%, 100%
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -233,46 +228,72 @@ iframe:first-of-type {{
     }}
 }}
 
-/* 🌟 KEYFRAMES: Khung chạy vòng quanh góc 16s 🌟 */
-@keyframes border-light-run {{
-    /* Cạnh TRÊN (0% - 18.75%) */
-    0% {{ transform: translate(0, 0) rotate(0deg); }}
-    18.75% {{ transform: translate(calc(100% - 3px), 0) rotate(0deg); }} /* Góc trên phải */
+
+/* 🌟 KEYFRAMES MỚI: HIỆU ỨNG NHÁY SÁNG 7 BƯỚC (CHU KỲ 28S) 🌟 */
+@keyframes pulse-border {{
+    /* Cấu hình cơ bản (Viền mờ - Base) */
+    --base-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
+    /* Cấu hình sáng (Vệt sáng vàng - Light) */
+    --light-shadow: 20px 3px rgba(255, 215, 0, 0.9);
     
-    /* Nghỉ (18.75% - 25%) */
-    25% {{ transform: translate(calc(100% - 3px), 0) rotate(90deg); }} /* Góc trên phải, bắt đầu quay */
-
-    /* Cạnh PHẢI (25% - 43.75%) */
-    25.01% {{ transform-origin: 0 0; }} /* Đặt lại gốc quay */
-    43.75% {{ transform: translate(calc(100% - 3px), calc(100% - 3px)) rotate(90deg); }} /* Góc dưới phải */
+    /* TRẠNG THÁI NGHỈ/TẮT */
+    0%, 4%, 11%, 18%, 25%, 32%, 39%, 100% {{
+        box-shadow: var(--base-shadow);
+    }}
     
-    /* Nghỉ (43.75% - 50%) */
-    50% {{ transform: translate(calc(100% - 3px), calc(100% - 3px)) rotate(180deg); }} /* Góc dưới phải, bắt đầu quay */
+    /* 1. CẠNH TRÊN (Sáng 1% = 0.28s) */
+    1% {{
+        box-shadow: 0 -3px var(--light-shadow), var(--base-shadow);
+    }}
+    
+    /* 2. CẠNH PHẢI (Sáng 8% = 2.24s) */
+    8% {{
+        box-shadow: 3px 0 var(--light-shadow), var(--base-shadow);
+    }}
+    
+    /* 3. CẠNH DƯỚI (Sáng 15% = 4.20s) */
+    15% {{
+        box-shadow: 0 3px var(--light-shadow), var(--base-shadow);
+    }}
+    
+    /* 4. CẠNH TRÁI (Sáng 22% = 6.16s) */
+    22% {{
+        box-shadow: -3px 0 var(--light-shadow), var(--base-shadow);
+    }}
 
-    /* Cạnh DƯỚI (50% - 68.75%) */
-    50.01% {{ transform-origin: 0 0; }} /* Đặt lại gốc quay */
-    68.75% {{ transform: translate(0, calc(100% - 3px)) rotate(180deg); }} /* Góc dưới trái */
-
-    /* Nghỉ (68.75% - 75%) */
-    75% {{ transform: translate(0, calc(100% - 3px)) rotate(270deg); }} /* Góc dưới trái, bắt đầu quay */
-
-    /* Cạnh TRÁI (75% - 93.75%) */
-    75.01% {{ transform-origin: 0 0; }} /* Đặt lại gốc quay */
-    93.75% {{ transform: translate(0, 0) rotate(270deg); }} /* Góc trên trái */
-
-    /* Nghỉ (93.75% - 100%) */
-    100% {{ transform: translate(0, 0) rotate(360deg); }}
+    /* 5. TRÊN & DƯỚI (Sáng 29% = 8.12s) */
+    29% {{
+        box-shadow: 
+            0 -3px var(--light-shadow), 
+            0 3px var(--light-shadow), 
+            var(--base-shadow);
+    }}
+    
+    /* 6. TRÁI & PHẢI (Sáng 36% = 10.08s) */
+    36% {{
+        box-shadow: 
+            -3px 0 var(--light-shadow), 
+            3px 0 var(--light-shadow), 
+            var(--base-shadow);
+    }}
+    
+    /* 7. CẢ 4 CẠNH (Bùng nổ - Sáng 43% = 12.04s) */
+    43% {{
+        box-shadow: 
+            0 -3px 25px 4px rgba(255, 215, 0, 1), 
+            0 3px 25px 4px rgba(255, 215, 0, 1), 
+            -3px 0 25px 4px rgba(255, 215, 0, 1),
+            3px 0 25px 4px rgba(255, 215, 0, 1);
+    }}
 }}
 
 
-/* === MUSIC PLAYER STYLES (ĐÃ RESIZE HEIGHT VÀ ÁP DỤNG LẠI HIỆU ỨNG CHẠY) === */
+/* === MUSIC PLAYER STYLES (ĐÃ CẬP NHẬT HIỆU ỨNG NHÁY SÁNG) === */
 #music-player-container {{
     position: fixed;
     bottom: 20px;
     right: 20px;
     width: 350px; 
-    /* KHẮC PHỤC LỖI HEIGHT */
-    height: 110px; 
     padding: 8px 16px; 
     background: rgba(0, 0, 0, 0.7); 
     border-radius: 12px;
@@ -282,10 +303,9 @@ iframe:first-of-type {{
     transform: translateY(100px);
     transition: opacity 1s ease-out 2s, transform 1s ease-out 2s;
     position: fixed;	
-    overflow: hidden; 
 }}
 
-/* LỚP GIẢ (::before) CHO HÌNH NỀN LOGO VÀ VIỀN MỜ CỐ ĐỊNH */
+/* 🌟 LỚP GIẢ (::before) CHO HÌNH NỀN LOGO VÀ HIỆU ỨNG NHÁY SÁNG 🌟 */
 #music-player-container::before {{
     content: '';
     position: absolute;
@@ -293,47 +313,32 @@ iframe:first-of-type {{
     left: 0;
     width: 100%;
     height: 100%;
+    /* Thêm padding/margin âm để mở rộng lớp giả ra ngoài một chút */
+    margin: -3px; 
+    width: calc(100% + 6px);
+    height: calc(100% + 6px);
+    
     background-image: var(--logo-bg-url);
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     filter: contrast(110%) brightness(90%); 
     opacity: 0.4; 
-    z-index: 1; 
-    /* Viền mờ nền */
-    border: 3px solid rgba(255, 215, 0, 0.3); 
+    z-index: -1; 
+    
     border-radius: 12px;
+    
+    /* ✅ ÁP DỤNG HIỆU ỨNG NHÁY SÁNG VÀO BOX-SHADOW CỦA LỚP GIẢ NÀY */
     box-sizing: border-box; 
+    /* ✅ Đặt chu kỳ 28 giây cho 7 bước */
+    animation: pulse-border 28s ease-in-out infinite; 
 }}
 
-/* HIỆU ỨNG VIỀN CHẠY (Sử dụng ::after) */
-#music-player-container::after {{
-    content: '';
-    position: absolute;
-    
-    /* Kích thước dải sáng */
-    width: 50px; 
-    height: 3px; 
-    
-    /* Vị trí ban đầu (góc trên trái, căn chỉnh theo border 3px) */
-    top: -1.5px; 
-    left: -1.5px; 
-    
-    background: linear-gradient(90deg, transparent 0%, rgba(255, 255, 0, 0.8) 50%, transparent 100%);
-    box-shadow: 0 0 10px 5px rgba(255, 255, 0, 0.9);
-    
-    /* Gốc quay nằm tại điểm đầu (0% của 50px chiều dài) */
-    transform-origin: 0% 0%; 
-
-    /* Animation chạy vòng quanh */
-    animation: border-light-run 16s linear infinite; 
-    z-index: 4; 
-}}
 
 /* Đảm bảo các thành phần con ở trên lớp giả */
 #music-player-container * {{
     position: relative;
-    z-index: 5; 
+    z-index: 5; 	
 }}
 
 .video-finished #music-player-container {{
@@ -413,7 +418,6 @@ iframe:first-of-type {{
 @media (max-width: 768px) {{
     #music-player-container {{
         width: calc(100% - 40px);
-        height: 100px;
         right: 20px;
         left: 20px;
         bottom: 15px;
@@ -442,6 +446,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
+    # Ngoặc nhọn trong f-string JavaScript (Template Literal) cần được nhân đôi
     music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files])
 else:
     music_sources_js = ""
@@ -677,12 +682,6 @@ js_callback_video = f"""
 """
 
 # Mã HTML/CSS cho Video
-intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
-intro_chars_html = ''.join([
-    f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'	
-    for char in intro_title
-])
-
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -762,7 +761,7 @@ html_content_modified = f"""
 </head>
 <body>
 
-    <div id="intro-text-container">{intro_chars_html}</div>
+    <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
     
     <video id="intro-video" muted playsinline></video>
     
@@ -772,6 +771,17 @@ html_content_modified = f"""
 </body>
 </html>
 """
+
+# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
+intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
+intro_chars_html = ''.join([
+    f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'	
+    for char in intro_title
+])
+html_content_modified = html_content_modified.replace(
+    "<div id=\"intro-text-container\">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>",
+    f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
+)
 
 # --- HIỂN THỊ IFRAME VIDEO ---
 st.components.v1.html(html_content_modified, height=1080, scrolling=False)
