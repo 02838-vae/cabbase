@@ -511,7 +511,7 @@ else:
     # Nếu không có file nhạc, vẫn tạo mảng rỗng
     music_sources_js = ""
 
-# JavaScript 
+# JavaScript (Đã sửa đổi logic phát nhạc)
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
@@ -545,6 +545,7 @@ js_callback_video = f"""
         }}, shuffledCells.length * 10 + 1000);
     }}
     
+    // SỬA LỖI QUAN TRỌNG: Đảm bảo phát nhạc đúng khi user click
     function initMusicPlayer() {{
         console.log("Initializing music player");
         
@@ -564,10 +565,10 @@ js_callback_video = f"""
             return;
         }}
         
+        // Kiểm tra nếu không có file nhạc, vô hiệu hóa nút
         if (musicSources.length === 0) {{
              console.warn("No music files available. Player is inactive.");
              durationEl.textContent = 'N/A';
-             // Thêm pointer-events: none cho các nút điều khiển nếu không có nhạc
              playPauseBtn.style.pointerEvents = 'none';
              prevBtn.style.pointerEvents = 'none';
              nextBtn.style.pointerEvents = 'none';
@@ -577,6 +578,7 @@ js_callback_video = f"""
         let currentTrack = 0;
         let isPlaying = false;
         
+        // Đảm bảo audio chỉ được khởi tạo 1 lần
         const audio = new Audio();
         audio.volume = 0.3;
         
@@ -584,35 +586,37 @@ js_callback_video = f"""
         function loadTrack(index) {{
             console.log("Loading track", index + 1);
             audio.src = musicSources[index];
-            audio.load();
+            // Không gọi audio.load() ở đây, để dành cho hàm togglePlayPause()
         }}
         
         function togglePlayPause() {{
-            // FIX LỖI QUAN TRỌNG: Đảm bảo audio.play() được gọi bên trong sự kiện người dùng
             if (isPlaying) {{
                 audio.pause();
                 playPauseBtn.textContent = '▶';
+                isPlaying = false;
             }} else {{
-                // FIX: Sử dụng then/catch để xử lý Promise trả về từ audio.play() 
-                // Đồng thời đảm bảo nút bấm thay đổi đúng trạng thái
+                // FIX: Gọi load() ngay trước play() để đảm bảo data sẵn sàng
+                audio.load(); 
                 audio.play().then(() => {{
                     playPauseBtn.textContent = '⏸';
+                    isPlaying = true;
                 }}).catch(e => {{
-                    console.error("Play error (maybe due to load failure or browser restriction):", e);
-                    // Dừng phát nếu lỗi
-                    isPlaying = false;
+                    console.error("Play error:", e);
+                    // Hiển thị alert nếu lỗi phát nhạc
+                    alert("Không thể phát nhạc. Vui lòng kiểm tra file nhạc (Base64) hoặc trình duyệt.");
                     playPauseBtn.textContent = '▶';
-                    alert("Không thể phát nhạc. Vui lòng kiểm tra file hoặc cấu hình trình duyệt.");
+                    isPlaying = false;
                 }});
             }}
-            isPlaying = !isPlaying;
         }}
         
         function nextTrack() {{
             currentTrack = (currentTrack + 1) % musicSources.length;
             loadTrack(currentTrack);
             if (isPlaying) {{
-                audio.play().catch(e => console.error("Play error:", e));
+                // Kích hoạt play sau khi load track mới
+                audio.load();
+                audio.play().catch(e => console.error("Next track play error:", e));
             }}
         }}
         
@@ -620,7 +624,9 @@ js_callback_video = f"""
             currentTrack = (currentTrack - 1 + musicSources.length) % musicSources.length;
             loadTrack(currentTrack);
             if (isPlaying) {{
-                audio.play().catch(e => console.error("Play error:", e));
+                // Kích hoạt play sau khi load track mới
+                audio.load();
+                audio.play().catch(e => console.error("Prev track play error:", e));
             }}
         }}
         
@@ -651,12 +657,14 @@ js_callback_video = f"""
         prevBtn.addEventListener('click', prevTrack);
         
         progressContainer.addEventListener('click', (e) => {{
-            const rect = progressContainer.getBoundingClientRect();
-            const percent = (e.clientX - rect.left) / rect.width;
-            audio.currentTime = percent * audio.duration;
+            if (audio.duration) {{
+                const rect = progressContainer.getBoundingClientRect();
+                const percent = (e.clientX - rect.left) / rect.width;
+                audio.currentTime = percent * audio.duration;
+            }}
         }});
         
-        // Load bài hát đầu tiên khi khởi tạo
+        // Load bài hát đầu tiên (chỉ set src)
         loadTrack(0);
         console.log("Music player initialized successfully");
     }}
