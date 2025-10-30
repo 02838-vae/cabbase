@@ -82,7 +82,7 @@ font_links = """
 st.markdown(font_links, unsafe_allow_html=True)
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
-# Đã THÊM CSS cho 2 TIÊU ĐỀ PHỤ
+# Đã CẬP NHẬT CSS cho 2 TIÊU ĐỀ PHỤ
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -230,57 +230,20 @@ iframe:first-of-type {{
 }}
 
 
-/* 🌟 KEYFRAMES: HIỆU ỨNG TỎA SÁNG MÀU NGẪU NHIÊN 🌟 */
-@keyframes glow-random-color {{
-    /* TRẠNG THÁI NGHỈ/TẮT */
-    0%, 57.14% /* 4s / 7s = 57.14% */, 100% {{
-        box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3); /* Viền mờ/cơ bản */
+/* ❌ BỎ KEYFRAMES GLOW CŨ VÀ THAY BẰNG KEYFRAMES MỚI CHO HIỆU ỨNG NEON */
+@keyframes neon-border-pulse {{
+    0%, 100% {{
+        border-color: #00ffff; /* Cyan */
+        box-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff;
     }}
-    
-    /* TRẠNG THÁI SÁNG (Chuyển màu từ 0% đến 57.14%) */
-    0% {{
-        /* Màu ban đầu - Ví dụ: Đỏ */
-        box-shadow:	
-            0 0 10px 4px rgba(255, 0, 0, 0.9),	
-            0 0 20px 8px rgba(255, 0, 0, 0.6),	
-            inset 0 0 5px 2px rgba(255, 0, 0, 0.9);	
-    }}
-    
-    14.28% /* 1s / 7s = 14.28% */ {{	
-        /* Màu 1s - Ví dụ: Xanh lá */
-        box-shadow:	
-            0 0 10px 4px rgba(0, 255, 0, 0.9),	
-            0 0 20px 8px rgba(0, 255, 0, 0.6),	
-            inset 0 0 5px 2px rgba(0, 255, 0, 0.9);
-    }}
-    
-    28.56% /* 2s / 7s = 28.56% */ {{	
-        /* Màu 2s - Ví dụ: Xanh dương */
-        box-shadow:	
-            0 0 10px 4px rgba(0, 0, 255, 0.9),	
-            0 0 20px 8px rgba(0, 0, 255, 0.6),	
-            inset 0 0 5px 2px rgba(0, 0, 255, 0.9);
-    }}
-
-    42.84% /* 3s / 7s = 42.84% */ {{	
-        /* Màu 3s - Ví dụ: Vàng */
-        box-shadow:	
-            0 0 10px 4px rgba(255, 255, 0, 0.9),	
-            0 0 20px 8px rgba(255, 255, 0, 0.6),	
-            inset 0 0 5px 2px rgba(255, 255, 0, 0.9);
-    }}
-    
-    57.14% /* 4s / 7s = 57.14% */ {{	
-        /* Màu 4s - Ví dụ: Hồng - Kết thúc hiệu ứng sáng */
-        box-shadow:	
-            0 0 10px 4px rgba(255, 0, 255, 0.9),	
-            0 0 20px 8px rgba(255, 0, 255, 0.6),	
-            inset 0 0 5px 2px rgba(255, 0, 255, 0.9);
+    50% {{
+        border-color: #00ccff; /* Blue/Cyan nhẹ hơn */
+        box-shadow: 0 0 2px #00ccff, 0 0 5px #00ccff;
     }}
 }}
 
 
-/* === MUSIC PLAYER STYLES (Giữ nguyên) === */
+/* === MUSIC PLAYER STYLES (CẬP NHẬT BORDER) === */
 #music-player-container {{
     position: fixed;
     bottom: 20px;
@@ -320,186 +283,87 @@ iframe:first-of-type {{
     
     border-radius: 12px;
     
-    /* ✅ ÁP DỤNG HIỆU ỨNG TỎA SÁNG */
+    /* ✅ ÁP DỤNG HIỆU ỨNG NEON MỚI */
     box-sizing: border-box;	
-    animation: glow-random-color 7s linear infinite;	
+    border: 3px solid #00ffff;
+    animation: neon-border-pulse 4s infinite alternate; /* Dùng neon pulse cho MP */
 }}
 
 /* ... (Giữ nguyên các style khác của music player) ... */
-#music-player-container * {{
-    position: relative;
-    z-index: 5; 	
-}}
 
-.video-finished #music-player-container {{
-    opacity: 1;
-    transform: translateY(0);
-}}
-
-/* Các style khác của player (giữ nguyên) */
-#music-player-container .controls,
-#music-player-container .time-info {{
-    color: #fff;	
-    text-shadow: 0 0 7px #000;
-}}
-
-#music-player-container .controls {{
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 6px;	
-}}
-
-#music-player-container .control-btn {{
-    background: rgba(255, 255, 255, 0.2);
-    border: 2px solid #FFFFFF;	
-    color: #FFD700;
-    width: 32px;	
-    height: 32px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    font-size: 14px;	
-}}
-
-#music-player-container .control-btn:hover {{
-    background: rgba(255, 215, 0, 0.5);
-    transform: scale(1.15);
-}}
-
-#music-player-container .control-btn.play-pause {{
-    width: 40px;	
-    height: 40px;
-    font-size: 18px;
-}}
-
-#music-player-container .progress-container {{
-    width: 100%;
-    height: 5px;	
-    background: rgba(0, 0, 0, 0.5);
-    border-radius: 3px;
-    cursor: pointer;
-    margin-bottom: 4px;	
-    position: relative;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.4);	
-}}
-
-#music-player-container .progress-bar {{
-    height: 100%;
-    background: linear-gradient(90deg, #FFD700, #FFA500);	
-    border-radius: 3px;
-    width: 0%;
-    transition: width 0.1s linear;
-}}
-
-#music-player-container .time-info {{
-    display: flex;
-    justify-content: space-between;
-    color: rgba(255, 255, 255, 1);
-    font-size: 10px;	
-    font-family: monospace;
-}}
-
-@media (max-width: 768px) {{
-    #music-player-container {{
-        width: calc(100% - 40px);
-        right: 20px;
-        left: 20px;
-        bottom: 15px;
-        padding: 8px 12px;
-    }}
-    #music-player-container .control-btn,
-    #music-player-container .control-btn.play-pause {{
-        width: 36px;
-        height: 36px;
-        font-size: 16px;
-    }}
-    #music-player-container .control-btn.play-pause {{
-        width: 44px;
-        height: 44px;
-        font-size: 20px;
-    }}
-}}
-
-/* ✅ CSS MỚI CHO 2 TIÊU ĐỀ PHỤ */
+/* ✅ CẬP NHẬT CSS CHO 2 TIÊU ĐỀ PHỤ - FIXED POSITION */
 .content-links-container {{
-    position: absolute;
-    top: 25vh; /* Dưới tiêu đề chính */
+    position: fixed; /* Cố định vị trí */
+    top: 20vh; /* Nằm ngay dưới tiêu đề chạy (title 5vh + 10vh height, thêm 5vh khoảng cách) */
     width: 100%;
     z-index: 10; 
     display: flex;
-    justify-content: space-around; /* Phân bổ đều giữa trái và phải cho PC */
+    justify-content: space-between; /* Đẩy ra sát hai bên cho PC */
     align-items: flex-start;
-    padding: 0 10vw; /* Khoảng cách từ lề PC */
-    pointer-events: none; /* Ban đầu không cho tương tác */
-    opacity: 0; /* Ban đầu ẩn */
-    transition: opacity 2s ease-out 3s; /* Hiện sau khi video kết thúc 3s */
+    padding: 0 5vw; /* Khoảng cách từ lề PC */
+    pointer-events: none; 
+    opacity: 0; 
+    transition: opacity 2s ease-out 3s; 
 }}
 
 .video-finished .content-links-container {{
     opacity: 1;
-    pointer-events: auto; /* Cho phép tương tác sau khi hiện */
+    pointer-events: auto; 
 }}
 
 .container-link {{
     /* Cấu hình cho 2 tiêu đề phụ */
-    width: 400px; /* Độ rộng cố định trên PC */
-    max-width: 45%; /* Đảm bảo không chiếm quá nửa màn hình */
+    width: 350px; /* Độ rộng cố định trên PC */
+    max-width: 40%; /* Đảm bảo không chiếm quá nửa màn hình */
     padding: 20px 15px;
-    margin: 15px; /* Khoảng cách giữa 2 box trên PC */
+    margin: 0; /* Bỏ margin để dùng padding của container */
     text-align: center;
-    text-decoration: none; /* Loại bỏ gạch chân mặc định của thẻ A */
-    color: #FFD700; /* Màu chữ Vàng ánh kim */
+    text-decoration: none;
+    color: #00ffff; /* Màu chữ Cyan/Neon */
     font-family: 'Playfair Display', serif;
     font-size: 1.5rem;
     font-weight: 700;
     cursor: pointer;
-    background-color: rgba(0, 0, 0, 0.4); /* Nền đen trong suốt tương đồng background */
+    background-color: rgba(0, 0, 0, 0.4); 
     border-radius: 8px;
     
-    /* Viền và Box-shadow Tương Đồng Với Music Player (Hiệu ứng Glow) */
+    /* ✅ STYLE NEON BORDER THEO CODEPEN */
     box-sizing: border-box; 
-    border: 3px solid rgba(255, 215, 0, 0.5); /* Viền mờ Vàng */
-    animation: glow-random-color 7s linear infinite; /* Áp dụng hiệu ứng tỏa sáng */
-    transition: transform 0.3s ease, background-color 0.3s ease;
+    border: 3px solid #00ffff; /* Viền Cyan */
+    box-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff; /* Hiệu ứng Neon */
+    animation: none; /* ❌ Bỏ hiệu ứng glow cũ */
+    transition: transform 0.3s ease, background-color 0.3s ease, box-shadow 0.3s ease;
 }}
 
 .container-link:hover {{
     transform: scale(1.05);
     background-color: rgba(0, 0, 0, 0.7);
-    border: 3px solid #FFD700; /* Viền đậm hơn khi hover */
+    /* Hiệu ứng sáng hơn khi hover */
+    box-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 30px #00ffff; 
 }}
 
 
 /* --- MEDIA QUERY CHO MOBILE --- */
 @media (max-width: 768px) {{
-    /* Điều chỉnh vị trí của phần nội dung chính để hiển thị bên dưới máy bay (mobile.jpg) */
+    /* Điều chỉnh vị trí cố định mobile */
     .content-links-container {{
-        position: absolute; /* Giữ fixed để chúng ta có thể đặt nó dựa vào viewport */
-        top: 60vh; /* Điều chỉnh vị trí nằm dưới máy bay (mobile.jpg) */
+        position: fixed; 
+        top: 65vh; /* Cố định ở khoảng giữa xuống, phía trên music player */
         flex-direction: column; 
-        align-items: center; /* Căn giữa */
-        padding: 0 5vw; /* Giảm padding lề */
+        align-items: center; 
+        padding: 0 5vw; 
         width: 100%;
         margin-top: 0; 
-        /* Ghi đè hiệu ứng opacity, để nó xuất hiện cùng lúc với khối text bên dưới */
         opacity: 0; 
         transition: opacity 2s ease-out 3s;
     }}
     
     .container-link {{
-        width: 80vw; /* Chiếm 80% chiều rộng màn hình mobile */
+        width: 80vw; 
         max-width: 90%; 
         font-size: 1.2rem;
-        margin: 10px 0; /* Khoảng cách trên dưới */
+        margin: 10px 0; 
     }}
-    
-    /* Điều chỉnh vị trí của music player (đã có ở code gốc) */
 }}
 </style>
 """
@@ -508,11 +372,10 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (GIỮ NGUYÊN) ---
 
 # Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
-    # Ngoặc nhọn trong f-string JavaScript (Template Literal) cần được nhân đôi
     music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files])
 else:
     music_sources_js = ""
@@ -880,6 +743,7 @@ st.markdown(f"""
 
 
 # --- THÊM 2 TIÊU ĐỀ PHỤ CÓ KHUNG (Container-Link) ---
+# Thẻ đã được set position: fixed và top: 20vh (PC) / 65vh (Mobile)
 st.markdown("""
 <div class="content-links-container">
     <a href="#" class="container-link" id="link-part-number">
@@ -889,7 +753,7 @@ st.markdown("""
         🧠 Ngân hàng trắc nghiệm
     </a>
 </div>
-""", unsafe_allow_html=True) # Lưu ý: Thẻ <a> sẽ chuyển trang khi click
+""", unsafe_allow_html=True) 
 
 
 # --- MUSIC PLAYER ---
@@ -911,7 +775,7 @@ if len(music_files) > 0:
 </div>
 """, unsafe_allow_html=True)
 
-# Thêm nội dung chính của ứng dụng (Thêm khoảng trống để đẩy nội dung xuống dưới tiêu đề phụ trên PC)
-st.markdown("<br><br><br><br><br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
+# Thêm nội dung chính của ứng dụng 
+# Bỏ các thẻ <br> vì các thẻ link đã là fixed, không cần đẩy nội dung xuống.
 st.markdown("<h2 style='text-align: center; color: white; opacity: 0; transition: opacity 2s 3s;'>Nội dung chính của Trang</h2>", unsafe_allow_html=True)
 st.markdown("<h2 style='text-align: center; color: white; opacity: 0; transition: opacity 2s 3s;'>Khu vực này sẽ xuất hiện sau 3 giây</h2>", unsafe_allow_html=True)
