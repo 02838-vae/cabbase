@@ -385,31 +385,16 @@ iframe:first-of-type {{
     }}
 }}
 
-/* --- KEYFRAMES NEON GLOW (MẪU SỐ 8) --- */
-@keyframes neon-flicker {{
-  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {{
-    text-shadow:
-      0 0 2px #00ffff, 
-      0 0 5px #00ffff, 
-      0 0 8px #00ffff, 
-      0 0 10px #228dff; /* Màu Cyan và Blue */
-  }}
-
-  20%, 24%, 55% {{
-    text-shadow: none; /* Tắt/Giảm độ sáng nhanh */
-  }}
-}}
-
-/* --- CSS MỚI CHO 2 TIÊU ĐỀ PHỤ --- */
+/* --- CSS MỚI CHO 2 TIÊU ĐỀ PHỤ - ĐÃ FIX FLICKER VÀ VỊ TRÍ PC --- */
 .content-links-container {{
     position: fixed; 
-    top: 20vh; /* PC: Nằm dưới tiêu đề chạy */
+    top: 20vh; 
     width: 100%;
     z-index: 10; 
     display: flex;
-    justify-content: space-between; /* Đẩy ra 2 góc */
+    justify-content: space-between; 
     align-items: flex-start;
-    padding: 0 10vw; /* Khoảng cách từ lề */
+    padding: 0 15vw; /* ✅ TĂNG PADDING ĐỂ DỊCH CHUYỂN TIÊU ĐỀ PC RA HAI GÓC */
     pointer-events: none; 
     opacity: 0; 
     transition: opacity 2s ease-out 3s; 
@@ -428,35 +413,42 @@ iframe:first-of-type {{
     text-align: center;
     text-decoration: none; 
     
-    /* Màu chữ và Hiệu ứng NEON GLOW */
-    color: #00ffff; /* Màu chữ chính: Neon Cyan */
+    /* Màu chữ và Hiệu ứng NEON GLOW TĨNH (Fixed Flicker) */
+    color: #00ffff; 
     font-family: 'Playfair Display', serif;
-    font-size: 2.2rem; /* ✅ PHÓNG TO SIZE CHỮ TRÊN PC */
+    font-size: 2.2rem; 
     font-weight: 700;
     cursor: pointer;
     background-color: transparent; 
     
-    animation: neon-flicker 5s infinite; /* Áp dụng hiệu ứng Neon Glow */
+    /* ✅ Áp dụng Neon Glow TĨNH (Khắc phục Flicker) */
+    text-shadow:
+      0 0 4px rgba(0, 255, 255, 0.8), /* Hiệu ứng tỏa sáng Cyan */
+      0 0 10px rgba(34, 141, 255, 0.6); /* Hiệu ứng tỏa sáng Blue */
+    
+    animation: none; /* ✅ TẮT ANIMATION FLICKER */
     
     border: none;
     box-shadow: none;
     
-    transition: transform 0.3s ease, color 0.3s ease;
+    transition: transform 0.3s ease, color 0.3s ease, text-shadow 0.3s ease;
 }}
 
 .container-link:hover {{
-    transform: scale(1.05); /* Giảm độ scale hover để phù hợp với text */
-    color: #ffffff; 
-    /* Giảm nhẹ flicker khi hover */
-    text-shadow: 0 0 5px #fff, 0 0 15px #00ffff, 0 0 25px #00ffff; 
-    animation: none; /* Tắt flicker khi hover */
+    transform: scale(1.05); 
+    /* ✅ Đổi màu chữ và shadow sang VÀNG cho dễ thấy */
+    color: #ffd700; /* Vàng kim */
+    text-shadow: 
+      0 0 5px #ffd700, 
+      0 0 15px #ff8c00, /* Cam sẫm */
+      0 0 25px rgba(255, 215, 0, 0.7); /* Tỏa sáng mạnh hơn */
 }}
 
 /* --- MEDIA QUERY CHO MOBILE --- */
 @media (max-width: 768px) {{
     .content-links-container {{
         position: fixed; 
-        top: 45vh; /* Giữ nguyên vị trí đã fix */
+        top: 45vh; 
         flex-direction: column; 
         align-items: center; 
         padding: 0 5vw; 
@@ -464,7 +456,7 @@ iframe:first-of-type {{
     }}
     
     .container-link {{
-        font-size: 1.5rem; /* Kích thước chữ mobile */
+        font-size: 1.5rem; 
         width: auto; 
         max-width: 90%; 
         margin: 10px 0; 
@@ -856,10 +848,10 @@ st.markdown(f"""
 st.markdown("""
 <div class="content-links-container">
     <a href="#" class="container-link" id="link-part-number">
-        Tra cứu part number
+        Tra cứu part number 🔍
     </a>
     <a href="#" class="container-link" id="link-quiz-bank">
-        Ngân hàng trắc nghiệm
+        Ngân hàng trắc nghiệm 📖
     </a>
 </div>
 """, unsafe_allow_html=True)
