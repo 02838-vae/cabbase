@@ -822,26 +822,24 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Đã tối ưu cho tốc độ & Fix lỗi AttributeError) ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Fix lỗi Scope cuối cùng) ---
 
-# Khởi tạo placeholder để đảm bảo biến TỒN TẠI (AttributeError Fix)
+# 1. KHỞI TẠO PLACEHOLDER KHÔNG ĐIỀU KIỆN
 video_placeholder = st.empty()
 
-# Tối ưu tốc độ: Chỉ tạo và hiển thị nội dung video nặng nề NẾU chưa chạy xong
+# 2. KIỂM TRA ĐIỀU KIỆN VÀ GỌI HÀM NẾU CẦN
 if not st.session_state.video_ended:
 
-    # GỌI HÀM để tạo HTML. Hàm này đảm bảo trả về chuỗi HTML đã được định nghĩa.
+    # GỌI HÀM để tạo HTML.
     try:
         html_content_modified = get_intro_html(video_pc_base64, video_mobile_base64, audio_base64, music_files)
         
-        # Hiển thị HTML vào placeholder đã định nghĩa
+        # 3. HIỂN THỊ NỘI DUNG VÀO PLACEHOLDER
         video_placeholder.components.v1.html(html_content_modified, height=1080, scrolling=False)
     
     except Exception as e:
-        # Xử lý lỗi trong quá trình tạo/hiển thị HTML (ví dụ: lỗi Base64)
         st.error(f"Lỗi khi hiển thị video intro (có thể do lỗi Base64 media). {str(e)}")
-        # Cập nhật state để không cố gắng chạy lại video ở lần refresh tiếp theo
-        st.session_state.video_ended = True
+        st.session_state.video_ended = True 
 
 
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
