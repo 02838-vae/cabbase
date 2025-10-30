@@ -17,7 +17,6 @@ if 'video_ended' not in st.session_state:
 
 def get_base64_encoded_file(file_path):
     """Đọc file và trả về Base64 encoded string."""
-    # Kiểm tra kích thước file > 0 (Quan trọng cho base64)
     if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
         return None
     try:
@@ -25,23 +24,18 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except Exception as e:
-        # Tắt thông báo lỗi file tạm thời để không làm phiền console
         return None
 
 
 # Mã hóa các file media chính (bắt buộc)
 try:
-    # Đảm bảo các file này nằm cùng thư mục với app.py
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
-    
-    # MÃ HÓA CHO LOGO
     logo_base64 = get_base64_encoded_file("logo.jpg")
 
-    # Kiểm tra file bắt buộc
     if not all([video_pc_base64, video_mobile_base64, audio_base64, bg_pc_base64, bg_mobile_base64]):
         missing_files = []
         if not video_pc_base64: missing_files.append("airplane.mp4")
@@ -58,7 +52,6 @@ except Exception as e:
     st.error(f"❌ Lỗi khi đọc file: {{str(e)}}")
     st.stop()
 
-# Đảm bảo logo_base64 được khởi tạo nếu file không tồn tại
 if not 'logo_base64' in locals() or not logo_base64:
     logo_base64 = "" 
 
@@ -71,7 +64,7 @@ for i in range(1, 7):
         music_files.append(music_base64)
 
 
-# --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
+# --- PHẦN 1: NHÚNG FONT VÀ CSS CHUNG ---
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
@@ -79,9 +72,7 @@ font_links = """
 """
 st.markdown(font_links, unsafe_allow_html=True)
 
-# --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
-
-# Sửa lỗi: Dùng ngoặc nhọn kép {{...}} cho toàn bộ khối CSS để tránh lỗi f-string
+# CSS (Giữ nguyên phần vị trí tiêu đề đã fix)
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -387,14 +378,12 @@ iframe:first-of-type {{
 /* --- CSS MỚI CHO 2 TIÊU ĐỀ PHỤ - ĐÃ FIX VỊ TRÍ PC (SÁT GÓC) VÀ VIỀN BAO --- */
 .content-links-container {{
     position: fixed; 
-    /* ĐIỀU CHỈNH: Hạ thấp vị trí xuống 30vh */
     top: 30vh; 
     width: 100%;
     z-index: 10; 
     display: flex;
-    justify-content: space-between; /* Đẩy hai phần tử ra hai góc */
+    justify-content: space-between; 
     align-items: flex-start;
-    /* ĐIỀU CHỈNH: Đặt padding ngang về 0 để đẩy sát lề nhất có thể */
     padding: 0 0; 
     box-sizing: border-box; 
     pointer-events: none; 
@@ -407,47 +396,34 @@ iframe:first-of-type {{
     pointer-events: auto; 
 }}
 
-/* Định vị PC: Tra cứu Part Number sát trái */
 #link-part-number {{
     margin-right: auto; 
-    /* ĐIỀU CHỈNH: Đẩy sát lề trái 8vw */
     margin-left: 8vw;    
 }}
 
-/* Định vị PC: Ngân hàng trắc nghiệm sát phải */
 #link-quiz-bank {{
     margin-left: auto; 
-    /* ĐIỀU CHỈNH: Đẩy sát lề phải 8vw */
     margin-right: 8vw;   
 }}
 
 .container-link {{
-    /* Thiết lập chữ */
     display: inline-block;
     padding: 10px 15px; 
     text-align: center;
     text-decoration: none; 
-    
     color: #00ffff; 
     font-family: 'Playfair Display', serif;
     font-size: 2.2rem; 
     font-weight: 700;
     cursor: pointer;
     background-color: rgba(0, 0, 0, 0.4); 
-    
-    /* Thiết lập khung viền */
     border: 2px solid #00ffff; 
-    border-radius: 8px; /* Bo góc mềm mại */
+    border-radius: 8px; 
     box-sizing: border-box; 
-    
-    /* Neon Glow Tĩnh */
     text-shadow:
       0 0 4px rgba(0, 255, 255, 0.8), 
       0 0 10px rgba(34, 141, 255, 0.6); 
-      
-    /* Thêm Box Shadow cho khung (Neon effect) */
     box-shadow: 0 0 5px #00ffff, 0 0 15px rgba(0, 255, 255, 0.5); 
-    
     transition: transform 0.3s ease, color 0.3s ease, text-shadow 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }}
 
@@ -455,31 +431,25 @@ iframe:first-of-type {{
     transform: scale(1.05); 
     color: #ffd700; 
     border-color: #ffd700; 
-    
-    /* Box Shadow Vàng khi hover */
     box-shadow: 
       0 0 5px #ffd700, 
       0 0 15px #ff8c00, 
       0 0 25px rgba(255, 215, 0, 0.7); 
-      
-    /* Text Shadow Vàng khi hover */
     text-shadow: 
       0 0 3px #ffd700, 
       0 0 8px #ff8c00; 
 }}
 
-/* --- MEDIA QUERY CHO MOBILE --- */
 @media (max-width: 768px) {{
     .content-links-container {{
         position: fixed; 
         top: 45vh; 
         flex-direction: column; 
-        align-items: center; /* Canh giữa trên mobile */
+        align-items: center; 
         padding: 0 5vw; 
         width: 100%;
     }}
 
-    /* Đảm bảo tiêu đề được canh giữa trên mobile */
     #link-part-number, #link-quiz-bank {{
         margin: 10px 0;
     }}
@@ -502,16 +472,15 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (GIỮ NGUYÊN) ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
 # Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
     music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files])
 else:
-    # Nếu không có file nhạc, vẫn tạo mảng rỗng
     music_sources_js = ""
 
-# JavaScript (Đã sửa đổi logic phát nhạc)
+# JavaScript (Đã sửa đổi logic phát nhạc để đảm bảo tương tác người dùng)
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
@@ -565,7 +534,6 @@ js_callback_video = f"""
             return;
         }}
         
-        // Kiểm tra nếu không có file nhạc, vô hiệu hóa nút
         if (musicSources.length === 0) {{
              console.warn("No music files available. Player is inactive.");
              durationEl.textContent = 'N/A';
@@ -576,9 +544,7 @@ js_callback_video = f"""
         }}
         
         let currentTrack = 0;
-        let isPlaying = false;
-        
-        // Đảm bảo audio chỉ được khởi tạo 1 lần
+        // KHỞI TẠO ĐỐI TƯỢNG AUDIO
         const audio = new Audio();
         audio.volume = 0.3;
         
@@ -586,26 +552,32 @@ js_callback_video = f"""
         function loadTrack(index) {{
             console.log("Loading track", index + 1);
             audio.src = musicSources[index];
-            // Không gọi audio.load() ở đây, để dành cho hàm togglePlayPause()
+            // Load file ngay khi set src
+            audio.load(); 
         }}
         
         function togglePlayPause() {{
-            if (isPlaying) {{
+            // KIỂM TRA TRỰC TIẾP TRẠNG THÁI AUDIO
+            if (!audio.paused) {{
+                // ĐANG CHƠI -> TẠM DỪNG
                 audio.pause();
                 playPauseBtn.textContent = '▶';
-                isPlaying = false;
+                console.log("Music paused.");
             }} else {{
-                // FIX: Gọi load() ngay trước play() để đảm bảo data sẵn sàng
-                audio.load(); 
+                // ĐANG DỪNG -> CHƠI
+                // RẤT QUAN TRỌNG: Đảm bảo set src trước khi play
+                if (!audio.src) {{
+                    loadTrack(currentTrack);
+                }}
+
                 audio.play().then(() => {{
                     playPauseBtn.textContent = '⏸';
-                    isPlaying = true;
+                    console.log("Music playing.");
                 }}).catch(e => {{
-                    console.error("Play error:", e);
-                    // Hiển thị alert nếu lỗi phát nhạc
-                    alert("Không thể phát nhạc. Vui lòng kiểm tra file nhạc (Base64) hoặc trình duyệt.");
+                    console.error("Play error (This is likely the issue):", e);
+                    // BÁO LỖI TRỰC TIẾP LÊN GIAO DIỆN
+                    alert("❌ Lỗi phát nhạc. Có thể do file Base64 bị lỗi hoặc trình duyệt chặn (Play error). Vui lòng kiểm tra lại file background{{currentTrack + 1}}.mp3.");
                     playPauseBtn.textContent = '▶';
-                    isPlaying = false;
                 }});
             }}
         }}
@@ -613,9 +585,7 @@ js_callback_video = f"""
         function nextTrack() {{
             currentTrack = (currentTrack + 1) % musicSources.length;
             loadTrack(currentTrack);
-            if (isPlaying) {{
-                // Kích hoạt play sau khi load track mới
-                audio.load();
+            if (!audio.paused) {{
                 audio.play().catch(e => console.error("Next track play error:", e));
             }}
         }}
@@ -623,9 +593,7 @@ js_callback_video = f"""
         function prevTrack() {{
             currentTrack = (currentTrack - 1 + musicSources.length) % musicSources.length;
             loadTrack(currentTrack);
-            if (isPlaying) {{
-                // Kích hoạt play sau khi load track mới
-                audio.load();
+            if (!audio.paused) {{
                 audio.play().catch(e => console.error("Prev track play error:", e));
             }}
         }}
@@ -664,14 +632,12 @@ js_callback_video = f"""
             }}
         }});
         
-        // Load bài hát đầu tiên (chỉ set src)
+        // Tải bài hát đầu tiên ngay lập tức
         loadTrack(0);
-        console.log("Music player initialized successfully");
+        console.log("Music player initialized successfully and first track loaded.");
     }}
 
     document.addEventListener("DOMContentLoaded", function() {{
-        console.log("DOM loaded, waiting for elements...");
-        
         const waitForElements = setInterval(() => {{
             const video = document.getElementById('intro-video');
             const audio = document.getElementById('background-audio');
@@ -679,7 +645,6 @@ js_callback_video = f"""
             
             if (video && audio && introTextContainer) {{
                 clearInterval(waitForElements);
-                console.log("All elements found, initializing...");
                 
                 const isMobile = window.innerWidth <= 768;
                 const videoSource = isMobile ? 'data:video/mp4;base64,{video_mobile_base64}' : 'data:video/mp4;base64,{video_pc_base64}';
@@ -687,36 +652,19 @@ js_callback_video = f"""
                 video.src = videoSource;
                 audio.src = 'data:audio/mp3;base64,{audio_base64}';
 
-                console.log("Video/Audio source set. Loading metadata...");
-                
-                // --- LOGIC CHƠI VIDEO/AUDIO ĐƯỢC CẢI TIẾN ---
-                
                 const tryToPlay = () => {{
-                    console.log("Attempting to play video (User interaction or Canplay event)");
-                    
-                    // 1. Thử phát video (còn muted)
-                    video.play().then(() => {{
-                        console.log("✅ Video is playing!");
-                    }}).catch(err => {{
-                        // Thất bại lần 2 (ngay cả sau tương tác). Có thể do lỗi tệp.
-                        console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
-                        
-                        // Nếu không thể phát, chuyển sang nội dung chính sau 2 giây
+                    video.play().catch(err => {{
+                        console.error("Video play failed:", err);
                         setTimeout(sendBackToStreamlit, 2000);	
                     }});
-
-                    // 2. Thử phát audio (có thể bị chặn)
                     audio.play().catch(e => {{
-                        console.log("Audio autoplay blocked (normal), waiting for video end.");
+                        console.log("Audio autoplay blocked (normal).");
                     }});
                 }};
 
-                // Lắng nghe sự kiện video sẵn sàng (đáng tin cậy hơn)
                 video.addEventListener('canplaythrough', tryToPlay, {{ once: true }});
                 
-                // Event khi video kết thúc
                 video.addEventListener('ended', () => {{
-                    console.log("Video ended, transitioning...");
                     video.style.opacity = 0;
                     audio.pause();
                     audio.currentTime = 0;
@@ -724,18 +672,14 @@ js_callback_video = f"""
                     setTimeout(sendBackToStreamlit, 500);
                 }});
 
-                // Xử lý lỗi tệp video (RẤT QUAN TRỌNG VỚI BASE64)
                 video.addEventListener('error', (e) => {{
-                    console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
+                    console.error("Video error detected. Skipping intro.", e);
                     sendBackToStreamlit();
                 }});
 
 
-                // Click/Touch handler để kích hoạt 'tryToPlay' nếu Autoplay bị chặn
                 const clickHandler = () => {{
-                    console.log("User interaction detected, forcing play attempt.");
                     tryToPlay();
-                    // Xóa listener sau lần tương tác đầu tiên
                     document.removeEventListener('click', clickHandler);
                     document.removeEventListener('touchstart', clickHandler);
                 }};
@@ -743,10 +687,8 @@ js_callback_video = f"""
                 document.addEventListener('click', clickHandler, {{ once: true }});
                 document.addEventListener('touchstart', clickHandler, {{ once: true }});
                 
-                // Load video
                 video.load();	
                 
-                // Animate text
                 const chars = introTextContainer.querySelectorAll('.intro-char');
                 chars.forEach((char, index) => {{
                     char.style.animationDelay = `${{index * 0.1}}s`;	
@@ -755,12 +697,10 @@ js_callback_video = f"""
             }}
         }}, 100);
         
-        // Timeout sau 5 giây (nếu video không load được)
         setTimeout(() => {{
             clearInterval(waitForElements);
             const video = document.getElementById('intro-video');
             if (video && !video.src) {{
-                console.warn("Timeout before video source set. Force transitioning to main content.");
                 sendBackToStreamlit();
             }}
         }}, 5000);
@@ -768,7 +708,7 @@ js_callback_video = f"""
 </script>
 """
 
-# Mã HTML/CSS cho Video (Đã sửa lỗi cú pháp)
+# Mã HTML/CSS cho Video 
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -801,10 +741,8 @@ html_content_modified = f"""
             text-align: center;
             color: #FFD700;	
             font-size: 3vw;	
-            
             font-family: 'Sacramento', cursive;	
             font-weight: 400;	
-            
             text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);	
             z-index: 100;
             pointer-events: none;
@@ -913,8 +851,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# --- MUSIC PLAYER (ĐÃ KHÔI PHỤC VÀ LUÔN HIỂN THỊ) ---
-# Player luôn hiển thị, logic phát nhạc nằm trong JS và chỉ hoạt động khi có file
+# --- MUSIC PLAYER ---
 st.markdown("""
 <div id="music-player-container">
     <div class="controls">
