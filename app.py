@@ -17,6 +17,7 @@ if 'video_ended' not in st.session_state:
 
 def get_base64_encoded_file(file_path):
     """Đọc file và trả về Base64 encoded string."""
+    # Kiểm tra kích thước file > 0 (Quan trọng cho base64)
     if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
         return None
     try:
@@ -24,7 +25,7 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except Exception as e:
-        st.error(f"Lỗi khi đọc file {{file_path}}: {{str(e)}}")
+        # st.error(f"Lỗi khi đọc file {{file_path}}: {{str(e)}}") # Tắt thông báo lỗi file tạm thời
         return None
 
 
@@ -60,7 +61,8 @@ except Exception as e:
 # Đảm bảo logo_base64 được khởi tạo nếu file không tồn tại
 if not 'logo_base64' in locals() or not logo_base64:
     logo_base64 = "" 
-    st.info("ℹ️ Không tìm thấy file logo.jpg. Music player sẽ không có hình nền logo.")
+    # Tắt thông báo nếu logo không quan trọng lắm
+    # st.info("ℹ️ Không tìm thấy file logo.jpg. Music player sẽ không có hình nền logo.")
 
 
 # Mã hóa các file nhạc nền (không bắt buộc)
@@ -70,8 +72,9 @@ for i in range(1, 7):
     if music_base64:
         music_files.append(music_base64)
 
+# Thay đổi: Giữ Music Player hiển thị ngay cả khi không có file nhạc, chỉ hiển thị thông báo nhẹ
 if len(music_files) == 0:
-    st.info("ℹ️ Không tìm thấy file nhạc nền (background1.mp3 - background6.mp3). Music player sẽ không hoạt động.")
+    st.info("ℹ️ Không tìm thấy file nhạc nền (background1.mp3 - background6.mp3). Music player sẽ hiển thị nhưng không thể phát nhạc.")
 
 
 # --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
@@ -390,14 +393,16 @@ iframe:first-of-type {{
 /* --- CSS MỚI CHO 2 TIÊU ĐỀ PHỤ - ĐÃ FIX VỊ TRÍ PC (SÁT GÓC) VÀ VIỀN BAO --- */
 .content-links-container {{
     position: fixed; 
-    top: 20vh; 
+    /* ĐIỀU CHỈNH: Hạ thấp vị trí xuống 25vh (từ 20vh) */
+    top: 25vh; 
     width: 100%;
     z-index: 10; 
     display: flex;
     justify-content: space-between; /* Đẩy hai phần tử ra hai góc */
     align-items: flex-start;
-    padding: 0 5vw; /* Giảm padding tổng thể, sử dụng margin auto để đẩy sát */
-    box-sizing: border-box; /* Quan trọng để padding không làm tràn màn hình */
+    /* ĐIỀU CHỈNH: Tăng padding từ 5vw lên 8vw để đẩy xa hơn */
+    padding: 0 8vw; 
+    box-sizing: border-box; 
     pointer-events: none; 
     opacity: 0; 
     transition: opacity 2s ease-out 3s; 
@@ -507,6 +512,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 if len(music_files) > 0:
     music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files])
 else:
+    # Thay đổi: Nếu không có file nhạc, vẫn tạo mảng rỗng để JS không bị lỗi
     music_sources_js = ""
 
 # JavaScript (Đã sửa lỗi cú pháp bên trong JS)
@@ -548,17 +554,7 @@ js_callback_video = f"""
         
         const musicSources = [{music_sources_js}];
         
-        if (musicSources.length === 0) {{
-            console.log("No music files available");
-            return;
-        }}
-        
-        let currentTrack = 0;
-        let isPlaying = false;
-        
-        const audio = new Audio();
-        audio.volume = 0.3;
-        
+        // Thay đổi: Cho phép player khởi tạo ngay cả khi không có sources
         const playPauseBtn = window.parent.document.getElementById('play-pause-btn');
         const prevBtn = window.parent.document.getElementById('prev-btn');
         const nextBtn = window.parent.document.getElementById('next-btn');
@@ -571,6 +567,19 @@ js_callback_video = f"""
             console.error("Music player elements not found in parent document");
             return;
         }}
+        
+        if (musicSources.length === 0) {{
+             console.log("No music files available, player initialized in passive mode.");
+             durationEl.textContent = 'N/A';
+             return; // Dừng logic phát nhạc, nhưng nút bấm vẫn hiển thị
+        }}
+        
+        let currentTrack = 0;
+        let isPlaying = false;
+        
+        const audio = new Audio();
+        audio.volume = 0.3;
+        
         
         function loadTrack(index) {{
             console.log("Loading track", index + 1);
@@ -884,9 +893,9 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# --- MUSIC PLAYER (GIỮ NGUYÊN) ---
-if len(music_files) > 0:
-    st.markdown("""
+# --- MUSIC PLAYER (ĐÃ KHÔI PHỤC VÀ LUÔN HIỂN THỊ) ---
+# Loại bỏ điều kiện if len(music_files) > 0: để đảm bảo nó luôn hiển thị
+st.markdown("""
 <div id="music-player-container">
     <div class="controls">
         <button class="control-btn" id="prev-btn">⏮</button>
