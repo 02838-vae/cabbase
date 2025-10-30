@@ -9,6 +9,12 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
+# THÊM LOG CHẨN ĐOÁN (Dòng 1):
+# Nếu trang trắng không chạy gì, lỗi xảy ra trước dòng này.
+# Nếu thấy dòng này mà trang vẫn lỗi, lỗi xảy ra sau đó, nhưng Streamlit bị treo trước khi hiện thị.
+st.success("✅ Ứng dụng Streamlit đã khởi động.")
+
+
 # Khởi tạo session state
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
@@ -372,13 +378,18 @@ try:
         if not bg_pc_base64: missing_files.append("cabbase.jpg")
         if not bg_mobile_base64: missing_files.append("mobile.jpg")
         
-        st.error(f"⚠️ Thiếu các file media cần thiết hoặc file rỗng. Vui lòng kiểm tra lại các file sau trong thư mục:")
+        # THÊM LOG CHẨN ĐOÁN (Dòng 2): Báo lỗi file media
+        st.error(f"❌ **Lỗi nghiêm trọng (Media Missing):** Thiếu các file media cần thiết hoặc file rỗng. Vui lòng kiểm tra lại các file sau trong thư mục:")
         st.write(" - " + "\n - ".join(missing_files))
         st.stop()
         
 except Exception as e:
-    st.error(f"❌ Lỗi khi đọc file: {str(e)}")
+    # THÊM LOG CHẨN ĐOÁN (Dòng 3): Báo lỗi đọc file
+    st.error(f"❌ **Lỗi nghiêm trọng (File Read Error):** Lỗi khi đọc file Base64. Lỗi: {str(e)}")
     st.stop()
+    
+# THÊM LOG CHẨN ĐOÁN (Dòng 4): Đã mã hóa Base64 thành công
+st.info("✅ Mã hóa Base64 thành công. Đang tải CSS/HTML.")
 
 if not 'logo_base64' in locals() or not logo_base64:
     logo_base64 = "" 
@@ -829,6 +840,9 @@ video_placeholder = st.empty()
 
 # 2. KIỂM TRA ĐIỀU KIỆN VÀ GỌI HÀM NẾU CẦN
 if not st.session_state.video_ended:
+    
+    # THÊM LOG CHẨN ĐOÁN (Dòng 5): Đang cố gắng hiển thị video
+    st.info("🔄 Đang chuẩn bị hiển thị video intro...")
 
     # GỌI HÀM để tạo HTML.
     try:
@@ -836,10 +850,17 @@ if not st.session_state.video_ended:
         
         # 3. HIỂN THỊ NỘI DUNG VÀO PLACEHOLDER
         video_placeholder.components.v1.html(html_content_modified, height=1080, scrolling=False)
+        
+        # THÊM LOG CHẨN ĐOÁN (Dòng 6): Thành công
+        st.info("✅ Video intro đã được nhúng thành công.")
     
     except Exception as e:
-        st.error(f"Lỗi khi hiển thị video intro (có thể do lỗi Base64 media). {str(e)}")
+        # THÊM LOG CHẨN ĐOÁN (Dòng 7): Lỗi trong khối try/except
+        st.error(f"❌ **Lỗi hiển thị video:** Lỗi khi hiển thị video (Lỗi {str(e)}). Tự động chuyển sang nội dung chính.")
         st.session_state.video_ended = True 
+else:
+    # THÊM LOG CHẨN ĐOÁN (Dòng 8): Đã bỏ qua video
+    st.info("⏩ Video intro đã hoàn tất. Đang hiển thị nội dung chính.")
 
 
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
