@@ -24,7 +24,8 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except Exception as e:
-        st.error(f"Lỗi khi đọc file {file_path}: {str(e)}")
+        # In lỗi chi tiết trong terminal
+        print(f"Lỗi khi đọc file {file_path}: {str(e)}") 
         return None
 
 
@@ -86,33 +87,16 @@ hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 
-/* SỬA LỖI TẢI TRANG: THÊM HIỆU ỨNG LOADING SCREEN ĐỂ CHE MÀN HÌNH ĐEN KHI TẢI BASE64 */
+/* Hiệu ứng Tải trang (để xử lý màn hình đen) */
 #st-global-spinner {{ visibility: hidden; }}
-
-.stApp {{
-    /* Thêm animation vào body để báo hiệu Streamlit đã tải xong */
-    animation: fadein 0.5s forwards;
-}}
-
-/* Keyframes Tải trang (để xử lý màn hình đen) */
-@keyframes fadein {{
-    from {{ opacity: 0; }}
-    to {{ opacity: 1; }}
-}}
+.stApp {{ animation: fadein 0.5s forwards; }}
+@keyframes fadein {{ from {{ opacity: 0; }} to {{ opacity: 1; }} }}
 
 /* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
 
-.main {{
-    padding: 0;
-    margin: 0;
-}}
-
-div.block-container {{
-    padding: 0;
-    margin: 0;
-    max-width: 100% !important;
-}}
+.main {{ padding: 0; margin: 0; }}
+div.block-container {{ padding: 0; margin: 0; max-width: 100% !important; }}
 
 /* Iframe Video Intro */
 iframe:first-of-type {{
@@ -141,6 +125,7 @@ iframe:first-of-type {{
     --logo-bg-url: url('data:image/jpeg;base64,{logo_base64}');
 }}
 
+/* Reveal Grid */
 .reveal-grid {{
     position: fixed;
     top: 0;
@@ -243,7 +228,7 @@ iframe:first-of-type {{
 }}
 
 
-/* 💖 KEYFRAMES MỚI: HIỆU ỨNG TỎA SÁNG LUNG LINH & NHẤP NHÁY NHẸ (7s) 💖 */
+/* KEYFRAMES GLOW PLAYER */
 @keyframes glow-random-color {{
     0%, 57.14% /* 4s sáng */, 100% {{
         box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1),
@@ -269,7 +254,7 @@ iframe:first-of-type {{
             0 0 15px 5px rgba(255, 0, 255, 0.8), 
             0 0 30px 10px rgba(255, 0, 255, 0.4);
     }}
-    50% {{ 
+    50% {{
         box-shadow: 
             0 0 20px 8px rgba(255, 255, 0, 1), 
             0 0 40px 15px rgba(255, 255, 0, 0.6);
@@ -406,7 +391,7 @@ iframe:first-of-type {{
     font-family: monospace;
 }}
 
-/* SỬA LỖI MOBILE: CĂN GIỮA NÚT NHẠC */
+/* MOBILE: CĂN GIỮA NÚT NHẠC */
 @media (max-width: 768px) {{
     #music-player-container {{
         width: calc(100% - 40px);
@@ -427,180 +412,74 @@ iframe:first-of-type {{
         font-size: 20px;
     }}
     #music-player-container .controls {{
-        /* Đảm bảo căn giữa cho màn hình nhỏ */
         justify-content: center !important; 
     }}
 }}
 
-/* --- CSS MỚI CHO THẺ NỘI DUNG (INFO CARDS) - GIỐNG CODEPEN --- */
+/* === CSS MỚI CHO TEXT LINKS (DÙNG POSITION: FIXED) === */
 
-.info-card-wrapper {{
-    margin-top: 20vh;
-    margin-bottom: 5vh;
-    padding: 0 5vw;
+/* Container bao bọc 2 link */
+.nav-links-container {{
+    position: fixed;
+    top: 20vh; /* Đặt dưới tiêu đề chính */
     width: 100%;
-    z-index: 50 !important;
+    z-index: 30; 
+    display: flex;
+    justify-content: space-between;
+    padding: 0 5vw;
     opacity: 0;
     transition: opacity 2s 3s; 
     pointer-events: none; 
-    position: relative !important; 
-    min-height: 250px;
-    display: block !important;
 }}
 
-.video-finished .info-card-wrapper {{
-    opacity: 1 !important;
-    pointer-events: auto !important; 
-}}
-
-.info-card-container {{
-    display: flex;
-    justify-content: center;
-    gap: 40px;
-    perspective: 1000px;
-}}
-
-.info-card {{
-    position: relative;
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    width: 350px; 
-    height: 220px;
-    padding: 30px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
-    cursor: pointer;
-    overflow: hidden;
-    
-    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-    
-    transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-    transform-style: preserve-3d;
-}}
-
-/* Hiệu ứng làm mờ các card khác khi hover */
-.info-card-container:hover .info-card:not(:hover) {{
-    filter: blur(4px) brightness(0.7);
-    transform: scale(0.95);
-    opacity: 0.7;
-}}
-
-.info-card:hover {{
-    transform: translateY(-10px) scale(1.05);
-    background: rgba(255, 255, 255, 0.15);
-    border: 1px solid rgba(255, 215, 0, 0.6);
-    box-shadow: 0 20px 60px 0 rgba(255, 215, 0, 0.3),
-                0 0 40px 0 rgba(255, 215, 0, 0.2),
-                inset 0 0 30px 0 rgba(255, 215, 0, 0.1);
-}}
-
-/* Gradient overlay khi hover */
-.info-card::before {{
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(135deg, 
-        rgba(255, 215, 0, 0) 0%, 
-        rgba(255, 215, 0, 0.1) 50%, 
-        rgba(255, 215, 0, 0) 100%);
-    opacity: 0;
-    transition: opacity 0.5s ease;
-    pointer-events: none;
-}}
-
-.info-card:hover::before {{
+.video-finished .nav-links-container {{
     opacity: 1;
+    pointer-events: auto; 
 }}
 
-.info-card h3 {{
-    font-size: 2em;
+/* Style cho từng link (tiêu đề) */
+.nav-link {{
     font-family: 'Playfair Display', serif;
-    margin-bottom: 15px;
+    font-size: 1.5vw; 
     font-weight: 700;
-    color: rgba(255, 255, 255, 0.6);
-    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-    transition: all 0.5s ease;
-    position: relative;
-    z-index: 1;
+    text-decoration: none; 
+    padding: 10px 15px;
+    border-radius: 8px;
+    
+    /* Neon Glow Effect */
+    color: #FFFFFF;
+    background: rgba(0, 0, 0, 0.4); 
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    text-shadow: 0 0 5px #00FFFF, 0 0 10px #00FFFF;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.7); 
+    
+    transition: all 0.3s ease-in-out;
 }}
 
-.info-card:hover h3 {{
-    color: #FFD700;
-    text-shadow: 0 0 20px rgba(255, 215, 0, 0.8),
-                 0 0 40px rgba(255, 215, 0, 0.4);
-    transform: scale(1.1);
+.nav-link:hover {{
+    color: #FFD700; /* Màu vàng khi hover */
+    background: rgba(255, 255, 0, 0.1);
+    border-color: #FFD700;
+    text-shadow: 0 0 8px #FFD700, 0 0 15px #FFD700;
+    box-shadow: 0 0 15px 5px rgba(255, 215, 0, 0.8);
+    transform: scale(1.05);
 }}
 
-.info-card p {{
-    font-size: 1.05em;
-    font-weight: 300;
-    line-height: 1.6;
-    color: rgba(255, 255, 255, 0.4);
-    margin: 5px 0;
-    transition: all 0.5s ease;
-    position: relative;
-    z-index: 1;
-}}
-
-.info-card:hover p {{
-    color: rgba(255, 255, 255, 0.95);
-    transform: translateY(-2px);
-}}
-
-/* Hiệu ứng shine khi hover */
-.info-card::after {{
-    content: '';
-    position: absolute;
-    top: -50%;
-    left: -50%;
-    width: 200%;
-    height: 200%;
-    background: linear-gradient(
-        45deg,
-        transparent,
-        rgba(255, 255, 255, 0.1),
-        transparent
-    );
-    transform: rotate(45deg);
-    transition: all 0.6s ease;
-    opacity: 0;
-}}
-
-.info-card:hover::after {{
-    opacity: 1;
-    left: 100%;
-}}
-
-/* Media Query cho Card trên Mobile */
-@media (max-width: 1000px) {{
-    .info-card-container {{
+/* Responsive cho Mobile */
+@media (max-width: 768px) {{
+    .nav-links-container {{
+        top: 18vh; 
         flex-direction: column;
         align-items: center;
-        gap: 30px;
+        gap: 15px;
+        position: fixed; /* Giữ Fixed trên mobile để đảm bảo visibility */
+        padding-top: 5vh; /* Thêm padding để không bị tiêu đề che */
     }}
-    .info-card {{
-        width: 85%;
-        max-width: 400px;
-        height: 200px;
-    }}
-    .info-card-wrapper {{
-        margin-top: 15vh;
-        margin-bottom: 10vh;
-    }}
-    /* Tắt hiệu ứng blur trên mobile */
-    .info-card-container:hover .info-card:not(:hover) {{
-        filter: none;
-        transform: scale(1);
-        opacity: 1;
+    .nav-link {{
+        font-size: 4.5vw; 
+        width: 80vw;
+        text-align: center;
+        margin: 0; 
     }}
 }}
 </style>
@@ -610,7 +489,7 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Giữ nguyên) ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
 # Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
@@ -618,7 +497,7 @@ if len(music_files) > 0:
 else:
     music_sources_js = ""
 
-# JavaScript 
+# JavaScript  
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
@@ -998,21 +877,16 @@ if len(music_files) > 0:
 </div>
 """, unsafe_allow_html=True)
 
-# --- NỘI DUNG CHÍNH: CÁC THẺ HỌC TẬP MỚI (ĐÃ SỬA VỊ TRÍ) ---
+# --- NỘI DUNG MỚI: CÁC TEXT LINKS (ĐÃ SỬA LỖI VỊ TRÍ) ---
+# NOTE: Các liên kết này sử dụng position: fixed để đảm bảo hiển thị
 st.markdown("""
-<div class="info-card-wrapper">
-    <div class="info-card-container">
-        <div class="info-card">
-            <h3>Tra cứu Part number 🔎</h3>
-            <p>Tìm kiếm nhanh chóng mã phụ tùng</p>
-            <p>Thông tin kỹ thuật, sơ đồ chi tiết</p>
-        </div>
-        <div class="info-card">
-            <h3>Ngân hàng trắc nghiệm 🧠</h3>
-            <p>Ôn tập kiến thức chuyên môn</p>
-            <p>Làm bài kiểm tra mô phỏng</p>
-        </div>
-    </div>
+<div class="nav-links-container">
+    <a href="https://www.google.com" target="_blank" class="nav-link">
+        Tra cứu Part number 🔎
+    </a>
+    <a href="https://www.google.com" target="_blank" class="nav-link">
+        Ngân hàng trắc nghiệm 🧠
+    </a>
 </div>
 """, unsafe_allow_html=True)
 
