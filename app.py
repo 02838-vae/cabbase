@@ -385,16 +385,31 @@ iframe:first-of-type {{
     }}
 }}
 
-/* --- CSS MỚI CHO 2 TIÊU ĐỀ PHỤ - ĐƠN GIẢN HÓA HOÀN TOÀN --- */
+/* --- KEYFRAMES NEON GLOW (MẪU SỐ 8) --- */
+@keyframes neon-flicker {{
+  0%, 19%, 21%, 23%, 25%, 54%, 56%, 100% {{
+    text-shadow:
+      0 0 2px #00ffff, 
+      0 0 5px #00ffff, 
+      0 0 8px #00ffff, 
+      0 0 10px #228dff; /* Màu Cyan và Blue */
+  }}
+
+  20%, 24%, 55% {{
+    text-shadow: none; /* Tắt/Giảm độ sáng nhanh */
+  }}
+}}
+
+/* --- CSS MỚI CHO 2 TIÊU ĐỀ PHỤ --- */
 .content-links-container {{
     position: fixed; 
     top: 20vh; /* PC: Nằm dưới tiêu đề chạy */
     width: 100%;
     z-index: 10; 
     display: flex;
-    justify-content: space-around; /* Phân bổ đều giữa trái và phải */
+    justify-content: space-between; /* Đẩy ra 2 góc */
     align-items: flex-start;
-    padding: 0 10vw; 
+    padding: 0 10vw; /* Khoảng cách từ lề */
     pointer-events: none; 
     opacity: 0; 
     transition: opacity 2s ease-out 3s; 
@@ -406,20 +421,23 @@ iframe:first-of-type {{
 }}
 
 .container-link {{
-    /* Đã đơn giản hóa */
+    /* Thiết lập chữ */
     display: inline-block;
     padding: 10px 20px;
     margin: 0;
     text-align: center;
-    text-decoration: none; /* Bỏ gạch chân */
-    color: #00ffff; /* Màu chữ Neon Cyan (Giữ nguyên) */
+    text-decoration: none; 
+    
+    /* Màu chữ và Hiệu ứng NEON GLOW */
+    color: #00ffff; /* Màu chữ chính: Neon Cyan */
     font-family: 'Playfair Display', serif;
-    font-size: 1.5rem;
+    font-size: 2.2rem; /* ✅ PHÓNG TO SIZE CHỮ TRÊN PC */
     font-weight: 700;
     cursor: pointer;
-    background-color: transparent; /* Bỏ nền box */
+    background-color: transparent; 
     
-    /* Bỏ tất cả border và shadow cũ */
+    animation: neon-flicker 5s infinite; /* Áp dụng hiệu ứng Neon Glow */
+    
     border: none;
     box-shadow: none;
     
@@ -427,16 +445,18 @@ iframe:first-of-type {{
 }}
 
 .container-link:hover {{
-    transform: scale(1.1); /* Tăng scale khi hover */
-    color: #ffffff; /* Cho thêm hiệu ứng hover đổi màu trắng */
-    text-shadow: 0 0 5px #00ffff; /* Thêm shadow nhẹ khi hover */
+    transform: scale(1.05); /* Giảm độ scale hover để phù hợp với text */
+    color: #ffffff; 
+    /* Giảm nhẹ flicker khi hover */
+    text-shadow: 0 0 5px #fff, 0 0 15px #00ffff, 0 0 25px #00ffff; 
+    animation: none; /* Tắt flicker khi hover */
 }}
 
 /* --- MEDIA QUERY CHO MOBILE --- */
 @media (max-width: 768px) {{
     .content-links-container {{
         position: fixed; 
-        top: 45vh; /* ✅ Kéo lên cao hơn để dễ tương tác (từ 65vh -> 45vh) */
+        top: 45vh; /* Giữ nguyên vị trí đã fix */
         flex-direction: column; 
         align-items: center; 
         padding: 0 5vw; 
@@ -444,11 +464,15 @@ iframe:first-of-type {{
     }}
     
     .container-link {{
-        width: auto; /* Để chiều rộng tự động theo nội dung */
+        font-size: 1.5rem; /* Kích thước chữ mobile */
+        width: auto; 
         max-width: 90%; 
-        font-size: 1.2rem;
         margin: 10px 0; 
         padding: 8px 15px; 
+    }}
+    
+    .container-link:hover {{
+        transform: scale(1.03); 
     }}
 }}
 </style>
@@ -828,7 +852,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 
-# --- THÊM 2 TIÊU ĐỀ PHỤ VỚI STYLE ĐƠN GIẢN MỚI ---
+# --- THÊM 2 TIÊU ĐỀ PHỤ VỚI STYLE ĐƠN GIẢN VÀ NEON MỚI ---
 st.markdown("""
 <div class="content-links-container">
     <a href="#" class="container-link" id="link-part-number">
@@ -841,7 +865,7 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# --- MUSIC PLAYER (ĐÃ KHÔI PHỤC) ---
+# --- MUSIC PLAYER (GIỮ NGUYÊN) ---
 if len(music_files) > 0:
     st.markdown("""
 <div id="music-player-container">
