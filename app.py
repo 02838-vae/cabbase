@@ -385,31 +385,43 @@ iframe:first-of-type {{
     }}
 }}
 
-/* --- CSS MỚI CHO 2 TIÊU ĐỀ PHỤ - ĐÃ THÊM VIỀN BAO VÀ CHỈNH VỊ TRÍ PC --- */
-.content-links-container {{
+/* --- CSS MỚI CHO 2 TIÊU ĐỀ PHỤ - ĐÃ FIX VỊ TRÍ PC (SÁT GÓC) VÀ VIỀN BAO --- */
+.content-links-container {
     position: fixed; 
     top: 20vh; 
     width: 100%;
     z-index: 10; 
     display: flex;
-    justify-content: space-between; 
+    justify-content: space-between; /* Đẩy hai phần tử ra hai góc */
     align-items: flex-start;
-    padding: 0 15vw; /* Đảm bảo PC nằm sâu hai bên */
+    padding: 0 5vw; /* Giảm padding tổng thể, sử dụng margin auto để đẩy sát */
+    box-sizing: border-box; /* Quan trọng để padding không làm tràn màn hình */
     pointer-events: none; 
     opacity: 0; 
     transition: opacity 2s ease-out 3s; 
-}}
+}
 
-.video-finished .content-links-container {{
+.video-finished .content-links-container {
     opacity: 1;
     pointer-events: auto; 
-}}
+}
 
-.container-link {{
-    /* Vị trí và chữ */
+/* Định vị PC: Tra cứu Part Number sát trái */
+#link-part-number {
+    margin-right: auto; 
+    margin-left: 0;    
+}
+
+/* Định vị PC: Ngân hàng trắc nghiệm sát phải */
+#link-quiz-bank {
+    margin-left: auto; 
+    margin-right: 0;   
+}
+
+.container-link {
+    /* Thiết lập chữ */
     display: inline-block;
-    padding: 10px 15px; /* Giảm padding ngang để khung nhỏ lại */
-    margin: 0;
+    padding: 10px 15px; 
     text-align: center;
     text-decoration: none; 
     
@@ -418,10 +430,10 @@ iframe:first-of-type {{
     font-size: 2.2rem; 
     font-weight: 700;
     cursor: pointer;
-    background-color: rgba(0, 0, 0, 0.4); /* Thêm nền nhẹ cho dễ thấy khung */
+    background-color: rgba(0, 0, 0, 0.4); 
     
     /* Thiết lập khung viền */
-    border: 2px solid #00ffff; /* Viền Neon Cyan */
+    border: 2px solid #00ffff; 
     border-radius: 8px; /* Bo góc mềm mại */
     box-sizing: border-box; 
     
@@ -434,12 +446,12 @@ iframe:first-of-type {{
     box-shadow: 0 0 5px #00ffff, 0 0 15px rgba(0, 255, 255, 0.5); 
     
     transition: transform 0.3s ease, color 0.3s ease, text-shadow 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-}}
+}
 
-.container-link:hover {{
+.container-link:hover {
     transform: scale(1.05); 
-    color: #ffd700; /* Màu vàng kim khi hover */
-    border-color: #ffd700; /* Viền đổi màu vàng khi hover */
+    color: #ffd700; 
+    border-color: #ffd700; 
     
     /* Box Shadow Vàng khi hover */
     box-shadow: 
@@ -447,35 +459,39 @@ iframe:first-of-type {{
       0 0 15px #ff8c00, 
       0 0 25px rgba(255, 215, 0, 0.7); 
       
-    /* Text Shadow Vàng khi hover (đã fix lỗi lóa) */
+    /* Text Shadow Vàng khi hover */
     text-shadow: 
       0 0 3px #ffd700, 
       0 0 8px #ff8c00; 
-}}
+}
 
 /* --- MEDIA QUERY CHO MOBILE --- */
-@media (max-width: 768px) {{
-    .content-links-container {{
+@media (max-width: 768px) {
+    .content-links-container {
         position: fixed; 
         top: 45vh; 
         flex-direction: column; 
-        align-items: center; 
+        align-items: center; /* Canh giữa trên mobile */
         padding: 0 5vw; 
         width: 100%;
-    }}
+    }
+
+    /* Đảm bảo tiêu đề được canh giữa trên mobile */
+    #link-part-number, #link-quiz-bank {
+        margin: 10px 0;
+    }
     
-    .container-link {{
-        font-size: 1.2rem; /* Giảm size để mobile dễ chứa */
+    .container-link {
+        font-size: 1.2rem; 
         width: auto; 
         max-width: 90%; 
-        margin: 10px 0; 
         padding: 8px 12px; 
-    }}
+    }
     
-    .container-link:hover {{
+    .container-link:hover {
         transform: scale(1.03); 
-    }}
-}}
+    }
+}
 </style>
 """
 
