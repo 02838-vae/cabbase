@@ -496,9 +496,14 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Đã tối ưu cho tốc độ) ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Đã tối ưu cho tốc độ & Fix lỗi AttributeError) ---
 
-# Tối ưu tốc độ: Chỉ hiển thị các thành phần chính nếu video chưa kết thúc
+# --- FIX LỖI 1: Đảm bảo video_placeholder LUÔN ĐƯỢC KHỞI TẠO ---
+# Chúng ta sử dụng st.empty() ngay lập tức để giữ chỗ và khởi tạo biến này.
+video_placeholder = st.empty()
+html_content_modified = "" # Khởi tạo biến này để đảm bảo nó tồn tại
+
+# Tối ưu tốc độ: Chỉ hiển thị các thành phần nặng nếu video chưa kết thúc
 if not st.session_state.video_ended:
 
     # Tạo danh sách music sources cho JavaScript 
@@ -823,9 +828,9 @@ if not st.session_state.video_ended:
         f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
     )
 
-    # Sử dụng st.empty() để kiểm soát khu vực hiển thị video/intro
-    video_placeholder = st.empty()
+    # --- FIX LỖI 2: Chỉ hiển thị nội dung vào placeholder NẾU video chưa chạy xong ---
     video_placeholder.components.v1.html(html_content_modified, height=1080, scrolling=False)
+
 
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
 
