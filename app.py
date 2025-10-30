@@ -25,7 +25,7 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except Exception as e:
-        # st.error(f"Lỗi khi đọc file {{file_path}}: {{str(e)}}") # Tắt thông báo lỗi file tạm thời
+        # Tắt thông báo lỗi file tạm thời để không làm phiền console
         return None
 
 
@@ -61,8 +61,6 @@ except Exception as e:
 # Đảm bảo logo_base64 được khởi tạo nếu file không tồn tại
 if not 'logo_base64' in locals() or not logo_base64:
     logo_base64 = "" 
-    # Tắt thông báo nếu logo không quan trọng lắm
-    # st.info("ℹ️ Không tìm thấy file logo.jpg. Music player sẽ không có hình nền logo.")
 
 
 # Mã hóa các file nhạc nền (không bắt buộc)
@@ -72,9 +70,9 @@ for i in range(1, 7):
     if music_base64:
         music_files.append(music_base64)
 
-# Thay đổi: Giữ Music Player hiển thị ngay cả khi không có file nhạc, chỉ hiển thị thông báo nhẹ
-if len(music_files) == 0:
-    st.info("ℹ️ Không tìm thấy file nhạc nền (background1.mp3 - background6.mp3). Music player sẽ hiển thị nhưng không thể phát nhạc.")
+# XÓA: Loại bỏ thông báo st.info về file nhạc nền không tìm thấy
+# if len(music_files) == 0:
+#     st.info("ℹ️ Không tìm thấy file nhạc nền (background1.mp3 - background6.mp3). Music player sẽ hiển thị nhưng không thể phát nhạc.")
 
 
 # --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
@@ -393,15 +391,15 @@ iframe:first-of-type {{
 /* --- CSS MỚI CHO 2 TIÊU ĐỀ PHỤ - ĐÃ FIX VỊ TRÍ PC (SÁT GÓC) VÀ VIỀN BAO --- */
 .content-links-container {{
     position: fixed; 
-    /* ĐIỀU CHỈNH: Hạ thấp vị trí xuống 25vh (từ 20vh) */
-    top: 25vh; 
+    /* ĐIỀU CHỈNH: Hạ thấp vị trí xuống 30vh (từ 25vh) */
+    top: 30vh; 
     width: 100%;
     z-index: 10; 
     display: flex;
     justify-content: space-between; /* Đẩy hai phần tử ra hai góc */
     align-items: flex-start;
-    /* ĐIỀU CHỈNH: Tăng padding từ 5vw lên 8vw để đẩy xa hơn */
-    padding: 0 8vw; 
+    /* ĐIỀU CHỈNH: Đặt padding ngang về 0 để đẩy sát lề nhất có thể */
+    padding: 0 0; 
     box-sizing: border-box; 
     pointer-events: none; 
     opacity: 0; 
@@ -416,13 +414,15 @@ iframe:first-of-type {{
 /* Định vị PC: Tra cứu Part Number sát trái */
 #link-part-number {{
     margin-right: auto; 
-    margin-left: 0;    
+    /* ĐIỀU CHỈNH: Đẩy sát lề trái 8vw */
+    margin-left: 8vw;    
 }}
 
 /* Định vị PC: Ngân hàng trắc nghiệm sát phải */
 #link-quiz-bank {{
     margin-left: auto; 
-    margin-right: 0;   
+    /* ĐIỀU CHỈNH: Đẩy sát lề phải 8vw */
+    margin-right: 8vw;   
 }}
 
 .container-link {{
@@ -512,10 +512,10 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 if len(music_files) > 0:
     music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files])
 else:
-    # Thay đổi: Nếu không có file nhạc, vẫn tạo mảng rỗng để JS không bị lỗi
+    # Nếu không có file nhạc, vẫn tạo mảng rỗng
     music_sources_js = ""
 
-# JavaScript (Đã sửa lỗi cú pháp bên trong JS)
+# JavaScript 
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
@@ -554,7 +554,7 @@ js_callback_video = f"""
         
         const musicSources = [{music_sources_js}];
         
-        // Thay đổi: Cho phép player khởi tạo ngay cả khi không có sources
+        // --- Music Player Elements ---
         const playPauseBtn = window.parent.document.getElementById('play-pause-btn');
         const prevBtn = window.parent.document.getElementById('prev-btn');
         const nextBtn = window.parent.document.getElementById('next-btn');
@@ -569,9 +569,13 @@ js_callback_video = f"""
         }}
         
         if (musicSources.length === 0) {{
-             console.log("No music files available, player initialized in passive mode.");
+             console.warn("No music files available. Player is inactive.");
              durationEl.textContent = 'N/A';
-             return; // Dừng logic phát nhạc, nhưng nút bấm vẫn hiển thị
+             // Thêm pointer-events: none cho các nút điều khiển nếu không có nhạc
+             playPauseBtn.style.pointerEvents = 'none';
+             prevBtn.style.pointerEvents = 'none';
+             nextBtn.style.pointerEvents = 'none';
+             return; 
         }}
         
         let currentTrack = 0;
@@ -894,7 +898,7 @@ st.markdown("""
 
 
 # --- MUSIC PLAYER (ĐÃ KHÔI PHỤC VÀ LUÔN HIỂN THỊ) ---
-# Loại bỏ điều kiện if len(music_files) > 0: để đảm bảo nó luôn hiển thị
+# Player luôn hiển thị, logic phát nhạc nằm trong JS và chỉ hoạt động khi có file
 st.markdown("""
 <div id="music-player-container">
     <div class="controls">
