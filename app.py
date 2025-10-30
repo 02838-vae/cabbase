@@ -518,28 +518,20 @@ js_callback_video = f"""
     
     function initRevealEffect() {{
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
-
-        if (!revealGrid) {{ return; }}
-
+        if (!revealGrid) return;
         const cells = revealGrid.querySelectorAll('.grid-cell');
         const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
-
         shuffledCells.forEach((cell, index) => {{
             setTimeout(() => {{
                 cell.style.opacity = 0;	
             }}, index * 10);
         }});
-        
-        setTimeout(() => {{
-             revealGrid.remove();
-        }}, shuffledCells.length * 10 + 1000);
+        setTimeout(() => revealGrid.remove(), shuffledCells.length * 10 + 1000);
     }}
     
     function initMusicPlayer() {{
         console.log("Initializing music player");
-        
         const musicSources = [{music_sources_js}];
-        
         if (musicSources.length === 0) {{
             console.log("No music files available");
             return;
@@ -547,7 +539,6 @@ js_callback_video = f"""
         
         let currentTrack = 0;
         let isPlaying = false;
-        
         const audio = new Audio();
         audio.volume = 0.3;
         
@@ -560,12 +551,11 @@ js_callback_video = f"""
         const durationEl = window.parent.document.getElementById('duration');
         
         if (!playPauseBtn || !prevBtn || !nextBtn) {{
-            console.error("Music player elements not found in parent document");
+            console.error("Music player elements not found");
             return;
         }}
         
         function loadTrack(index) {{
-            console.log("Loading track", index + 1);
             audio.src = musicSources[index];
             audio.load();
         }}
@@ -584,17 +574,13 @@ js_callback_video = f"""
         function nextTrack() {{
             currentTrack = (currentTrack + 1) % musicSources.length;
             loadTrack(currentTrack);
-            if (isPlaying) {{
-                audio.play().catch(e => console.error("Play error:", e));
-            }}
+            if (isPlaying) audio.play().catch(e => console.error("Play error:", e));
         }}
         
         function prevTrack() {{
             currentTrack = (currentTrack - 1 + musicSources.length) % musicSources.length;
             loadTrack(currentTrack);
-            if (isPlaying) {{
-                audio.play().catch(e => console.error("Play error:", e));
-            }}
+            if (isPlaying) audio.play().catch(e => console.error("Play error:", e));
         }}
         
         function formatTime(seconds) {{
@@ -614,9 +600,7 @@ js_callback_video = f"""
             durationEl.textContent = formatTime(audio.duration);
         }});
         
-        audio.addEventListener('ended', () => {{
-            nextTrack();
-        }});
+        audio.addEventListener('ended', nextTrack);
         
         playPauseBtn.addEventListener('click', togglePlayPause);
         nextBtn.addEventListener('click', nextTrack);
@@ -633,8 +617,6 @@ js_callback_video = f"""
     }}
 
     document.addEventListener("DOMContentLoaded", function() {{
-        console.log("DOM loaded, waiting for elements...");
-        
         const waitForElements = setInterval(() => {{
             const video = document.getElementById('intro-video');
             const audio = document.getElementById('background-audio');
@@ -642,63 +624,35 @@ js_callback_video = f"""
             
             if (video && audio && introTextContainer) {{
                 clearInterval(waitForElements);
-                console.log("All elements found, initializing...");
-                
                 const isMobile = window.innerWidth <= 768;
                 const videoSource = isMobile ? 'data:video/mp4;base64,{video_mobile_base64}' : 'data:video/mp4;base64,{video_pc_base64}';
-
                 video.src = videoSource;
                 audio.src = 'data:audio/mp3;base64,{audio_base64}';
-
-                console.log("Video/Audio source set. Loading metadata...");
-                
-                // --- LOGIC CHƠI VIDEO/AUDIO ĐƯỢC CẢI TIẾN ---
                 
                 const tryToPlay = () => {{
-                    console.log("Attempting to play video (User interaction or Canplay event)");
-                    
-                    // 1. Thử phát video (còn muted)
                     video.play().then(() => {{
                         console.log("✅ Video is playing!");
                     }}).catch(err => {{
-                        // Thất bại lần 2 (ngay cả sau tương tác). Có thể do lỗi tệp.
-                        console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
-                        
-                        // Nếu không thể phát, chuyển sang nội dung chính sau 2 giây
-                        setTimeout(sendBackToStreamlit, 2000);	
+                        console.error("❌ Video can't play:", err);
+                        setTimeout(sendBackToStreamlit, 2000);
                     }});
-
-                    // 2. Thử phát audio (có thể bị chặn)
-                    audio.play().catch(e => {{
-                        console.log("Audio autoplay blocked (normal), waiting for video end.");
-                    }});
+                    audio.play().catch(e => console.log("Audio autoplay blocked"));
                 }};
-
-                // Lắng nghe sự kiện video sẵn sàng (đáng tin cậy hơn)
-                video.addEventListener('canplaythrough', tryToPlay, {{ once: true }});
                 
-                // Event khi video kết thúc
+                video.addEventListener('canplaythrough', tryToPlay, {{ once: true }});
                 video.addEventListener('ended', () => {{
-                    console.log("Video ended, transitioning...");
                     video.style.opacity = 0;
                     audio.pause();
-                    audio.currentTime = 0;
-                    introTextContainer.style.opacity = 0;	
+                    introTextContainer.style.opacity = 0;
                     setTimeout(sendBackToStreamlit, 500);
                 }});
-
-                // Xử lý lỗi tệp video (RẤT QUAN TRỌNG VỚI BASE64)
                 video.addEventListener('error', (e) => {{
-                    console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
+                    console.error("Video error:", e);
                     sendBackToStreamlit();
                 }});
-
-
-                // Click/Touch handler để kích hoạt 'tryToPlay' nếu Autoplay bị chặn
+                
                 const clickHandler = () => {{
-                    console.log("User interaction detected, forcing play attempt.");
                     tryToPlay();
-                    // Xóa listener sau lần tương tác đầu tiên
                     document.removeEventListener('click', clickHandler);
                     document.removeEventListener('touchstart', clickHandler);
                 }};
@@ -706,30 +660,26 @@ js_callback_video = f"""
                 document.addEventListener('click', clickHandler, {{ once: true }});
                 document.addEventListener('touchstart', clickHandler, {{ once: true }});
                 
-                // Load video
-                video.load();	
-                
-                // Animate text
+                video.load();
                 const chars = introTextContainer.querySelectorAll('.intro-char');
-                chars.forEach((char, index) => {{
-                    char.style.animationDelay = `${{index * 0.1}}s`;	
-                    char.classList.add('char-shown');	
+                chars.forEach((char, i) => {{
+                    char.style.animationDelay = `${{i * 0.1}}s`;
+                    char.classList.add('char-shown');
                 }});
             }}
         }}, 100);
-        
-        // Timeout sau 5 giây (nếu video không load được)
         setTimeout(() => {{
             clearInterval(waitForElements);
             const video = document.getElementById('intro-video');
             if (video && !video.src) {{
-                console.warn("Timeout before video source set. Force transitioning to main content.");
+                console.warn("Timeout — no video src set.");
                 sendBackToStreamlit();
             }}
         }}, 5000);
     }});
 </script>
 """
+
 
 # Mã HTML/CSS cho Video
 html_content_modified = f"""
