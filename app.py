@@ -385,7 +385,7 @@ iframe:first-of-type {{
     }}
 }}
 
-/* --- CSS MỚI CHO 2 TIÊU ĐỀ PHỤ - ĐÃ FIX FLICKER VÀ VỊ TRÍ PC --- */
+/* --- CSS MỚI CHO 2 TIÊU ĐỀ PHỤ - ĐÃ THÊM VIỀN BAO VÀ CHỈNH VỊ TRÍ PC --- */
 .content-links-container {{
     position: fixed; 
     top: 20vh; 
@@ -394,7 +394,7 @@ iframe:first-of-type {{
     display: flex;
     justify-content: space-between; 
     align-items: flex-start;
-    padding: 0 15vw; /* ✅ TĂNG PADDING ĐỂ DỊCH CHUYỂN TIÊU ĐỀ PC RA HAI GÓC */
+    padding: 0 15vw; /* Đảm bảo PC nằm sâu hai bên */
     pointer-events: none; 
     opacity: 0; 
     transition: opacity 2s ease-out 3s; 
@@ -406,42 +406,51 @@ iframe:first-of-type {{
 }}
 
 .container-link {{
-    /* Thiết lập chữ */
+    /* Vị trí và chữ */
     display: inline-block;
-    padding: 10px 20px;
+    padding: 10px 15px; /* Giảm padding ngang để khung nhỏ lại */
     margin: 0;
     text-align: center;
     text-decoration: none; 
     
-    /* Màu chữ và Hiệu ứng NEON GLOW TĨNH (Fixed Flicker) */
     color: #00ffff; 
     font-family: 'Playfair Display', serif;
     font-size: 2.2rem; 
     font-weight: 700;
     cursor: pointer;
-    background-color: transparent; 
+    background-color: rgba(0, 0, 0, 0.4); /* Thêm nền nhẹ cho dễ thấy khung */
     
-    /* ✅ Áp dụng Neon Glow TĨNH (Khắc phục Flicker) */
+    /* Thiết lập khung viền */
+    border: 2px solid #00ffff; /* Viền Neon Cyan */
+    border-radius: 8px; /* Bo góc mềm mại */
+    box-sizing: border-box; 
+    
+    /* Neon Glow Tĩnh */
     text-shadow:
-      0 0 4px rgba(0, 255, 255, 0.8), /* Hiệu ứng tỏa sáng Cyan */
-      0 0 10px rgba(34, 141, 255, 0.6); /* Hiệu ứng tỏa sáng Blue */
+      0 0 4px rgba(0, 255, 255, 0.8), 
+      0 0 10px rgba(34, 141, 255, 0.6); 
+      
+    /* Thêm Box Shadow cho khung (Neon effect) */
+    box-shadow: 0 0 5px #00ffff, 0 0 15px rgba(0, 255, 255, 0.5); 
     
-    animation: none; /* ✅ TẮT ANIMATION FLICKER */
-    
-    border: none;
-    box-shadow: none;
-    
-    transition: transform 0.3s ease, color 0.3s ease, text-shadow 0.3s ease;
+    transition: transform 0.3s ease, color 0.3s ease, text-shadow 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }}
 
 .container-link:hover {{
     transform: scale(1.05); 
-    /* ✅ Đổi màu chữ và shadow sang VÀNG cho dễ thấy */
-    color: #ffd700; /* Vàng kim */
-    text-shadow: 
+    color: #ffd700; /* Màu vàng kim khi hover */
+    border-color: #ffd700; /* Viền đổi màu vàng khi hover */
+    
+    /* Box Shadow Vàng khi hover */
+    box-shadow: 
       0 0 5px #ffd700, 
-      0 0 15px #ff8c00, /* Cam sẫm */
-      0 0 25px rgba(255, 215, 0, 0.7); /* Tỏa sáng mạnh hơn */
+      0 0 15px #ff8c00, 
+      0 0 25px rgba(255, 215, 0, 0.7); 
+      
+    /* Text Shadow Vàng khi hover (đã fix lỗi lóa) */
+    text-shadow: 
+      0 0 3px #ffd700, 
+      0 0 8px #ff8c00; 
 }}
 
 /* --- MEDIA QUERY CHO MOBILE --- */
@@ -456,11 +465,11 @@ iframe:first-of-type {{
     }}
     
     .container-link {{
-        font-size: 1.5rem; 
+        font-size: 1.2rem; /* Giảm size để mobile dễ chứa */
         width: auto; 
         max-width: 90%; 
         margin: 10px 0; 
-        padding: 8px 15px; 
+        padding: 8px 12px; 
     }}
     
     .container-link:hover {{
@@ -844,14 +853,14 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 
-# --- THÊM 2 TIÊU ĐỀ PHỤ VỚI STYLE ĐƠN GIẢN VÀ NEON MỚI ---
+# --- THÊM 2 TIÊU ĐỀ PHỤ VỚI STYLE ĐÃ CHỈNH SỬA ---
 st.markdown("""
 <div class="content-links-container">
     <a href="#" class="container-link" id="link-part-number">
         Tra cứu part number 🔍
     </a>
     <a href="#" class="container-link" id="link-quiz-bank">
-        Ngân hàng trắc nghiệm 📖
+        Ngân hàng trắc nghiệm 📋✅
     </a>
 </div>
 """, unsafe_allow_html=True)
