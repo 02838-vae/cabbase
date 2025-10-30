@@ -9,23 +9,17 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Khởi tạo session state với giá trị mặc định an toàn
+# Khởi tạo session state
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
 
-# Kiểm tra query params để bỏ qua video
-query_params = st.query_params
-if 'skip_video' in query_params or st.session_state.video_ended:
-    st.session_state.video_ended = True
-
 # --- CÁC HÀM TIỆN ÍCH ---
+
 def get_base64_encoded_file(file_path):
     """Đọc file và trả về Base64 encoded string."""
-    if not os.path.exists(file_path):
+    if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
         return None
     try:
-        if os.path.getsize(file_path) == 0:
-            return None
         with open(file_path, "rb") as f:
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
@@ -34,44 +28,42 @@ def get_base64_encoded_file(file_path):
         return None
 
 def get_intro_html(video_pc_base64, video_mobile_base64, audio_base64, music_files):
-    """Tạo chuỗi HTML/JS cho video intro."""
-    
+    """Tạo chuỗi HTML/JS cho video intro (Tách biệt để tránh lỗi scope)."""
+
     # Tạo danh sách music sources cho JavaScript 
     if len(music_files) > 0:
         music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files])
     else:
         music_sources_js = ""
 
-    # JavaScript được tối ưu hóa
+    # JavaScript  
     js_callback_video = f"""
     <script>
-        console.log("🎬 Video script loaded");
+        console.log("Script loaded");
         
-        // Hàm chuyển sang nội dung chính (KHÔNG dùng fetch API)
         function sendBackToStreamlit() {{
-            console.log("✅ Transitioning to main content");
+            console.log("Video ended or skipped, revealing main content");
             const stApp = window.parent.document.querySelector('.stApp');
             if (stApp) {{
                 stApp.classList.add('video-finished', 'main-content-revealed');
+                // Gửi tín hiệu Python qua Session State
+                fetch('/_stcore/script/client_state', {{
+                    method: 'POST',
+                    headers: {{'Content-Type': 'application/json'}},
+                    body: JSON.stringify({{
+                        'setState': {{
+                            'video_ended': true,
+                        }}
+                    }})
+                }});
             }}
-            
-            // Đánh dấu video đã kết thúc bằng localStorage
-            try {{
-                localStorage.setItem('video_ended', 'true');
-            }} catch(e) {{
-                console.log("localStorage not available");
-            }}
-            
             initRevealEffect();
             setTimeout(initMusicPlayer, 100);
         }}
         
         function initRevealEffect() {{
             const revealGrid = window.parent.document.querySelector('.reveal-grid');
-            if (!revealGrid) {{ 
-                console.log("⚠️ Reveal grid not found");
-                return; 
-            }}
+            if (!revealGrid) {{ return; }}
             const cells = revealGrid.querySelectorAll('.grid-cell');
             const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
             shuffledCells.forEach((cell, index) => {{
@@ -85,7 +77,7 @@ def get_intro_html(video_pc_base64, video_mobile_base64, audio_base64, music_fil
         }}
         
         function initMusicPlayer() {{
-            console.log("🎵 Initializing music player");
+            console.log("Initializing music player");
             
             const musicSources = [{music_sources_js}];
             
@@ -108,11 +100,12 @@ def get_intro_html(video_pc_base64, video_mobile_base64, audio_base64, music_fil
             const durationEl = window.parent.document.getElementById('duration');
             
             if (!playPauseBtn || !prevBtn || !nextBtn) {{
-                console.error("❌ Music player elements not found");
+                console.error("Music player elements not found in parent document");
                 return;
             }}
             
             function loadTrack(index) {{
+                console.log("Loading track", index + 1);
                 audio.src = musicSources[index];
                 audio.load();
             }}
@@ -176,35 +169,20 @@ def get_intro_html(video_pc_base64, video_mobile_base64, audio_base64, music_fil
             }});
             
             loadTrack(0);
-            console.log("✅ Music player initialized");
-        }}
-
-        // Kiểm tra localStorage khi load
-        try {{
-            if (localStorage.getItem('video_ended') === 'true') {{
-                console.log("Video already played, skipping...");
-                sendBackToStreamlit();
-                return;
-            }}
-        }} catch(e) {{
-            console.log("localStorage check failed, continuing...");
+            console.log("Music player initialized successfully");
         }}
 
         document.addEventListener("DOMContentLoaded", function() {{
-            console.log("📄 DOM loaded, waiting for elements...");
-            
-            let attemptCount = 0;
-            const maxAttempts = 50;
+            console.log("DOM loaded, waiting for elements...");
             
             const waitForElements = setInterval(() => {{
-                attemptCount++;
                 const video = document.getElementById('intro-video');
                 const audio = document.getElementById('background-audio');
                 const introTextContainer = document.getElementById('intro-text-container');
                 
                 if (video && audio && introTextContainer) {{
                     clearInterval(waitForElements);
-                    console.log("✅ All elements found, initializing...");
+                    console.log("All elements found, initializing...");
                     
                     const isMobile = window.innerWidth <= 768;
                     const videoSource = isMobile ? 'data:video/mp4;base64,{video_mobile_base64}' : 'data:video/mp4;base64,{video_pc_base64}';
@@ -214,14 +192,14 @@ def get_intro_html(video_pc_base64, video_mobile_base64, audio_base64, music_fil
                     
                     const tryToPlay = () => {{
                         video.play().then(() => {{
-                            console.log("✅ Video playing!");
+                            console.log("✅ Video is playing!");
                         }}).catch(err => {{
-                            console.error("❌ Video play failed:", err);
-                            setTimeout(sendBackToStreamlit, 1000);	
+                            console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
+                            setTimeout(sendBackToStreamlit, 2000);	
                         }});
 
                         audio.play().catch(e => {{
-                            console.log("Audio autoplay blocked (normal)");
+                            console.log("Audio autoplay blocked (normal), waiting for video end.");
                         }});
                     }};
 
@@ -236,12 +214,15 @@ def get_intro_html(video_pc_base64, video_mobile_base64, audio_base64, music_fil
                     }});
 
                     video.addEventListener('error', (e) => {{
-                        console.error("❌ Video error:", e);
+                        console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
                         sendBackToStreamlit();
                     }});
 
+
                     const clickHandler = () => {{
                         tryToPlay();
+                        document.removeEventListener('click', clickHandler);
+                        document.removeEventListener('touchstart', clickHandler);
                     }};
                     
                     document.addEventListener('click', clickHandler, {{ once: true }});
@@ -254,23 +235,26 @@ def get_intro_html(video_pc_base64, video_mobile_base64, audio_base64, music_fil
                         char.style.animationDelay = `${{index * 0.1}}s`;	
                         char.classList.add('char-shown');	
                     }});
-                }} else if (attemptCount >= maxAttempts) {{
-                    clearInterval(waitForElements);
-                    console.warn("⚠️ Timeout: Elements not found, skipping video");
-                    sendBackToStreamlit();
                 }}
             }}, 100);
+            
+            setTimeout(() => {{
+                clearInterval(waitForElements);
+                const video = document.getElementById('intro-video');
+                if (video && !video.src) {{
+                    console.warn("Timeout before video source set. Force transitioning to main content.");
+                    sendBackToStreamlit();
+                }}
+            }}, 5000);
         }});
     </script>
     """
 
-    # HTML content
+    # Mã HTML/CSS cho Video
     html_content_modified = f"""
     <!DOCTYPE html>
     <html>
     <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>
             html, body {{
                 margin: 0;
@@ -299,8 +283,10 @@ def get_intro_html(video_pc_base64, video_mobile_base64, audio_base64, music_fil
                 text-align: center;
                 color: #FFD700;	
                 font-size: 3vw;	
+                
                 font-family: 'Sacramento', cursive;	
                 font-weight: 400;	
+                
                 text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);	
                 z-index: 100;
                 pointer-events: none;
@@ -339,18 +325,23 @@ def get_intro_html(video_pc_base64, video_mobile_base64, audio_base64, music_fil
                     font-size: 6vw;	
                 }}
             }}
+            
         </style>
     </head>
     <body>
+
         <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+        
         <video id="intro-video" muted playsinline></video>
+        
         <audio id="background-audio"></audio>
+
         {js_callback_video}
     </body>
     </html>
     """
 
-    # Xử lý hiệu ứng chữ thả
+    # Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
     intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
     intro_chars_html = ''.join([
         f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'	
@@ -365,6 +356,7 @@ def get_intro_html(video_pc_base64, video_mobile_base64, audio_base64, music_fil
 
 # Mã hóa các file media chính
 try:
+    # Đảm bảo các file này nằm cùng thư mục với app.py
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
@@ -372,25 +364,26 @@ try:
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
     logo_base64 = get_base64_encoded_file("logo.jpg")
 
-    # Kiểm tra file thiếu
-    missing_files = []
-    if not video_pc_base64: missing_files.append("airplane.mp4")
-    if not video_mobile_base64: missing_files.append("mobile.mp4")
-    if not audio_base64: missing_files.append("plane_fly.mp3")
-    if not bg_pc_base64: missing_files.append("cabbase.jpg")
-    if not bg_mobile_base64: missing_files.append("mobile.jpg")
-    
-    if missing_files:
-        st.error(f"❌ Thiếu các file: {', '.join(missing_files)}")
-        st.info("💡 Đảm bảo các file media nằm cùng thư mục với app.py")
+    if not all([video_pc_base64, video_mobile_base64, audio_base64, bg_pc_base64, bg_mobile_base64]):
+        missing_files = []
+        if not video_pc_base64: missing_files.append("airplane.mp4")
+        if not video_mobile_base64: missing_files.append("mobile.mp4")
+        if not audio_base64: missing_files.append("plane_fly.mp3")
+        if not bg_pc_base64: missing_files.append("cabbase.jpg")
+        if not bg_mobile_base64: missing_files.append("mobile.jpg")
+        
+        st.error(f"⚠️ Thiếu các file media cần thiết hoặc file rỗng. Vui lòng kiểm tra lại các file sau trong thư mục:")
+        st.write(" - " + "\n - ".join(missing_files))
         st.stop()
         
 except Exception as e:
-    st.error(f"❌ Lỗi đọc file: {str(e)}")
+    st.error(f"❌ Lỗi khi đọc file: {str(e)}")
     st.stop()
 
-if not logo_base64:
-    logo_base64 = ""
+if not 'logo_base64' in locals() or not logo_base64:
+    logo_base64 = "" 
+    st.info("ℹ️ Không tìm thấy file logo.jpg. Music player sẽ không có hình nền logo.")
+
 
 # Mã hóa các file nhạc nền
 music_files = []
@@ -399,26 +392,34 @@ for i in range(1, 7):
     if music_base64:
         music_files.append(music_base64)
 
-# --- NHÚNG FONT ---
+if len(music_files) == 0:
+    st.info("ℹ️ Không tìm thấy file nhạc nền (background1.mp3 - background6.mp3). Music player sẽ không hoạt động.")
+
+
+# --- PHẦN 1: NHÚNG FONT ---
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
 """
 st.markdown(font_links, unsafe_allow_html=True)
 
-# --- CSS CHÍNH ---
+# --- PHẦN 2: CSS CHÍNH (ĐÃ KHÔI PHỤC VỊ TRÍ) ---
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 
+/* Hiệu ứng Tải trang */
 #st-global-spinner {{ visibility: hidden; }}
 .stApp {{ animation: fadein 0.5s forwards; }}
 @keyframes fadein {{ from {{ opacity: 0; }} to {{ opacity: 1; }} }}
 
+/* Ẩn các thành phần mặc định */
 #MainMenu, footer, header {{visibility: hidden;}}
+
 .main {{ padding: 0; margin: 0; }}
 div.block-container {{ padding: 0; margin: 0; max-width: 100% !important; }}
 
+/* Iframe Video Intro */
 iframe:first-of-type {{
     transition: opacity 1s ease-out, visibility 1s ease-out;
     opacity: 1;
@@ -445,6 +446,7 @@ iframe:first-of-type {{
     --logo-bg-url: url('data:image/jpeg;base64,{logo_base64}');
 }}
 
+/* Reveal Grid */
 .reveal-grid {{
     position: fixed;
     top: 0;
@@ -483,17 +485,20 @@ iframe:first-of-type {{
     }}
 }}
 
+/* Keyframes cho hiệu ứng chữ chạy đơn */
 @keyframes scrollText {{
     0% {{ transform: translate(100vw, 0); }}
     100% {{ transform: translate(-100%, 0); }}
 }}
 
+/* Keyframes cho hiệu ứng Đổi Màu Gradient */
 @keyframes colorShift {{
     0% {{ background-position: 0% 50%; }}
     50% {{ background-position: 100% 50%; }}
     100% {{ background-position: 0% 50%; }}
 }}
 
+/* === TIÊU ĐỀ TRANG CHÍNH (Vị trí cũ) === */
 #main-title-container {{
     position: fixed;
     top: 5vh;	
@@ -516,13 +521,16 @@ iframe:first-of-type {{
     font-size: 3.5vw;	
     margin: 0;
     font-weight: 900;	
+    font-feature-settings: "lnum" 1;	
     letter-spacing: 5px;	
     white-space: nowrap;	
     display: inline-block;	
+    animation: scrollText 15s linear infinite;
     background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
     background-size: 400% 400%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    color: transparent;
     animation: colorShift 10s ease infinite, scrollText 15s linear infinite;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }}
@@ -530,34 +538,57 @@ iframe:first-of-type {{
 @media (max-width: 768px) {{
     #main-title-container {{
         height: 8vh;
+        width: 100%;	
+        left: 0;
     }}
+    
     #main-title-container h1 {{
         font-size: 6.5vw;	
         animation-duration: 8s;
     }}
 }}
 
+
+/* KEYFRAMES GLOW PLAYER */
 @keyframes glow-random-color {{
-    0%, 57.14%, 100% {{
-        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1);
+    0%, 57.14% /* 4s sáng */, 100% {{
+        box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.1),
+                    0 0 5px 1px rgba(255, 255, 255, 0.05);
     }}
     0% {{
-        box-shadow: 0 0 15px 5px rgba(255, 0, 0, 0.8), 0 0 30px 10px rgba(255, 0, 0, 0.4);
+        box-shadow: 
+            0 0 15px 5px rgba(255, 0, 0, 0.8), 
+            0 0 30px 10px rgba(255, 0, 0, 0.4);
     }}
     14.28% {{ 
-        box-shadow: 0 0 15px 5px rgba(0, 255, 255, 0.8), 0 0 30px 10px rgba(0, 255, 255, 0.4);
+        box-shadow: 
+            0 0 15px 5px rgba(0, 255, 255, 0.8), 
+            0 0 30px 10px rgba(0, 255, 255, 0.4);
     }}
     28.56% {{ 
-        box-shadow: 0 0 15px 5px rgba(0, 0, 255, 0.8), 0 0 30px 10px rgba(0, 0, 255, 0.4);
+        box-shadow: 
+            0 0 15px 5px rgba(0, 0, 255, 0.8), 
+            0 0 30px 10px rgba(0, 0, 255, 0.4);
     }}
     42.84% {{ 
-        box-shadow: 0 0 15px 5px rgba(255, 0, 255, 0.8), 0 0 30px 10px rgba(255, 0, 255, 0.4);
+        box-shadow: 
+            0 0 15px 5px rgba(255, 0, 255, 0.8), 
+            0 0 30px 10px rgba(255, 0, 255, 0.4);
     }}
     50% {{
-        box-shadow: 0 0 20px 8px rgba(255, 255, 0, 1), 0 0 40px 15px rgba(255, 255, 0, 0.6);
+        box-shadow: 
+            0 0 20px 8px rgba(255, 255, 0, 1), 
+            0 0 40px 15px rgba(255, 255, 0, 0.6);
+    }}
+    57.14% {{ 
+        box-shadow: 
+            0 0 15px 5px rgba(255, 0, 0, 0.8), 
+            0 0 30px 10px rgba(255, 0, 0, 0.4);
     }}
 }}
 
+
+/* === MUSIC PLAYER STYLES === */
 #music-player-container {{
     position: fixed;
     bottom: 20px;
@@ -571,28 +602,38 @@ iframe:first-of-type {{
     opacity: 0;
     transform: translateY(100px);
     transition: opacity 1s ease-out 2s, transform 1s ease-out 2s;
+    position: fixed;	
 }}
 
 #music-player-container::before {{
     content: '';
     position: absolute;
-    top: -3px;
-    left: -3px;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    margin: -3px; 
     width: calc(100% + 6px);
     height: calc(100% + 6px);
+    
     background-image: var(--logo-bg-url);
     background-size: cover;
     background-position: center;
+    background-repeat: no-repeat;
     filter: contrast(110%) brightness(90%); 
     opacity: 0.4; 
     z-index: -1; 
+    
     border-radius: 12px;
+    
+    box-sizing: border-box; 
     animation: glow-random-color 7s linear infinite; 
 }}
 
+
 #music-player-container * {{
     position: relative;
-    z-index: 5;
+    z-index: 5; 	
 }}
 
 .video-finished #music-player-container {{
@@ -671,6 +712,7 @@ iframe:first-of-type {{
     font-family: monospace;
 }}
 
+/* MOBILE: CĂN GIỮA NÚT NHẠC */
 @media (max-width: 768px) {{
     #music-player-container {{
         width: calc(100% - 40px);
@@ -679,7 +721,8 @@ iframe:first-of-type {{
         bottom: 15px;
         padding: 8px 12px;
     }}
-    #music-player-container .control-btn {{
+    #music-player-container .control-btn,
+    #music-player-container .control-btn.play-pause {{
         width: 36px;
         height: 36px;
         font-size: 16px;
@@ -689,11 +732,17 @@ iframe:first-of-type {{
         height: 44px;
         font-size: 20px;
     }}
+    #music-player-container .controls {{
+        justify-content: center !important; 
+    }}
 }}
 
+/* === CSS CHO TEXT LINKS (Vị trí cũ) === */
+
+/* Container bao bọc 2 link */
 .nav-links-container {{
     position: fixed;
-    top: 25vh; 
+    top: 15vh; /* Vị trí cũ, cao hơn */
     width: 100%;
     z-index: 30; 
     display: flex;
@@ -709,6 +758,7 @@ iframe:first-of-type {{
     pointer-events: auto; 
 }}
 
+/* Style cho từng link (Giữ nguyên) */
 .nav-link {{
     font-family: 'Playfair Display', serif;
     font-size: 1.5vw; 
@@ -716,11 +766,14 @@ iframe:first-of-type {{
     text-decoration: none; 
     padding: 10px 15px;
     border-radius: 8px;
+    
+    /* Neon Glow Effect */
     color: #FFFFFF;
     background: rgba(0, 0, 0, 0.4); 
     border: 1px solid rgba(255, 255, 255, 0.3);
     text-shadow: 0 0 5px #00FFFF, 0 0 10px #00FFFF;
     box-shadow: 0 0 10px rgba(0, 255, 255, 0.7); 
+    
     transition: all 0.3s ease-in-out;
 }}
 
@@ -733,39 +786,62 @@ iframe:first-of-type {{
     transform: scale(1.05);
 }}
 
+/* Responsive cho Mobile (Vị trí cũ) */
 @media (max-width: 768px) {{
     .nav-links-container {{
         position: fixed; 
-        top: 25vh;
+        top: 15vh; /* Vị trí cũ */
+        margin-top: 0; 
         flex-direction: column;
         align-items: center;
         gap: 15px;
         padding: 0 5vw;
+        width: 100%; 
+        z-index: 30; 
+    }}
+    
+    .video-finished #top-spacer {{
+        display: none !important; /* Không cần spacer ở vị trí cũ */
+        height: 0; 
     }}
     
     .nav-link {{
         font-size: 4.5vw; 
         width: 80vw;
         text-align: center;
+        margin: 0; 
     }}
 }}
 </style>
 """
 
+# Thêm CSS vào trang chính
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# --- VIDEO INTRO ---
+
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Logic hoạt động ổn định) ---
+
+# Khởi tạo placeholder không điều kiện
 video_placeholder = st.empty()
 
+# Kiểm tra điều kiện và gọi hàm nếu cần
 if not st.session_state.video_ended:
+
     try:
         html_content_modified = get_intro_html(video_pc_base64, video_mobile_base64, audio_base64, music_files)
+        
+        # Hiển thị nội dung vào placeholder
         video_placeholder.components.v1.html(html_content_modified, height=1080, scrolling=False)
+    
     except Exception as e:
-        st.error(f"Lỗi hiển thị video: {str(e)}")
-        st.session_state.video_ended = True
+        # Nếu có lỗi, chuyển sang nội dung chính
+        st.error(f"❌ Lỗi khi tải video intro. Tự động chuyển qua nội dung chính.")
+        st.session_state.video_ended = True 
+    
 
-# --- REVEAL GRID ---
+# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
+
+# Tạo Lưới Reveal
 grid_cells_html = ""
 for i in range(240):	
     grid_cells_html += f'<div class="grid-cell"></div>'
@@ -777,9 +853,11 @@ reveal_grid_html = f"""
 """
 st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
-# --- TIÊU ĐỀ CHÍNH ---
+
+# --- NỘI DUNG CHÍNH (TIÊU ĐỀ ĐƠN, ĐỔI MÀU) ---
 main_title_text = "TỔ BẢO DƯỠNG SỐ 1"	
 
+# Nhúng tiêu đề
 st.markdown(f"""
 <div id="main-title-container">
     <h1>{main_title_text}</h1>
@@ -805,7 +883,8 @@ if len(music_files) > 0:
 </div>
 """, unsafe_allow_html=True)
 
-# --- NAV LINKS ---
+# --- NỘI DUNG MỚI: CÁC TEXT LINKS (ĐÃ KHÔI PHỤC VỊ TRÍ) ---
+# Thẻ spacer không còn cần thiết cho vị trí cũ
 st.markdown("<div id='top-spacer' style='display: none;'></div>", unsafe_allow_html=True)
 
 st.markdown("""
@@ -819,33 +898,5 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- NỘI DUNG BỔ SUNG ---
+# Thêm khoảng trống ở cuối trang 
 st.markdown("<br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br><br>", unsafe_allow_html=True)
-
-# --- THÊM NÚT SKIP VIDEO (CHỈ HIỆN KHI VIDEO ĐANG CHẠY) ---
-if not st.session_state.video_ended:
-    st.markdown("""
-    <style>
-    #skip-video-btn {{
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        z-index: 1001;
-        background: rgba(255, 215, 0, 0.9);
-        color: #000;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 8px;
-        cursor: pointer;
-        font-weight: bold;
-        transition: all 0.3s ease;
-    }}
-    #skip-video-btn:hover {{
-        background: rgba(255, 255, 0, 1);
-        transform: scale(1.05);
-    }}
-    </style>
-    <button id="skip-video-btn" onclick="localStorage.setItem('video_ended', 'true'); window.location.href = window.location.href + '?skip_video=1'">
-        ⏩ Bỏ qua video
-    </button>
-    """, unsafe_allow_html=True)
