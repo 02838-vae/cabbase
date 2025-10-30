@@ -24,7 +24,6 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except Exception as e:
-        # In lỗi chi tiết trong terminal
         print(f"Lỗi khi đọc file {file_path}: {str(e)}") 
         return None
 
@@ -82,17 +81,17 @@ font_links = """
 """
 st.markdown(font_links, unsafe_allow_html=True)
 
-# --- PHẦN 2: CSS CHÍNH (ĐÃ CẬP NHẬT) ---
+# --- PHẦN 2: CSS CHÍNH (ĐÃ CẬP NHẬT NAV LINKS VỊ TRÍ) ---
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 
-/* Hiệu ứng Tải trang (để xử lý màn hình đen) */
+/* Hiệu ứng Tải trang */
 #st-global-spinner {{ visibility: hidden; }}
 .stApp {{ animation: fadein 0.5s forwards; }}
 @keyframes fadein {{ from {{ opacity: 0; }} to {{ opacity: 1; }} }}
 
-/* Ẩn các thành phần mặc định của Streamlit */
+/* Ẩn các thành phần mặc định */
 #MainMenu, footer, header {{visibility: hidden;}}
 
 .main {{ padding: 0; margin: 0; }}
@@ -416,12 +415,13 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === CSS MỚI CHO TEXT LINKS (DÙNG POSITION: FIXED) === */
+/* === CSS CHO TEXT LINKS (ĐÃ SỬA LỖI VỊ TRÍ) === */
 
 /* Container bao bọc 2 link */
 .nav-links-container {{
+    /* PC: Đẩy xuống dưới tiêu đề chạy */
     position: fixed;
-    top: 20vh; /* Đặt dưới tiêu đề chính */
+    top: 25vh; /* Đã tăng từ 20vh lên 25vh */
     width: 100%;
     z-index: 30; 
     display: flex;
@@ -437,7 +437,7 @@ iframe:first-of-type {{
     pointer-events: auto; 
 }}
 
-/* Style cho từng link (tiêu đề) */
+/* Style cho từng link */
 .nav-link {{
     font-family: 'Playfair Display', serif;
     font-size: 1.5vw; 
@@ -457,7 +457,7 @@ iframe:first-of-type {{
 }}
 
 .nav-link:hover {{
-    color: #FFD700; /* Màu vàng khi hover */
+    color: #FFD700; 
     background: rgba(255, 255, 0, 0.1);
     border-color: #FFD700;
     text-shadow: 0 0 8px #FFD700, 0 0 15px #FFD700;
@@ -468,12 +468,17 @@ iframe:first-of-type {{
 /* Responsive cho Mobile */
 @media (max-width: 768px) {{
     .nav-links-container {{
-        top: 18vh; 
+        /* MOBILE: Chuyển sang relative để nằm trong luồng nội dung và không che hình nền */
+        position: relative; 
+        top: auto; 
+        margin-top: 20vh; /* Khoảng cách từ tiêu đề cố định */
+        margin-bottom: 5vh; 
         flex-direction: column;
         align-items: center;
         gap: 15px;
-        position: fixed; /* Giữ Fixed trên mobile để đảm bảo visibility */
-        padding-top: 5vh; /* Thêm padding để không bị tiêu đề che */
+        padding: 0 5vw;
+        width: 100%; 
+        z-index: 30; 
     }}
     .nav-link {{
         font-size: 4.5vw; 
@@ -878,7 +883,6 @@ if len(music_files) > 0:
 """, unsafe_allow_html=True)
 
 # --- NỘI DUNG MỚI: CÁC TEXT LINKS (ĐÃ SỬA LỖI VỊ TRÍ) ---
-# NOTE: Các liên kết này sử dụng position: fixed để đảm bảo hiển thị
 st.markdown("""
 <div class="nav-links-container">
     <a href="https://www.google.com" target="_blank" class="nav-link">
