@@ -243,7 +243,7 @@ iframe:first-of-type {{
     }}
 }}
 
-/* --- MUSIC PLAYER STYLES (ĐÃ KHÔI PHỤC) --- */
+/* --- MUSIC PLAYER STYLES --- */
 #music-player-container {{
     position: fixed;
     bottom: 20px;
@@ -385,16 +385,16 @@ iframe:first-of-type {{
     }}
 }}
 
-/* --- CSS MỚI CHO 2 TIÊU ĐỀ PHỤ - STYLE NEON GRADIENT --- */
+/* --- CSS MỚI CHO 2 TIÊU ĐỀ PHỤ - ĐƠN GIẢN HÓA HOÀN TOÀN --- */
 .content-links-container {{
     position: fixed; 
-    top: 20vh; 
+    top: 20vh; /* PC: Nằm dưới tiêu đề chạy */
     width: 100%;
     z-index: 10; 
     display: flex;
-    justify-content: space-between; 
+    justify-content: space-around; /* Phân bổ đều giữa trái và phải */
     align-items: flex-start;
-    padding: 0 5vw; 
+    padding: 0 10vw; 
     pointer-events: none; 
     opacity: 0; 
     transition: opacity 2s ease-out 3s; 
@@ -406,147 +406,49 @@ iframe:first-of-type {{
 }}
 
 .container-link {{
-    /* KHUNG BÊN NGOÀI */
-    position: relative;
-    display: block; /* Quan trọng để thẻ a bao quanh toàn bộ nội dung */
-    width: 350px; 
-    max-width: 40%;
-    height: 250px; /* Chiều cao cố định để tạo khung đứng */
-    text-align: center;
-    text-decoration: none;
-    cursor: pointer;
-    background-color: transparent;
-    padding: 0;
+    /* Đã đơn giản hóa */
+    display: inline-block;
+    padding: 10px 20px;
     margin: 0;
-    box-sizing: border-box;
-    overflow: hidden; /* Cắt các lớp giả bên ngoài */
+    text-align: center;
+    text-decoration: none; /* Bỏ gạch chân */
+    color: #00ffff; /* Màu chữ Neon Cyan (Giữ nguyên) */
+    font-family: 'Playfair Display', serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    cursor: pointer;
+    background-color: transparent; /* Bỏ nền box */
     
-    /* ❌ BỎ TẤT CẢ BORDER VÀ BOX-SHADOW CŨ Ở ĐÂY */
-    transition: transform 0.3s ease;
+    /* Bỏ tất cả border và shadow cũ */
+    border: none;
+    box-shadow: none;
+    
+    transition: transform 0.3s ease, color 0.3s ease;
 }}
 
 .container-link:hover {{
-    transform: scale(1.05);
+    transform: scale(1.1); /* Tăng scale khi hover */
+    color: #ffffff; /* Cho thêm hiệu ứng hover đổi màu trắng */
+    text-shadow: 0 0 5px #00ffff; /* Thêm shadow nhẹ khi hover */
 }}
-
-/* LỚP GIẢ ::BEFORE: TẠO KHUNG NEON BÊN NGOÀI */
-.container-link::before {{
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border: 1px solid rgba(0, 255, 255, 0.5); /* Viền mỏng */
-    box-shadow: 0 0 10px rgba(0, 255, 255, 0.8); /* Hiệu ứng neon */
-    z-index: 1;
-    pointer-events: none;
-    transition: box-shadow 0.3s ease;
-}}
-
-.container-link:hover::before {{
-    box-shadow: 0 0 15px rgba(0, 255, 255, 1), 0 0 25px rgba(0, 255, 255, 0.7);
-}}
-
-/* NỘI DUNG CHÍNH (DIV WRAPPER) */
-.link-content-wrapper {{
-    position: relative;
-    height: 100%;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-    align-items: center;
-    z-index: 2;
-}}
-
-/* PHẦN ĐẦU (DẢI GRADIENT NEON VÁT LÊN) */
-.link-header {{
-    position: relative;
-    width: 100%;
-    height: 70%; 
-    background: linear-gradient(135deg, rgba(16, 17, 19, 0.9), rgba(4, 255, 255, 0.1));
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    
-    /* TẠO ĐƯỜNG VÁT NEON */
-    clip-path: polygon(0% 0%, 100% 0%, 100% 85%, 0% 100%);
-    
-    border-bottom: 2px solid #00ffff;
-    box-shadow: inset 0 -5px 15px rgba(0, 255, 255, 0.5);
-    transition: background 0.3s ease;
-}}
-
-.container-link:hover .link-header {{
-    background: linear-gradient(135deg, rgba(16, 17, 19, 1), rgba(4, 255, 255, 0.3));
-}}
-
-/* TEXT TRONG PHẦN HEADER */
-.link-header h3 {{
-    color: #00ffff; /* Neon Cyan */
-    font-family: 'Electrolize', sans-serif;
-    font-size: 1.4rem;
-    text-shadow: 0 0 5px #00ffff, 0 0 10px rgba(0, 255, 255, 0.5);
-    padding: 0;
-    margin: 0;
-    font-weight: 400;
-}}
-
-.link-header span {{
-    font-size: 3rem; 
-    margin-bottom: 10px;
-    display: block;
-}}
-
-/* PHẦN CHÂN (NỀN TRẮNG VÀ CHỮ ĐEN) */
-.link-footer {{
-    width: 100%;
-    height: 30%; 
-    background-color: white;
-    color: black;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    font-family: 'Playfair Display', serif;
-    font-size: 1.2rem;
-    font-weight: 900;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-}}
-
 
 /* --- MEDIA QUERY CHO MOBILE --- */
 @media (max-width: 768px) {{
-    /* Điều chỉnh vị trí cố định mobile */
     .content-links-container {{
         position: fixed; 
-        top: 65vh; 
+        top: 45vh; /* ✅ Kéo lên cao hơn để dễ tương tác (từ 65vh -> 45vh) */
         flex-direction: column; 
         align-items: center; 
         padding: 0 5vw; 
         width: 100%;
-        margin-top: 0; 
-        opacity: 0; 
-        transition: opacity 2s ease-out 3s;
     }}
     
     .container-link {{
-        width: 80vw; 
+        width: auto; /* Để chiều rộng tự động theo nội dung */
         max-width: 90%; 
-        height: 180px; /* Điều chỉnh chiều cao cho mobile */
+        font-size: 1.2rem;
         margin: 10px 0; 
-    }}
-    
-    .link-header h3 {{
-        font-size: 1.1rem;
-    }}
-    .link-header span {{
-        font-size: 2.5rem; 
-    }}
-    .link-footer {{
-        font-size: 1rem;
+        padding: 8px 15px; 
     }}
 }}
 </style>
@@ -564,7 +466,7 @@ if len(music_files) > 0:
 else:
     music_sources_js = ""
 
-# JavaScript 
+# JavaScript (GIỮ NGUYÊN)
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
@@ -926,30 +828,14 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 
-# --- THÊM 2 TIÊU ĐỀ PHỤ VỚI STYLE NEON MỚI ---
+# --- THÊM 2 TIÊU ĐỀ PHỤ VỚI STYLE ĐƠN GIẢN MỚI ---
 st.markdown("""
 <div class="content-links-container">
     <a href="#" class="container-link" id="link-part-number">
-        <div class="link-content-wrapper">
-            <div class="link-header">
-                <span>🧮</span>
-                <h3>TRA CỨU PART NUMBER</h3>
-            </div>
-            <div class="link-footer">
-                TÌM KIẾM DỮ LIỆU
-            </div>
-        </div>
+        Tra cứu part number
     </a>
     <a href="#" class="container-link" id="link-quiz-bank">
-        <div class="link-content-wrapper">
-            <div class="link-header">
-                <span>🧠</span>
-                <h3>NGÂN HÀNG TRẮC NGHIỆM</h3>
-            </div>
-            <div class="link-footer">
-                LUYỆN TẬP VÀ KIỂM TRA
-            </div>
-        </div>
+        Ngân hàng trắc nghiệm
     </a>
 </div>
 """, unsafe_allow_html=True)
@@ -975,5 +861,5 @@ if len(music_files) > 0:
 """, unsafe_allow_html=True)
 
 # Thêm nội dung chính của ứng dụng 
-st.markdown("<h2 style='text-align: center; color: white; opacity: 0; transition: opacity 2s 3s;'>Nội dung chính của Trang</h2>", unsafe_allow_html=True)
+st.markdown("<h2 style='text-align: center; color: white; opacity: 0; transition: opacity 2s 3s;'>Nội dung chính của Trang (sẽ xuất hiện bên dưới)</h2>", unsafe_allow_html=True)
 st.markdown("<h2 style='text-align: center; color: white; opacity: 0; transition: opacity 2s 3s;'>Khu vực này sẽ xuất hiện sau 3 giây</h2>", unsafe_allow_html=True)
