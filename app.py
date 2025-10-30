@@ -27,6 +27,332 @@ def get_base64_encoded_file(file_path):
         print(f"Lỗi khi đọc file {file_path}: {str(e)}") 
         return None
 
+def get_intro_html(video_pc_base64, video_mobile_base64, audio_base64, music_files):
+    """Tạo chuỗi HTML/JS cho video intro (Tách biệt để tránh lỗi scope)."""
+
+    # Tạo danh sách music sources cho JavaScript 
+    if len(music_files) > 0:
+        music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files])
+    else:
+        music_sources_js = ""
+
+    # JavaScript  
+    js_callback_video = f"""
+    <script>
+        console.log("Script loaded");
+        
+        function sendBackToStreamlit() {{
+            console.log("Video ended or skipped, revealing main content");
+            const stApp = window.parent.document.querySelector('.stApp');
+            if (stApp) {{
+                stApp.classList.add('video-finished', 'main-content-revealed');
+                // Gửi tín hiệu Python qua Session State
+                fetch('/_stcore/script/client_state', {{
+                    method: 'POST',
+                    headers: {{'Content-Type': 'application/json'}},
+                    body: JSON.stringify({{
+                        'setState': {{
+                            'video_ended': true,
+                        }}
+                    }})
+                }});
+            }}
+            initRevealEffect();
+            setTimeout(initMusicPlayer, 100);
+        }}
+        
+        function initRevealEffect() {{
+            const revealGrid = window.parent.document.querySelector('.reveal-grid');
+            if (!revealGrid) {{ return; }}
+            const cells = revealGrid.querySelectorAll('.grid-cell');
+            const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
+            shuffledCells.forEach((cell, index) => {{
+                setTimeout(() => {{
+                    cell.style.opacity = 0;	
+                }}, index * 10);
+            }});
+            setTimeout(() => {{
+                 revealGrid.remove();
+            }}, shuffledCells.length * 10 + 1000);
+        }}
+        
+        function initMusicPlayer() {{
+            console.log("Initializing music player");
+            
+            const musicSources = [{music_sources_js}];
+            
+            if (musicSources.length === 0) {{
+                console.log("No music files available");
+                return;
+            }}
+            
+            let currentTrack = 0;
+            let isPlaying = false;
+            const audio = new Audio();
+            audio.volume = 0.3;
+            
+            const playPauseBtn = window.parent.document.getElementById('play-pause-btn');
+            const prevBtn = window.parent.document.getElementById('prev-btn');
+            const nextBtn = window.parent.document.getElementById('next-btn');
+            const progressBar = window.parent.document.getElementById('progress-bar');
+            const progressContainer = window.parent.document.getElementById('progress-container');
+            const currentTimeEl = window.parent.document.getElementById('current-time');
+            const durationEl = window.parent.document.getElementById('duration');
+            
+            if (!playPauseBtn || !prevBtn || !nextBtn) {{
+                console.error("Music player elements not found in parent document");
+                return;
+            }}
+            
+            function loadTrack(index) {{
+                console.log("Loading track", index + 1);
+                audio.src = musicSources[index];
+                audio.load();
+            }}
+            
+            function togglePlayPause() {{
+                if (isPlaying) {{
+                    audio.pause();
+                    playPauseBtn.textContent = '▶';
+                }} else {{
+                    audio.play().catch(e => console.error("Play error:", e));
+                    playPauseBtn.textContent = '⏸';
+                }}
+                isPlaying = !isPlaying;
+            }}
+            
+            function nextTrack() {{
+                currentTrack = (currentTrack + 1) % musicSources.length;
+                loadTrack(currentTrack);
+                if (isPlaying) {{
+                    audio.play().catch(e => console.error("Play error:", e));
+                }}
+            }}
+            
+            function prevTrack() {{
+                currentTrack = (currentTrack - 1 + musicSources.length) % musicSources.length;
+                loadTrack(currentTrack);
+                if (isPlaying) {{
+                    audio.play().catch(e => console.error("Play error:", e));
+                }}
+            }}
+            
+            function formatTime(seconds) {{
+                if (isNaN(seconds)) return '0:00';
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return `${{mins}}:${{secs.toString().padStart(2, '0')}}`;
+            }}
+            
+            audio.addEventListener('timeupdate', () => {{
+                const progress = (audio.currentTime / audio.duration) * 100;
+                progressBar.style.width = progress + '%';
+                currentTimeEl.textContent = formatTime(audio.currentTime);
+            }});
+            
+            audio.addEventListener('loadedmetadata', () => {{
+                durationEl.textContent = formatTime(audio.duration);
+            }});
+            
+            audio.addEventListener('ended', () => {{
+                nextTrack();
+            }});
+            
+            playPauseBtn.addEventListener('click', togglePlayPause);
+            nextBtn.addEventListener('click', nextTrack);
+            prevBtn.addEventListener('click', prevTrack);
+            
+            progressContainer.addEventListener('click', (e) => {{
+                const rect = progressContainer.getBoundingClientRect();
+                const percent = (e.clientX - rect.left) / rect.width;
+                audio.currentTime = percent * audio.duration;
+            }});
+            
+            loadTrack(0);
+            console.log("Music player initialized successfully");
+        }}
+
+        document.addEventListener("DOMContentLoaded", function() {{
+            console.log("DOM loaded, waiting for elements...");
+            
+            const waitForElements = setInterval(() => {{
+                const video = document.getElementById('intro-video');
+                const audio = document.getElementById('background-audio');
+                const introTextContainer = document.getElementById('intro-text-container');
+                
+                if (video && audio && introTextContainer) {{
+                    clearInterval(waitForElements);
+                    console.log("All elements found, initializing...");
+                    
+                    const isMobile = window.innerWidth <= 768;
+                    const videoSource = isMobile ? 'data:video/mp4;base64,{video_mobile_base64}' : 'data:video/mp4;base64,{video_pc_base64}';
+
+                    video.src = videoSource;
+                    audio.src = 'data:audio/mp3;base64,{audio_base64}';
+                    
+                    const tryToPlay = () => {{
+                        video.play().then(() => {{
+                            console.log("✅ Video is playing!");
+                        }}).catch(err => {{
+                            console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
+                            setTimeout(sendBackToStreamlit, 2000);	
+                        }});
+
+                        audio.play().catch(e => {{
+                            console.log("Audio autoplay blocked (normal), waiting for video end.");
+                        }});
+                    }};
+
+                    video.addEventListener('canplaythrough', tryToPlay, {{ once: true }});
+                    
+                    video.addEventListener('ended', () => {{
+                        video.style.opacity = 0;
+                        audio.pause();
+                        audio.currentTime = 0;
+                        introTextContainer.style.opacity = 0;	
+                        setTimeout(sendBackToStreamlit, 500);
+                    }});
+
+                    video.addEventListener('error', (e) => {{
+                        console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
+                        sendBackToStreamlit();
+                    }});
+
+
+                    const clickHandler = () => {{
+                        tryToPlay();
+                        document.removeEventListener('click', clickHandler);
+                        document.removeEventListener('touchstart', clickHandler);
+                    }};
+                    
+                    document.addEventListener('click', clickHandler, {{ once: true }});
+                    document.addEventListener('touchstart', clickHandler, {{ once: true }});
+                    
+                    video.load();	
+                    
+                    const chars = introTextContainer.querySelectorAll('.intro-char');
+                    chars.forEach((char, index) => {{
+                        char.style.animationDelay = `${{index * 0.1}}s`;	
+                        char.classList.add('char-shown');	
+                    }});
+                }}
+            }}, 100);
+            
+            setTimeout(() => {{
+                clearInterval(waitForElements);
+                const video = document.getElementById('intro-video');
+                if (video && !video.src) {{
+                    console.warn("Timeout before video source set. Force transitioning to main content.");
+                    sendBackToStreamlit();
+                }}
+            }}, 5000);
+        }});
+    </script>
+    """
+
+    # Mã HTML/CSS cho Video
+    html_content_modified = f"""
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            html, body {{
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+                height: 100vh;
+                width: 100vw;
+                background-color: #000;
+            }}
+            
+            #intro-video {{
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                object-fit: cover;
+                z-index: 0;
+                transition: opacity 1s;	
+            }}
+
+            #intro-text-container {{	
+                position: fixed;
+                top: 5vh;
+                width: 100%;
+                text-align: center;
+                color: #FFD700;	
+                font-size: 3vw;	
+                
+                font-family: 'Sacramento', cursive;	
+                font-weight: 400;	
+                
+                text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);	
+                z-index: 100;
+                pointer-events: none;
+                display: flex;	
+                justify-content: center;
+                opacity: 1;	
+                transition: opacity 0.5s;
+            }}
+            
+            .intro-char {{
+                display: inline-block;	
+                opacity: 0;
+                transform: translateY(-50px);	
+                animation-fill-mode: forwards;	
+                animation-duration: 0.8s;	
+                animation-timing-function: ease-out;	
+            }}
+
+            @keyframes charDropIn {{
+                from {{
+                    opacity: 0;
+                    transform: translateY(-50px);
+                }}
+                to {{
+                    opacity: 1;
+                    transform: translateY(0);
+                }}
+            }}
+
+            .intro-char.char-shown {{
+                animation-name: charDropIn;
+            }}
+
+            @media (max-width: 768px) {{
+                #intro-text-container {{
+                    font-size: 6vw;	
+                }}
+            }}
+            
+        </style>
+    </head>
+    <body>
+
+        <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+        
+        <video id="intro-video" muted playsinline></video>
+        
+        <audio id="background-audio"></audio>
+
+        {js_callback_video}
+    </body>
+    </html>
+    """
+
+    # Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
+    intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
+    intro_chars_html = ''.join([
+        f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'	
+        for char in intro_title
+    ])
+    html_content_modified = html_content_modified.replace(
+        "<div id=\"intro-text-container\">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>",
+        f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
+    )
+    
+    return html_content_modified
 
 # Mã hóa các file media chính
 try:
@@ -498,338 +824,24 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Đã tối ưu cho tốc độ & Fix lỗi AttributeError) ---
 
-# --- FIX LỖI 1: Đảm bảo video_placeholder LUÔN ĐƯỢC KHỞI TẠO ---
-# Chúng ta sử dụng st.empty() ngay lập tức để giữ chỗ và khởi tạo biến này.
+# Khởi tạo placeholder để đảm bảo biến TỒN TẠI (AttributeError Fix)
 video_placeholder = st.empty()
-html_content_modified = "" # Khởi tạo biến này để đảm bảo nó tồn tại
 
-# Tối ưu tốc độ: Chỉ hiển thị các thành phần nặng nếu video chưa kết thúc
+# Tối ưu tốc độ: Chỉ tạo và hiển thị nội dung video nặng nề NẾU chưa chạy xong
 if not st.session_state.video_ended:
 
-    # Tạo danh sách music sources cho JavaScript 
-    if len(music_files) > 0:
-        music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files])
-    else:
-        music_sources_js = ""
-
-    # JavaScript  
-    js_callback_video = f"""
-    <script>
-        console.log("Script loaded");
+    # GỌI HÀM để tạo HTML. Hàm này đảm bảo trả về chuỗi HTML đã được định nghĩa.
+    try:
+        html_content_modified = get_intro_html(video_pc_base64, video_mobile_base64, audio_base64, music_files)
         
-        function sendBackToStreamlit() {{
-            console.log("Video ended or skipped, revealing main content");
-            const stApp = window.parent.document.querySelector('.stApp');
-            if (stApp) {{
-                stApp.classList.add('video-finished', 'main-content-revealed');
-                // Gửi tín hiệu Python qua Session State
-                fetch('/_stcore/script/client_state', {{
-                    method: 'POST',
-                    headers: {{'Content-Type': 'application/json'}},
-                    body: JSON.stringify({{
-                        'setState': {{
-                            'video_ended': true,
-                        }}
-                    }})
-                }});
-            }}
-            initRevealEffect();
-            setTimeout(initMusicPlayer, 100);
-        }}
-        
-        function initRevealEffect() {{
-            const revealGrid = window.parent.document.querySelector('.reveal-grid');
-            if (!revealGrid) {{ return; }}
-            const cells = revealGrid.querySelectorAll('.grid-cell');
-            const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
-            shuffledCells.forEach((cell, index) => {{
-                setTimeout(() => {{
-                    cell.style.opacity = 0;	
-                }}, index * 10);
-            }});
-            setTimeout(() => {{
-                 revealGrid.remove();
-            }}, shuffledCells.length * 10 + 1000);
-        }}
-        
-        function initMusicPlayer() {{
-            console.log("Initializing music player");
-            
-            const musicSources = [{music_sources_js}];
-            
-            if (musicSources.length === 0) {{
-                console.log("No music files available");
-                return;
-            }}
-            
-            let currentTrack = 0;
-            let isPlaying = false;
-            const audio = new Audio();
-            audio.volume = 0.3;
-            
-            const playPauseBtn = window.parent.document.getElementById('play-pause-btn');
-            const prevBtn = window.parent.document.getElementById('prev-btn');
-            const nextBtn = window.parent.document.getElementById('next-btn');
-            const progressBar = window.parent.document.getElementById('progress-bar');
-            const progressContainer = window.parent.document.getElementById('progress-container');
-            const currentTimeEl = window.parent.document.getElementById('current-time');
-            const durationEl = window.parent.document.getElementById('duration');
-            
-            if (!playPauseBtn || !prevBtn || !nextBtn) {{
-                console.error("Music player elements not found in parent document");
-                return;
-            }}
-            
-            function loadTrack(index) {{
-                console.log("Loading track", index + 1);
-                audio.src = musicSources[index];
-                audio.load();
-            }}
-            
-            function togglePlayPause() {{
-                if (isPlaying) {{
-                    audio.pause();
-                    playPauseBtn.textContent = '▶';
-                }} else {{
-                    audio.play().catch(e => console.error("Play error:", e));
-                    playPauseBtn.textContent = '⏸';
-                }}
-                isPlaying = !isPlaying;
-            }}
-            
-            function nextTrack() {{
-                currentTrack = (currentTrack + 1) % musicSources.length;
-                loadTrack(currentTrack);
-                if (isPlaying) {{
-                    audio.play().catch(e => console.error("Play error:", e));
-                }}
-            }}
-            
-            function prevTrack() {{
-                currentTrack = (currentTrack - 1 + musicSources.length) % musicSources.length;
-                loadTrack(currentTrack);
-                if (isPlaying) {{
-                    audio.play().catch(e => console.error("Play error:", e));
-                }}
-            }}
-            
-            function formatTime(seconds) {{
-                if (isNaN(seconds)) return '0:00';
-                const mins = Math.floor(seconds / 60);
-                const secs = Math.floor(seconds % 60);
-                return `${{mins}}:${{secs.toString().padStart(2, '0')}}`;
-            }}
-            
-            audio.addEventListener('timeupdate', () => {{
-                const progress = (audio.currentTime / audio.duration) * 100;
-                progressBar.style.width = progress + '%';
-                currentTimeEl.textContent = formatTime(audio.currentTime);
-            }});
-            
-            audio.addEventListener('loadedmetadata', () => {{
-                durationEl.textContent = formatTime(audio.duration);
-            }});
-            
-            audio.addEventListener('ended', () => {{
-                nextTrack();
-            }});
-            
-            playPauseBtn.addEventListener('click', togglePlayPause);
-            nextBtn.addEventListener('click', nextTrack);
-            prevBtn.addEventListener('click', prevTrack);
-            
-            progressContainer.addEventListener('click', (e) => {{
-                const rect = progressContainer.getBoundingClientRect();
-                const percent = (e.clientX - rect.left) / rect.width;
-                audio.currentTime = percent * audio.duration;
-            }});
-            
-            loadTrack(0);
-            console.log("Music player initialized successfully");
-        }}
-
-        document.addEventListener("DOMContentLoaded", function() {{
-            console.log("DOM loaded, waiting for elements...");
-            
-            const waitForElements = setInterval(() => {{
-                const video = document.getElementById('intro-video');
-                const audio = document.getElementById('background-audio');
-                const introTextContainer = document.getElementById('intro-text-container');
-                
-                if (video && audio && introTextContainer) {{
-                    clearInterval(waitForElements);
-                    console.log("All elements found, initializing...");
-                    
-                    const isMobile = window.innerWidth <= 768;
-                    const videoSource = isMobile ? 'data:video/mp4;base64,{video_mobile_base64}' : 'data:video/mp4;base64,{video_pc_base64}';
-
-                    video.src = videoSource;
-                    audio.src = 'data:audio/mp3;base64,{audio_base64}';
-                    
-                    const tryToPlay = () => {{
-                        video.play().then(() => {{
-                            console.log("✅ Video is playing!");
-                        }}).catch(err => {{
-                            console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
-                            setTimeout(sendBackToStreamlit, 2000);	
-                        }});
-
-                        audio.play().catch(e => {{
-                            console.log("Audio autoplay blocked (normal), waiting for video end.");
-                        }});
-                    }};
-
-                    video.addEventListener('canplaythrough', tryToPlay, {{ once: true }});
-                    
-                    video.addEventListener('ended', () => {{
-                        video.style.opacity = 0;
-                        audio.pause();
-                        audio.currentTime = 0;
-                        introTextContainer.style.opacity = 0;	
-                        setTimeout(sendBackToStreamlit, 500);
-                    }});
-
-                    video.addEventListener('error', (e) => {{
-                        console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
-                        sendBackToStreamlit();
-                    }});
-
-
-                    const clickHandler = () => {{
-                        tryToPlay();
-                        document.removeEventListener('click', clickHandler);
-                        document.removeEventListener('touchstart', clickHandler);
-                    }};
-                    
-                    document.addEventListener('click', clickHandler, {{ once: true }});
-                    document.addEventListener('touchstart', clickHandler, {{ once: true }});
-                    
-                    video.load();	
-                    
-                    const chars = introTextContainer.querySelectorAll('.intro-char');
-                    chars.forEach((char, index) => {{
-                        char.style.animationDelay = `${{index * 0.1}}s`;	
-                        char.classList.add('char-shown');	
-                    }});
-                }}
-            }}, 100);
-            
-            setTimeout(() => {{
-                clearInterval(waitForElements);
-                const video = document.getElementById('intro-video');
-                if (video && !video.src) {{
-                    console.warn("Timeout before video source set. Force transitioning to main content.");
-                    sendBackToStreamlit();
-                }}
-            }}, 5000);
-        }});
-    </script>
-    """
-
-    # Mã HTML/CSS cho Video
-    html_content_modified = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <style>
-            html, body {{
-                margin: 0;
-                padding: 0;
-                overflow: hidden;
-                height: 100vh;
-                width: 100vw;
-                background-color: #000;
-            }}
-            
-            #intro-video {{
-                position: absolute;
-                top: 0;
-                left: 0;
-                width: 100%;
-                height: 100%;
-                object-fit: cover;
-                z-index: 0;
-                transition: opacity 1s;	
-            }}
-
-            #intro-text-container {{	
-                position: fixed;
-                top: 5vh;
-                width: 100%;
-                text-align: center;
-                color: #FFD700;	
-                font-size: 3vw;	
-                
-                font-family: 'Sacramento', cursive;	
-                font-weight: 400;	
-                
-                text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);	
-                z-index: 100;
-                pointer-events: none;
-                display: flex;	
-                justify-content: center;
-                opacity: 1;	
-                transition: opacity 0.5s;
-            }}
-            
-            .intro-char {{
-                display: inline-block;	
-                opacity: 0;
-                transform: translateY(-50px);	
-                animation-fill-mode: forwards;	
-                animation-duration: 0.8s;	
-                animation-timing-function: ease-out;	
-            }}
-
-            @keyframes charDropIn {{
-                from {{
-                    opacity: 0;
-                    transform: translateY(-50px);
-                }}
-                to {{
-                    opacity: 1;
-                    transform: translateY(0);
-                }}
-            }}
-
-            .intro-char.char-shown {{
-                animation-name: charDropIn;
-            }}
-
-            @media (max-width: 768px) {{
-                #intro-text-container {{
-                    font-size: 6vw;	
-                }}
-            }}
-            
-        </style>
-    </head>
-    <body>
-
-        <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-        
-        <video id="intro-video" muted playsinline></video>
-        
-        <audio id="background-audio"></audio>
-
-        {js_callback_video}
-    </body>
-    </html>
-    """
-
-    # Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
-    intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
-    intro_chars_html = ''.join([
-        f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'	
-        for char in intro_title
-    ])
-    html_content_modified = html_content_modified.replace(
-        "<div id=\"intro-text-container\">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>",
-        f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
-    )
-
-    # --- FIX LỖI 2: Chỉ hiển thị nội dung vào placeholder NẾU video chưa chạy xong ---
-    video_placeholder.components.v1.html(html_content_modified, height=1080, scrolling=False)
+        # Hiển thị HTML vào placeholder đã định nghĩa
+        video_placeholder.components.v1.html(html_content_modified, height=1080, scrolling=False)
+    
+    except Exception as e:
+        # Xử lý lỗi trong quá trình tạo/hiển thị HTML (ví dụ: lỗi Base64)
+        st.error(f"Lỗi khi hiển thị video intro (có thể do lỗi Base64 media). {str(e)}")
+        # Cập nhật state để không cố gắng chạy lại video ở lần refresh tiếp theo
+        st.session_state.video_ended = True
 
 
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
