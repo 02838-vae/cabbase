@@ -24,7 +24,7 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except Exception as e:
-        st.error(f"Lỗi khi đọc file {file_path}: {str(e)}")
+        st.error(f"Lỗi khi đọc file {{file_path}}: {{str(e)}}")
         return None
 
 
@@ -54,7 +54,7 @@ try:
         st.stop()
         
 except Exception as e:
-    st.error(f"❌ Lỗi khi đọc file: {str(e)}")
+    st.error(f"❌ Lỗi khi đọc file: {{str(e)}}")
     st.stop()
 
 # Đảm bảo logo_base64 được khởi tạo nếu file không tồn tại
@@ -66,7 +66,7 @@ if not 'logo_base64' in locals() or not logo_base64:
 # Mã hóa các file nhạc nền (không bắt buộc)
 music_files = []
 for i in range(1, 7):
-    music_base64 = get_base64_encoded_file(f"background{i}.mp3")
+    music_base64 = get_base64_encoded_file(f"background{{i}}.mp3")
     if music_base64:
         music_files.append(music_base64)
 
@@ -84,7 +84,7 @@ st.markdown(font_links, unsafe_allow_html=True)
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
 
-# Sửa lỗi: Chỉ sử dụng f-string cho các biến Python (như base64 URLs)
+# Sửa lỗi: Dùng ngoặc nhọn kép {{...}} cho toàn bộ khối CSS để tránh lỗi f-string
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -388,7 +388,7 @@ iframe:first-of-type {{
 }}
 
 /* --- CSS MỚI CHO 2 TIÊU ĐỀ PHỤ - ĐÃ FIX VỊ TRÍ PC (SÁT GÓC) VÀ VIỀN BAO --- */
-.content-links-container {
+.content-links-container {{
     position: fixed; 
     top: 20vh; 
     width: 100%;
@@ -401,26 +401,26 @@ iframe:first-of-type {{
     pointer-events: none; 
     opacity: 0; 
     transition: opacity 2s ease-out 3s; 
-}
+}}
 
-.video-finished .content-links-container {
+.video-finished .content-links-container {{
     opacity: 1;
     pointer-events: auto; 
-}
+}}
 
 /* Định vị PC: Tra cứu Part Number sát trái */
-#link-part-number {
+#link-part-number {{
     margin-right: auto; 
     margin-left: 0;    
-}
+}}
 
 /* Định vị PC: Ngân hàng trắc nghiệm sát phải */
-#link-quiz-bank {
+#link-quiz-bank {{
     margin-left: auto; 
     margin-right: 0;   
-}
+}}
 
-.container-link {
+.container-link {{
     /* Thiết lập chữ */
     display: inline-block;
     padding: 10px 15px; 
@@ -448,9 +448,9 @@ iframe:first-of-type {{
     box-shadow: 0 0 5px #00ffff, 0 0 15px rgba(0, 255, 255, 0.5); 
     
     transition: transform 0.3s ease, color 0.3s ease, text-shadow 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-}
+}}
 
-.container-link:hover {
+.container-link:hover {{
     transform: scale(1.05); 
     color: #ffd700; 
     border-color: #ffd700; 
@@ -465,35 +465,35 @@ iframe:first-of-type {{
     text-shadow: 
       0 0 3px #ffd700, 
       0 0 8px #ff8c00; 
-}
+}}
 
 /* --- MEDIA QUERY CHO MOBILE --- */
-@media (max-width: 768px) {
-    .content-links-container {
+@media (max-width: 768px) {{
+    .content-links-container {{
         position: fixed; 
         top: 45vh; 
         flex-direction: column; 
         align-items: center; /* Canh giữa trên mobile */
         padding: 0 5vw; 
         width: 100%;
-    }
+    }}
 
     /* Đảm bảo tiêu đề được canh giữa trên mobile */
-    #link-part-number, #link-quiz-bank {
+    #link-part-number, #link-quiz-bank {{
         margin: 10px 0;
-    }
+    }}
     
-    .container-link {
+    .container-link {{
         font-size: 1.2rem; 
         width: auto; 
         max-width: 90%; 
         padding: 8px 12px; 
-    }
+    }}
     
-    .container-link:hover {
+    .container-link:hover {{
         transform: scale(1.03); 
-    }
-}
+    }}
+}}
 </style>
 """
 
@@ -509,7 +509,7 @@ if len(music_files) > 0:
 else:
     music_sources_js = ""
 
-# JavaScript (GIỮ NGUYÊN)
+# JavaScript (Đã sửa lỗi cú pháp bên trong JS)
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
@@ -739,7 +739,7 @@ js_callback_video = f"""
 </script>
 """
 
-# Mã HTML/CSS cho Video
+# Mã HTML/CSS cho Video (Đã sửa lỗi cú pháp)
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
