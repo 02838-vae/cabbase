@@ -70,10 +70,6 @@ for i in range(1, 7):
     if music_base64:
         music_files.append(music_base64)
 
-# XÓA: Loại bỏ thông báo st.info về file nhạc nền không tìm thấy
-# if len(music_files) == 0:
-#     st.info("ℹ️ Không tìm thấy file nhạc nền (background1.mp3 - background6.mp3). Music player sẽ hiển thị nhưng không thể phát nhạc.")
-
 
 # --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
 font_links = """
@@ -391,7 +387,7 @@ iframe:first-of-type {{
 /* --- CSS MỚI CHO 2 TIÊU ĐỀ PHỤ - ĐÃ FIX VỊ TRÍ PC (SÁT GÓC) VÀ VIỀN BAO --- */
 .content-links-container {{
     position: fixed; 
-    /* ĐIỀU CHỈNH: Hạ thấp vị trí xuống 30vh (từ 25vh) */
+    /* ĐIỀU CHỈNH: Hạ thấp vị trí xuống 30vh */
     top: 30vh; 
     width: 100%;
     z-index: 10; 
@@ -592,12 +588,22 @@ js_callback_video = f"""
         }}
         
         function togglePlayPause() {{
+            // FIX LỖI QUAN TRỌNG: Đảm bảo audio.play() được gọi bên trong sự kiện người dùng
             if (isPlaying) {{
                 audio.pause();
                 playPauseBtn.textContent = '▶';
             }} else {{
-                audio.play().catch(e => console.error("Play error:", e));
-                playPauseBtn.textContent = '⏸';
+                // FIX: Sử dụng then/catch để xử lý Promise trả về từ audio.play() 
+                // Đồng thời đảm bảo nút bấm thay đổi đúng trạng thái
+                audio.play().then(() => {{
+                    playPauseBtn.textContent = '⏸';
+                }}).catch(e => {{
+                    console.error("Play error (maybe due to load failure or browser restriction):", e);
+                    // Dừng phát nếu lỗi
+                    isPlaying = false;
+                    playPauseBtn.textContent = '▶';
+                    alert("Không thể phát nhạc. Vui lòng kiểm tra file hoặc cấu hình trình duyệt.");
+                }});
             }}
             isPlaying = !isPlaying;
         }}
@@ -639,6 +645,7 @@ js_callback_video = f"""
             nextTrack();
         }});
         
+        // Gắn sự kiện vào nút bấm
         playPauseBtn.addEventListener('click', togglePlayPause);
         nextBtn.addEventListener('click', nextTrack);
         prevBtn.addEventListener('click', prevTrack);
@@ -649,6 +656,7 @@ js_callback_video = f"""
             audio.currentTime = percent * audio.duration;
         }});
         
+        // Load bài hát đầu tiên khi khởi tạo
         loadTrack(0);
         console.log("Music player initialized successfully");
     }}
