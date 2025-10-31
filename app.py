@@ -17,6 +17,7 @@ if 'video_ended' not in st.session_state:
 
 def get_base64_encoded_file(file_path):
     """Đọc file và trả về Base64 encoded string."""
+    # Kiểm tra kích thước file > 0
     if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
         return None
     try:
@@ -29,13 +30,17 @@ def get_base64_encoded_file(file_path):
 
 # Mã hóa các file media chính (bắt buộc)
 try:
+    # Đảm bảo các file này nằm cùng thư mục với app.py
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
+    
+    # MÃ HÓA CHO LOGO
     logo_base64 = get_base64_encoded_file("logo.jpg")
 
+    # Kiểm tra file bắt buộc
     if not all([video_pc_base64, video_mobile_base64, audio_base64, bg_pc_base64, bg_mobile_base64]):
         missing_files = []
         if not video_pc_base64: missing_files.append("airplane.mp4")
@@ -52,12 +57,14 @@ except Exception as e:
     st.error(f"❌ Lỗi khi đọc file: {{str(e)}}")
     st.stop()
 
+# Đảm bảo logo_base64 được khởi tạo nếu file không tồn tại
 if not 'logo_base64' in locals() or not logo_base64:
     logo_base64 = "" 
 
 
 # Mã hóa các file nhạc nền (không bắt buộc)
 music_files = []
+# Bạn cần đảm bảo các file này tên là background1.mp3, background2.mp3, v.v...
 for i in range(1, 7):
     music_base64 = get_base64_encoded_file(f"background{{i}}.mp3")
     if music_base64:
@@ -72,7 +79,7 @@ font_links = """
 """
 st.markdown(font_links, unsafe_allow_html=True)
 
-# CSS (Giữ nguyên phần vị trí tiêu đề đã fix)
+# CSS (ĐÃ XÁC NHẬN FIX VỊ TRÍ VÀ HIỆU ỨNG)
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -375,7 +382,7 @@ iframe:first-of-type {{
     }}
 }}
 
-/* --- CSS MỚI CHO 2 TIÊU ĐỀ PHỤ - ĐÃ FIX VỊ TRÍ PC (SÁT GÓC) VÀ VIỀN BAO --- */
+/* --- CSS MỚI CHO 2 TIÊU ĐỀ PHỤ --- */
 .content-links-container {{
     position: fixed; 
     top: 30vh; 
@@ -472,7 +479,7 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (CÓ CHỈNH SỬA LOGIC NHẠC) ---
 
 # Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
@@ -514,7 +521,7 @@ js_callback_video = f"""
         }}, shuffledCells.length * 10 + 1000);
     }}
     
-    // SỬA LỖI QUAN TRỌNG: Đảm bảo phát nhạc đúng khi user click
+    // ĐÃ TỐI ƯU HÓA HÀM NÀY ĐỂ KHẮC PHỤC LỖI PLAY/PAUSE
     function initMusicPlayer() {{
         console.log("Initializing music player");
         
@@ -544,7 +551,6 @@ js_callback_video = f"""
         }}
         
         let currentTrack = 0;
-        // KHỞI TẠO ĐỐI TƯỢNG AUDIO
         const audio = new Audio();
         audio.volume = 0.3;
         
@@ -552,8 +558,7 @@ js_callback_video = f"""
         function loadTrack(index) {{
             console.log("Loading track", index + 1);
             audio.src = musicSources[index];
-            // Load file ngay khi set src
-            audio.load(); 
+            audio.load(); // Yêu cầu tải metadata ngay khi đổi track
         }}
         
         function togglePlayPause() {{
@@ -565,18 +570,20 @@ js_callback_video = f"""
                 console.log("Music paused.");
             }} else {{
                 // ĐANG DỪNG -> CHƠI
-                // RẤT QUAN TRỌNG: Đảm bảo set src trước khi play
                 if (!audio.src) {{
                     loadTrack(currentTrack);
                 }}
 
+                // FIX QUAN TRỌNG: Buộc tải lại dữ liệu Base64 trước khi play để tránh lỗi kẹt
+                audio.load();
+                
                 audio.play().then(() => {{
                     playPauseBtn.textContent = '⏸';
                     console.log("Music playing.");
                 }}).catch(e => {{
-                    console.error("Play error (This is likely the issue):", e);
-                    // BÁO LỖI TRỰC TIẾP LÊN GIAO DIỆN
-                    alert("❌ Lỗi phát nhạc. Có thể do file Base64 bị lỗi hoặc trình duyệt chặn (Play error). Vui lòng kiểm tra lại file background{{currentTrack + 1}}.mp3.");
+                    console.error("Play error:", e);
+                    // BÁO LỖI TRỰC TIẾP LÊN GIAO DIỆN NẾU THẤT BẠI
+                    alert("❌ Lỗi phát nhạc: Kiểm tra lại file MP3 hoặc Base64. (Chi tiết lỗi: " + e.message + ")");
                     playPauseBtn.textContent = '▶';
                 }});
             }}
