@@ -14,6 +14,8 @@ st.set_page_config(
 # Khởi tạo session state
 if 'page' not in st.session_state:
     st.session_state.page = 'home' # <-- TRANG ĐIỀU HƯỚNG CHÍNH
+if 'user_interacted' not in st.session_state:
+    st.session_state.user_interacted = False # Theo dõi tương tác người dùng cho phép Audio
 
 
 # --- CÁC HÀM TIỆN ÍCH DÙNG CHUNG ---
@@ -33,7 +35,6 @@ def get_base64_encoded_file(file_path):
 
 def load_and_clean(excel_file, sheet):
     """Tải và làm sạch DataFrame từ Excel sheet."""
-    # (Hàm này giữ nguyên)
     df = pd.read_excel(excel_file, sheet_name=sheet)
     df.columns = df.columns.str.strip().str.upper()
     df = df.replace(r'^\s*$', pd.NA, regex=True).dropna(how="all")
@@ -47,7 +48,6 @@ def load_and_clean(excel_file, sheet):
 def render_music_player(logo_base64):
     """Render thanh Music Player và CSS/JS liên quan."""
     music_files = [get_base64_encoded_file(f"background{i}.mp3") for i in range(1, 7)]
-    # Chỉ bao gồm file có nội dung > 50 ký tự (không phải fallback)
     music_sources_js = ",\n        ".join([f"'{music}'" for music in music_files if len(music) > 50]) 
 
     # CSS cho Music Player
@@ -115,7 +115,6 @@ def render_music_player(logo_base64):
                 audio.id = 'global-music-audio';
                 audio.volume = 0.3;
                 window.parent.document.body.appendChild(audio);
-                // Bắt buộc phải load track đầu tiên khi tạo
                 audio.src = musicSources[0];
                 audio.load();
             }}
@@ -154,7 +153,7 @@ def render_music_player(logo_base64):
 
             function togglePlayPause() {{
                 if (audio.paused) {{
-                    // Lỗi: Trình duyệt chặn Play tự động -> Người dùng phải tương tác
+                    // Bắt buộc tương tác người dùng
                     audio.play().then(updatePlayerUI).catch(e => {{
                         console.error("Play error:", e);
                         alert("⚠️ Lỗi: Trình duyệt chặn tự động phát nhạc. Vui lòng nhấn nút Play một lần nữa.");
@@ -246,7 +245,7 @@ def render_home_page():
     """
     st.markdown(font_links, unsafe_allow_html=True)
 
-    # CSS (Sửa lỗi tiêu đề chạy, vị trí link Mobile/PC)
+    # CSS (Sửa lỗi tương tác Link, Mobile Layout)
     hide_streamlit_style = f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -262,7 +261,6 @@ def render_home_page():
         background-color: black; 
     }}
 
-    /* FIX: Video bị zoom to và iframe */
     iframe:first-of-type {{
         transition: opacity 1s ease-out, visibility 1s ease-out;
         opacity: 1;
@@ -304,14 +302,14 @@ def render_home_page():
         .reveal-grid {{ grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(20, 1fr); }}
     }}
 
-    /* FIX: Tiêu đề chạy phía trên màn hình k có */
+    /* Tiêu đề chạy */
     @keyframes scrollText {{ 0% {{ transform: translate(100vw, 0); }} 100% {{ transform: translate(-100%, 0); }} }}
     @keyframes colorShift {{ 0% {{ background-position: 0% 50%; }} 50% {{ background-position: 100% 50%; }} 100% {{ background-position: 0% 50%; }} }}
 
     #main-title-container {{
         position: fixed; top: 5vh; left: 0; width: 100%; height: 10vh;
         overflow: hidden; z-index: 20; pointer-events: none; opacity: 0; 
-        transition: opacity 2s ease-out 2s; /* Tăng độ trễ hiển thị */
+        transition: opacity 2s ease-out 2s; 
     }}
     .video-finished #main-title-container {{ opacity: 1; }}
 
@@ -323,13 +321,13 @@ def render_home_page():
         animation: colorShift 10s ease infinite, scrollText 15s linear infinite; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
     }}
 
-    /* FIX: Bố cục link trên PC và Mobile */
+    /* Bố cục link trên PC và Mobile */
     .content-links-container {{
-        position: fixed; top: 30vh; width: 100%; z-index: 10; 
+        position: fixed; top: 35vh; width: 100%; z-index: 10; 
         display: flex; 
         justify-content: center; 
         gap: 60px;
-        align-items: center; padding: 0 5vw; /* Thêm padding ngang */
+        align-items: center; padding: 0 5vw; 
         box-sizing: border-box; pointer-events: none; opacity: 0; transition: opacity 2s ease-out 3s;
     }}
     .video-finished .content-links-container {{ opacity: 1; pointer-events: auto; }}
@@ -344,42 +342,47 @@ def render_home_page():
         box-shadow: 0 0 5px #00ffff, 0 0 15px rgba(0, 255, 255, 0.5);
         transition: transform 0.3s ease, color 0.3s ease, text-shadow 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
         white-space: nowrap;
-        flex-grow: 1; /* Cho phép giãn ra */
-        max-width: 400px; /* Giới hạn chiều rộng trên PC */
+        flex-grow: 1; 
+        max-width: 400px; 
     }}
-    
+
+    /* FIX: Hover/Click interaction */
+    .container-link:hover {{
+        transform: scale(1.05); color: #ffd700; border-color: #ffd700;
+        box-shadow: 0 0 5px #ffd700, 0 0 15px #ff8c00, 0 0 25px rgba(255, 215, 0, 0.7);
+        text-shadow: 0 0 3px #ffd700, 0 0 8px #ff8c00;
+    }}
+
     /* Bố cục trên PC: Đẩy sát 2 bên */
     @media (min-width: 769px) {{
         .content-links-container {{
-            justify-content: space-between; /* Đẩy ra 2 bên */
-            top: 35vh;
-            max-width: 100%;
+            justify-content: space-between; 
         }}
     }}
 
-    /* Bố cục trên Mobile: Dịch xuống một xíu */
+    /* Bố cục trên Mobile: Sửa rộng ra và dịch xuống */
     @media (max-width: 768px) {{
         #main-title-container h1 {{ font-size: 6.5vw; animation-duration: 8s; }}
-        .container-link {{ font-size: 1.4rem; }}
+        .container-link {{ font-size: 1.4rem; max-width: 90%; /* FIX: Tăng rộng cho Ngân hàng trắc nghiệm */}}
         .content-links-container {{ 
             flex-direction: column; 
             gap: 15px; 
-            top: 40vh; /* FIX: Dịch xuống một xíu nữa */
+            top: 45vh; /* FIX: Dịch xuống thêm */
         }}
-        .container-link {{ max-width: 80%; }}
     }}
     </style>
     """
     st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-    # JavaScript (Sửa lỗi plane_fly.mp3 trên mobile)
+    # JavaScript (Sửa lỗi âm thanh máy bay trên mobile, click chuyển trang)
     js_callback_video = f"""
     <script>
         console.log("Home Script loaded");
         
         // Hàm chuyển trang sử dụng URL query param
         function sendPageChange(pageName) {{
+            // Sử dụng window.parent.location.href để đảm bảo chuyển trang từ Iframe Streamlit
             const currentUrl = window.parent.location.href.split('?')[0];
             window.parent.location.href = currentUrl + '?page=' + pageName;
         }}
@@ -390,6 +393,29 @@ def render_home_page():
         
         function switchToQuizBank() {{
             alert("Trang Ngân hàng trắc nghiệm đang được xây dựng!");
+        }}
+        
+        // *** HÀM MỚI: XỬ LÝ TƯƠNG TÁC ĐẦU TIÊN CỦA NGƯỜI DÙNG ***
+        function handleFirstInteraction() {{
+            // Kích hoạt biến trạng thái tương tác
+            window.parent.document.querySelector('.stApp').setAttribute('data-interacted', 'true');
+
+            // Cố gắng Play cả audio intro và global music player
+            const audioIntro = document.getElementById('background-audio');
+            const video = document.getElementById('intro-video');
+            const globalAudio = window.parent.document.getElementById('global-music-audio');
+
+            if (audioIntro) audioIntro.play().catch(e => console.warn("Intro Audio Play Error:", e));
+            if (video) video.play().catch(e => console.warn("Video Play Error:", e));
+
+            // Nếu global audio tồn tại (tức là đã load), cố gắng Play nó
+            if (globalAudio && globalAudio.paused) {{
+                globalAudio.play().catch(e => console.warn("Global Music Play Error:", e));
+            }}
+
+            // Ẩn nút "BẮT ĐẦU"
+            const startBtnContainer = document.getElementById('start-button-container');
+            if(startBtnContainer) startBtnContainer.style.display = 'none';
         }}
         
         function sendBackToStreamlit() {{
@@ -413,6 +439,12 @@ def render_home_page():
         }}
         
         document.addEventListener("DOMContentLoaded", function() {{
+            // Gán lại sự kiện click cho các link trong Iframe (trước khi bị ẩn)
+            const partNumberLink = document.getElementById('link-part-number');
+            const quizBankLink = document.getElementById('link-quiz-bank');
+            if(partNumberLink) partNumberLink.onclick = switchToPartNumber;
+            if(quizBankLink) quizBankLink.onclick = switchToQuizBank;
+
             const waitForElements = setInterval(() => {{
                 const video = document.getElementById('intro-video');
                 const audio = document.getElementById('background-audio');
@@ -427,36 +459,17 @@ def render_home_page():
                     video.src = videoSource;
                     audio.src = 'data:audio/mp3;base64,{audio_base64}';
 
-                    const tryToPlay = () => {{
-                        // Bắt buộc gọi Play() trên cả 2 object cùng lúc để tăng khả năng Play trên Mobile
-                        const playVideo = video.play().catch(err => {{ console.warn("Video Play Error:", err); }});
-                        const playAudio = audio.play().catch(e => {{ console.warn("Audio Play Error:", e); }});
+                    // 1. Chỉ load video/audio (KHÔNG TỰ PLAY)
+                    video.load();	
+                    audio.load();
 
-                        Promise.all([playVideo, playAudio]).catch(() => {{
-                            // Nếu Play thất bại hoàn toàn (do chặn), chuyển qua trang chính
-                            setTimeout(sendBackToStreamlit, 3000); 
-                        }});
-                    }};
-
-                    video.addEventListener('canplaythrough', tryToPlay, {{ once: true }});
                     video.addEventListener('ended', () => {{
                         video.style.opacity = 0; audio.pause(); audio.currentTime = 0; introTextContainer.style.opacity = 0;	
                         setTimeout(sendBackToStreamlit, 500);
                     }});
                     video.addEventListener('error', (e) => {{ sendBackToStreamlit(); }});
 
-                    const clickHandler = () => {{
-                        // Sau khi người dùng tương tác, thử Play lại
-                        tryToPlay();
-                        document.removeEventListener('click', clickHandler);
-                        document.removeEventListener('touchstart', clickHandler);
-                    }};
-                    
-                    // Cần tương tác người dùng để Play
-                    document.addEventListener('click', clickHandler, {{ once: true }});
-                    document.addEventListener('touchstart', clickHandler, {{ once: true }});
-                    
-                    video.load();	
+                    // 2. Kích hoạt hiệu ứng chữ
                     const chars = introTextContainer.querySelectorAll('.intro-char');
                     chars.forEach((char, index) => {{
                         char.style.animationDelay = `${{index * 0.1}}s`;	
@@ -464,6 +477,18 @@ def render_home_page():
                     }});
                 }}
             }}, 100);
+
+            // Gán sự kiện cho nút BẮT ĐẦU (chỉ hiển thị nếu chưa tương tác)
+            const startBtn = document.getElementById('start-btn-actual');
+            if (startBtn) {{
+                startBtn.addEventListener('click', handleFirstInteraction);
+                startBtn.addEventListener('touchstart', handleFirstInteraction);
+            }}
+
+            // Tự động chuyển nếu đã tương tác (chẳng hạn khi reload)
+            if (window.parent.document.querySelector('.stApp').getAttribute('data-interacted') === 'true') {{
+                setTimeout(sendBackToStreamlit, 100);
+            }}
         }});
     </script>
     """
@@ -481,12 +506,31 @@ def render_home_page():
             @keyframes charDropIn {{ from {{ opacity: 0; transform: translateY(-50px); }} to {{ opacity: 1; transform: translateY(0); }} }}
             .intro-char.char-shown {{ animation-name: charDropIn; }}
             @media (max-width: 768px) {{ #intro-text-container {{ font-size: 6vw; }} }}
+
+            /* CSS cho nút BẮT ĐẦU */
+            #start-button-container {{
+                position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+                z-index: 200; opacity: 1; transition: opacity 0.5s;
+            }}
+            #start-btn-actual {{
+                padding: 15px 30px; font-size: 24px; font-weight: bold;
+                color: #fff; background: linear-gradient(45deg, #007bff, #00c6ff);
+                border: none; border-radius: 50px; cursor: pointer;
+                box-shadow: 0 4px 15px rgba(0, 123, 255, 0.5);
+                transition: transform 0.2s, box-shadow 0.2s;
+            }}
+            #start-btn-actual:hover {{ transform: scale(1.05); box-shadow: 0 6px 20px rgba(0, 123, 255, 0.8); }}
         </style>
     </head>
     <body>
         <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
         <video id="intro-video" muted playsinline></video>
         <audio id="background-audio"></audio>
+        
+        <div id="start-button-container">
+            <button id="start-btn-actual">BẮT ĐẦU</button>
+        </div>
+
         {js_callback_video}
     </body>
     </html>
@@ -533,11 +577,6 @@ def render_home_page():
 
     # --- MUSIC PLAYER ---
     render_music_player(logo_base64)
-
-
-    # Nội dung placeholder
-    st.markdown("<h2 style='text-align: center; color: white; opacity: 0; transition: opacity 2s 3s;'>Nội dung chính của Trang (sẽ xuất hiện bên dưới)</h2>", unsafe_allow_html=True)
-
 
 # --- HÀM RENDER TRANG TRA CỨU PART NUMBER ---
 
