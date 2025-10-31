@@ -14,8 +14,6 @@ st.set_page_config(
 # Khởi tạo session state
 if 'page' not in st.session_state:
     st.session_state.page = 'home' # <-- TRANG ĐIỀU HƯỚNG CHÍNH
-if 'music_loaded' not in st.session_state:
-    st.session_state.music_loaded = False
 
 
 # --- CÁC HÀM TIỆN ÍCH DÙNG CHUNG ---
@@ -23,13 +21,14 @@ if 'music_loaded' not in st.session_state:
 def get_base64_encoded_file(file_path):
     """Đọc file và trả về Base64 encoded string."""
     if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
-        return "" # Trả về chuỗi rỗng thay vì None để tránh lỗi string formatting
+        # Quan trọng: Nếu file không tồn tại, trả về chuỗi Base64 1x1 pixel trong suốt để không làm hỏng CSS URL
+        return "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" 
     try:
         with open(file_path, "rb") as f:
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except Exception as e:
-        return ""
+        return "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
 
 def load_and_clean(excel_file, sheet):
     """Tải và làm sạch DataFrame từ Excel sheet."""
@@ -46,9 +45,9 @@ def load_and_clean(excel_file, sheet):
 def render_music_player(logo_base64):
     """Render thanh Music Player và CSS/JS liên quan."""
     music_files = [get_base64_encoded_file(f"background{i}.mp3") for i in range(1, 7)]
-    music_sources_js = ",\n        ".join([f"'{music}'" for music in music_files if music])
+    music_sources_js = ",\n        ".join([f"'{music}'" for music in music_files if len(music) > 50]) # Kiểm tra file có nội dung
 
-    # CSS cho Music Player (giúp hiển thị ở trang Part Number)
+    # CSS cho Music Player
     music_player_css = f"""
     <style>
     @keyframes neon-border-pulse {{
@@ -63,7 +62,7 @@ def render_music_player(logo_base64):
     #music-player-container {{
         position: fixed; bottom: 20px; right: 20px; width: 350px; padding: 8px 16px;
         background: rgba(0, 0, 0, 0.7); border-radius: 12px; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
-        z-index: 999; opacity: 1; transition: opacity 1s; /* Đảm bảo luôn hiện khi không ở video intro */
+        z-index: 999; opacity: 1; transition: opacity 1s;
     }}
     #music-player-container::before {{
         content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%; margin: -3px;
@@ -88,7 +87,8 @@ def render_music_player(logo_base64):
     @media (max-width: 768px) {{
         #music-player-container {{ width: calc(100% - 40px); right: 20px; left: 20px; bottom: 15px; padding: 8px 12px; }}
     }}
-    /* Chỉ ẩn Music Player trong quá trình chạy video intro (dùng cho trang Home) */
+    
+    /* Music player chỉ ẩn trong quá trình chạy video intro (dùng cho trang Home) */
     .stApp:not(.video-finished) #music-player-container {{ opacity: 0; transform: translateY(100px); }}
     </style>
     """
@@ -99,7 +99,12 @@ def render_music_player(logo_base64):
     <script>
         document.addEventListener('DOMContentLoaded', () => {{
             const musicSources = [{music_sources_js}];
-            if (musicSources.length === 0) return;
+            if (musicSources.length === 0) {{
+                // Tắt Player nếu không có file nhạc
+                const playerContainer = document.getElementById('music-player-container');
+                if(playerContainer) playerContainer.style.display = 'none';
+                return;
+            }}
 
             // 1. Tìm hoặc tạo Global Audio Element (ở parent window)
             let audio = window.parent.document.getElementById('global-music-audio');
@@ -108,7 +113,8 @@ def render_music_player(logo_base64):
                 audio.id = 'global-music-audio';
                 audio.volume = 0.3;
                 window.parent.document.body.appendChild(audio);
-                audio.src = musicSources[0]; // Tải track đầu tiên khi khởi tạo
+                // Bắt buộc phải load track đầu tiên khi tạo
+                audio.src = musicSources[0];
                 audio.load();
             }}
             
@@ -123,9 +129,9 @@ def render_music_player(logo_base64):
 
             if (!playPauseBtn) return;
             
-            let currentTrackIndex = 0;
-            // Tìm index của track hiện tại (cần logic phức tạp hơn nếu muốn nhớ vị trí)
-            
+            // Tìm index của track hiện tại
+            let currentTrackIndex = musicSources.findIndex(src => src === audio.src) || 0;
+
             function formatTime(seconds) {{
                 if (isNaN(seconds) || seconds < 0) return '0:00';
                 const mins = Math.floor(seconds / 60);
@@ -133,14 +139,13 @@ def render_music_player(logo_base64):
                 return `${{mins}}:${{secs.toString().padStart(2, '0')}}`;
             }}
             
+            // Cập nhật UI của Player
             function updatePlayerUI() {{
-                 // Đồng bộ trạng thái UI (Play/Pause)
                  if (audio.paused) {{
                     playPauseBtn.textContent = '▶';
                  }} else {{
                     playPauseBtn.textContent = '⏸';
                  }}
-                 // Đồng bộ thời gian
                  const progress = (audio.currentTime / audio.duration) * 100;
                  if (!isNaN(progress)) progressBar.style.width = progress + '%';
                  currentTimeEl.textContent = formatTime(audio.currentTime);
@@ -149,11 +154,11 @@ def render_music_player(logo_base64):
 
             function togglePlayPause() {{
                 if (audio.paused) {{
-                    // Yêu cầu Play (cần tương tác người dùng)
+                    // Vấn đề: Trình duyệt chặn Play tự động
                     audio.play().then(updatePlayerUI).catch(e => {{
                         console.error("Play error:", e);
-                        // Thông báo lỗi nếu trình duyệt chặn
-                        alert("Vui lòng tương tác (nhấn Play) để trình duyệt cho phép phát nhạc.");
+                        // Cung cấp thông báo rõ ràng cho người dùng
+                        alert("⚠️ Lỗi phát nhạc: Trình duyệt đang chặn Play tự động. Vui lòng bấm nút Play một lần nữa.");
                         playPauseBtn.textContent = '▶';
                     }});
                 }} else {{
@@ -162,28 +167,19 @@ def render_music_player(logo_base64):
                 }}
             }}
             
-            function nextTrack() {{
-                currentTrackIndex = (currentTrackIndex + 1) % musicSources.length;
+            function changeTrack(direction) {{
+                currentTrackIndex = (currentTrackIndex + direction + musicSources.length) % musicSources.length;
                 audio.src = musicSources[currentTrackIndex];
                 audio.load();
                 if (!audio.paused) {{ 
-                    audio.play().catch(e => console.error("Next track play error:", e)); 
-                }}
-            }}
-            
-            function prevTrack() {{
-                currentTrackIndex = (currentTrackIndex - 1 + musicSources.length) % musicSources.length;
-                audio.src = musicSources[currentTrackIndex];
-                audio.load();
-                if (!audio.paused) {{ 
-                    audio.play().catch(e => console.error("Prev track play error:", e)); 
+                    audio.play().catch(e => console.error("Track change play error:", e)); 
                 }}
             }}
             
             // 3. Gắn sự kiện (Chỉ gắn sự kiện cho các nút trong Iframe hiện tại)
             playPauseBtn.onclick = togglePlayPause;
-            nextBtn.onclick = nextTrack;
-            prevBtn.onclick = prevTrack;
+            nextBtn.onclick = () => changeTrack(1);
+            prevBtn.onclick = () => changeTrack(-1);
             progressContainer.onclick = (e) => {{
                 if (audio.duration) {{
                     const rect = progressContainer.getBoundingClientRect();
@@ -192,11 +188,11 @@ def render_music_player(logo_base64):
                 }}
             }};
 
-            // 4. Lắng nghe sự kiện từ Global Audio Object và cập nhật UI
+            // 4. Lắng nghe sự kiện từ Global Audio Object và cập nhật UI (Chỉ cần lắng nghe 1 lần)
             if (!window.parent.audioUpdateListenerAdded) {{
                 audio.addEventListener('timeupdate', updatePlayerUI);
                 audio.addEventListener('loadedmetadata', updatePlayerUI);
-                audio.addEventListener('ended', nextTrack);
+                audio.addEventListener('ended', () => changeTrack(1));
                 window.parent.audioUpdateListenerAdded = true;
             }}
             
@@ -239,8 +235,8 @@ def render_home_page():
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
     logo_base64 = get_base64_encoded_file("logo.jpg")
 
-    if not all([video_pc_base64, video_mobile_base64, audio_base64, bg_pc_base64, bg_mobile_base64, logo_base64]):
-        st.error("⚠️ Thiếu một số file media bắt buộc cho Trang Chủ.")
+    if logo_base64 == "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=":
+        st.error("⚠️ Lỗi: Không tìm thấy file 'logo.jpg'.")
         st.stop()
             
     # --- PHẦN 1: NHÚNG FONT VÀ CSS CHUNG ---
@@ -251,7 +247,7 @@ def render_home_page():
     """
     st.markdown(font_links, unsafe_allow_html=True)
 
-    # CSS (Đã sửa lỗi hiển thị link)
+    # CSS (Đã sửa lỗi Video Zoom, Background Đen, Size Link)
     hide_streamlit_style = f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -261,34 +257,81 @@ def render_home_page():
     .main {{ padding: 0; margin: 0; }}
     div.block-container {{ padding: 0; margin: 0; max-width: 100% !important; }}
 
+    /* FIX: Background đen thui */
     .stApp {{
         --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
         --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
+        /* đảm bảo background mặc định là màu đen trước khi load video */
+        background-color: black; 
     }}
-    
-    /* ... (CSS Video, Title, Reveal Grid giữ nguyên) ... */
 
+    /* FIX: Video bị zoom (đã thêm CSS cho video element trong iframe) */
+    iframe:first-of-type {{
+        transition: opacity 1s ease-out, visibility 1s ease-out;
+        opacity: 1;
+        visibility: visible;
+        width: 100vw !important;
+        height: 100vh !important;	
+        position: fixed;
+        top: 0;
+        left: 0;
+        z-index: 1000;
+        /* THÊM QUAN TRỌNG: Đảm bảo iframe không bị overflow */
+        padding: 0;
+        margin: 0;
+        border: none;
+    }}
+
+    .video-finished iframe:first-of-type {{
+        opacity: 0;
+        visibility: hidden;
+        pointer-events: none;
+        height: 1px !important;	
+        width: 1px !important;
+    }}
+
+    .reveal-grid {{
+        position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
+        display: grid; grid-template-columns: repeat(20, 1fr);	grid-template-rows: repeat(12, 1fr);
+        z-index: 500; pointer-events: none;	
+    }}
+    .grid-cell {{ background-color: white; opacity: 1; transition: opacity 0.5s ease-out; }}
+    
+    /* FIX: Background trang chính k load (đen thui) */
+    .main-content-revealed {{
+        background-image: var(--main-bg-url-pc); background-size: cover; background-position: center;
+        background-attachment: fixed; filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%);	
+        transition: filter 2s ease-out;	
+    }}
+
+    @media (max-width: 768px) {{
+        .main-content-revealed {{ background-image: var(--main-bg-url-mobile); }}
+        .reveal-grid {{ grid-template-columns: repeat(10, 1fr); grid-template-rows: repeat(20, 1fr); }}
+    }}
+
+    /* ... (CSS Title giữ nguyên) ... */
+
+    /* FIX: Size link quá lớn và không chuyển trang */
     .content-links-container {{
         position: fixed; top: 30vh; width: 100%; z-index: 10; 
-        display: flex; /* Đảm bảo các mục nằm ngang */
-        justify-content: center; /* Đảm bảo nằm giữa */
-        gap: 80px; /* Thêm khoảng cách giữa 2 link */
+        display: flex; 
+        justify-content: center; 
+        gap: 60px; /* Giảm khoảng cách giữa 2 link */
         align-items: center; padding: 0 0;
         box-sizing: border-box; pointer-events: none; opacity: 0; transition: opacity 2s ease-out 3s;
     }}
     .video-finished .content-links-container {{ opacity: 1; pointer-events: auto; }}
-    /* Bỏ các margin auto cũ đang gây lỗi */
-    #link-part-number, #link-quiz-bank {{ margin: 0 !important; }} 
 
     .container-link {{
-        display: inline-block; padding: 10px 15px; text-align: center; text-decoration: none;
-        color: #00ffff; font-family: 'Playfair Display', serif; font-size: 2.2rem;
+        display: inline-block; padding: 8px 12px; text-align: center; text-decoration: none;
+        color: #00ffff; font-family: 'Playfair Display', serif; 
+        font-size: 1.8rem; /* FIX: Giảm size tiêu đề */
         font-weight: 700; cursor: pointer; background-color: rgba(0, 0, 0, 0.4);
         border: 2px solid #00ffff; border-radius: 8px; box-sizing: border-box;
         text-shadow: 0 0 4px rgba(0, 255, 255, 0.8), 0 0 10px rgba(34, 141, 255, 0.6);
         box-shadow: 0 0 5px #00ffff, 0 0 15px rgba(0, 255, 255, 0.5);
         transition: transform 0.3s ease, color 0.3s ease, text-shadow 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
-        white-space: nowrap; /* Giữ cho nội dung không bị xuống dòng */
+        white-space: nowrap;
     }}
 
     .container-link:hover {{
@@ -296,19 +339,23 @@ def render_home_page():
         box-shadow: 0 0 5px #ffd700, 0 0 15px #ff8c00, 0 0 25px rgba(255, 215, 0, 0.7);
         text-shadow: 0 0 3px #ffd700, 0 0 8px #ff8c00;
     }}
+    
+    @media (max-width: 768px) {{
+        .container-link {{ font-size: 1.2rem; }}
+        .content-links-container {{ flex-direction: column; gap: 15px; }}
+    }}
     </style>
     """
     st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-    # JavaScript (Đã sửa lại logic chuyển trang)
+    # JavaScript (Đã sửa lỗi Video Zoom, Chuyển Trang)
     js_callback_video = f"""
     <script>
         console.log("Home Script loaded");
         
-        // Hàm gửi tín hiệu chuyển trang về Streamlit Python
+        // Hàm chuyển trang sử dụng URL query param
         function sendPageChange(pageName) {{
-            // *** SỬ DỤNG CHUYỂN HƯỚNG TRỰC TIẾP QUA QUERY PARAM ***
             const currentUrl = window.parent.location.href.split('?')[0];
             window.parent.location.href = currentUrl + '?page=' + pageName;
         }}
@@ -328,11 +375,9 @@ def render_home_page():
                 stApp.classList.add('video-finished', 'main-content-revealed');
             }}
             initRevealEffect();
-            // KHÔNG CẦN CHẠY music player logic ở đây nữa vì nó đã tự khởi động
         }}
         
         function initRevealEffect() {{
-            // ... (Giữ nguyên logic reveal) ...
             const revealGrid = window.parent.document.querySelector('.reveal-grid');
             if (!revealGrid) {{ return; }}
             const cells = revealGrid.querySelectorAll('.grid-cell');
@@ -376,6 +421,7 @@ def render_home_page():
                         document.removeEventListener('touchstart', clickHandler);
                     }};
                     
+                    // Cần tương tác người dùng để Play
                     document.addEventListener('click', clickHandler, {{ once: true }});
                     document.addEventListener('touchstart', clickHandler, {{ once: true }});
                     
@@ -391,14 +437,14 @@ def render_home_page():
     </script>
     """
     
-    # Mã HTML/CSS cho Video Intro
+    # Mã HTML/CSS cho Video Intro (Đã thêm CSS cho video element)
     html_content_modified = f"""
     <!DOCTYPE html>
     <html>
     <head>
         <style>
-            /* ... (CSS Video Intro giữ nguyên) ... */
             html, body {{ margin: 0; padding: 0; overflow: hidden; height: 100vh; width: 100vw; background-color: #000; }}
+            /* FIX: Video bị zoom to */
             #intro-video {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 0; transition: opacity 1s; }}
             #intro-text-container {{	position: fixed; top: 5vh; width: 100%; text-align: center; color: #FFD700; font-size: 3vw; font-family: 'Sacramento', cursive; text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8); z-index: 100; pointer-events: none; display: flex; justify-content: center; opacity: 1; transition: opacity 0.5s; }}
             .intro-char {{ display: inline-block; opacity: 0; transform: translateY(-50px); animation-fill-mode: forwards; animation-duration: 0.8s; animation-timing-function: ease-out; }}
@@ -426,6 +472,7 @@ def render_home_page():
     )
 
     # --- HIỂN THỊ IFRAME VIDEO ---
+    # Đặt height lớn để đảm bảo chiếm toàn bộ không gian
     st.components.v1.html(html_content_modified, height=1080, scrolling=False)
 
 
@@ -443,7 +490,7 @@ def render_home_page():
     """, unsafe_allow_html=True)
 
 
-    # --- TIÊU ĐỀ PHỤ (CÓ CLICK CHUYỂN TRANG) ---
+    # --- TIÊU ĐỀ PHỤ (Đã sửa lỗi size và chuyển trang) ---
     st.markdown("""
     <div class="content-links-container">
         <div class="container-link" id="link-part-number" onclick="switchToPartNumber()">
@@ -492,6 +539,7 @@ def render_part_number_page():
         background: #5d4037; box-shadow: 2px 2px 0 #3e2723; transform: translate(2px, 2px);
     }}
 
+    /* FIX: Background trang chính Part Number load */
     .stApp {{
         font-family: 'Special Elite', cursive !important;
         background:
@@ -505,8 +553,6 @@ def render_part_number_page():
         background: url("https://www.transparenttextures.com/patterns/aged-paper.png");
         opacity: 0.2; pointer-events: none; z-index: -1;
     }}
-
-    /* ... (CSS cho Part Number giữ nguyên) ... */
 
     header[data-testid="stHeader"] {{ display: none; }}
     .block-container {{ padding-top: 0 !important; }}
@@ -522,7 +568,7 @@ def render_part_number_page():
     
     # Thêm nút quay lại trang chủ
     if st.button("⬅️ Quay lại Trang Chủ", key="back_home_part", help="Trở về màn hình giới thiệu", type="secondary"):
-        st.query_params.clear() # Xóa page param
+        st.query_params.clear() 
         st.session_state.page = 'home'
         st.rerun()
 
