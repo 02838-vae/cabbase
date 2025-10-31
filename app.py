@@ -17,30 +17,32 @@ if 'video_ended' not in st.session_state:
 
 def get_base64_encoded_file(file_path):
     """Đọc file và trả về Base64 encoded string."""
-    # Kiểm tra kích thước file > 0
-    if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
+    if not os.path.exists(file_path):
+        print(f"❌ File không tồn tại: {file_path}")
+        return None
+    if os.path.getsize(file_path) == 0:
+        print(f"❌ File rỗng: {file_path}")
         return None
     try:
         with open(file_path, "rb") as f:
             data = f.read()
-        return base64.b64encode(data).decode("utf-8")
+        encoded = base64.b64encode(data).decode("utf-8")
+        print(f"✅ Đã mã hóa file: {file_path} ({len(encoded)} ký tự)")
+        return encoded
     except Exception as e:
+        print(f"❌ Lỗi khi đọc file {file_path}: {str(e)}")
         return None
 
 
 # Mã hóa các file media chính (bắt buộc)
 try:
-    # Đảm bảo các file này nằm cùng thư mục với app.py
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
-    
-    # MÃ HÓA CHO LOGO
     logo_base64 = get_base64_encoded_file("logo.jpg")
 
-    # Kiểm tra file bắt buộc
     if not all([video_pc_base64, video_mobile_base64, audio_base64, bg_pc_base64, bg_mobile_base64]):
         missing_files = []
         if not video_pc_base64: missing_files.append("airplane.mp4")
@@ -49,26 +51,60 @@ try:
         if not bg_pc_base64: missing_files.append("cabbase.jpg")
         if not bg_mobile_base64: missing_files.append("mobile.jpg")
         
-        st.error(f"⚠️ Thiếu các file media cần thiết hoặc file rỗng. Vui lòng kiểm tra lại các file sau trong thư mục:")
-        st.write(" - " + "\n - ".join(missing_files))
+        st.error(f"⚠️ Thiếu các file media cần thiết hoặc file rỗng:")
+        for f in missing_files:
+            st.write(f"- {f}")
         st.stop()
         
 except Exception as e:
-    st.error(f"❌ Lỗi khi đọc file: {{str(e)}}")
+    st.error(f"❌ Lỗi khi đọc file: {str(e)}")
     st.stop()
 
-# Đảm bảo logo_base64 được khởi tạo nếu file không tồn tại
-if not 'logo_base64' in locals() or not logo_base64:
+if not logo_base64:
     logo_base64 = "" 
 
 
-# Mã hóa các file nhạc nền (không bắt buộc)
+# ===== PHẦN QUAN TRỌNG: MÃ HÓA CÁC FILE NHẠC NỀN =====
+print("\n🎵 Đang tìm kiếm file nhạc nền...")
 music_files = []
-# Bạn cần đảm bảo các file này tên là background1.mp3, background2.mp3, v.v...
-for i in range(1, 7):
-    music_base64 = get_base64_encoded_file(f"background{{i}}.mp3")
-    if music_base64:
-        music_files.append(music_base64)
+
+# Thử nhiều pattern tên file khác nhau
+patterns_to_try = [
+    "background{}.mp3",  # background1.mp3, background2.mp3, ...
+    "Background{}.mp3",  # Background1.mp3 (chữ B hoa)
+    "music{}.mp3",       # music1.mp3, music2.mp3, ...
+    "song{}.mp3",        # song1.mp3, song2.mp3, ...
+]
+
+for pattern in patterns_to_try:
+    for i in range(1, 10):  # Thử từ 1-9
+        filename = pattern.format(i)
+        music_base64 = get_base64_encoded_file(filename)
+        if music_base64:
+            music_files.append(music_base64)
+            print(f"✅ Đã tải: {filename}")
+
+# Hiển thị thông tin debug
+if len(music_files) == 0:
+    print("\n❌ KHÔNG TÌM THẤY FILE NHẠC NÀO!")
+    print("📁 Các file trong thư mục hiện tại:")
+    for item in os.listdir("."):
+        if item.endswith((".mp3", ".MP3")):
+            print(f"   - {item}")
+    
+    st.warning(f"""
+    ⚠️ **Không tìm thấy file nhạc nền!**
+    
+    Vui lòng đặt file MP3 vào cùng thư mục với script này và đặt tên theo format:
+    - `background1.mp3`, `background2.mp3`, ... hoặc
+    - `music1.mp3`, `music2.mp3`, ... hoặc  
+    - `song1.mp3`, `song2.mp3`, ...
+    
+    Các file MP3 hiện có trong thư mục: {[f for f in os.listdir('.') if f.endswith(('.mp3', '.MP3'))]}
+    """)
+else:
+    print(f"\n✅ ĐÃ TẢI THÀNH CÔNG {len(music_files)} FILE NHẠC!")
+    st.success(f"✅ Đã tải {len(music_files)} bài nhạc nền")
 
 
 # --- PHẦN 1: NHÚNG FONT VÀ CSS CHUNG ---
@@ -79,7 +115,7 @@ font_links = """
 """
 st.markdown(font_links, unsafe_allow_html=True)
 
-# CSS (ĐÃ XÁC NHẬN FIX VỊ TRÍ VÀ HIỆU ỨNG)
+# CSS (Giữ nguyên - không thay đổi)
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -231,11 +267,11 @@ iframe:first-of-type {{
 /* --- KEYFRAMES NEON (Dành cho Music Player) --- */
 @keyframes neon-border-pulse {{
     0%, 100% {{
-        border-color: #00ffff; /* Cyan */
+        border-color: #00ffff;
         box-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff;
     }}
     50% {{
-        border-color: #00ccff; /* Blue/Cyan nhẹ hơn */
+        border-color: #00ccff;
         box-shadow: 0 0 2px #00ccff, 0 0 5px #00ccff;
     }}
 }}
@@ -254,7 +290,6 @@ iframe:first-of-type {{
     opacity: 0;
     transform: translateY(100px);
     transition: opacity 1s ease-out 2s, transform 1s ease-out 2s;
-    position: fixed;	
 }}
 
 #music-player-container::before {{
@@ -285,7 +320,7 @@ iframe:first-of-type {{
 
 #music-player-container * {{
     position: relative;
-    z-index: 5; 	
+    z-index: 5;
 }}
 
 .video-finished #music-player-container {{
@@ -382,7 +417,6 @@ iframe:first-of-type {{
     }}
 }}
 
-/* --- CSS MỚI CHO 2 TIÊU ĐỀ PHỤ --- */
 .content-links-container {{
     position: fixed; 
     top: 30vh; 
@@ -475,25 +509,25 @@ iframe:first-of-type {{
 </style>
 """
 
-# Thêm CSS vào trang chính
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (CÓ CHỈNH SỬA LOGIC NHẠC) ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
-# Tạo danh sách music sources cho JavaScript 
+# Tạo danh sách music sources cho JavaScript - FIX QUAN TRỌNG
 if len(music_files) > 0:
     music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files])
 else:
-    music_sources_js = ""
+    music_sources_js = "''"  # Cung cấp giá trị mặc định để tránh lỗi syntax
 
-# JavaScript (Đã sửa đổi logic phát nhạc để đảm bảo tương tác người dùng)
+# JavaScript với logging chi tiết hơn
 js_callback_video = f"""
 <script>
-    console.log("Script loaded");
+    console.log("🎬 Script loaded");
+    console.log("🎵 Number of music files available: {len(music_files)}");
     
     function sendBackToStreamlit() {{
-        console.log("Video ended or skipped, revealing main content");
+        console.log("✅ Video ended, revealing main content");
         const stApp = window.parent.document.querySelector('.stApp');
         if (stApp) {{
             stApp.classList.add('video-finished', 'main-content-revealed');
@@ -504,7 +538,6 @@ js_callback_video = f"""
     
     function initRevealEffect() {{
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
-
         if (!revealGrid) {{ return; }}
 
         const cells = revealGrid.querySelectorAll('.grid-cell');
@@ -521,13 +554,12 @@ js_callback_video = f"""
         }}, shuffledCells.length * 10 + 1000);
     }}
     
-    // ĐÃ TỐI ƯU HÓA HÀM NÀY ĐỂ KHẮC PHỤC LỖI PLAY/PAUSE
     function initMusicPlayer() {{
-        console.log("Initializing music player");
+        console.log("🎵 Initializing music player...");
         
         const musicSources = [{music_sources_js}];
+        console.log("📋 Music sources array length:", musicSources.length);
         
-        // --- Music Player Elements ---
         const playPauseBtn = window.parent.document.getElementById('play-pause-btn');
         const prevBtn = window.parent.document.getElementById('prev-btn');
         const nextBtn = window.parent.document.getElementById('next-btn');
@@ -537,53 +569,56 @@ js_callback_video = f"""
         const durationEl = window.parent.document.getElementById('duration');
         
         if (!playPauseBtn || !prevBtn || !nextBtn) {{
-            console.error("Music player elements not found in parent document");
+            console.error("❌ Music player elements not found!");
             return;
         }}
         
-        if (musicSources.length === 0) {{
-             console.warn("No music files available. Player is inactive.");
+        if (musicSources.length === 0 || musicSources[0] === '') {{
+             console.warn("⚠️ No music files available!");
              durationEl.textContent = 'N/A';
+             playPauseBtn.textContent = '❌';
              playPauseBtn.style.pointerEvents = 'none';
              prevBtn.style.pointerEvents = 'none';
              nextBtn.style.pointerEvents = 'none';
+             playPauseBtn.style.opacity = '0.5';
+             prevBtn.style.opacity = '0.5';
+             nextBtn.style.opacity = '0.5';
              return; 
         }}
+        
+        console.log("✅ Music player elements found, creating Audio object...");
         
         let currentTrack = 0;
         const audio = new Audio();
         audio.volume = 0.3;
         
-        
         function loadTrack(index) {{
-            console.log("Loading track", index + 1);
+            console.log("📀 Loading track #" + (index + 1) + "...");
             audio.src = musicSources[index];
-            audio.load(); // Yêu cầu tải metadata ngay khi đổi track
+            audio.load();
+            console.log("✅ Track loaded, src length:", audio.src.length);
         }}
         
         function togglePlayPause() {{
-            // KIỂM TRA TRỰC TIẾP TRẠNG THÁI AUDIO
+            console.log("🎵 Toggle play/pause clicked. Current paused state:", audio.paused);
+            
             if (!audio.paused) {{
-                // ĐANG CHƠI -> TẠM DỪNG
                 audio.pause();
                 playPauseBtn.textContent = '▶';
-                console.log("Music paused.");
+                console.log("⏸️ Music paused");
             }} else {{
-                // ĐANG DỪNG -> CHƠI
-                if (!audio.src) {{
+                if (!audio.src || audio.src === '') {{
+                    console.log("⚠️ No source, loading track 0...");
                     loadTrack(currentTrack);
                 }}
 
-                // FIX QUAN TRỌNG: Buộc tải lại dữ liệu Base64 trước khi play để tránh lỗi kẹt
-                audio.load();
-                
+                console.log("▶️ Attempting to play...");
                 audio.play().then(() => {{
                     playPauseBtn.textContent = '⏸';
-                    console.log("Music playing.");
+                    console.log("✅ Music playing successfully!");
                 }}).catch(e => {{
-                    console.error("Play error:", e);
-                    // BÁO LỖI TRỰC TIẾP LÊN GIAO DIỆN NẾU THẤT BẠI
-                    alert("❌ Lỗi phát nhạc: Kiểm tra lại file MP3 hoặc Base64. (Chi tiết lỗi: " + e.message + ")");
+                    console.error("❌ Play failed:", e);
+                    alert("❌ Lỗi phát nhạc: " + e.message + "\\n\\nVui lòng kiểm tra:\\n1. File MP3 có đúng format không?\\n2. File có bị lỗi không?\\n3. Xem console log để biết chi tiết");
                     playPauseBtn.textContent = '▶';
                 }});
             }}
@@ -591,6 +626,7 @@ js_callback_video = f"""
         
         function nextTrack() {{
             currentTrack = (currentTrack + 1) % musicSources.length;
+            console.log("⏭️ Next track:", currentTrack + 1);
             loadTrack(currentTrack);
             if (!audio.paused) {{
                 audio.play().catch(e => console.error("Next track play error:", e));
@@ -599,6 +635,7 @@ js_callback_video = f"""
         
         function prevTrack() {{
             currentTrack = (currentTrack - 1 + musicSources.length) % musicSources.length;
+            console.log("⏮️ Previous track:", currentTrack + 1);
             loadTrack(currentTrack);
             if (!audio.paused) {{
                 audio.play().catch(e => console.error("Prev track play error:", e));
@@ -620,13 +657,20 @@ js_callback_video = f"""
         
         audio.addEventListener('loadedmetadata', () => {{
             durationEl.textContent = formatTime(audio.duration);
+            console.log("📊 Duration loaded:", audio.duration + "s");
         }});
         
         audio.addEventListener('ended', () => {{
+            console.log("🔚 Track ended, playing next...");
             nextTrack();
         }});
         
-        // Gắn sự kiện vào nút bấm
+        audio.addEventListener('error', (e) => {{
+            console.error("❌ Audio error event:", e);
+            console.error("Error code:", audio.error ? audio.error.code : 'unknown');
+            console.error("Error message:", audio.error ? audio.error.message : 'unknown');
+        }});
+        
         playPauseBtn.addEventListener('click', togglePlayPause);
         nextBtn.addEventListener('click', nextTrack);
         prevBtn.addEventListener('click', prevTrack);
@@ -639,9 +683,8 @@ js_callback_video = f"""
             }}
         }});
         
-        // Tải bài hát đầu tiên ngay lập tức
         loadTrack(0);
-        console.log("Music player initialized successfully and first track loaded.");
+        console.log("✅ Music player fully initialized!");
     }}
 
     document.addEventListener("DOMContentLoaded", function() {{
