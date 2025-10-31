@@ -104,7 +104,6 @@ if len(music_files) == 0:
     """)
 else:
     print(f"\n✅ ĐÃ TẢI THÀNH CÔNG {len(music_files)} FILE NHẠC!")
-    st.success(f"✅ Đã tải {len(music_files)} bài nhạc nền")
 
 
 # --- PHẦN 1: NHÚNG FONT VÀ CSS CHUNG ---
