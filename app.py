@@ -25,8 +25,8 @@ def navigate_to(page_name):
 
 # --- CÁC HÀM TIỆN ÍCH DÙNG CHUNG ---
 
-def get_base64_encoded_file(file_path, mime_type=""):
-    """Đọc file và trả về Base64 encoded string."""
+def get_base64_encoded_file(file_path):
+    """Đọc file và trả về Base64 encoded string. (Giữ lại cho các file nhỏ: ảnh, audio)"""
     fallback_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" 
     if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
         return fallback_base64
@@ -52,21 +52,25 @@ def load_and_clean(excel_file, sheet):
         return pd.DataFrame()
 
 
-# --- TẢI VÀ KIỂM TRA FILE (Sử dụng Base64 cho tất cả media) ---
-# Đảm bảo các file này tồn tại trong cùng thư mục với script
-video_pc_base64 = get_base64_encoded_file("airplane.mp4")
-video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
-audio_intro_base64 = get_base64_encoded_file("plane_fly.mp3")
+# --- TẢI VÀ KIỂM TRA FILE ---
+# Video file paths (sẽ dùng trực tiếp)
+VIDEO_PC_PATH = "airplane.mp4"
+VIDEO_MOBILE_PATH = "mobile.mp4"
+AUDIO_INTRO_PATH = "plane_fly.mp3"
+
+# Base64 cho các file nhỏ (ảnh, audio nền)
+audio_intro_base64 = get_base64_encoded_file(AUDIO_INTRO_PATH)
 bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
 bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
 
 music_files = [get_base64_encoded_file(f"background{i}.mp3") for i in range(1, 7)]
-valid_music_files = [music for music in music_files if music != "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="]
+valid_music_files = [music for music in music_files if music != "iVBORN5CYII="]
 
 
-# --- PHẦN MUSIC PLAYER ---
+# --- PHẦN MUSIC PLAYER (Không thay đổi) ---
 def render_music_player():
-    """Render thanh Music Player và CSS/JS liên quan (Ổn định trên DOM chính)."""
+    """Render thanh Music Player và CSS/JS liên quan."""
+    # (Phần này giữ nguyên như code trước)
     if not valid_music_files: return
 
     music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in valid_music_files]) 
@@ -126,14 +130,11 @@ def render_music_player():
 
     music_player_js = f"""
     <script>
-        // Dùng window.musicPlayerInitialized để đảm bảo chỉ chạy 1 lần
         if (!window.musicPlayerInitialized) {{
             const musicSources = [{music_sources_js}];
             if (musicSources.length === 0) return;
 
             const getEl = (id) => window.document.getElementById(id);
-
-            // 1. Tạo hoặc tìm Audio Element toàn cục
             let audio = window.document.getElementById('global-music-audio');
             if (!audio) {{
                 audio = window.document.createElement('audio');
@@ -226,12 +227,10 @@ def render_music_player():
 # --- HÀM RENDER TRANG CHỦ ---
 def render_home_page():
     
-    # 1. CSS CHUNG và Hiệu ứng chuyển cảnh (Cải tiến)
-    video_src = f"data:video/mp4;base64,{video_pc_base64}"
-    video_src_mobile = f"data:video/mp4;base64,{video_mobile_base64}"
+    # 1. CSS CHUNG và Hiệu ứng chuyển cảnh
     audio_src = f"data:audio/mp3;base64,{audio_intro_base64}"
     
-    # === SỬA LỖI VIDEO PLAYBACK LOGIC ===
+    # === LOGIC JS MỚI: Dùng Video ID của Streamlit ===
     js_reveal_code = f"""
     <script>
         function revealContent() {{
@@ -254,17 +253,34 @@ def render_home_page():
         }}
 
         document.addEventListener("DOMContentLoaded", () => {{
-            const video = document.getElementById('intro-video'); // ID VIDEO DUY NHẤT
+            // TÌM PHẦN TỬ VIDEO Streamlit TẠO RA (Thường là phần tử video đầu tiên trong stApp)
+            const video = document.querySelector('.stApp video'); 
             const audio = document.getElementById('background-audio');
             const introTextContainer = document.getElementById('intro-text-container');
             
             if (video && audio) {{
+                // Logic phát hiện xem video đã phát chưa (để tránh revealContent ngay lập tức)
+                let videoStarted = false;
+                
+                // Lắng nghe sự kiện "chơi" để xác nhận video đã chạy
+                video.addEventListener('play', () => {{
+                    videoStarted = true;
+                    audio.play().catch(e => console.log("Audio Intro Blocked/Started Late."));
+                }}, {{ once: true }});
+                
                 // Lắng nghe sự kiện ended sau khi metadata đã được tải
                 video.addEventListener('loadedmetadata', () => {{
                     video.addEventListener('ended', () => {{
-                        video.style.opacity = 0; audio.pause(); 
-                        if(introTextContainer) introTextContainer.style.opacity = 0;
-                        setTimeout(revealContent, 500);
+                        if (videoStarted) {{ // Chỉ chuyển khi video thực sự đã chạy xong
+                            video.style.opacity = 0; 
+                            audio.pause(); 
+                            if(introTextContainer) introTextContainer.style.opacity = 0;
+                            setTimeout(revealContent, 500);
+                        }} else {{
+                            // Nếu ended xảy ra mà chưa kịp play (lỗi tải), chuyển ngay
+                            console.log("Video ended without starting. Revealing content immediately.");
+                            revealContent();
+                        }}
                     }}, {{ once: true }});
                 }}, {{ once: true }});
 
@@ -277,27 +293,23 @@ def render_home_page():
                     char.classList.add('char-shown');	
                 }});
                 
-                // FIX: Play/Pause/End event listeners
+                // Yêu cầu tương tác người dùng để phát video
                 function attemptPlay() {{
-                    video.play().then(() => {{
-                        // Phát audio sau khi video đã play thành công
-                        audio.play().catch(e => console.log("Audio Intro Blocked/Started Late."));
-                        
-                        // Loại bỏ listener sau khi tương tác thành công
-                        document.removeEventListener('click', attemptPlay);
-                        document.removeEventListener('touchstart', attemptPlay);
-                    }}).catch(err => {{
+                    video.play().catch(err => {{
                         console.error("Video Play Blocked/Failed. Showing content:", err);
-                        // Nếu bị chặn/lỗi, hiển thị ngay lập tức
                         revealContent();
                     }});
+                    
+                    document.removeEventListener('click', attemptPlay);
+                    document.removeEventListener('touchstart', attemptPlay);
                 }}
                 
                 // Bắt buộc phải có tương tác người dùng
                 document.addEventListener('click', attemptPlay, {{ once: true }});
                 document.addEventListener('touchstart', attemptPlay, {{ once: true }});
+                
             }} else {{
-                // Nếu video không tồn tại (lỗi file), hiển thị nội dung ngay
+                // Nếu video element không tồn tại, hiển thị nội dung ngay
                 revealContent();
             }}
         }});
@@ -305,6 +317,7 @@ def render_home_page():
     </script>
     """
     
+    # --- CSS GIỮ NGUYÊN (Chỉ cần đảm bảo CSS .stApp video hoạt động) ---
     hide_streamlit_style = f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -320,17 +333,17 @@ def render_home_page():
         background-color: black; 
     }}
     
-    /* Video container (FIXED: Dùng ID duy nhất) */
+    /* Video container (Wrapper vẫn cần để giữ vị trí tuyệt đối) */
     #video-container-wrapper {{
         position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 1000;
         transition: opacity 1s ease-out, visibility 1s ease-out;
     }}
     .video-finished #video-container-wrapper {{ opacity: 0; visibility: hidden; pointer-events: none; }}
     
-    #intro-video {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }}
+    /* Áp dụng CSS cho thẻ <video> được Streamlit nhúng (bên trong stApp) */
+    .stApp video {{ position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; }}
     
-    /* Bỏ Media Query chọn video trong CSS vì đã dùng thẻ <source> trong HTML */
-
+    /* ... (CSS còn lại giữ nguyên) ... */
     .main-content-revealed {{
         background-image: var(--main-bg-url-pc); background-size: cover; background-position: center;
         background-attachment: fixed; filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%);	
@@ -338,7 +351,6 @@ def render_home_page():
     }}
     @media (max-width: 768px) {{ .main-content-revealed {{ background-image: var(--main-bg-url-mobile); }} }}
     
-    /* ... (CSS còn lại giữ nguyên) ... */
     @keyframes scrollText {{ 0% {{ transform: translate(100vw, 0); }} 100% {{ transform: translate(-100%, 0); }} }}
     @keyframes colorShift {{ 0% {{ background-position: 0% 50%; }} 50% {{ background-position: 100% 50%; }} 100% {{ background-position: 0% 50%; }} }}
 
@@ -391,29 +403,27 @@ def render_home_page():
     st.markdown(hide_streamlit_style, unsafe_allow_html=True)
     st.markdown(js_reveal_code, unsafe_allow_html=True)
 
-    # 2. HTML Video và Audio (Dùng <source> để trình duyệt tự chọn)
+    # 2. HTML Video và Audio (SỬ DỤNG STREAMLIT NATIVE VIDEO WIDGET)
     intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
     intro_chars_html = ''.join([
         f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'	
         for char in intro_title
     ])
-
-    # === SỬA LỖI HTML VIDEO: Dùng <video> duy nhất với <source> ===
+    
+    # Tạo video element (sẽ bị ẩn đi bằng CSS)
+    # Streamlit sẽ tự tạo thẻ <video> và nhúng nó vào DOM
+    st.video(VIDEO_PC_PATH) # Streamlit sẽ nhúng video này lên đầu trang
+    
+    # Đặt div wrapper và text animation xung quanh video (Streamlit sẽ đặt video ở trên)
     video_html = f"""
     <div id="video-container-wrapper">
         <div id="intro-text-container">{intro_chars_html}</div>
-        <video id="intro-video" class="intro-video-element" muted playsinline>
-            <source src="{video_src}" type="video/mp4" media="(min-width: 769px)">
-            <source src="{video_src_mobile}" type="video/mp4" media="(max-width: 768px)">
-        </video>
         <audio id="background-audio" src="{audio_src}" volume="0.5"></audio>
     </div>
     """
     st.markdown(video_html, unsafe_allow_html=True)
 
-
     # --- HIỆU ỨNG REVEAL VÀ TIÊU ĐỀ CHÍNH ---
-    # Grid cells để tạo hiệu ứng
     grid_cells_html = "".join([f'<div class="grid-cell"></div>' for i in range(240)])
     reveal_grid_html = f'<div class="reveal-grid">{grid_cells_html}</div>'
     st.markdown(reveal_grid_html, unsafe_allow_html=True)
@@ -441,7 +451,7 @@ def render_home_page():
     render_music_player()
 
 
-# --- HÀM RENDER TRANG TRA CỨU PART NUMBER (ĐÃ BỎ MUSIC PLAYER) ---
+# --- HÀM RENDER TRANG TRA CỨU PART NUMBER ---
 def render_part_number_page():
     
     excel_file = "A787.xlsx"
@@ -455,7 +465,6 @@ def render_part_number_page():
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
     
-    /* Thiết lập lại nền cho trang này */
     .stApp {{
         font-family: 'Special Elite', cursive !important;
         background: linear-gradient(rgba(245, 242, 230, 0.5), rgba(245, 242, 230, 0.5)),
@@ -467,7 +476,6 @@ def render_part_number_page():
         background: url("https://www.transparenttextures.com/patterns/aged-paper.png");
         opacity: 0.2; pointer-events: none; z-index: -1;
     }}
-    /* CSS cho tiêu đề trong trang tra cứu */
     .main-title {{ 
         font-size: 3rem; color: #4B0082; text-align: center; margin-top: 20px; 
         text-shadow: 1px 1px 2px #ccc; border-bottom: 3px solid #8A2BE2; padding-bottom: 5px;
@@ -483,12 +491,8 @@ def render_part_number_page():
     </style>
     """, unsafe_allow_html=True)
 
-    # Thêm nút quay lại trang chủ
     if st.button("⬅️ Quay lại Trang Chủ", key="back_home_part", help="Trở về màn hình giới thiệu", type="secondary"):
         navigate_to('home')
-
-    # --- MUSIC PLAYER ---
-    # render_music_player() <--- ĐÃ BỎ LỜI GỌI HÀM NÀY ĐI
 
     # ===== TIÊU ĐỀ =====
     st.markdown('<div class="main-title">📜 TỔ BẢO DƯỠNG SỐ 1</div>', unsafe_allow_html=True)
@@ -572,7 +576,6 @@ def render_quiz_bank_page():
     st.markdown("---")
     st.info("### Trang này đang được xây dựng!")
     
-    # Giữ Music Player ở trang này nếu cần
     render_music_player()
 
 
