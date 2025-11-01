@@ -524,8 +524,7 @@ def render_home_page():
         <audio id="background-audio"></audio>
         
         <div id="interaction-overlay">
-            <p>🎬 VUI LÒNG CHẠM (CLICK) VÀO MÀN HÌNH ĐỂ KHỞI ĐỘNG VIDEO VÀ ÂM THANH.</p>
-            <p style="font-size: 16px; margin-top: 20px; opacity: 0.8;">⚠️ Do giới hạn của trình duyệt, bạn cần tương tác để phát media.<br>Nếu không click, trang sẽ tự động chuyển sau 5 giây.</p>
+            <p style="font-size: 28px; font-weight: bold;">🎬 CHẠM VÀO MÀN HÌNH ĐỂ BẮT ĐẦU</p>
         </div>
 
         {js_callback_video}
@@ -659,7 +658,7 @@ def render_part_number_page():
                     df_desc = df_desc[df_desc["ITEM"] == item]
 
                 df_desc = df_desc.drop(columns=["A/C", "ITEM", "DESCRIPTION"], errors="ignore")
-                df_desc = df_desc.replace(r'^\s*$', pd.NA, regex=True).dropna(how="all")
+                df_desc = df_desc.replace(r'^\s*, pd.NA, regex=True).dropna(how="all")
 
                 if not df_desc.empty:
                     df_desc.insert(0, "STT", range(1, len(df_desc) + 1))
