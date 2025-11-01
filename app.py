@@ -659,7 +659,7 @@ def render_part_number_page():
                     df_desc = df_desc[df_desc["ITEM"] == item]
 
                 df_desc = df_desc.drop(columns=["A/C", "ITEM", "DESCRIPTION"], errors="ignore")
-                df_desc = df_desc.replace(r'^\s*, pd.NA, regex=True).dropna(how="all")
+                df_desc = df_desc.replace(r'^\s*$', pd.NA, regex=True).dropna(how="all")
 
                 if not df_desc.empty:
                     df_desc.insert(0, "STT", range(1, len(df_desc) + 1))
