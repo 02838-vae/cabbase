@@ -15,25 +15,14 @@ st.set_page_config(
 if 'page' not in st.session_state:
     st.session_state.page = 'home'
 
-# --- HÀM XỬ LÝ CHUYỂN TRANG (KHÔNG ĐỔI) ---
-def handle_page_change_from_js():
-    """Hàm Python xử lý lệnh chuyển trang từ JavaScript/Iframe."""
-    # Lắng nghe request từ JS
-    js_command = st.query_params.get("cmd")
-    if js_command and js_command[0] == "navigate" and len(st.query_params.get("target", [])) > 0:
-        target_page = st.query_params["target"][0]
-        if target_page in ['part_number', 'quiz_bank', 'home']:
-            st.session_state.page = target_page
-            # Xóa query params để tránh vòng lặp
-            st.query_params.clear() 
-            st.rerun()
+# --- HÀM XỬ LÝ CHUYỂN TRANG ---
+def navigate_to(page_name):
+    """Chuyển trang đơn giản qua session state"""
+    if page_name in ['part_number', 'quiz_bank', 'home']:
+        st.session_state.page = page_name
+        st.rerun()
 
-# Gọi hàm này ngay từ đầu để xử lý lệnh chuyển trang
-handle_page_change_from_js()
-
-
-# --- CÁC HÀM TIỆN ÍCH DÙNG CHUNG (KHÔNG ĐỔI) ---
-
+# --- CÁC HÀM TIỆN ÍCH DÙNG CHUNG ---
 def get_base64_encoded_file(file_path):
     """Đọc file và trả về Base64 encoded string."""
     fallback_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" 
@@ -56,16 +45,14 @@ def load_and_clean(excel_file, sheet):
             df[col] = df[col].fillna("").astype(str).str.strip()
     return df
 
-# --- PHẦN MUSIC PLAYER (SỬA: Tinh chỉnh togglePlayPause) ---
-
+# --- PHẦN MUSIC PLAYER (ĐÃ SỬA) ---
 def render_music_player(logo_base64):
     """Render thanh Music Player và CSS/JS liên quan."""
     music_files = [get_base64_encoded_file(f"background{i}.mp3") for i in range(1, 7)]
-    music_sources_js = ",\n        ".join([f"'{music}'" for music in music_files if len(music) > 50]) 
+    music_sources_js = ",\n        ".join([f"'data:audio/mp3;base64,{music}'" for music in music_files if len(music) > 50]) 
 
     music_player_css = f"""
     <style>
-    /* ... (CSS Music Player giữ nguyên) ... */
     @keyframes neon-border-pulse {{
         0%, 100% {{ border-color: #00ffff; box-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff; }}
         50% {{ border-color: #00ccff; box-shadow: 0 0 2px #00ccff, 0 0 5px #00ccff; }}
@@ -104,16 +91,15 @@ def render_music_player(logo_base64):
         #music-player-container {{ width: calc(100% - 40px); right: 20px; left: 20px; bottom: 15px; padding: 8px 12px; }}
     }}
     
-    /* Music player chỉ ẩn trong quá trình chạy video intro (dùng cho trang Home) */
     .stApp:not(.video-finished) #music-player-container {{ opacity: 0; transform: translateY(100px); }}
     </style>
     """
     st.markdown(music_player_css, unsafe_allow_html=True)
 
-    # JavaScript để quản lý Audio (ĐÃ SỬA: Tinh chỉnh logic Play)
+    # JavaScript để quản lý Audio (ĐÃ SỬA - Thêm data:audio/mp3;base64,)
     music_player_js = f"""
     <script>
-        document.addEventListener('DOMContentLoaded', () => {{
+        (function() {{
             const musicSources = [{music_sources_js}];
             if (musicSources.length === 0) {{
                 const playerContainer = document.getElementById('music-player-container');
@@ -121,18 +107,20 @@ def render_music_player(logo_base64):
                 return;
             }}
 
-            // 1. Tìm hoặc tạo Global Audio Element (ở parent window)
             let audio = window.parent.document.getElementById('global-music-audio');
             if (!audio) {{
                 audio = window.parent.document.createElement('audio');
                 audio.id = 'global-music-audio';
                 audio.volume = 0.3;
                 window.parent.document.body.appendChild(audio);
+                
+                // QUAN TRỌNG: Thêm prefix data:audio/mp3;base64,
                 audio.src = musicSources[0];
                 audio.load();
             }}
             
             const playPauseBtn = document.getElementById('play-pause-btn');
+            if (!playPauseBtn) return;
             
             function formatTime(seconds) {{
                 if (isNaN(seconds) || seconds < 0) return '0:00';
@@ -157,14 +145,14 @@ def render_music_player(logo_base64):
                  if (durationEl) durationEl.textContent = formatTime(audio.duration);
             }}
 
-            // FIX LỖI MUSIC PLAYER KHÔNG CHẠY: Bắt buộc tương tác để Play
             function togglePlayPause() {{
                 if (audio.paused) {{
-                    audio.play().then(updatePlayerUI).catch(e => {{
+                    audio.play().then(() => {{
+                        console.log("Music playing");
+                        updatePlayerUI();
+                    }}).catch(e => {{
                         console.error("Play error:", e);
-                        // Thông báo rõ ràng hơn
-                        alert("⚠️ LỖI PHÁT NHẠC (Trình duyệt chặn): Vui lòng đảm bảo bạn đã tương tác với trang (click) và nhấn nút Play/Pause này một lần nữa.");
-                        playPauseBtn.textContent = '▶';
+                        alert("⚠️ Lỗi phát nhạc: " + e.message);
                     }});
                 }} else {{
                     audio.pause();
@@ -173,12 +161,14 @@ def render_music_player(logo_base64):
             }}
             
             function changeTrack(direction) {{
-                let currentTrackIndex = musicSources.findIndex(src => src === audio.src) || 0;
-                currentTrackIndex = (currentTrackIndex + direction + musicSources.length) % musicSources.length;
-                audio.src = musicSources[currentTrackIndex];
+                let currentIndex = musicSources.findIndex(src => audio.src === src);
+                if (currentIndex === -1) currentIndex = 0;
+                currentIndex = (currentIndex + direction + musicSources.length) % musicSources.length;
+                const wasPlaying = !audio.paused;
+                audio.src = musicSources[currentIndex];
                 audio.load();
-                if (!audio.paused) {{ 
-                    audio.play().catch(e => console.error("Track change play error:", e)); 
+                if (wasPlaying) {{ 
+                    audio.play().catch(e => console.error("Track change error:", e)); 
                 }}
             }}
 
@@ -201,11 +191,13 @@ def render_music_player(logo_base64):
                 audio.addEventListener('timeupdate', updatePlayerUI);
                 audio.addEventListener('loadedmetadata', updatePlayerUI);
                 audio.addEventListener('ended', () => changeTrack(1));
+                audio.addEventListener('canplaythrough', () => console.log('Audio ready to play'));
+                audio.addEventListener('error', (e) => console.error('Audio error:', e));
                 window.parent.audioUpdateListenerAdded = true;
             }}
             
             updatePlayerUI();
-        }});
+        }})();
     </script>
     """
     
@@ -229,7 +221,7 @@ def render_music_player(logo_base64):
     st.components.v1.html(music_player_js, height=0)
 
 
-# --- HÀM RENDER TRANG CHỦ (SỬA: Bỏ nút Bắt đầu & Tự động Play/Chuyển trang) ---
+# --- HÀM RENDER TRANG CHỦ (ĐÃ SỬA) ---
 def render_home_page():
     
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
@@ -243,7 +235,7 @@ def render_home_page():
         st.error("⚠️ Lỗi: Không tìm thấy file 'logo.jpg' hoặc các file media khác. Vui lòng kiểm tra lại thư mục.")
         st.stop()
             
-    # --- PHẦN 1: CSS CHUNG (Thêm CSS cho overlay hướng dẫn) ---
+    # --- CSS CHUNG ---
     font_links = """
     <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
@@ -253,7 +245,6 @@ def render_home_page():
 
     hide_streamlit_style = f"""
     <style>
-    /* ... (CSS Layout giữ nguyên) ... */
     @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
     @import url('https://fonts.googleapis.com/css2?family=Electrolize&display=swap');
 
@@ -267,7 +258,6 @@ def render_home_page():
         background-color: black; 
     }}
 
-    /* FIX: Tinh chỉnh lại Z-index và visibility để tương tác dễ hơn */
     iframe:first-of-type {{
         transition: opacity 1s ease-out, visibility 1s ease-out;
         opacity: 1;
@@ -277,7 +267,7 @@ def render_home_page():
         position: fixed;
         top: 0;
         left: 0;
-        z-index: 1000; /* Quan trọng: Đặt iframe video ở trên cùng */
+        z-index: 1000;
         padding: 0;
         margin: 0;
         border: none;
@@ -289,7 +279,7 @@ def render_home_page():
         pointer-events: none;
         height: 1px !important;	
         width: 1px !important;
-        z-index: 1; /* Đảm bảo nó không chặn các element khác khi ẩn */
+        z-index: 1;
     }}
 
     .reveal-grid {{
@@ -374,14 +364,17 @@ def render_home_page():
         }}
     }}
     
-    /* MỚI: Overlay hướng dẫn tương tác */
     #interaction-overlay {{
         position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0, 0, 0, 0.8); z-index: 1001; 
-        display: flex; justify-content: center; align-items: center;
-        color: #fff; font-size: 24px; text-align: center;
+        background: rgba(0, 0, 0, 0.85); z-index: 1001; 
+        display: flex; justify-content: center; align-items: center; flex-direction: column;
+        color: #fff; font-size: 20px; text-align: center;
         opacity: 1; transition: opacity 0.5s;
-        cursor: pointer;
+        cursor: pointer; padding: 20px;
+    }}
+    #interaction-overlay p {{
+        max-width: 600px;
+        line-height: 1.6;
     }}
     .hidden-overlay {{ opacity: 0; pointer-events: none; }}
     </style>
@@ -389,26 +382,17 @@ def render_home_page():
     st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-    # JavaScript (SỬA LỚN: Tự động Play, Hướng dẫn tương tác, Chuyển trang)
+    # JavaScript (ĐÃ SỬA - Thêm hàm navigateToPage)
     js_callback_video = f"""
     <script>
         console.log("Home Script loaded");
         
-        // FIX LỖI CHUYỂN TRANG: Kích hoạt lệnh rerender Streamlit qua Query Params
-        function sendPageChange(pageName) {{
-            const currentUrl = new URL(window.parent.location.href);
-            currentUrl.searchParams.set('cmd', 'navigate');
-            currentUrl.searchParams.set('target', pageName);
-            window.parent.location.href = currentUrl.toString();
-        }}
-
-        function switchToPartNumber() {{
-            sendPageChange('part_number');
-        }}
-        
-        function switchToQuizBank() {{
-            alert("Trang Ngân hàng trắc nghiệm đang được xây dựng!");
-        }}
+        // QUAN TRỌNG: Hàm chuyển trang qua Streamlit
+        window.navigateToPage = function(pageName) {{
+            const params = new URLSearchParams(window.parent.location.search);
+            params.set('page', pageName);
+            window.parent.location.search = params.toString();
+        }};
         
         function sendBackToStreamlit() {{
             console.log("Video ended or skipped, revealing main content");
@@ -430,36 +414,36 @@ def render_home_page():
             setTimeout(() => {{ revealGrid.remove(); }}, shuffledCells.length * 10 + 1000);
         }}
 
-        // MỚI: Hàm cố gắng Play video/audio
         function tryToPlayMedia() {{
             const video = document.getElementById('intro-video');
             const audio = document.getElementById('background-audio');
             
-            // Cố gắng Play cả hai
-            const playVideo = video.play().catch(e => console.warn("Video Play Blocked:", e));
-            const playAudio = audio.play().catch(e => console.warn("Audio Play Blocked:", e));
+            const playVideo = video.play().catch(e => {{
+                console.warn("Video Play Blocked:", e);
+                return Promise.reject(e);
+            }});
+            const playAudio = audio.play().catch(e => {{
+                console.warn("Audio Play Blocked:", e);
+                return Promise.reject(e);
+            }});
 
-            // Nếu thất bại (bị chặn) -> Bỏ qua video/audio, chuyển đến trang chính sau 5s
             Promise.allSettled([playVideo, playAudio]).then(results => {{
-                const isBlocked = results.some(r => r.status === 'rejected');
-                if (isBlocked) {{
-                    console.log("Media playback blocked. Auto-skipping video in 5s.");
+                const videoBlocked = results[0].status === 'rejected';
+                const audioBlocked = results[1].status === 'rejected';
+                
+                if (videoBlocked || audioBlocked) {{
+                    console.log("Media playback blocked. Auto-skipping in 5s.");
                     setTimeout(sendBackToStreamlit, 5000); 
+                }} else {{
+                    console.log("Media playing successfully");
                 }}
             }});
             
-            // Ẩn overlay sau khi tương tác
             const overlay = document.getElementById('interaction-overlay');
             if(overlay) overlay.classList.add('hidden-overlay');
         }}
         
         document.addEventListener("DOMContentLoaded", function() {{
-            // Gán lại sự kiện click cho các link trong PARENT FRAME (FIX LỖI CHUYỂN TRANG)
-            const partNumberLink = window.parent.document.getElementById('link-part-number');
-            const quizBankLink = window.parent.document.getElementById('link-quiz-bank');
-            if(partNumberLink) partNumberLink.onclick = switchToPartNumber;
-            if(quizBankLink) quizBankLink.onclick = switchToQuizBank;
-            
             const waitForElements = setInterval(() => {{
                 const video = document.getElementById('intro-video');
                 const audio = document.getElementById('background-audio');
@@ -474,15 +458,25 @@ def render_home_page():
 
                     video.src = videoSource;
                     audio.src = 'data:audio/mp3;base64,{audio_base64}';
+                    audio.volume = 0.5;
 
                     video.load();	
                     audio.load();
 
                     video.addEventListener('ended', () => {{
-                        video.style.opacity = 0; audio.pause(); audio.currentTime = 0; introTextContainer.style.opacity = 0;	
+                        video.style.opacity = 0; 
+                        audio.pause(); 
+                        audio.currentTime = 0; 
+                        introTextContainer.style.opacity = 0;	
                         setTimeout(sendBackToStreamlit, 500);
                     }});
-                    video.addEventListener('error', (e) => {{ sendBackToStreamlit(); }});
+                    video.addEventListener('error', (e) => {{ 
+                        console.error("Video error:", e);
+                        sendBackToStreamlit(); 
+                    }});
+                    audio.addEventListener('error', (e) => {{ 
+                        console.error("Audio error:", e);
+                    }});
 
                     const chars = introTextContainer.querySelectorAll('.intro-char');
                     chars.forEach((char, index) => {{
@@ -490,19 +484,16 @@ def render_home_page():
                         char.classList.add('char-shown');	
                     }});
 
-                    // 1. Tự động Play ngay
-                    tryToPlayMedia();
+                    // Tự động play
+                    setTimeout(() => {{
+                        tryToPlayMedia();
+                    }}, 500);
 
-                    // 2. Gán sự kiện tương tác lên overlay để kích hoạt lại Play nếu bị chặn
-                    overlay.addEventListener('click', tryToPlayMedia, {{ once: true }});
-                    overlay.addEventListener('touchstart', tryToPlayMedia, {{ once: true }});
+                    // Sự kiện click để play lại nếu bị chặn
+                    overlay.addEventListener('click', tryToPlayMedia);
+                    overlay.addEventListener('touchstart', tryToPlayMedia, {{ passive: true }});
                 }}
             }}, 100);
-            
-            // Tự động chuyển nếu đã có lệnh navigate (cho trường hợp quay lại)
-            if (window.parent.location.search.includes('cmd=navigate')) {{
-                setTimeout(sendBackToStreamlit, 100);
-            }}
         }});
     </script>
     """
@@ -513,7 +504,6 @@ def render_home_page():
         for char in intro_title
     ])
 
-    # SỬA: Bỏ nút BẮT ĐẦU, thay bằng OVERLAY HƯỚNG DẪN
     html_content = f"""
     <!DOCTYPE html>
     <html>
@@ -534,7 +524,8 @@ def render_home_page():
         <audio id="background-audio"></audio>
         
         <div id="interaction-overlay">
-            <p>VUI LÒNG CHẠM (CLICK) VÀO MÀN HÌNH ĐỂ KHỞI ĐỘNG VIDEO VÀ ÂM THANH MÁY BAY. <br> (Giới hạn của trình duyệt)<br><br> *Nếu không tương tác, trang sẽ tự động chuyển sau 5 giây.</p>
+            <p>🎬 VUI LÒNG CHẠM (CLICK) VÀO MÀN HÌNH ĐỂ KHỞI ĐỘNG VIDEO VÀ ÂM THANH.</p>
+            <p style="font-size: 16px; margin-top: 20px; opacity: 0.8;">⚠️ Do giới hạn của trình duyệt, bạn cần tương tác để phát media.<br>Nếu không click, trang sẽ tự động chuyển sau 5 giây.</p>
         </div>
 
         {js_callback_video}
@@ -544,28 +535,25 @@ def render_home_page():
 
     st.components.v1.html(html_content, height=1080, scrolling=False)
 
-
-    # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH (KHÔNG ĐỔI) ---
+    # --- HIỆU ỨNG REVEAL ---
     grid_cells_html = "".join([f'<div class="grid-cell"></div>' for i in range(240)])
     reveal_grid_html = f'<div class="reveal-grid">{grid_cells_html}</div>'
     st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
-
-    # --- TIÊU ĐỀ CHÍNH (KHÔNG ĐỔI) ---
+    # --- TIÊU ĐỀ CHÍNH ---
     st.markdown(f"""
     <div id="main-title-container">
         <h1>TỔ BẢO DƯỠNG SỐ 1</h1>
     </div>
     """, unsafe_allow_html=True)
 
-
-    # --- TIÊU ĐỀ PHỤ (Liên kết - BỎ onclick trên HTML, xử lý qua JS ở parent frame) ---
+    # --- NÚT CHUYỂN TRANG (ĐÃ SỬA - Dùng onclick gọi hàm JS) ---
     st.markdown("""
     <div class="content-links-container">
-        <div class="container-link" id="link-part-number">
+        <div class="container-link" onclick="window.navigateToPage('part_number')">
             Tra cứu part number 🔍
         </div>
-        <div class="container-link" id="link-quiz-bank">
+        <div class="container-link" onclick="alert('Trang Ngân hàng trắc nghiệm đang được xây dựng!')">
             Ngân hàng trắc nghiệm 📋✅
         </div>
     </div>
@@ -575,8 +563,7 @@ def render_home_page():
     render_music_player(logo_base64)
 
 
-# --- HÀM RENDER TRANG TRA CỨU PART NUMBER (KHÔNG ĐỔI) ---
-
+# --- HÀM RENDER TRANG TRA CỨU PART NUMBER ---
 def render_part_number_page():
     
     excel_file = "A787.xlsx"
@@ -588,7 +575,7 @@ def render_part_number_page():
     bg_img_base64 = get_base64_encoded_file("partnumber.jpg")
     logo_base64 = get_base64_encoded_file("logo.jpg")
     
-    # === CSS PHONG CÁCH VINTAGE (KHÔNG ĐỔI) ===
+    # === CSS PHONG CÁCH VINTAGE ===
     st.markdown(f"""
     <style>
     @import url('https://fonts.googleapis.com/css2?family=Special+Elite&display=swap');
@@ -632,9 +619,7 @@ def render_part_number_page():
     
     # Thêm nút quay lại trang chủ
     if st.button("⬅️ Quay lại Trang Chủ", key="back_home_part", help="Trở về màn hình giới thiệu", type="secondary"):
-        st.query_params.clear() 
-        st.session_state.page = 'home'
-        st.rerun()
+        navigate_to('home')
 
     # --- MUSIC PLAYER ---
     if logo_base64:
@@ -645,7 +630,7 @@ def render_part_number_page():
     st.markdown('<div class="sub-title">🔎 TRA CỨU PART NUMBER</div>', unsafe_allow_html=True)
 
 
-    # ===== NỘI DUNG CHÍNH (KHÔNG ĐỔI) =====
+    # ===== NỘI DUNG CHÍNH =====
     zone = st.selectbox("📂 Bạn muốn tra cứu zone nào?", xls.sheet_names)
     if zone:
         df = load_and_clean(excel_file, zone)
@@ -674,7 +659,7 @@ def render_part_number_page():
                     df_desc = df_desc[df_desc["ITEM"] == item]
 
                 df_desc = df_desc.drop(columns=["A/C", "ITEM", "DESCRIPTION"], errors="ignore")
-                df_desc = df_desc.replace(r'^\s*$', pd.NA, regex=True).dropna(how="all")
+                df_desc = df_desc.replace(r'^\s*, pd.NA, regex=True).dropna(how="all")
 
                 if not df_desc.empty:
                     df_desc.insert(0, "STT", range(1, len(df_desc) + 1))
@@ -684,7 +669,14 @@ def render_part_number_page():
                     st.warning("📌 Không có dữ liệu phù hợp.")
 
 
-# --- LOGIC ĐIỀU HƯỚNG CHÍNH CỦA ỨNG DỤNG (KHÔNG ĐỔI) ---
+# --- LOGIC ĐIỀU HƯỚNG CHÍNH CỦA ỨNG DỤNG ---
+
+# Kiểm tra query params để chuyển trang
+if 'page' in st.query_params:
+    requested_page = st.query_params['page']
+    if requested_page in ['part_number', 'quiz_bank', 'home']:
+        st.session_state.page = requested_page
+    st.query_params.clear()
 
 # Hiển thị trang tương ứng
 if st.session_state.page == 'part_number':
@@ -694,8 +686,6 @@ elif st.session_state.page == 'quiz_bank':
     st.markdown("---")
     st.markdown("### Trang này đang được xây dựng!")
     if st.button("⬅️ Quay lại Trang Chủ", key="back_home_quiz"):
-        st.query_params.clear()
-        st.session_state.page = 'home'
-        st.rerun()
+        navigate_to('home')
 else: # st.session_state.page == 'home'
     render_home_page()
