@@ -423,7 +423,6 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 # --- LOGIC CHÍNH ---
 
 # ✅ NÚT VỀ TRANG CHỦ - ĐÃ CHỈNH SỬA SỬ DỤNG THẺ <a>
-# Đã thêm ?skip_intro=1 để hướng dẫn app.py bỏ qua video intro
 st.markdown("""
 <div id="back-to-home-btn-container">
     <a id="manual-home-btn" href="/?skip_intro=1" target="_self">
@@ -605,198 +604,167 @@ if len(music_files) > 0:
 </div>
 """, unsafe_allow_html=True)
 
-    # ✅ JAVASCRIPT KHỞI TẠO MUSIC PLAYER - ĐÃ KHẮC PHỤC LỖI AUTOPLAY VÀ DELAY
+    # ✅ JAVASCRIPT KHỞI TẠO MUSIC PLAYER - ĐÃ SỬA LỖI ESCAPING F-STRING
     music_sources_js = ",\n            ".join([f"'{url}'" for url in music_files])
 
     st.components.v1.html(f"""
     <script>
         console.log("🎵 Initializing partnumber music player (using localStorage for state)");
-        
-        const musicSources = [
-            {music_sources_js}
-        ];
-        
-        if (musicSources.length === 0) {{
-            console.error("❌ No music sources");
-            return;
-        }}
-        
-        // ✅ LẤY TRẠNG THÁI TỪ LOCALSTORAGE
-        let currentTrack = parseInt(localStorage.getItem('st_music_track')) || 0;
-        let savedTime = parseFloat(localStorage.getItem('st_music_time')) || 0;
-        let hasUserInteracted = localStorage.getItem('st_user_interacted') === 'true'; // Cờ tương tác
-        
-        // Trạng thái phát nhạc ban đầu CHỈ được lấy từ localStorage nếu người dùng ĐÃ TƯƠNG TÁC
-        let isPlaying = hasUserInteracted && (localStorage.getItem('st_music_playing') === 'true');
-
-        if (currentTrack >= musicSources.length) {{
-            currentTrack = 0;
-            localStorage.setItem('st_music_track', '0');
-        }}
-        
-        const audio = new Audio();
-        audio.volume = 0.3;
-        
-        // ✅ ÁNH XẠ CÁC PHẦN TỬ (Sử dụng window.parent.document)
-        const parentDoc = window.parent.document;
-        const p_playPauseBtn = parentDoc.getElementById('play-pause-btn');
-        const p_prevBtn = parentDoc.getElementById('prev-btn');
-        const p_nextBtn = parentDoc.getElementById('next-btn');
-        const p_progressBar = parentDoc.getElementById('progress-bar');
-        const p_progressContainer = parentDoc.getElementById('progress-container');
-        const p_currentTimeEl = parentDoc.getElementById('current-time');
-        const p_durationEl = parentDoc.getElementById('duration');
-
-        if (!p_playPauseBtn || !p_prevBtn || !p_nextBtn) {{
-            console.error("❌ Music player buttons not found in parent document. Aborting JS logic.");
-            return;
-        }}
-        
-        // ✅ CẬP NHẬT ICON BAN ĐẦU
-        if (isPlaying) {{
-             p_playPauseBtn.textContent = '⏸';
-        }} else {{
-             p_playPauseBtn.textContent = '▶';
-        }}
-
-        // ===============================================
-        // ✅ KHỐI ĐỊNH NGHĨA HÀM
-        // ===============================================
-        
-        function formatTime(seconds) {{
-            if (isNaN(seconds) || seconds < 0) return '0:00';
-            const mins = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return mins + ':' + String(secs).padStart(2, '0');
-        }}
-        
-        function loadTrack(index) {{
-            console.log("💿 Loading: " + musicSources[index]);
-            audio.src = musicSources[index];
-            audio.load();
+        // Dùng setTimeout để đảm bảo các button được tạo ra trước
+        setTimeout(function() {{
+            const musicSources = [
+                {music_sources_js}
+            ];
             
-            // ✅ THỬ ÁP DỤNG THỜI GIAN ĐÃ LƯU KHI METADATA ĐƯỢC TẢI
-            audio.addEventListener('loadedmetadata', function listener() {{
-                p_durationEl.textContent = formatTime(audio.duration);
-                
-                // ✅ CHỈ PHỤC HỒI NẾU ĐÃ TƯƠNG TÁC VÀ CÓ SAVED TIME
-                if (hasUserInteracted && index === currentTrack && savedTime > 0) {{
-                    audio.currentTime = savedTime;
-                    
-                    // Phục hồi trạng thái phát nếu đang phát trước khi rerun
-                    if (isPlaying) {{
-                        audio.play().then(() => {{
-                            p_playPauseBtn.textContent = '⏸';
-                            console.log(`▶️ Continue from ${{formatTime(audio.currentTime)}}`); 
-                        }}).catch(e => {{
-                            // Nếu Autoplay thất bại sau rerun, đặt lại trạng thái
-                            isPlaying = false;
-                            localStorage.setItem('st_music_playing', 'false');
-                            p_playPauseBtn.textContent = '▶';
-                            console.error("Autoplay failed after rerun:", e.message);
-                        }});
-                    }}
-                    
-                    savedTime = 0; 
-                    localStorage.removeItem('st_music_time'); 
-                }}
-                
-                audio.removeEventListener('loadedmetadata', listener);
-            }});
-        }}
-        
-        function togglePlayPause() {{
-            // ✅ ĐÁNH DẤU LÀ ĐÃ CÓ TƯƠNG TÁC LẦN ĐẦU
-            if (!hasUserInteracted) {{
-                hasUserInteracted = true;
-                localStorage.setItem('st_user_interacted', 'true');
+            if (musicSources.length === 0) {{
+                console.error("❌ No music sources");
+                return;
             }}
             
+            // ✅ LẤY TRẠNG THÁI TỪ LOCALSTORAGE
+            let currentTrack = parseInt(localStorage.getItem('st_music_track')) || 0;
+            let isPlaying = localStorage.getItem('st_music_playing') === 'true';
+            let savedTime = parseFloat(localStorage.getItem('st_music_time')) || 0;
+            
+            if (currentTrack >= musicSources.length) {{
+                currentTrack = 0;
+                localStorage.setItem('st_music_track', '0');
+            }}
+            
+            const audio = new Audio();
+            audio.volume = 0.3;
+            
+            const playPauseBtn = window.parent.document.getElementById('play-pause-btn');
+            const prevBtn = window.parent.document.getElementById('prev-btn');
+            const nextBtn = window.parent.document.getElementById('next-btn');
+            const progressBar = window.parent.document.getElementById('progress-bar');
+            const progressContainer = window.parent.document.getElementById('progress-container');
+            const currentTimeEl = window.parent.document.getElementById('current-time');
+            const durationEl = window.parent.document.getElementById('duration');
+            
+            if (!playPauseBtn || !prevBtn || !nextBtn) {{
+                console.error("❌ Music player buttons not found");
+                return;
+            }}
+            
+            // ✅ CẬP NHẬT ICON BAN ĐẦU
             if (isPlaying) {{
-                audio.pause();
-                p_playPauseBtn.textContent = '▶';
-                isPlaying = false;
-                localStorage.setItem('st_music_playing', 'false'); // ✅ LƯU TRẠNG THÁI
-                console.log("⏸ Paused");
+                 playPauseBtn.textContent = '⏸';
             }} else {{
-                // Đảm bảo load lại bài hát trước khi play nếu audio object bị reset
-                if (!audio.src || audio.currentSrc !== musicSources[currentTrack]) {{
-                    loadTrack(currentTrack);
-                }}
+                 playPauseBtn.textContent = '▶';
+            }}
 
-                audio.play().then(() => {{
-                    p_playPauseBtn.textContent = '⏸';
-                    isPlaying = true;
-                    localStorage.setItem('st_music_playing', 'true'); // ✅ LƯU TRẠNG THÁI
-                    console.log("▶️ Playing");
-                }}).catch(e => {{
-                    console.error("❌ Play error:", e.message);
-                    isPlaying = false;
-                    localStorage.setItem('st_music_playing', 'false');
-                    p_playPauseBtn.textContent = '▶';
+            // ===============================================
+            // ✅ KHỐI ĐỊNH NGHĨA HÀM (Đảm bảo định nghĩa trước khi gọi)
+            // ===============================================
+            
+            function formatTime(seconds) {{
+                if (isNaN(seconds) || seconds < 0) return '0:00';
+                const mins = Math.floor(seconds / 60);
+                const secs = Math.floor(seconds % 60);
+                return mins + ':' + String(secs).padStart(2, '0');
+            }}
+            
+            function loadTrack(index) {{
+                console.log("💿 Loading: " + musicSources[index]);
+                audio.src = musicSources[index];
+                audio.load();
+                
+                // ✅ THỬ ÁP DỤNG THỜI GIAN ĐÃ LƯU KHI METADATA ĐƯỢC TẢI
+                audio.addEventListener('loadedmetadata', function listener() {{
+                    if (index === currentTrack && savedTime > 0) {{
+                        audio.currentTime = savedTime;
+                        // Đặt lại savedTime để nó không áp dụng khi chuyển bài sau này
+                        savedTime = 0; 
+                        localStorage.removeItem('st_music_time'); 
+                        // ✅ SỬA LỖI PYTHON SYNTAX BẰNG CÁCH ESCAPE DẤU NGOẶC NHỌN PYTHON
+                        console.log(`▶️ Continue from ${{formatTime(audio.currentTime)}}`); 
+                    }}
+                    audio.removeEventListener('loadedmetadata', listener);
                 }});
             }}
-        }}
-        
-        function nextTrack() {{
-            currentTrack = (currentTrack + 1) % musicSources.length;
-            loadTrack(currentTrack);
-            localStorage.setItem('st_music_track', currentTrack.toString()); 
-            localStorage.removeItem('st_music_time'); 
-            // Chỉ cố gắng phát nếu trước đó đang phát
-            if (isPlaying) audio.play().catch(e => console.error(e));
-        }}
-        
-        function prevTrack() {{
-            currentTrack = (currentTrack - 1 + musicSources.length) % musicSources.length;
-            loadTrack(currentTrack);
-            localStorage.setItem('st_music_track', currentTrack.toString()); 
-            localStorage.removeItem('st_music_time'); 
-            // Chỉ cố gắng phát nếu trước đó đang phát
-            if (isPlaying) audio.play().catch(e => console.error(e));
-        }}
-        
-        // ===============================================
-        // ✅ KHỐI XỬ LÝ SỰ KIỆN VÀ KHỞI TẠO
-        // ===============================================
-        
-        audio.addEventListener('timeupdate', () => {{
-            if (audio.duration) {{
-                const progress = (audio.currentTime / audio.duration) * 100;
-                p_progressBar.style.width = progress + '%';
-                p_currentTimeEl.textContent = formatTime(audio.currentTime);
-                // Chỉ lưu vị trí nếu đang phát hoặc đã có savedTime trước đó
-                if (isPlaying || savedTime > 0) {{ 
-                    localStorage.setItem('st_music_time', audio.currentTime.toString()); 
+            
+            function togglePlayPause() {{
+                if (isPlaying) {{
+                    audio.pause();
+                    playPauseBtn.textContent = '▶';
+                    isPlaying = false;
+                    localStorage.setItem('st_music_playing', 'false'); // ✅ LƯU TRẠNG THÁI
+                    console.log("⏸ Paused");
+                }} else {{
+                    audio.play().then(() => {{
+                        playPauseBtn.textContent = '⏸';
+                        isPlaying = true;
+                        localStorage.setItem('st_music_playing', 'true'); // ✅ LƯU TRẠNG THÁI
+                        console.log("▶️ Playing");
+                    }}).catch(e => {{
+                        console.error("❌ Play error:", e.message);
+                    }});
                 }}
             }}
-        }});
-        
-        audio.addEventListener('ended', nextTrack);
-        
-        audio.addEventListener('error', (e) => {{
-            console.error("❌ Track load error, skipping");
-            nextTrack();
-        }});
-        
-        p_playPauseBtn.addEventListener('click', togglePlayPause);
-        p_nextBtn.addEventListener('click', nextTrack);
-        p_prevBtn.addEventListener('click', prevTrack);
-        
-        p_progressContainer.addEventListener('click', (e) => {{
-            const rect = p_progressContainer.getBoundingClientRect();
-            const percent = (e.clientX - rect.left) / rect.width;
-            if (!isNaN(audio.duration)) {{
-                audio.currentTime = percent * audio.duration;
-                localStorage.setItem('st_music_time', audio.currentTime.toString()); // ✅ LƯU VỊ TRÍ MỚI
-            }}
-        }});
-        
-        loadTrack(currentTrack); // ✅ LOAD BÀI HÁT ĐÃ LƯU
-        
-        // ✅ KHÔNG TỰ ĐỘNG PLAY TỪ ĐẦU!
-        
-        console.log("✅ Music player ready!");
             
+            function nextTrack() {{
+                currentTrack = (currentTrack + 1) % musicSources.length;
+                loadTrack(currentTrack);
+                localStorage.setItem('st_music_track', currentTrack.toString()); // ✅ LƯU TRACK
+                localStorage.removeItem('st_music_time'); // ✅ XÓA THỜI GIAN CŨ
+                if (isPlaying) audio.play().catch(e => console.error(e));
+            }}
+            
+            function prevTrack() {{
+                currentTrack = (currentTrack - 1 + musicSources.length) % musicSources.length;
+                loadTrack(currentTrack);
+                localStorage.setItem('st_music_track', currentTrack.toString()); // ✅ LƯU TRACK
+                localStorage.removeItem('st_music_time'); // ✅ XÓA THỜI GIAN CŨ
+                if (isPlaying) audio.play().catch(e => console.error(e));
+            }}
+            
+            // ===============================================
+            // ✅ KHỐI XỬ LÝ SỰ KIỆN VÀ KHỞI TẠO
+            // ===============================================
+            
+            audio.addEventListener('timeupdate', () => {{
+                if (audio.duration) {{
+                    const progress = (audio.currentTime / audio.duration) * 100;
+                    progressBar.style.width = progress + '%';
+                    currentTimeEl.textContent = formatTime(audio.currentTime);
+                    localStorage.setItem('st_music_time', audio.currentTime.toString()); // ✅ LƯU VỊ TRÍ
+                }}
+            }});
+            
+            audio.addEventListener('loadedmetadata', () => {{
+                durationEl.textContent = formatTime(audio.duration);
+            }});
+            
+            audio.addEventListener('ended', nextTrack);
+            
+            audio.addEventListener('error', (e) => {{
+                console.error("❌ Track load error, skipping");
+                nextTrack();
+            }});
+            
+            playPauseBtn.addEventListener('click', togglePlayPause);
+            nextBtn.addEventListener('click', nextTrack);
+            prevBtn.addEventListener('click', prevTrack);
+            
+            progressContainer.addEventListener('click', (e) => {{
+                const rect = progressContainer.getBoundingClientRect();
+                const percent = (e.clientX - rect.left) / rect.width;
+                if (!isNaN(audio.duration)) {{
+                    audio.currentTime = percent * audio.duration;
+                    localStorage.setItem('st_music_time', audio.currentTime.toString()); // ✅ LƯU VỊ TRÍ MỚI
+                }}
+            }});
+            
+            loadTrack(currentTrack); // ✅ LOAD BÀI HÁT ĐÃ LƯU
+            
+            // ✅ NẾU ĐANG PHÁT, BẮT ĐẦU PHÁT LẠI SAU KHI TẢI
+            if (isPlaying) {{
+                audio.play().catch(e => console.error("Auto play failed:", e.message));
+            }}
+            
+            console.log("✅ Music player ready!");
+            
+        }}, 1500);
     </script>
     """, height=0)
