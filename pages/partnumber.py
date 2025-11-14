@@ -58,19 +58,6 @@ except Exception as e:
     st.error(f"❌ Lỗi khi đọc file ảnh nền: {str(e)}")
     st.stop()
 
-# --- SETUP MUSIC PLAYER ---
-logo_base64 = get_base64_encoded_file("logo.jpg") # Cần đảm bảo file này nằm ở thư mục gốc
-if len(logo_base64) < 50: # Kiểm tra lại nếu file logo.jpg không tìm thấy ở thư mục gốc
-    logo_base64 = get_base64_encoded_file("pages/logo.jpg")
-if len(logo_base64) < 50:
-    logo_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
-
-BASE_MUSIC_URL = "https://raw.githubusercontent.com/02838-vae/cabbase/main/"
-music_files = [f"{BASE_MUSIC_URL}background{i}.mp3" for i in range(1, 7)]
-
-if len(music_files) == 0:
-    st.info("ℹ️ Không tìm thấy URL nhạc nền.")
-
 # --- CSS ---
 hide_streamlit_style = f"""
 <style>
@@ -86,7 +73,6 @@ hide_streamlit_style = f"""
 }}
 
 .stApp {{
-    --logo-bg-url: url('data:image/jpeg;base64,{logo_base64}');
     background: url("data:image/jpeg;base64,{pn_bg_pc_base64}") no-repeat center top fixed !important;
     background-size: cover !important;
     font-family: 'Oswald', sans-serif !important;
@@ -107,60 +93,95 @@ hide_streamlit_style = f"""
     .main > div:first-child {{ padding-top: 200px !important; }}
 }}
 
+/* ✅ KEYFRAMES CHO TIÊU ĐỀ CHẠY - GIỐNG TRANG CHÍNH */
 @keyframes scrollText {{
-    0% {{ transform: translate(100vw, 0);}}
+    0% {{ transform: translate(100vw, 0); }}
     100% {{ transform: translate(-100%, 0); }}
 }}
 
 @keyframes colorShift {{
-    0% {{ background-position: 0% 50%;}}
-    50% {{ background-position: 100% 50%;}}
-    100% {{ background-position: 0% 50%;}}
+    0% {{ background-position: 0% 50%; }}
+    50% {{ background-position: 100% 50%; }}
+    100% {{ background-position: 0% 50%; }}
 }}
 
+/* ✅ TIÊU ĐỀ CHẠY - GIỐNG Y HỆT TRANG CHÍNH */
 #main-title-container {{
-    position: static !important;
+    position: fixed;
+    top: 5vh;
+    left: 0;
     width: 100%;
-    height: auto;
+    height: 10vh;
     overflow: hidden;
-    z-index: 995;
+    z-index: 20;
     pointer-events: none;
     opacity: 1;
     transition: opacity 2s;
-    margin-top: 10px;
-    text-align: center;
 }}
 
 #main-title-container h1 {{
     font-family: 'Playfair Display', serif;
-    font-size: 3vw;
+    font-size: 3.5vw;
     margin: 0;
     font-weight: 900;
+    font-feature-settings: "lnum" 1;
     letter-spacing: 5px;
     white-space: nowrap;
     display: inline-block;
+    animation: scrollText 15s linear infinite;
     background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
     background-size: 400% 400%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    color: transparent;
     animation: colorShift 10s ease infinite, scrollText 15s linear infinite;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-    line-height: 1.2;
-}}
-
-#main-title-container h1 span.number-fix {{
-    font-size: 1em;
-    display: inline-block;
-    vertical-align: top;
 }}
 
 @media (max-width: 768px) {{
+    #main-title-container {{
+        height: 8vh;
+        width: 100%;
+        left: 0;
+    }}
+    
     #main-title-container h1 {{
-        font-size: 5vw;
+        font-size: 6.5vw;
         animation-duration: 8s;
     }}
 }}
 
+/* ✅ NÚT VỀ TRANG CHỦ - FIXED */
+#back-to-home-btn-container {{
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 1001;
+}}
+
+a#manual-home-btn {{
+    background-color: rgba(0, 0, 0, 0.85);
+    color: #FFEA00;
+    border: 2px solid #FFEA00;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 16px;
+    transition: all 0.3s;
+    cursor: pointer;
+    font-family: 'Oswald', sans-serif;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}}
+
+a#manual-home-btn:hover {{
+    background-color: #FFEA00;
+    color: black;
+    transform: scale(1.05);
+}}
+
+/* ✅ TIÊU ĐỀ PHỤ TĨNH */
 #sub-static-title {{
     position: static;
     margin-top: 20px;
@@ -192,169 +213,6 @@ hide_streamlit_style = f"""
     #sub-static-title h2, .result-title h3 {{
         font-size: 1.2rem;
         white-space: nowrap;
-    }}
-}}
-
-@keyframes glow-random-color {{
-    0%, 100% {{ box-shadow: 0 0 10px 4px rgba(255, 0, 0, 0.9), 0 0 20px 8px rgba(255, 0, 0, 0.6); }}
-    14.28% {{ box-shadow: 0 0 10px 4px rgba(0, 255, 0, 0.9), 0 0 20px 8px rgba(0, 255, 0, 0.6); }}
-    28.56% {{ box-shadow: 0 0 10px 4px rgba(0, 0, 255, 0.9), 0 0 20px 8px rgba(0, 0, 255, 0.6); }}
-    42.84% {{ box-shadow: 0 0 10px 4px rgba(255, 255, 0, 0.9), 0 0 20px 8px rgba(255, 255, 0, 0.6); }}
-    57.14% {{ box-shadow: 0 0 10px 4px rgba(255, 0, 255, 0.9), 0 0 20px 8px rgba(255, 0, 255, 0.6); }}
-}}
-
-/* ✅ NÚT VỀ TRANG CHỦ - FIXED */
-#back-to-home-btn-container {{
-    position: fixed;
-    top: 15px;
-    left: 15px;
-    z-index: 1001;
-}}
-
-/* Đã đổi từ #manual-home-btn thành a#manual-home-btn */
-a#manual-home-btn {{
-    background-color: rgba(0, 0, 0, 0.85);
-    color: #FFEA00;
-    border: 2px solid #FFEA00;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-weight: bold;
-    font-size: 16px;
-    transition: all 0.3s;
-    cursor: pointer;
-    font-family: 'Oswald', sans-serif;
-    text-decoration: none;
-    display: inline-block;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-}}
-
-a#manual-home-btn:hover {{
-    background-color: #FFEA00;
-    color: black;
-    transform: scale(1.05);
-}}
-
-/* --- MUSIC PLAYER STYLES --- */
-#music-player-container {{
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 350px;
-    padding: 10px 16px;
-    background: rgba(0, 0, 0, 0.85);
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
-    z-index: 999;
-    opacity: 1;
-}}
-
-#music-player-container::before {{
-    content: '';
-    position: absolute;
-    top: -3px;
-    left: -3px;
-    width: calc(100% + 6px);
-    height: calc(100% + 6px);
-    background-image: var(--logo-bg-url);
-    background-size: cover;
-    background-position: center;
-    filter: contrast(110%) brightness(90%);
-    opacity: 0.4;
-    z-index: -1;
-    border-radius: 12px;
-    animation: glow-random-color 7s linear infinite;
-}}
-
-#music-player-container * {{
-    position: relative;
-    z-index: 5;
-}}
-
-#music-player-container .controls,
-#music-player-container .time-info {{
-    color: #fff;
-    text-shadow: 0 0 7px #000;
-}}
-
-#music-player-container .controls {{
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    margin-bottom: 8px;
-}}
-
-#music-player-container .control-btn {{
-    background: rgba(255, 255, 255, 0.2);
-    border: 2px solid #FFFFFF;
-    color: #FFD700;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    font-size: 16px;
-    font-weight: bold;
-}}
-
-#music-player-container .control-btn:hover {{
-    background: rgba(255, 215, 0, 0.5);
-    transform: scale(1.15);
-}}
-
-#music-player-container .control-btn.play-pause {{
-    width: 44px;
-    height: 44px;
-    font-size: 20px;
-}}
-
-#music-player-container .progress-container {{
-    width: 100%;
-    height: 6px;
-    background: rgba(0, 0, 0, 0.5);
-    border-radius: 3px;
-    cursor: pointer;
-    margin-bottom: 6px;
-    position: relative;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-}}
-
-#music-player-container .progress-bar {{
-    height: 100%;
-    background: linear-gradient(90deg, #FFD700, #FFA500);
-    border-radius: 3px;
-    width: 0%;
-    transition: width 0.1s linear;
-}}
-
-#music-player-container .time-info {{
-    display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-    font-family: monospace;
-}}
-
-@media (max-width: 768px) {{
-    #music-player-container {{
-        width: calc(100% - 40px);
-        right: 20px;
-        left: 20px;
-        bottom: 15px;
-        padding: 10px 12px;
-    }}
-    #music-player-container .control-btn {{
-        width: 40px;
-        height: 40px;
-        font-size: 18px;
-    }}
-    #music-player-container .control-btn.play-pause {{
-        width: 48px;
-        height: 48px;
-        font-size: 22px;
     }}
 }}
 
@@ -422,7 +280,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- LOGIC CHÍNH ---
 
-# ✅ NÚT VỀ TRANG CHỦ - ĐÃ CHỈNH SỬA SỬ DỤNG THẺ <a>
+# ✅ NÚT VỀ TRANG CHỦ - BỎ HIỆU ỨNG REVEAL VÀ VIDEO
 st.markdown("""
 <div id="back-to-home-btn-container">
     <a id="manual-home-btn" href="/?skip_intro=1" target="_self">
@@ -432,9 +290,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 
-# --- HIỂN THỊ TIÊU ĐỀ ---
-main_title_text = "TỔ BẢO DƯỠNG SỐ <span class='number-fix'>1</span>"
+# --- ✅ HIỂN THỊ TIÊU ĐỀ CHẠY GIỐNG TRANG CHÍNH ---
+main_title_text = "Tổ Bảo Dưỡng Số 1"
 st.markdown(f'<div id="main-title-container"><h1>{main_title_text}</h1></div>', unsafe_allow_html=True)
+
+# --- TIÊU ĐỀ PHỤ ---
 st.markdown('<div id="sub-static-title"><h2>TRA CỨU PART NUMBER</h2></div>', unsafe_allow_html=True)
 
 # --- DROPDOWN & XỬ LÝ DỮ LIỆU ---
@@ -494,7 +354,7 @@ item_selected = False
 if (aircraft_selected and zone_selected) and item_exists and (desc_selected or not desc_exists):
     items_options = [CHOOSE_PROMPT] + sorted(df_filtered["ITEM"].dropna().unique().tolist())
     with col4:
-        item = st.selectbox("📌 Item", items_options, key="item_select")
+        item = st.selectbox("🔌 Item", items_options, key="item_select")
     item_selected = (item and item != CHOOSE_PROMPT)
     if item_selected:
         df_filtered = df_filtered[df_filtered["ITEM"] == item].copy()
@@ -584,187 +444,3 @@ if zone_selected:
     else:
         st.markdown("---")
         st.warning("⚠️ **Không có dữ liệu Part Number** trong Zone này.")
-
-# --- MUSIC PLAYER HTML ---
-if len(music_files) > 0:
-    st.markdown("""
-<div id="music-player-container">
-    <div class="controls">
-        <button class="control-btn" id="prev-btn">⏮</button>
-        <button class="control-btn play-pause" id="play-pause-btn">▶</button>
-        <button class="control-btn" id="next-btn">⏭</button>
-    </div>
-    <div class="progress-container" id="progress-container">
-        <div class="progress-bar" id="progress-bar"></div>
-    </div>
-    <div class="time-info">
-        <span id="current-time">0:00</span>
-        <span id="duration">0:00</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-    # ✅ JAVASCRIPT KHỞI TẠO MUSIC PLAYER - ĐÃ SỬA LỖI ESCAPING F-STRING
-    music_sources_js = ",\n            ".join([f"'{url}'" for url in music_files])
-
-    st.components.v1.html(f"""
-    <script>
-        console.log("🎵 Initializing partnumber music player (using localStorage for state)");
-        // Dùng setTimeout để đảm bảo các button được tạo ra trước
-        setTimeout(function() {{
-            const musicSources = [
-                {music_sources_js}
-            ];
-            
-            if (musicSources.length === 0) {{
-                console.error("❌ No music sources");
-                return;
-            }}
-            
-            // ✅ LẤY TRẠNG THÁI TỪ LOCALSTORAGE
-            let currentTrack = parseInt(localStorage.getItem('st_music_track')) || 0;
-            let isPlaying = localStorage.getItem('st_music_playing') === 'true';
-            let savedTime = parseFloat(localStorage.getItem('st_music_time')) || 0;
-            
-            if (currentTrack >= musicSources.length) {{
-                currentTrack = 0;
-                localStorage.setItem('st_music_track', '0');
-            }}
-            
-            const audio = new Audio();
-            audio.volume = 0.3;
-            
-            const playPauseBtn = window.parent.document.getElementById('play-pause-btn');
-            const prevBtn = window.parent.document.getElementById('prev-btn');
-            const nextBtn = window.parent.document.getElementById('next-btn');
-            const progressBar = window.parent.document.getElementById('progress-bar');
-            const progressContainer = window.parent.document.getElementById('progress-container');
-            const currentTimeEl = window.parent.document.getElementById('current-time');
-            const durationEl = window.parent.document.getElementById('duration');
-            
-            if (!playPauseBtn || !prevBtn || !nextBtn) {{
-                console.error("❌ Music player buttons not found");
-                return;
-            }}
-            
-            // ✅ CẬP NHẬT ICON BAN ĐẦU
-            if (isPlaying) {{
-                 playPauseBtn.textContent = '⏸';
-            }} else {{
-                 playPauseBtn.textContent = '▶';
-            }}
-
-            // ===============================================
-            // ✅ KHỐI ĐỊNH NGHĨA HÀM (Đảm bảo định nghĩa trước khi gọi)
-            // ===============================================
-            
-            function formatTime(seconds) {{
-                if (isNaN(seconds) || seconds < 0) return '0:00';
-                const mins = Math.floor(seconds / 60);
-                const secs = Math.floor(seconds % 60);
-                return mins + ':' + String(secs).padStart(2, '0');
-            }}
-            
-            function loadTrack(index) {{
-                console.log("💿 Loading: " + musicSources[index]);
-                audio.src = musicSources[index];
-                audio.load();
-                
-                // ✅ THỬ ÁP DỤNG THỜI GIAN ĐÃ LƯU KHI METADATA ĐƯỢC TẢI
-                audio.addEventListener('loadedmetadata', function listener() {{
-                    if (index === currentTrack && savedTime > 0) {{
-                        audio.currentTime = savedTime;
-                        // Đặt lại savedTime để nó không áp dụng khi chuyển bài sau này
-                        savedTime = 0; 
-                        localStorage.removeItem('st_music_time'); 
-                        // ✅ SỬA LỖI PYTHON SYNTAX BẰNG CÁCH ESCAPE DẤU NGOẶC NHỌN PYTHON
-                        console.log(`▶️ Continue from ${{formatTime(audio.currentTime)}}`); 
-                    }}
-                    audio.removeEventListener('loadedmetadata', listener);
-                }});
-            }}
-            
-            function togglePlayPause() {{
-                if (isPlaying) {{
-                    audio.pause();
-                    playPauseBtn.textContent = '▶';
-                    isPlaying = false;
-                    localStorage.setItem('st_music_playing', 'false'); // ✅ LƯU TRẠNG THÁI
-                    console.log("⏸ Paused");
-                }} else {{
-                    audio.play().then(() => {{
-                        playPauseBtn.textContent = '⏸';
-                        isPlaying = true;
-                        localStorage.setItem('st_music_playing', 'true'); // ✅ LƯU TRẠNG THÁI
-                        console.log("▶️ Playing");
-                    }}).catch(e => {{
-                        console.error("❌ Play error:", e.message);
-                    }});
-                }}
-            }}
-            
-            function nextTrack() {{
-                currentTrack = (currentTrack + 1) % musicSources.length;
-                loadTrack(currentTrack);
-                localStorage.setItem('st_music_track', currentTrack.toString()); // ✅ LƯU TRACK
-                localStorage.removeItem('st_music_time'); // ✅ XÓA THỜI GIAN CŨ
-                if (isPlaying) audio.play().catch(e => console.error(e));
-            }}
-            
-            function prevTrack() {{
-                currentTrack = (currentTrack - 1 + musicSources.length) % musicSources.length;
-                loadTrack(currentTrack);
-                localStorage.setItem('st_music_track', currentTrack.toString()); // ✅ LƯU TRACK
-                localStorage.removeItem('st_music_time'); // ✅ XÓA THỜI GIAN CŨ
-                if (isPlaying) audio.play().catch(e => console.error(e));
-            }}
-            
-            // ===============================================
-            // ✅ KHỐI XỬ LÝ SỰ KIỆN VÀ KHỞI TẠO
-            // ===============================================
-            
-            audio.addEventListener('timeupdate', () => {{
-                if (audio.duration) {{
-                    const progress = (audio.currentTime / audio.duration) * 100;
-                    progressBar.style.width = progress + '%';
-                    currentTimeEl.textContent = formatTime(audio.currentTime);
-                    localStorage.setItem('st_music_time', audio.currentTime.toString()); // ✅ LƯU VỊ TRÍ
-                }}
-            }});
-            
-            audio.addEventListener('loadedmetadata', () => {{
-                durationEl.textContent = formatTime(audio.duration);
-            }});
-            
-            audio.addEventListener('ended', nextTrack);
-            
-            audio.addEventListener('error', (e) => {{
-                console.error("❌ Track load error, skipping");
-                nextTrack();
-            }});
-            
-            playPauseBtn.addEventListener('click', togglePlayPause);
-            nextBtn.addEventListener('click', nextTrack);
-            prevBtn.addEventListener('click', prevTrack);
-            
-            progressContainer.addEventListener('click', (e) => {{
-                const rect = progressContainer.getBoundingClientRect();
-                const percent = (e.clientX - rect.left) / rect.width;
-                if (!isNaN(audio.duration)) {{
-                    audio.currentTime = percent * audio.duration;
-                    localStorage.setItem('st_music_time', audio.currentTime.toString()); // ✅ LƯU VỊ TRÍ MỚI
-                }}
-            }});
-            
-            loadTrack(currentTrack); // ✅ LOAD BÀI HÁT ĐÃ LƯU
-            
-            // ✅ NẾU ĐANG PHÁT, BẮT ĐẦU PHÁT LẠI SAU KHI TẢI
-            if (isPlaying) {{
-                audio.play().catch(e => console.error("Auto play failed:", e.message));
-            }}
-            
-            console.log("✅ Music player ready!");
-            
-        }}, 1500);
-    </script>
-    """, height=0)
