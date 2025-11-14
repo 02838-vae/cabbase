@@ -97,7 +97,7 @@ hide_streamlit_style = f"""
 /* --- TIÊU ĐỀ PHỤ (ĐÃ HẠ THẤP HƠN) --- */
 #sub-static-title {{
     position: static;
-    margin-top: 120px; /* ⬅⬅⬅ TĂNG LÊN ĐỂ TIÊU ĐỀ XUỐNG THẤP */
+    margin-top: 200px; /* ⬅⬅⬅ TĂNG LÊN ĐỂ TIÊU ĐỀ XUỐNG THẤP */
     margin-bottom: 30px;
     text-align: center;
 }}
