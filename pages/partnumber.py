@@ -16,8 +16,7 @@ def get_base64_encoded_file(file_path):
     if "pages/" not in path_to_check:
         # Thử tìm trong thư mục gốc nếu nó là logo.jpg
         if not os.path.exists(path_to_check):
-  
-          path_to_check = os.path.join(os.path.dirname(__file__), file_path)
+            path_to_check = os.path.join(os.path.dirname(__file__), file_path)
     
     if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
         return "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
@@ -31,7 +30,6 @@ def get_base64_encoded_file(file_path):
 def load_and_clean(excel_file, sheet):
     """Tải và làm sạch dữ liệu từ sheet Excel."""
     
-
     try:
         # Đường dẫn file excel, giả định nó nằm trong thư mục pages/
         excel_path = os.path.join(os.path.dirname(__file__), excel_file.replace("pages/", ""))
@@ -40,8 +38,7 @@ def load_and_clean(excel_file, sheet):
         df.columns = df.columns.str.strip().str.upper()
         df = df.replace(r'^\s*$', pd.NA, regex=True).dropna(how="all")
         for col in df.columns:
-            
-if df[col].dtype == "object":
+            if df[col].dtype == "object":
                 df[col] = df[col].fillna("").astype(str).str.strip()
             if col in ["A/C", "DESCRIPTION", "ITEM", "PART NUMBER"] and df[col].eq("").all():
                 return pd.DataFrame()
@@ -51,8 +48,7 @@ if df[col].dtype == "object":
 
 # --- BIẾN VÀ ĐƯỜNG DẪN ---
 CHOOSE_PROMPT = "-- CHỌN --"
-excel_file = "pages/A787.xlsx" # Giả định 
-file excel nằm cùng cấp với thư mục pages/
+excel_file = "pages/A787.xlsx" # Giả định file excel nằm cùng cấp với thư mục pages/
 
 try:
     # Cần đảm bảo các file này nằm trong thư mục 'pages/'
@@ -73,52 +69,47 @@ hide_streamlit_style = f"""
     padding: 0;
     margin: 0;
     background-color: transparent !important;
-z-index: 10 !important;
+    z-index: 10 !important;
 }}
 
 .stApp {{
     background: url("data:image/jpeg;base64,{pn_bg_pc_base64}") no-repeat center top fixed !important;
     background-size: cover !important;
-font-family: 'Oswald', sans-serif !important;
+    font-family: 'Oswald', sans-serif !important;
     filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) !important;
 }}
 
 .main > div:first-child {{
-    padding-top: 450px !important; /* ĐÃ SỬA: Đẩy nội dung xuống thấp hơn */
-padding-left: 20px;
+    padding-top: 350px !important;
+    padding-left: 20px;
     padding-right: 20px;
 }}
 
 @media (max-width: 768px) {{
     .stApp {{
         background: url("data:image/jpeg;base64,{pn_bg_mobile_base64}") no-repeat center top scroll !important;
-background-size: cover !important;
+        background-size: cover !important;
     }}
-    .main > div:first-child {{ 
-        padding-top: 300px !important; /* ĐÃ SỬA: Đẩy nội dung xuống thấp hơn */
-}}
+    .main > div:first-child {{ padding-top: 200px !important; }}
 }}
 
 /* ✅ KEYFRAMES CHO TIÊU ĐỀ CHẠY - GIỐNG TRANG CHÍNH */
 @keyframes scrollText {{
-    0% {{ transform: translate(100vw, 0);
-}}
+    0% {{ transform: translate(100vw, 0); }}
     100% {{ transform: translate(-100%, 0); }}
 }}
 
 @keyframes colorShift {{
-    0% {{ background-position: 0% 50%;
-}}
+    0% {{ background-position: 0% 50%; }}
     50% {{ background-position: 100% 50%; }}
-    100% {{ background-position: 0% 50%;
-}}
+    100% {{ background-position: 0% 50%; }}
 }}
 
 /* ✅ TIÊU ĐỀ CHẠY - GIỐNG Y HỆT TRANG CHÍNH */
 #main-title-container {{
     position: fixed;
     top: 5vh;
-left: 0;
+    left: 0;
     width: 100%;
     height: 10vh;
     overflow: hidden;
@@ -134,29 +125,29 @@ left: 0;
     margin: 0;
     font-weight: 900;
     font-feature-settings: "lnum" 1;
-letter-spacing: 5px;
+    letter-spacing: 5px;
     white-space: nowrap;
     display: inline-block;
     animation: scrollText 15s linear infinite;
     background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
-background-size: 400% 400%;
+    background-size: 400% 400%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
     animation: colorShift 10s ease infinite, scrollText 15s linear infinite;
-text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }}
 
 @media (max-width: 768px) {{
     #main-title-container {{
         height: 8vh;
-width: 100%;
+        width: 100%;
         left: 0;
     }}
     
     #main-title-container h1 {{
         font-size: 6.5vw;
-animation-duration: 8s;
+        animation-duration: 8s;
     }}
 }}
 
@@ -164,7 +155,7 @@ animation-duration: 8s;
 #back-to-home-btn-container {{
     position: fixed;
     top: 15px;
-left: 15px;
+    left: 15px;
     z-index: 1001;
 }}
 
@@ -172,7 +163,7 @@ a#manual-home-btn {{
     background-color: rgba(0, 0, 0, 0.85);
     color: #FFEA00;
     border: 2px solid #FFEA00;
-padding: 10px 20px;
+    padding: 10px 20px;
     border-radius: 8px;
     font-weight: bold;
     font-size: 16px;
@@ -180,14 +171,14 @@ padding: 10px 20px;
     cursor: pointer;
     font-family: 'Oswald', sans-serif;
     text-decoration: none;
-display: inline-block;
+    display: inline-block;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }}
 
 a#manual-home-btn:hover {{
     background-color: #FFEA00;
     color: black;
-transform: scale(1.05);
+    transform: scale(1.05);
 }}
 
 /* ✅ TIÊU ĐỀ PHỤ TĨNH */
@@ -195,7 +186,7 @@ transform: scale(1.05);
     position: static;
     margin-top: 20px;
     margin-bottom: 30px;
-z-index: 90;
+    z-index: 90;
     background: transparent !important;
     text-align: center;
 }}
@@ -203,7 +194,7 @@ z-index: 90;
 #sub-static-title h2 {{
     font-family: 'Playfair Display', serif;
     font-size: 2rem;
-color: #FFEA00;
+    color: #FFEA00;
     text-align: center;
     text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8);
     margin-bottom: 20px;
@@ -214,21 +205,21 @@ color: #FFEA00;
     font-size: 2rem;
     color: #FFEA00;
     text-align: center;
-text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8);
+    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8);
     margin-bottom: 20px;
 }}
 
 @media (max-width: 768px) {{
     #sub-static-title h2, .result-title h3 {{
         font-size: 1.2rem;
-white-space: nowrap;
+        white-space: nowrap;
     }}
 }}
 
 /* --- CSS CHO DROPDOWN & BẢNG KẾT QUẢ --- */
 div.stSelectbox label p, div[data-testid*="column"] label p {{
     color: #00FF00 !important;
-font-size: 1.25rem !important;
+    font-size: 1.25rem !important;
     font-weight: bold;
     text-shadow: 0 0 5px rgba(0,255,0,0.5);
 }}
@@ -245,7 +236,7 @@ font-size: 1.25rem !important;
 
 .custom-table th {{
     background-color: #1E8449 !important;
-color: #FFFFFF !important;
+    color: #FFFFFF !important;
     padding: 14px;
     border: 2px solid #2ECC71;
     font-size: 1.1rem;
@@ -260,7 +251,7 @@ color: #FFFFFF !important;
     border: 1px solid #333333;
     vertical-align: middle;
     font-size: 1rem;
-color: #000000;
+    color: #000000;
     background-color: #FFFFFF !important;
     font-family: Arial, sans-serif;
 }}
@@ -269,7 +260,7 @@ color: #000000;
     display: flex;
     justify-content: flex-start;
     width: 100%;
-margin-top: 20px;
+    margin-top: 20px;
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 15px;
@@ -279,7 +270,7 @@ margin-top: 20px;
     min-width: 100%;
     width: max-content;
     margin: 0;
-border-collapse: collapse;
+    border-collapse: collapse;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }}
 
@@ -309,8 +300,7 @@ st.markdown('<div id="sub-static-title"><h2>TRA CỨU PART NUMBER</h2></div>', u
 # --- DROPDOWN & XỬ LÝ DỮ LIỆU ---
 try:
     if not os.path.exists(excel_file):
-        st.error(f"❌ Không tìm 
-thấy file Excel: {excel_file}")
+        st.error(f"❌ Không tìm thấy file Excel: {excel_file}")
         st.stop()
 
     excel_path = os.path.join(os.path.dirname(__file__), excel_file.replace("pages/", ""))
@@ -338,8 +328,7 @@ if zone_selected:
 
 ac_exists = "A/C" in df_base.columns
 aircraft_selected = False
-if 
-zone_selected and ac_exists:
+if zone_selected and ac_exists:
     aircraft_options = [CHOOSE_PROMPT] + sorted(df_base["A/C"].dropna().unique().tolist())
     with col2:
         aircraft = st.selectbox("✈️ Loại máy bay", aircraft_options, key="aircraft_select")
@@ -355,8 +344,7 @@ desc_selected = False
 if aircraft_selected and zone_selected and desc_exists:
     descs_options = [CHOOSE_PROMPT] + sorted(df_filtered["DESCRIPTION"].dropna().unique().tolist())
     with col3:
-      
-  desc = st.selectbox("🔑 Mô tả chi tiết", descs_options, key="desc_select")
+        desc = st.selectbox("🔑 Mô tả chi tiết", descs_options, key="desc_select")
     desc_selected = (desc and desc != CHOOSE_PROMPT)
     if desc_selected:
         df_filtered = df_filtered[df_filtered["DESCRIPTION"] == desc].copy()
@@ -369,8 +357,7 @@ if (aircraft_selected and zone_selected) and item_exists and (desc_selected or n
         item = st.selectbox("🔌 Item", items_options, key="item_select")
     item_selected = (item and item != CHOOSE_PROMPT)
     if item_selected:
-      
-  df_filtered = df_filtered[df_filtered["ITEM"] == item].copy()
+        df_filtered = df_filtered[df_filtered["ITEM"] == item].copy()
 
 st.markdown("</div>", unsafe_allow_html=True)
 st.markdown("---")
@@ -386,8 +373,7 @@ if zone_selected:
             df_display = df_display.drop(columns=["DESCRIPTION"])
         if "ITEM" in df_display.columns:
             df_display = df_display.drop(columns=["ITEM"])
-       
- if "A/C" in df_display.columns:
+        if "A/C" in df_display.columns:
             df_display = df_display.drop(columns=["A/C"])
 
         if len(df_display) > 0:
@@ -397,8 +383,7 @@ if zone_selected:
             df_display.insert(0, "STT", range(1, len(df_display) + 1))
 
             if "PART NUMBER" in df_display.columns:
-       
-         pn_col = df_display.pop("PART NUMBER")
+                pn_col = df_display.pop("PART NUMBER")
                 df_display.insert(1, "PART NUMBER", pn_col)
 
             html_parts = ['<div class="table-container">']
@@ -406,8 +391,7 @@ if zone_selected:
 
             html_parts.append('<thead><tr>')
             for col in df_display.columns:
-              
-  html_parts.append(f'<th>{str(col)}</th>')
+                html_parts.append(f'<th>{str(col)}</th>')
             html_parts.append('</tr></thead>')
 
             html_parts.append('<tbody>')
@@ -415,9 +399,7 @@ if zone_selected:
                 html_parts.append('<tr>')
                 for col in df_display.columns:
                     val = row[col]
- 
-                   style = "color: #FF69B4;
-font-weight: bold;" if col == "PART NUMBER" else ""
+                    style = "color: #FF69B4; font-weight: bold;" if col == "PART NUMBER" else ""
                     html_parts.append(f'<td style="{style}">{str(val)}</td>')
                 html_parts.append('</tr>')
             html_parts.append('</tbody></table>')
@@ -425,8 +407,7 @@ font-weight: bold;" if col == "PART NUMBER" else ""
 
             st.markdown(''.join(html_parts), unsafe_allow_html=True)
         else:
-          
-  st.markdown("---")
+            st.markdown("---")
             st.warning("⚠️ **Không tìm thấy kết quả phù hợp** với các tiêu chí đã chọn.")
 
     elif not all_criteria_met:
@@ -435,8 +416,7 @@ font-weight: bold;" if col == "PART NUMBER" else ""
         if zone_selected and not aircraft_selected and ac_exists:
             prompt_text = "Loại máy bay"
         elif zone_selected and aircraft_selected and desc_exists and not desc_selected:
-   
-         prompt_text = "Mô tả chi tiết"
+            prompt_text = "Mô tả chi tiết"
         elif zone_selected and aircraft_selected and item_exists and (desc_selected or not desc_exists) and not item_selected:
             prompt_text = "Item"
 
@@ -444,16 +424,16 @@ font-weight: bold;" if col == "PART NUMBER" else ""
             f"""
             <div style='
                 text-align: center;
-background-color: rgba(0,255,0, 0.1);
+                background-color: rgba(0,255,0, 0.1);
                 border: 1px solid #00FF00;
                 padding: 10px 25px;
                 border-radius: 12px;
                 margin: 15px auto;
                 max-width: fit-content;
-'>
+            '>
                 <p style='
                     font-size: 1.1rem;
-margin: 0;
+                    margin: 0;
                     text-shadow: 0 0 5px #FFFFE0;
                 '>
                     <font color="#FFFFE0">💡 Vui lòng <strong>chọn {prompt_text}</strong> để tiếp tục tra cứu.</font>
@@ -463,5 +443,4 @@ margin: 0;
 
     else:
         st.markdown("---")
-        st.warning("⚠️ **Không 
-có dữ liệu Part Number** trong Zone này.")
+        st.warning("⚠️ **Không có dữ liệu Part Number** trong Zone này.")
