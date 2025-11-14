@@ -58,18 +58,12 @@ except Exception as e:
     st.error(f"❌ Lỗi khi đọc file ảnh nền: {str(e)}")
     st.stop()
 
-# --- SETUP MUSIC PLAYER ---
+# --- SETUP LOGO (dùng cho nền CSS) ---
 logo_base64 = get_base64_encoded_file("logo.jpg") # Cần đảm bảo file này nằm ở thư mục gốc
 if len(logo_base64) < 50: # Kiểm tra lại nếu file logo.jpg không tìm thấy ở thư mục gốc
     logo_base64 = get_base64_encoded_file("pages/logo.jpg")
 if len(logo_base64) < 50:
     logo_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
-
-BASE_MUSIC_URL = "https://raw.githubusercontent.com/02838-vae/cabbase/main/"
-music_files = [f"{BASE_MUSIC_URL}background{i}.mp3" for i in range(1, 7)]
-
-if len(music_files) == 0:
-    st.info("ℹ️ Không tìm thấy URL nhạc nền.")
 
 # --- CSS ---
 hide_streamlit_style = f"""
@@ -148,11 +142,7 @@ hide_streamlit_style = f"""
     line-height: 1.2;
 }}
 
-#main-title-container h1 span.number-fix {{
-    font-size: 1em;
-    display: inline-block;
-    vertical-align: top;
-}}
+/* ĐÃ XÓA CSS number-fix ĐỂ ĐỒNG BỘ CHỮ */
 
 @media (max-width: 768px) {{
     #main-title-container h1 {{
@@ -195,15 +185,10 @@ hide_streamlit_style = f"""
     }}
 }}
 
-@keyframes glow-random-color {{
-    0%, 100% {{ box-shadow: 0 0 10px 4px rgba(255, 0, 0, 0.9), 0 0 20px 8px rgba(255, 0, 0, 0.6); }}
-    14.28% {{ box-shadow: 0 0 10px 4px rgba(0, 255, 0, 0.9), 0 0 20px 8px rgba(0, 255, 0, 0.6); }}
-    28.56% {{ box-shadow: 0 0 10px 4px rgba(0, 0, 255, 0.9), 0 0 20px 8px rgba(0, 0, 255, 0.6); }}
-    42.84% {{ box-shadow: 0 0 10px 4px rgba(255, 255, 0, 0.9), 0 0 20px 8px rgba(255, 255, 0, 0.6); }}
-    57.14% {{ box-shadow: 0 0 10px 4px rgba(255, 0, 255, 0.9), 0 0 20px 8px rgba(255, 0, 255, 0.6); }}
-}}
+/* ĐÃ XÓA KEYFRAMES glow-random-color VÀ TẤT CẢ CSS CỦA MUSIC PLAYER */
 
-/* ✅ NÚT VỀ TRANG CHỦ - FIXED */
+
+/* NÚT VỀ TRANG CHỦ */
 #back-to-home-btn-container {{
     position: fixed;
     top: 15px;
@@ -211,7 +196,6 @@ hide_streamlit_style = f"""
     z-index: 1001;
 }}
 
-/* Đã đổi từ #manual-home-btn thành a#manual-home-btn */
 a#manual-home-btn {{
     background-color: rgba(0, 0, 0, 0.85);
     color: #FFEA00;
@@ -234,131 +218,7 @@ a#manual-home-btn:hover {{
     transform: scale(1.05);
 }}
 
-/* --- MUSIC PLAYER STYLES --- */
-#music-player-container {{
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 350px;
-    padding: 10px 16px;
-    background: rgba(0, 0, 0, 0.85);
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
-    z-index: 999;
-    opacity: 1;
-}}
-
-#music-player-container::before {{
-    content: '';
-    position: absolute;
-    top: -3px;
-    left: -3px;
-    width: calc(100% + 6px);
-    height: calc(100% + 6px);
-    background-image: var(--logo-bg-url);
-    background-size: cover;
-    background-position: center;
-    filter: contrast(110%) brightness(90%);
-    opacity: 0.4;
-    z-index: -1;
-    border-radius: 12px;
-    animation: glow-random-color 7s linear infinite;
-}}
-
-#music-player-container * {{
-    position: relative;
-    z-index: 5;
-}}
-
-#music-player-container .controls,
-#music-player-container .time-info {{
-    color: #fff;
-    text-shadow: 0 0 7px #000;
-}}
-
-#music-player-container .controls {{
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    margin-bottom: 8px;
-}}
-
-#music-player-container .control-btn {{
-    background: rgba(255, 255, 255, 0.2);
-    border: 2px solid #FFFFFF;
-    color: #FFD700;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    font-size: 16px;
-    font-weight: bold;
-}}
-
-#music-player-container .control-btn:hover {{
-    background: rgba(255, 215, 0, 0.5);
-    transform: scale(1.15);
-}}
-
-#music-player-container .control-btn.play-pause {{
-    width: 44px;
-    height: 44px;
-    font-size: 20px;
-}}
-
-#music-player-container .progress-container {{
-    width: 100%;
-    height: 6px;
-    background: rgba(0, 0, 0, 0.5);
-    border-radius: 3px;
-    cursor: pointer;
-    margin-bottom: 6px;
-    position: relative;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.4);
-}}
-
-#music-player-container .progress-bar {{
-    height: 100%;
-    background: linear-gradient(90deg, #FFD700, #FFA500);
-    border-radius: 3px;
-    width: 0%;
-    transition: width 0.1s linear;
-}}
-
-#music-player-container .time-info {{
-    display: flex;
-    justify-content: space-between;
-    font-size: 11px;
-    font-family: monospace;
-}}
-
-@media (max-width: 768px) {{
-    #music-player-container {{
-        width: calc(100% - 40px);
-        right: 20px;
-        left: 20px;
-        bottom: 15px;
-        padding: 10px 12px;
-    }}
-    #music-player-container .control-btn {{
-        width: 40px;
-        height: 40px;
-        font-size: 18px;
-    }}
-    #music-player-container .control-btn.play-pause {{
-        width: 48px;
-        height: 48px;
-        font-size: 22px;
-    }}
-}}
-
-/* --- CSS CHO DROPDOWN & BẢNG KẾT QUẢ --- */
+/* --- CSS CHO DROPDOWN & BẢNG KẾT QUẢ --- (Giữ nguyên) */
 div.stSelectbox label p, div[data-testid*="column"] label p {{
     color: #00FF00 !important;
     font-size: 1.25rem !important;
@@ -422,10 +282,10 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- LOGIC CHÍNH ---
 
-# ✅ NÚT VỀ TRANG CHỦ - ĐÃ CHỈNH SỬA SỬ DỤNG THẺ <a>
+# ✅ NÚT VỀ TRANG CHỦ - ĐÃ BỎ QUERY PARAMETER
 st.markdown("""
 <div id="back-to-home-btn-container">
-    <a id="manual-home-btn" href="/?skip_intro=1" target="_self">
+    <a id="manual-home-btn" href="/" target="_self">
         🏠 Về Trang Chủ
     </a>
 </div>
@@ -433,7 +293,8 @@ st.markdown("""
 
 
 # --- HIỂN THỊ TIÊU ĐỀ ---
-main_title_text = "TỔ BẢO DƯỠNG SỐ <span class='number-fix'>1</span>"
+# ✅ ĐÃ SỬA TIÊU ĐỀ: ĐỒNG BỘ CHỮ SỐ
+main_title_text = "TỔ BẢO DƯỠNG SỐ 1"
 st.markdown(f'<div id="main-title-container"><h1>{main_title_text}</h1></div>', unsafe_allow_html=True)
 st.markdown('<div id="sub-static-title"><h2>TRA CỨU PART NUMBER</h2></div>', unsafe_allow_html=True)
 
@@ -585,238 +446,4 @@ if zone_selected:
         st.markdown("---")
         st.warning("⚠️ **Không có dữ liệu Part Number** trong Zone này.")
 
-# --- MUSIC PLAYER HTML ---
-if len(music_files) > 0:
-    st.markdown("""
-<div id="music-player-container">
-    <div class="controls">
-        <button class="control-btn" id="prev-btn">⏮</button>
-        <button class="control-btn play-pause" id="play-pause-btn">▶</button>
-        <button class="control-btn" id="next-btn">⏭</button>
-    </div>
-    <div class="progress-container" id="progress-container">
-        <div class="progress-bar" id="progress-bar"></div>
-    </div>
-    <div class="time-info">
-        <span id="current-time">0:00</span>
-        <span id="duration">0:00</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-    # ✅ JAVASCRIPT KHỞI TẠO MUSIC PLAYER - ĐÃ KHẮC PHỤC LỖI AUTOPLAY VÀ DELAY
-    music_sources_js = ",\n            ".join([f"'{url}'" for url in music_files])
-
-    st.components.v1.html(f"""
-    <script>
-        console.log("🎵 Initializing partnumber music player (using localStorage for state)");
-        
-        // ✅ CHẠY NGAY LẬP TỨC (ĐÃ XÓA SETTIMEOUT)
-        
-        const musicSources = [
-            {music_sources_js}
-        ];
-        
-        if (musicSources.length === 0) {{
-            console.error("❌ No music sources");
-            return;
-        }}
-        
-        // ✅ LẤY TRẠNG THÁI TỪ LOCALSTORAGE
-        let currentTrack = parseInt(localStorage.getItem('st_music_track')) || 0;
-        let savedTime = parseFloat(localStorage.getItem('st_music_time')) || 0;
-        let hasUserInteracted = localStorage.getItem('st_user_interacted') === 'true'; // Cờ tương tác
-        
-        // Trạng thái phát nhạc ban đầu CHỈ được lấy từ localStorage nếu người dùng ĐÃ TƯƠNG TÁC
-        let isPlaying = hasUserInteracted && (localStorage.getItem('st_music_playing') === 'true');
-
-        if (currentTrack >= musicSources.length) {{
-            currentTrack = 0;
-            localStorage.setItem('st_music_track', '0');
-        }}
-        
-        const audio = new Audio();
-        audio.volume = 0.3;
-        
-        // ✅ ÁNH XẠ CÁC PHẦN TỬ (Đã bỏ window.parent vì nó đã chạy trong iframe)
-        const playPauseBtn = document.getElementById('play-pause-btn');
-        const prevBtn = document.getElementById('prev-btn');
-        const nextBtn = document.getElementById('next-btn');
-        const progressBar = document.getElementById('progress-bar');
-        const progressContainer = document.getElementById('progress-container');
-        const currentTimeEl = document.getElementById('current-time');
-        const durationEl = document.getElementById('duration');
-        
-        // Do st.components.v1.html được nhúng trong 1 iframe, ta cần tham chiếu đến DOM cha.
-        // Tuy nhiên, vì code HTML và JS đều được tạo ra bởi Streamlit, ta vẫn dùng document.getElementById
-        // và thêm .parentElement.parentElement để tìm các nút nếu cần (nhưng ta sẽ dùng window.parent.document).
-
-        // THAY ĐỔI: Sử dụng window.parent.document để tìm các phần tử, vì chúng nằm trong DOM chính
-        const parentDoc = window.parent.document;
-        const p_playPauseBtn = parentDoc.getElementById('play-pause-btn');
-        const p_prevBtn = parentDoc.getElementById('prev-btn');
-        const p_nextBtn = parentDoc.getElementById('next-btn');
-        const p_progressBar = parentDoc.getElementById('progress-bar');
-        const p_progressContainer = parentDoc.getElementById('progress-container');
-        const p_currentTimeEl = parentDoc.getElementById('current-time');
-        const p_durationEl = parentDoc.getElementById('duration');
-
-        if (!p_playPauseBtn || !p_prevBtn || !p_nextBtn) {{
-            console.error("❌ Music player buttons not found in parent document. Retrying...");
-            // Đây là một rủi ro khi dùng st.components.v1.html - có thể cần setTimeout ngắn
-            // Tuy nhiên, ta sẽ cố gắng sử dụng DOM đã tìm thấy
-            return;
-        }}
-        
-        // ✅ CẬP NHẬT ICON BAN ĐẦU
-        if (isPlaying) {{
-             p_playPauseBtn.textContent = '⏸';
-        }} else {{
-             p_playPauseBtn.textContent = '▶';
-        }}
-
-        // ===============================================
-        // ✅ KHỐI ĐỊNH NGHĨA HÀM
-        // ===============================================
-        
-        function formatTime(seconds) {{
-            if (isNaN(seconds) || seconds < 0) return '0:00';
-            const mins = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return mins + ':' + String(secs).padStart(2, '0');
-        }}
-        
-        function loadTrack(index) {{
-            console.log("💿 Loading: " + musicSources[index]);
-            audio.src = musicSources[index];
-            audio.load();
-            
-            // ✅ THỬ ÁP DỤNG THỜI GIAN ĐÃ LƯU KHI METADATA ĐƯỢC TẢI
-            audio.addEventListener('loadedmetadata', function listener() {{
-                p_durationEl.textContent = formatTime(audio.duration);
-                
-                // ✅ CHỈ PHỤC HỒI NẾU ĐÃ TƯƠNG TÁC VÀ CÓ SAVED TIME
-                if (hasUserInteracted && index === currentTrack && savedTime > 0) {{
-                    audio.currentTime = savedTime;
-                    
-                    // Phục hồi trạng thái phát nếu đang phát trước khi rerun
-                    if (isPlaying) {{
-                        audio.play().then(() => {{
-                            p_playPauseBtn.textContent = '⏸';
-                            console.log(`▶️ Continue from ${{formatTime(audio.currentTime)}}`); 
-                        }}).catch(e => {{
-                            // Nếu Autoplay thất bại sau rerun, đặt lại trạng thái
-                            isPlaying = false;
-                            localStorage.setItem('st_music_playing', 'false');
-                            p_playPauseBtn.textContent = '▶';
-                            console.error("Autoplay failed after rerun:", e.message);
-                        }});
-                    }}
-                    
-                    savedTime = 0; 
-                    localStorage.removeItem('st_music_time'); 
-                }}
-                
-                audio.removeEventListener('loadedmetadata', listener);
-            }});
-        }}
-        
-        function togglePlayPause() {{
-            // ✅ ĐÁNH DẤU LÀ ĐÃ CÓ TƯƠNG TÁC LẦN ĐẦU
-            if (!hasUserInteracted) {{
-                hasUserInteracted = true;
-                localStorage.setItem('st_user_interacted', 'true');
-            }}
-            
-            if (isPlaying) {{
-                audio.pause();
-                p_playPauseBtn.textContent = '▶';
-                isPlaying = false;
-                localStorage.setItem('st_music_playing', 'false'); // ✅ LƯU TRẠNG THÁI
-                console.log("⏸ Paused");
-            }} else {{
-                // Đảm bảo load lại bài hát trước khi play nếu audio object bị reset
-                if (!audio.src || audio.currentSrc !== musicSources[currentTrack]) {{
-                    loadTrack(currentTrack);
-                }}
-
-                audio.play().then(() => {{
-                    p_playPauseBtn.textContent = '⏸';
-                    isPlaying = true;
-                    localStorage.setItem('st_music_playing', 'true'); // ✅ LƯU TRẠNG THÁI
-                    console.log("▶️ Playing");
-                }}).catch(e => {{
-                    console.error("❌ Play error:", e.message);
-                    isPlaying = false;
-                    localStorage.setItem('st_music_playing', 'false');
-                    p_playPauseBtn.textContent = '▶';
-                }});
-            }}
-        }}
-        
-        function nextTrack() {{
-            currentTrack = (currentTrack + 1) % musicSources.length;
-            loadTrack(currentTrack);
-            localStorage.setItem('st_music_track', currentTrack.toString()); 
-            localStorage.removeItem('st_music_time'); 
-            // Chỉ cố gắng phát nếu trước đó đang phát
-            if (isPlaying) audio.play().catch(e => console.error(e));
-        }}
-        
-        function prevTrack() {{
-            currentTrack = (currentTrack - 1 + musicSources.length) % musicSources.length;
-            loadTrack(currentTrack);
-            localStorage.setItem('st_music_track', currentTrack.toString()); 
-            localStorage.removeItem('st_music_time'); 
-            // Chỉ cố gắng phát nếu trước đó đang phát
-            if (isPlaying) audio.play().catch(e => console.error(e));
-        }}
-        
-        // ===============================================
-        // ✅ KHỐI XỬ LÝ SỰ KIỆN VÀ KHỞI TẠO
-        // ===============================================
-        
-        audio.addEventListener('timeupdate', () => {{
-            if (audio.duration) {{
-                const progress = (audio.currentTime / audio.duration) * 100;
-                p_progressBar.style.width = progress + '%';
-                p_currentTimeEl.textContent = formatTime(audio.currentTime);
-                // Chỉ lưu vị trí nếu đang phát hoặc đã có savedTime trước đó
-                if (isPlaying || savedTime > 0) {{ 
-                    localStorage.setItem('st_music_time', audio.currentTime.toString()); 
-                }}
-            }}
-        }});
-        
-        audio.addEventListener('loadedmetadata', () => {{
-            p_durationEl.textContent = formatTime(audio.duration);
-        }});
-        
-        audio.addEventListener('ended', nextTrack);
-        
-        audio.addEventListener('error', (e) => {{
-            console.error("❌ Track load error, skipping");
-            nextTrack();
-        }});
-        
-        p_playPauseBtn.addEventListener('click', togglePlayPause);
-        p_nextBtn.addEventListener('click', nextTrack);
-        p_prevBtn.addEventListener('click', prevTrack);
-        
-        p_progressContainer.addEventListener('click', (e) => {{
-            const rect = p_progressContainer.getBoundingClientRect();
-            const percent = (e.clientX - rect.left) / rect.width;
-            if (!isNaN(audio.duration)) {{
-                audio.currentTime = percent * audio.duration;
-                localStorage.setItem('st_music_time', audio.currentTime.toString()); // ✅ LƯU VỊ TRÍ MỚI
-            }}
-        }});
-        
-        loadTrack(currentTrack); // ✅ LOAD BÀI HÁT ĐÃ LƯU
-        
-        // ✅ BỎ KHỐI TỰ ĐỘNG PLAY TỪ ĐẦU!
-        
-        console.log("✅ Music player ready!");
-            
-    </script>
-    """, height=0)
+# ĐÃ XÓA TOÀN BỘ CODE LIÊN QUAN ĐẾN MUSIC PLAYER HTML VÀ JAVASCRIPT
