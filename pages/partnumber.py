@@ -30,7 +30,7 @@ hide_streamlit_style = f"""
     background-size: cover !important;
 }}
 
-.main > div:first-child {{ padding-top: 480px !important; }}
+.main > div:first-child {{ padding-top: 350px !important; }}
 
 @media (max-width: 768px) {{
     .stApp {{
@@ -67,7 +67,7 @@ hide_streamlit_style = f"""
 /* --- TIÊU ĐỀ PHỤ (ĐÃ HẠ THẤP HƠN) --- */
 #sub-static-title {{
     position: static;
-    margin-top: 200px; /* ⬅⬅⬅ TĂNG LÊN ĐỂ TIÊU ĐỀ XUỐNG THẤP */
+    margin-top: 220px; /* ⬅⬅⬅ TĂNG LÊN ĐỂ TIÊU ĐỀ XUỐNG THẤP */
     margin-bottom: 30px;
     text-align: center;
 }}
