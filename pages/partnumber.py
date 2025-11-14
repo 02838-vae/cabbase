@@ -294,7 +294,7 @@ st.markdown("""
 main_title_text = "Tổ Bảo Dưỡng Số 1"
 st.markdown(f'<div id="main-title-container"><h1>{main_title_text}</h1></div>', unsafe_allow_html=True)
 
-# --- TIÊU ĐỀ PHỤ ---
+# --- TIÊU ĐỀ PHỤ - ĐẨY XUỐNG THẤP HƠN ---
 st.markdown('<div id="sub-static-title"><h2>TRA CỨU PART NUMBER</h2></div>', unsafe_allow_html=True)
 
 # --- DROPDOWN & XỬ LÝ DỮ LIỆU ---
