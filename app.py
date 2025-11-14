@@ -17,12 +17,10 @@ if 'video_ended' not in st.session_state:
 
 def get_base64_encoded_file(file_path):
     """Đọc file và trả về Base64 encoded string."""
-    # Sửa đường dẫn nếu cần thiết để phù hợp với môi trường triển khai
-    path_to_check = os.path.join(os.path.dirname(__file__), file_path)
-    if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
+    if not os.path.exists(file_path) or os.path.getsize(file_path) == 0:
         return None
     try:
-        with open(path_to_check, "rb") as f:
+        with open(file_path, "rb") as f:
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except Exception as e:
@@ -62,24 +60,7 @@ except Exception as e:
 # Đảm bảo logo_base64 được khởi tạo nếu file không tồn tại
 if not 'logo_base64' in locals() or not logo_base64:
     logo_base64 = "" 
-    st.info("ℹ️ Không tìm thấy file logo.jpg. Music player sẽ không có hình nền logo.")
-
-
-# --- SỬ DỤNG URL TRỰC TIẾP TỪ GITHUB RAW CONTENT (TỐC ĐỘ CAO HƠN) ---
-# Đảm bảo repository của bạn là PUBLIC để các URL này hoạt động
-BASE_MUSIC_URL = "https://raw.githubusercontent.com/02838-vae/cabbase/main/"
-music_urls = []
-
-# Thêm 6 file nhạc nền vào danh sách URL
-for i in range(1, 7):
-    url = f"{BASE_MUSIC_URL}background{i}.mp3"
-    music_urls.append(url)
-    
-# Biến được sử dụng trong JS:
-music_files = music_urls 
-
-if len(music_files) == 0:
-    st.info("ℹ️ Không tìm thấy URL nhạc nền. Music player sẽ không hoạt động.")
+    st.info("ℹ️ Không tìm thấy file logo.jpg.")
 
 
 # --- PHẦN 1: NHÚNG FONT BẰNG THẺ LINK TRỰC TIẾP VÀO BODY ---
@@ -237,176 +218,8 @@ iframe:first-of-type {{
 }}
 
 
-/* 🌟 KEYFRAMES: HIỆU ỨNG TỎA SÁNG MÀU NGẪU NHIÊN (Giữ nguyên cho Music Player) */
-@keyframes glow-random-color {{
-    0%, 57.14%, 100% {{
-        box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
-    }}
-    
-    0% {{
-        box-shadow: 0 0 10px 4px rgba(255, 0, 0, 0.9), 0 0 20px 8px rgba(255, 0, 0, 0.6), inset 0 0 5px 2px rgba(255, 0, 0, 0.9);
-    }}
-    
-    14.28% {{ 
-        box-shadow: 0 0 10px 4px rgba(0, 255, 0, 0.9), 0 0 20px 8px rgba(0, 255, 0, 0.6), inset 0 0 5px 2px rgba(0, 255, 0, 0.9);
-    }}
-    
-    28.56% {{ 
-        box-shadow: 0 0 10px 4px rgba(0, 0, 255, 0.9), 0 0 20px 8px rgba(0, 0, 255, 0.6), inset 0 0 5px 2px rgba(0, 0, 255, 0.9);
-    }}
+/* ✅ ĐÃ XÓA TẤT CẢ CSS LIÊN QUAN ĐẾN MUSIC PLAYER */
 
-    42.84% {{ 
-        box-shadow: 0 0 10px 4px rgba(255, 255, 0, 0.9), 0 0 20px 8px rgba(255, 255, 0, 0.6), inset 0 0 5px 2px rgba(255, 255, 0, 0.9);
-    }}
-    
-    57.14% {{ 
-        box-shadow: 0 0 10px 4px rgba(255, 0, 255, 0.9), 0 0 20px 8px rgba(255, 0, 255, 0.6), inset 0 0 5px 2px rgba(255, 0, 255, 0.9);
-    }}
-}}
-
-
-/* === MUSIC PLAYER STYLES (Giữ nguyên) === */
-#music-player-container {{
-    position: fixed;
-    bottom: 20px;
-    right: 20px;
-    width: 350px; 
-    padding: 8px 16px; 
-    background: rgba(0, 0, 0, 0.7); 
-    border-radius: 12px;
-    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
-    z-index: 999;
-    opacity: 0;
-    transform: translateY(100px);
-    transition: opacity 1s ease-out 2s, transform 1s ease-out 2s;
-    position: fixed;
-}}
-
-#music-player-container::before {{
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    margin: -3px;
-    width: calc(100% + 6px);
-    height: calc(100% + 6px);
-    
-    background-image: var(--logo-bg-url);
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    filter: contrast(110%) brightness(90%);
-    opacity: 0.4; 
-    z-index: -1; 
-    
-    border-radius: 12px;
-    
-    box-sizing: border-box; 
-    animation: glow-random-color 7s linear infinite;
-}}
-
-/* Đảm bảo các thành phần con ở trên lớp giả */
-#music-player-container * {{
-    position: relative;
-    z-index: 5; 
-}}
-
-.video-finished #music-player-container {{
-    opacity: 1;
-    transform: translateY(0);
-}}
-
-/* Các style khác của player (giữ nguyên) */
-#music-player-container .controls,
-#music-player-container .time-info {{
-    color: #fff;
-    text-shadow: 0 0 7px #000;
-}}
-
-#music-player-container .controls {{
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 6px; 
-}}
-
-#music-player-container .control-btn {{
-    background: rgba(255, 255, 255, 0.2);
-    border: 2px solid #FFFFFF; 
-    color: #FFD700;
-    width: 32px; 
-    height: 32px;
-    border-radius: 50%;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    transition: all 0.3s ease;
-    font-size: 14px;
-}}
-
-#music-player-container .control-btn:hover {{
-    background: rgba(255, 215, 0, 0.5);
-    transform: scale(1.15);
-}}
-
-#music-player-container .control-btn.play-pause {{
-    width: 40px; 
-    height: 40px;
-    font-size: 18px;
-}}
-
-#music-player-container .progress-container {{
-    width: 100%;
-    height: 5px; 
-    background: rgba(0, 0, 0, 0.5);
-    border-radius: 3px;
-    cursor: pointer;
-    margin-bottom: 4px; 
-    position: relative;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.4); 
-}}
-
-#music-player-container .progress-bar {{
-    height: 100%;
-    background: linear-gradient(90deg, #FFD700, #FFA500);
-    border-radius: 3px;
-    width: 0%;
-    transition: width 0.1s linear;
-}}
-
-#music-player-container .time-info {{
-    display: flex;
-    justify-content: space-between;
-    color: rgba(255, 255, 255, 1);
-    font-size: 10px; 
-    font-family: monospace;
-}}
-
-@media (max-width: 768px) {{
-    #music-player-container {{
-        width: calc(100% - 40px);
-        right: 20px;
-        left: 20px;
-        bottom: 15px;
-        padding: 8px 12px;
-    }}
-    #music-player-container .control-btn,
-    #music-player-container .control-btn.play-pause {{
-        width: 36px;
-        height: 36px;
-        font-size: 16px;
-    }}
-    #music-player-container .control-btn.play-pause {{
-        width: 44px;
-        height: 44px;
-        font-size: 20px;
-    }}
-}}
 
 /* === CSS MỚI CHO NAVIGATION BUTTON (UIverse Dark Mode) === */
 
@@ -422,7 +235,7 @@ iframe:first-of-type {{
     padding: 40px;
     opacity: 0;
     transition: opacity 2s ease-out 3s;
-    /* ✅ QUAN TRỌNG: Đảm bảo button ở trên cùng */
+    /* QUAN TRỌNG: Đảm bảo button ở trên cùng */
     z-index: 10000;
 }}
 
@@ -436,7 +249,7 @@ iframe:first-of-type {{
     --border_radius: 9999px; 
     --transtion: 0.3s ease-in-out;
     --active: 0; 
-    /* ✅ ĐIỀU CHỈNH: Màu ánh sáng hover SIÊU DỊU (Vàng Pastel) */
+    /* ĐIỀU CHỈNH: Màu ánh sáng hover SIÊU DỊU (Vàng Pastel) */
     --hover-color: hsl(40, 60%, 85%);
     --text-color: hsl(0, 0%, 100%); 
     
@@ -451,7 +264,7 @@ iframe:first-of-type {{
     border: none;
     border-radius: var(--border_radius);
     
-    /* ✅ ĐIỀU CHỈNH: Tăng hiệu ứng phóng to (scale 0.2) */
+    /* ĐIỀU CHỈNH: Tăng hiệu ứng phóng to (scale 0.2) */
     transform: scale(calc(1 + (var(--active, 0) * 0.2)));
     transition: transform var(--transtion);
     
@@ -488,7 +301,7 @@ iframe:first-of-type {{
     width: 90%;
     height: 90%;
     
-    /* ✅ ĐIỀU CHỈNH: Gradient bên trong button chuyển sang tông vàng/cam siêu dịu */
+    /* ĐIỀU CHỈNH: Gradient bên trong button chuyển sang tông vàng/cam siêu dịu */
     background-color: hsla(40, 60%, 85%, 0.75);
     background-image: 
         radial-gradient(at 51% 89%, hsla(45, 60%, 90%, 1) 0px, transparent 50%), 
@@ -538,7 +351,7 @@ iframe:first-of-type {{
     transform-origin: center;
     
     background: white;
-    /* ✅ ĐIỀU CHỈNH: Masking mới để ĐẢM BẢO chỉ 1 vệt sáng duy nhất */
+    /* ĐIỀU CHỈNH: Masking mới để ĐẢM BẢO chỉ 1 vệt sáng duy nhất */
     mask: conic-gradient(
         from 0deg at 50% 50%, 
         transparent 0%, 
@@ -647,28 +460,21 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Đã bỏ Music Player) ---
 
-# Tạo danh sách music sources cho JavaScript 
-if len(music_files) > 0:
-    music_sources_js = ",\n\t\t\t".join([f"'{url}'" for url in music_files])
-else:
-    music_sources_js = ""
-
-# ✅ PHẦN JS ĐÃ CHỈNH SỬA
+# JavaScript 
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
-
-    // Hàm thực hiện chuyển đổi sang nội dung chính
     function sendBackToStreamlit() {{
         console.log("Video ended or skipped, revealing main content");
         const stApp = window.parent.document.querySelector('.stApp');
         if (stApp) {{
             stApp.classList.add('video-finished', 'main-content-revealed');
+            // Cập nhật session state của parent để lần sau skip intro (sử dụng kỹ thuật đổi title)
+            window.parent.document.title = 'video_ended_true'; 
         }}
         initRevealEffect();
-        setTimeout(initMusicPlayer, 100);
     }}
     
     function initRevealEffect() {{
@@ -688,124 +494,9 @@ js_callback_video = f"""
         }}, shuffledCells.length * 10 + 1000);
     }}
     
-    function initMusicPlayer() {{
-        console.log("Initializing music player");
-        const musicSources = [{music_sources_js}];
-        
-        if (musicSources.length === 0) {{
-            console.log("No music files available");
-            return;
-        }}
-        
-        let currentTrack = 0;
-        let isPlaying = false;
-        
-        const audio = new Audio();
-        audio.volume = 0.3;
-        
-        const playPauseBtn = window.parent.document.getElementById('play-pause-btn');
-        const prevBtn = window.parent.document.getElementById('prev-btn');
-        const nextBtn = window.parent.document.getElementById('next-btn');
-        const progressBar = window.parent.document.getElementById('progress-bar');
-        const progressContainer = window.parent.document.getElementById('progress-container');
-        const currentTimeEl = window.parent.document.getElementById('current-time');
-        const durationEl = window.parent.document.getElementById('duration');
-        if (!playPauseBtn || !prevBtn || !nextBtn) {{
-            console.error("Music player elements not found in parent document");
-            return;
-        }}
-        
-        function loadTrack(index) {{
-            console.log("Loading track", index + 1, "from URL:", musicSources[index]); 
-            audio.src = musicSources[index]; 
-            audio.load();
-        }}
-        
-        function togglePlayPause() {{
-            if (isPlaying) {{
-                audio.pause();
-                playPauseBtn.textContent = '▶';
-            }} else {{
-                audio.play().catch(e => console.error("Play error:", e));
-                playPauseBtn.textContent = '⏸';
-            }}
-            isPlaying = !isPlaying;
-        }}
-        
-        function nextTrack() {{
-            currentTrack = (currentTrack + 1) % musicSources.length;
-            loadTrack(currentTrack);
-            if (isPlaying) {{
-                audio.play().catch(e => console.error("Play error:", e));
-            }}
-        }}
-        
-        function prevTrack() {{
-            currentTrack = (currentTrack - 1 + musicSources.length) % musicSources.length;
-            loadTrack(currentTrack);
-            if (isPlaying) {{
-                audio.play().catch(e => console.error("Play error:", e));
-            }}
-        }}
-        
-        function formatTime(seconds) {{
-            if (isNaN(seconds)) return '0:00';
-            const mins = Math.floor(seconds / 60);
-            const secs = Math.floor(seconds % 60);
-            return `${{mins}}:${{secs.toString().padStart(2, '0')}}`;
-        }}
-        
-        audio.addEventListener('timeupdate', () => {{
-            const progress = (audio.currentTime / audio.duration) * 100;
-            progressBar.style.width = progress + '%';
-            currentTimeEl.textContent = formatTime(audio.currentTime);
-        }});
-        audio.addEventListener('loadedmetadata', () => {{
-            durationEl.textContent = formatTime(audio.duration);
-        }});
-        audio.addEventListener('ended', () => {{
-            nextTrack();
-        }});
-        audio.addEventListener('error', (e) => {{ 
-            console.error("Error loading music track:", e);
-            nextTrack();
-        }});
-        playPauseBtn.addEventListener('click', togglePlayPause);
-        nextBtn.addEventListener('click', nextTrack);
-        prevBtn.addEventListener('click', prevTrack);
-        
-        progressContainer.addEventListener('click', (e) => {{
-            const rect = progressContainer.getBoundingClientRect();
-            const percent = (e.clientX - rect.left) / rect.width;
-            audio.currentTime = percent * audio.duration;
-        }});
-        loadTrack(0);
-        console.log("Music player initialized successfully");
-    }}
-
     document.addEventListener("DOMContentLoaded", function() {{
         console.log("DOM loaded, waiting for elements...");
-
-        // ✅ LOGIC MỚI: KIỂM TRA THAM SỐ SKIP_INTRO
-        const urlParams = new URLSearchParams(window.parent.location.search);
-        const skipIntro = urlParams.get('skip_intro');
         
-        if (skipIntro === '1') {{
-            console.log("Skip intro detected. Directly revealing main content.");
-            // Giả lập sự kiện video kết thúc
-            sendBackToStreamlit();
-            // Ẩn ngay lập tức video iframe
-            const iframe = window.frameElement;
-            if (iframe) {{
-                 iframe.style.opacity = 0;
-                 iframe.style.visibility = 'hidden';
-                 // Đảm bảo iframe không chặn tương tác (mặc dù opacity=0 đã làm điều này)
-                 iframe.style.pointerEvents = 'none'; 
-            }}
-            return; // Dừng khởi tạo video/audio
-        }}
-
-
         const waitForElements = setInterval(() => {{
             const video = document.getElementById('intro-video');
             const audio = document.getElementById('background-audio');
@@ -977,22 +668,44 @@ html_content_modified = html_content_modified.replace(
     f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
 )
 
-# --- HIỂN THỊ IFRAME VIDEO ---
-st.components.v1.html(html_content_modified, height=1080, scrolling=False)
+# --- HIỂN THỊ IFRAME VIDEO VÀ REVEAL GRID ---
 
-# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
+# LOGIC BỎ HIỆU ỨNG REVEAL KHI ĐÃ XEM LẦN ĐẦU (Quay lại trang chủ)
+if not st.session_state.video_ended:
+    # Lần đầu load trang: Hiển thị iframe và reveal grid
+    st.components.v1.html(html_content_modified, height=1080, scrolling=False)
 
-# Tạo Lưới Reveal
-grid_cells_html = ""
-for i in range(240):
-    grid_cells_html += f'<div class="grid-cell"></div>'
+    # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
 
-reveal_grid_html = f"""
-<div class="reveal-grid">
-    {grid_cells_html}
-</div>
-"""
-st.markdown(reveal_grid_html, unsafe_allow_html=True)
+    # Tạo Lưới Reveal
+    grid_cells_html = ""
+    for i in range(240):
+        grid_cells_html += f'<div class="grid-cell"></div>'
+
+    reveal_grid_html = f"""
+    <div class="reveal-grid">
+        {grid_cells_html}
+    </div>
+    """
+    st.markdown(reveal_grid_html, unsafe_allow_html=True)
+    
+    # Cập nhật session state khi JS đã báo hiệu video kết thúc
+    # Sử dụng `st.empty()` để kiểm tra title (giả định kỹ thuật này được sử dụng để cập nhật session state)
+    st.empty().markdown(f'<script>if(window.parent.document.title === "video_ended_true") window.parent.document.title = "{st.get_option("general.title")}";</script>', unsafe_allow_html=True)
+    if st.get_option("general.title") == "video_ended_true":
+        st.session_state.video_ended = True
+        st.experimental_rerun()
+                 
+else:
+    # Khi đã quay lại trang chủ, bỏ qua iframe và reveal grid, áp dụng CSS classes ngay lập tức
+    st.markdown("""
+    <script>
+        const stApp = window.parent.document.querySelector('.stApp');
+        if (stApp) {
+            stApp.classList.add('video-finished', 'main-content-revealed');
+        }
+    </script>
+    """, unsafe_allow_html=True)
 
 # --- NỘI DUNG CHÍNH (TIÊU ĐỀ ĐƠN, ĐỔI MÀU) ---
 main_title_text = "TỔ BẢO DƯỠNG SỐ 1"
@@ -1004,25 +717,9 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- MUSIC PLAYER ---\nif len(music_files) > 0:
-st.markdown("""
-<div id="music-player-container">
-    <div class="controls">
-        <button class="control-btn" id="prev-btn">⏮</button>
-        <button class="control-btn play-pause" id="play-pause-btn">▶</button>
-        <button class="control-btn" id="next-btn">⏭</button>
-    </div>
-    <div class="progress-container" id="progress-container">
-        <div class="progress-bar" id="progress-bar"></div>
-    </div>
-    <div class="time-info">
-        <span id="current-time">0:00</span>
-        <span id="duration">0:00</span>
-    </div>
-</div>
-""", unsafe_allow_html=True)
 
-# --- NAVIGATION BUTTON MỚI (UIverse Style) ---\n# Tên trang phụ là partnumber.py nên link href là /partnumber
+# --- NAVIGATION BUTTON MỚI (UIverse Style) ---
+# Tên trang phụ là partnumber.py nên link href là /partnumber
 st.markdown("""
 <div class="nav-container">
     <a href="/partnumber" target="_self" class="button">
