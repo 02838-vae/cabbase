@@ -51,26 +51,26 @@ except:
     st.stop()
 
 # --- CSS ---
-hide_streamlit_style = """
+hide_streamlit_style = f"""
 <style>
-#MainMenu, footer, header {visibility: hidden;}
+#MainMenu, footer, header {{visibility: hidden;}}
 
-.stApp {
-    background: url(\"data:image/jpeg;base64,{pc}\") no-repeat center top fixed !important;
+.stApp {{
+    background: url('data:image/jpeg;base64,{pn_bg_pc_base64}') no-repeat center top fixed !important;
     background-size: cover !important;
-}
+}}
 
-.main > div:first-child { padding-top: 350px !important; }
+.main > div:first-child {{ padding-top: 350px !important; }}
 
-@media (max-width: 768px) {
-    .stApp {
-        background: url(\"data:image/jpeg;base64,{mobile}\") no-repeat center top scroll !important;
+@media (max-width: 768px) {{
+    .stApp {{
+        background: url('data:image/jpeg;base64,{pn_bg_mobile_base64}') no-repeat center top scroll !important;
         background-size: cover !important;
-    }
-    .main > div:first-child { padding-top: 200px !important; }
-}
+    }}
+    .main > div:first-child {{ padding-top: 200px !important; }}
+}}
 
-#main-title-container {
+#main-title-container {{
     position: fixed;
     top: 5vh;
     left: 0;
@@ -78,37 +78,39 @@ hide_streamlit_style = """
     height: 10vh;
     overflow: hidden;
     z-index: 20;
-}
+}}
 
-#main-title-container h1 {
+#main-title-container h1 {{
     font-size: 3.5vw;
     margin: 0;
     font-weight: 900;
     white-space: nowrap;
     animation: scrollText 15s linear infinite;
-}
+}}
 
-@keyframes scrollText {
-    0% { transform: translate(100vw, 0); }
-    100% { transform: translate(-100%, 0); }
-}
+@keyframes scrollText {{
+    0% {{ transform: translate(100vw, 0); }}
+    100% {{ transform: translate(-100%, 0); }}
+}}
 
-#sub-static-title {
+#sub-static-title {{
     position: static;
-    margin-top: 220px;
+    margin-top: 260px;
     margin-bottom: 30px;
     text-align: center;
-}
+}}
 
-#sub-static-title h2 {
+#sub-static-title h2 {{
     font-size: 2rem;
     color: #FFEA00;
     text-shadow: 0 0 15px #FFEA00;
-}
+}}
 </style>
-""".format(pc=pn_bg_pc_base64, mobile=pn_bg_mobile_base64)
+"""
 
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- NÚT HOME ---
 st.markdown("""
