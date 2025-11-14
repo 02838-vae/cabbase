@@ -105,10 +105,10 @@ hide_streamlit_style = f"""
     100% {{ background-position: 0% 50%; }}
 }}
 
-/* ✅ TIÊU ĐỀ CHẠY - GIỐNG Y HỆT TRANG CHÍNH */
+/* ✅ TIÊU ĐỀ CHẠY - ĐÃ CHỈNH SỬA VỊ TRÍ TOP */
 #main-title-container {{
     position: fixed;
-    top: 5vh;
+    top: 80px; /* ĐIỀU CHỈNH: Đẩy tiêu đề xuống dưới nút Home */
     left: 0;
     width: 100%;
     height: 10vh;
@@ -140,7 +140,7 @@ hide_streamlit_style = f"""
 
 @media (max-width: 768px) {{
     #main-title-container {{
-        top: 60px;
+        top: 60px; /* ĐIỀU CHỈNH: Đẩy tiêu đề xuống dưới nút Home trên di động */
         height: 8vh;
         width: 100%;
         left: 0;
