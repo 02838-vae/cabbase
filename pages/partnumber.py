@@ -140,6 +140,7 @@ hide_streamlit_style = f"""
 
 @media (max-width: 768px) {{
     #main-title-container {{
+        top: 60px;
         height: 8vh;
         width: 100%;
         left: 0;
