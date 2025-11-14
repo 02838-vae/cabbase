@@ -34,8 +34,6 @@ def load_and_clean(excel_file, sheet):
         # Đường dẫn file excel, giả định nó nằm trong thư mục pages/
         excel_path = os.path.join(os.path.dirname(__file__), excel_file.replace("pages/", ""))
         
-        # ✅ KHUYẾN NGHỊ: Nếu file Excel lớn, cân nhắc thêm engine='openpyxl'
-        # Hoặc đảm bảo openpyxl đã được cài đặt.
         df = pd.read_excel(excel_path, sheet_name=sheet)
         df.columns = df.columns.str.strip().str.upper()
         df = df.replace(r'^\s*$', pd.NA, regex=True).dropna(how="all")
@@ -46,7 +44,6 @@ def load_and_clean(excel_file, sheet):
                 return pd.DataFrame()
         return df
     except Exception as e:
-        # st.error(f"Lỗi khi tải dữ liệu từ Excel: {e}") # Bỏ dòng này để tránh làm bẩn UI
         return pd.DataFrame()
 
 # --- BIẾN VÀ ĐƯỜNG DẪN ---
@@ -607,14 +604,14 @@ if len(music_files) > 0:
 </div>
 """, unsafe_allow_html=True)
 
-    # ✅ JAVASCRIPT KHỞI TẠO MUSIC PLAYER - ĐÃ XÓA SETTIMEOUT
+    # ✅ JAVASCRIPT KHỞI TẠO MUSIC PLAYER - ĐÃ KHẮC PHỤC LỖI AUTOPLAY VÀ DELAY
     music_sources_js = ",\n            ".join([f"'{url}'" for url in music_files])
 
     st.components.v1.html(f"""
     <script>
         console.log("🎵 Initializing partnumber music player (using localStorage for state)");
         
-        // ❌ ĐÃ XÓA setTimeout(..., 1500)
+        // ✅ CHẠY NGAY LẬP TỨC (ĐÃ XÓA SETTIMEOUT)
         
         const musicSources = [
             {music_sources_js}
@@ -627,9 +624,12 @@ if len(music_files) > 0:
         
         // ✅ LẤY TRẠNG THÁI TỪ LOCALSTORAGE
         let currentTrack = parseInt(localStorage.getItem('st_music_track')) || 0;
-        let isPlaying = localStorage.getItem('st_music_playing') === 'true';
         let savedTime = parseFloat(localStorage.getItem('st_music_time')) || 0;
+        let hasUserInteracted = localStorage.getItem('st_user_interacted') === 'true'; // Cờ tương tác
         
+        // Trạng thái phát nhạc ban đầu CHỈ được lấy từ localStorage nếu người dùng ĐÃ TƯƠNG TÁC
+        let isPlaying = hasUserInteracted && (localStorage.getItem('st_music_playing') === 'true');
+
         if (currentTrack >= musicSources.length) {{
             currentTrack = 0;
             localStorage.setItem('st_music_track', '0');
@@ -638,28 +638,41 @@ if len(music_files) > 0:
         const audio = new Audio();
         audio.volume = 0.3;
         
-        // ✅ KHAI BÁO BIẾN CHO PHẦN TỬ ĐỂ SỬ DỤNG TRONG LOGIC
-        const playPauseBtn = window.parent.document.getElementById('play-pause-btn');
-        const prevBtn = window.parent.document.getElementById('prev-btn');
-        const nextBtn = window.parent.document.getElementById('next-btn');
-        const progressBar = window.parent.document.getElementById('progress-bar');
-        const progressContainer = window.parent.document.getElementById('progress-container');
-        const currentTimeEl = window.parent.document.getElementById('current-time');
-        const durationEl = window.parent.document.getElementById('duration');
+        // ✅ ÁNH XẠ CÁC PHẦN TỬ (Đã bỏ window.parent vì nó đã chạy trong iframe)
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const progressBar = document.getElementById('progress-bar');
+        const progressContainer = document.getElementById('progress-container');
+        const currentTimeEl = document.getElementById('current-time');
+        const durationEl = document.getElementById('duration');
         
-        // Đảm bảo các phần tử đã được render
-        if (!playPauseBtn || !prevBtn || !nextBtn || !progressBar || !progressContainer) {{
-            console.error("❌ Music player buttons/elements not found after load");
-            // Thử thêm một độ trễ nhỏ nếu vẫn gặp lỗi (thường là 0ms)
-            // Hoặc sử dụng mutation observer nếu cần thiết, nhưng thường không cần với Streamlit
+        // Do st.components.v1.html được nhúng trong 1 iframe, ta cần tham chiếu đến DOM cha.
+        // Tuy nhiên, vì code HTML và JS đều được tạo ra bởi Streamlit, ta vẫn dùng document.getElementById
+        // và thêm .parentElement.parentElement để tìm các nút nếu cần (nhưng ta sẽ dùng window.parent.document).
+
+        // THAY ĐỔI: Sử dụng window.parent.document để tìm các phần tử, vì chúng nằm trong DOM chính
+        const parentDoc = window.parent.document;
+        const p_playPauseBtn = parentDoc.getElementById('play-pause-btn');
+        const p_prevBtn = parentDoc.getElementById('prev-btn');
+        const p_nextBtn = parentDoc.getElementById('next-btn');
+        const p_progressBar = parentDoc.getElementById('progress-bar');
+        const p_progressContainer = parentDoc.getElementById('progress-container');
+        const p_currentTimeEl = parentDoc.getElementById('current-time');
+        const p_durationEl = parentDoc.getElementById('duration');
+
+        if (!p_playPauseBtn || !p_prevBtn || !p_nextBtn) {{
+            console.error("❌ Music player buttons not found in parent document. Retrying...");
+            // Đây là một rủi ro khi dùng st.components.v1.html - có thể cần setTimeout ngắn
+            // Tuy nhiên, ta sẽ cố gắng sử dụng DOM đã tìm thấy
             return;
         }}
         
         // ✅ CẬP NHẬT ICON BAN ĐẦU
         if (isPlaying) {{
-             playPauseBtn.textContent = '⏸';
+             p_playPauseBtn.textContent = '⏸';
         }} else {{
-             playPauseBtn.textContent = '▶';
+             p_playPauseBtn.textContent = '▶';
         }}
 
         // ===============================================
@@ -680,22 +693,44 @@ if len(music_files) > 0:
             
             // ✅ THỬ ÁP DỤNG THỜI GIAN ĐÃ LƯU KHI METADATA ĐƯỢC TẢI
             audio.addEventListener('loadedmetadata', function listener() {{
-                if (index === currentTrack && savedTime > 0) {{
+                p_durationEl.textContent = formatTime(audio.duration);
+                
+                // ✅ CHỈ PHỤC HỒI NẾU ĐÃ TƯƠNG TÁC VÀ CÓ SAVED TIME
+                if (hasUserInteracted && index === currentTrack && savedTime > 0) {{
                     audio.currentTime = savedTime;
-                    // Đặt lại savedTime để nó không áp dụng khi chuyển bài sau này
+                    
+                    // Phục hồi trạng thái phát nếu đang phát trước khi rerun
+                    if (isPlaying) {{
+                        audio.play().then(() => {{
+                            p_playPauseBtn.textContent = '⏸';
+                            console.log(`▶️ Continue from ${{formatTime(audio.currentTime)}}`); 
+                        }}).catch(e => {{
+                            // Nếu Autoplay thất bại sau rerun, đặt lại trạng thái
+                            isPlaying = false;
+                            localStorage.setItem('st_music_playing', 'false');
+                            p_playPauseBtn.textContent = '▶';
+                            console.error("Autoplay failed after rerun:", e.message);
+                        }});
+                    }}
+                    
                     savedTime = 0; 
                     localStorage.removeItem('st_music_time'); 
-                    console.log(`▶️ Continue from ${{formatTime(audio.currentTime)}}`); 
                 }}
-                durationEl.textContent = formatTime(audio.duration); // Cập nhật duration
+                
                 audio.removeEventListener('loadedmetadata', listener);
             }});
         }}
         
         function togglePlayPause() {{
+            // ✅ ĐÁNH DẤU LÀ ĐÃ CÓ TƯƠNG TÁC LẦN ĐẦU
+            if (!hasUserInteracted) {{
+                hasUserInteracted = true;
+                localStorage.setItem('st_user_interacted', 'true');
+            }}
+            
             if (isPlaying) {{
                 audio.pause();
-                playPauseBtn.textContent = '▶';
+                p_playPauseBtn.textContent = '▶';
                 isPlaying = false;
                 localStorage.setItem('st_music_playing', 'false'); // ✅ LƯU TRẠNG THÁI
                 console.log("⏸ Paused");
@@ -704,17 +739,17 @@ if len(music_files) > 0:
                 if (!audio.src || audio.currentSrc !== musicSources[currentTrack]) {{
                     loadTrack(currentTrack);
                 }}
-                
+
                 audio.play().then(() => {{
-                    playPauseBtn.textContent = '⏸';
+                    p_playPauseBtn.textContent = '⏸';
                     isPlaying = true;
                     localStorage.setItem('st_music_playing', 'true'); // ✅ LƯU TRẠNG THÁI
                     console.log("▶️ Playing");
                 }}).catch(e => {{
-                    console.error("❌ Play error, need user interaction?", e.message);
-                    // Có thể cần yêu cầu người dùng nhấn Play lần đầu tiên
+                    console.error("❌ Play error:", e.message);
                     isPlaying = false;
-                    localStorage.setItem('st_music_playing', 'false'); 
+                    localStorage.setItem('st_music_playing', 'false');
+                    p_playPauseBtn.textContent = '▶';
                 }});
             }}
         }}
@@ -722,34 +757,40 @@ if len(music_files) > 0:
         function nextTrack() {{
             currentTrack = (currentTrack + 1) % musicSources.length;
             loadTrack(currentTrack);
-            localStorage.setItem('st_music_track', currentTrack.toString()); // ✅ LƯU TRACK
-            localStorage.removeItem('st_music_time'); // ✅ XÓA THỜI GIAN CŨ
+            localStorage.setItem('st_music_track', currentTrack.toString()); 
+            localStorage.removeItem('st_music_time'); 
+            // Chỉ cố gắng phát nếu trước đó đang phát
             if (isPlaying) audio.play().catch(e => console.error(e));
         }}
         
         function prevTrack() {{
             currentTrack = (currentTrack - 1 + musicSources.length) % musicSources.length;
             loadTrack(currentTrack);
-            localStorage.setItem('st_music_track', currentTrack.toString()); // ✅ LƯU TRACK
-            localStorage.removeItem('st_music_time'); // ✅ XÓA THỜI GIAN CŨ
+            localStorage.setItem('st_music_track', currentTrack.toString()); 
+            localStorage.removeItem('st_music_time'); 
+            // Chỉ cố gắng phát nếu trước đó đang phát
             if (isPlaying) audio.play().catch(e => console.error(e));
         }}
         
         // ===============================================
-        // ✅ KHỐI XỬ LÝ SỰ KIỆN VÀ KHỞI TẠO (CHẠY NGAY LẬP TỨC)
+        // ✅ KHỐI XỬ LÝ SỰ KIỆN VÀ KHỞI TẠO
         // ===============================================
         
         audio.addEventListener('timeupdate', () => {{
             if (audio.duration) {{
                 const progress = (audio.currentTime / audio.duration) * 100;
-                progressBar.style.width = progress + '%';
-                currentTimeEl.textContent = formatTime(audio.currentTime);
-                localStorage.setItem('st_music_time', audio.currentTime.toString()); // ✅ LƯU VỊ TRÍ
+                p_progressBar.style.width = progress + '%';
+                p_currentTimeEl.textContent = formatTime(audio.currentTime);
+                // Chỉ lưu vị trí nếu đang phát hoặc đã có savedTime trước đó
+                if (isPlaying || savedTime > 0) {{ 
+                    localStorage.setItem('st_music_time', audio.currentTime.toString()); 
+                }}
             }}
         }});
         
-        // Đã chuyển loadedmetadata ra khỏi đây và vào hàm loadTrack để xử lý savedTime tốt hơn
-        // audio.addEventListener('loadedmetadata', ...); 
+        audio.addEventListener('loadedmetadata', () => {{
+            p_durationEl.textContent = formatTime(audio.duration);
+        }});
         
         audio.addEventListener('ended', nextTrack);
         
@@ -758,12 +799,12 @@ if len(music_files) > 0:
             nextTrack();
         }});
         
-        playPauseBtn.addEventListener('click', togglePlayPause);
-        nextBtn.addEventListener('click', nextTrack);
-        prevBtn.addEventListener('click', prevTrack);
+        p_playPauseBtn.addEventListener('click', togglePlayPause);
+        p_nextBtn.addEventListener('click', nextTrack);
+        p_prevBtn.addEventListener('click', prevTrack);
         
-        progressContainer.addEventListener('click', (e) => {{
-            const rect = progressContainer.getBoundingClientRect();
+        p_progressContainer.addEventListener('click', (e) => {{
+            const rect = p_progressContainer.getBoundingClientRect();
             const percent = (e.clientX - rect.left) / rect.width;
             if (!isNaN(audio.duration)) {{
                 audio.currentTime = percent * audio.duration;
@@ -773,11 +814,7 @@ if len(music_files) > 0:
         
         loadTrack(currentTrack); // ✅ LOAD BÀI HÁT ĐÃ LƯU
         
-        // ✅ NẾU ĐANG PHÁT, BẮT ĐẦU PHÁT LẠI SAU KHI TẢI
-        if (isPlaying) {{
-            // Thử Play ngay lập tức để giảm gián đoạn
-            audio.play().catch(e => console.error("Auto play failed:", e.message));
-        }}
+        // ✅ BỎ KHỐI TỰ ĐỘNG PLAY TỪ ĐẦU!
         
         console.log("✅ Music player ready!");
             
