@@ -2,6 +2,7 @@ import streamlit as st
 import base64
 import os
 import time
+import random
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
@@ -18,7 +19,6 @@ if 'video_ended' not in st.session_state:
 
 def get_base64_encoded_file(file_path):
     """Đọc file và trả về Base64 encoded string."""
-    # Sửa đường dẫn nếu cần thiết để phù hợp với môi trường triển khai
     path_to_check = os.path.join(os.path.dirname(__file__), file_path)
     if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
         return None
@@ -30,24 +30,49 @@ def get_base64_encoded_file(file_path):
         st.error(f"Lỗi khi đọc file {file_path}: {str(e)}")
         return None
 
+
+# ✅ Mã hóa các file media chính
+pc_video_file = "airplane.mp4"
+mobile_video_file = "mobile.mp4"
+# ✅ Danh sách nhạc (ở thư mục gốc)
+music_files = [f"background{i}.mp3" for i in range(1, 7)] 
+music_base64_dict = {} # ✅ Từ điển chứa tất cả nhạc base64
+
+try:
+    # Load 2 video cho PC và Mobile
+    pc_video_base64 = get_base64_encoded_file(pc_video_file)
+    mobile_video_base64 = get_base64_encoded_file(mobile_video_file)
+    bg_img_base64 = get_base64_encoded_file("bg_main.jpg")
+
+    # ✅ Load TẤT CẢ các file nhạc
+    for file in music_files:
+        encoded_data = get_base64_encoded_file(file)
+        if encoded_data:
+            music_base64_dict[file] = encoded_data
+    
+    # Chuyển từ điển Python sang chuỗi JSON cho Javascript
+    import json
+    music_base64_json = json.dumps(music_base64_dict)
+
+except Exception as e:
+    st.error(f"Lỗi mã hóa file media: {e}")
+    pc_video_base64 = None
+    mobile_video_base64 = None
+    bg_img_base64 = None
+    music_base64_json = "{}" # Set là rỗng nếu lỗi
+
+
+# ✅ BỔ SUNG LỚP BẢO VỆ NẾU THIẾU MEDIA QUAN TRỌNG
+if not bg_img_base64 or (not pc_video_base64 and not mobile_video_base64):
+    st.session_state.video_ended = True 
+    st.warning("⚠️ **Thiếu file media quan trọng (bg_main.jpg, airplane.mp4, hoặc mobile.mp4)**. Đã bỏ qua Video Intro.")
+
+
+# --- CSS CHÍNH CHO TOÀN BỘ ỨNG DỤNG ---
 def set_page_style(css):
     """Áp dụng CSS style cho toàn bộ trang."""
     st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
 
-# Mã hóa các file media chính (bắt buộc)
-try:
-    # Đảm bảo các file này nằm trong thư mục gốc hoặc đường dẫn đúng
-    video_base64 = get_base64_encoded_file("intro.mp4")
-    bg_img_base64 = get_base64_encoded_file("bg_main.jpg")
-    audio_file_base64 = get_base64_encoded_file("music/BGM.mp3")
-except Exception as e:
-    st.error(f"Lỗi mã hóa file media: {e}")
-    video_base64 = None
-    bg_img_base64 = None
-    audio_file_base64 = None
-
-
-# --- CSS CHÍNH CHO TOÀN BỘ ỨNG DỤNG ---
 css = f"""
 /* 1. Reset và Font */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;700&display=swap');
@@ -63,12 +88,11 @@ css = f"""
 .stApp {{
     background: url("data:image/jpeg;base64,{bg_img_base64}") no-repeat center center fixed !important;
     background-size: cover !important;
-    min-height: 100vh; /* Đảm bảo chiều cao tối thiểu */
+    min-height: 100vh; 
     position: relative;
 }}
 
 /* 4. Che nội dung chính cho đến khi video kết thúc (trạng thái mặc định) */
-/* Cần class này để Streamlit không hiển thị các thành phần chính trước khi video xong */
 .stApp.video-not-finished {{
     overflow: hidden;
 }}
@@ -105,16 +129,16 @@ css = f"""
     width: 100%;
     height: 100%;
     display: grid;
-    grid-template-columns: repeat(10, 1fr); /* 10 cột */
-    grid-template-rows: repeat(10, 1fr); /* 10 hàng */
-    z-index: 999; /* Đảm bảo trên mọi thứ */
-    pointer-events: none; /* Không chặn tương tác */
+    grid-template-columns: repeat(10, 1fr); 
+    grid-template-rows: repeat(10, 1fr); 
+    z-index: 999; 
+    pointer-events: none; 
 }}
 
 .reveal-cell {{
-    background-color: #000; /* Màu đen hoặc màu nền bạn muốn */
+    background-color: #000; 
     opacity: 1;
-    transition: opacity 1s ease-out; /* Thời gian fade out */
+    transition: opacity 1s ease-out; 
 }}
 
 /* 8. Container Video */
@@ -124,8 +148,8 @@ css = f"""
     left: 0;
     width: 100%;
     height: 100%;
-    z-index: 998; /* Dưới lưới reveal */
-    background: black; /* Màu nền khi video chưa load */
+    z-index: 998; 
+    background: black; 
 }}
 
 /* 9. Video iframe (tùy chỉnh cho Streamlit component) */
@@ -209,7 +233,7 @@ iframe[title="video_callback_intro"] {{
     --color: #00FF00;
     --hover: #222;
     --hover-text: #00FF00;
-    --size: 100px; /* Tăng kích thước nút */
+    --size: 100px; 
     -webkit-tap-highlight-color: transparent;
     cursor: pointer;
     background: #000;
@@ -269,7 +293,7 @@ set_page_style(css)
 # Thêm class để ẩn nội dung chính ban đầu
 st.markdown('<div class="reveal-grid"></div>', unsafe_allow_html=True)
 st.markdown('<div id="video-iframe-container"></div>', unsafe_allow_html=True)
-st.markdown('<div id="music-audio-container" style="display: none;"></div>', unsafe_allow_html=True) # Container cho Audio
+st.markdown('<div id="music-audio-container" style="display: none;"></div>', unsafe_allow_html=True) 
 
 # --- LOGIC XỬ LÝ VIDEO VÀ HIỆU ỨNG TRONG IFRAME (JAVASCRIPT) ---
 js_callback_video = f"""
@@ -277,43 +301,128 @@ js_callback_video = f"""
     // --- KHAI BÁO CÁC HÀM CƠ BẢN ---
     const stApp = window.parent.document.querySelector('.stApp');
     const audioContainer = window.parent.document.querySelector('#music-audio-container');
-    const musicBase64 = "{audio_file_base64}";
+    
+    // ✅ Biến Javascript chứa TẤT CẢ các file nhạc Base64
+    const pcVideoBase64 = "{pc_video_base64}";
+    const mobileVideoBase64 = "{mobile_video_base64}";
+    const musicData = {music_base64_json}; // ✅ Đã sửa: Load toàn bộ JSON
+    const musicFiles = Object.keys(musicData);
+
     let audio = null;
     let isPlaying = false;
     let musicPlayerInitialized = false;
+    let currentTrackIndex = 0; // ✅ Theo dõi bài hát hiện tại
+    
+    function isMobile() {{
+        return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth < 768;
+    }}
+    
+    function formatTime(seconds) {{
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = Math.floor(seconds % 60);
+        return `${{minutes}}:${{remainingSeconds < 10 ? '0' : ''}}${{remainingSeconds}}`;
+    }}
 
-    function initMusicPlayer() {{
-        if (musicPlayerInitialized) return;
-        musicPlayerInitialized = true;
+    function updateMusicDisplay(duration) {{
+        const durationSpan = window.parent.document.querySelector('#duration');
+        if (durationSpan) {{
+            durationSpan.textContent = formatTime(duration);
+        }}
+    }}
+
+    function loadTrack(index) {{
+        if (musicFiles.length === 0) return;
+
+        currentTrackIndex = (index % musicFiles.length + musicFiles.length) % musicFiles.length;
+        const fileName = musicFiles[currentTrackIndex];
+        const base64Data = musicData[fileName];
+        const newSrc = 'data:audio/mp3;base64,' + base64Data;
+
+        // Xóa player cũ nếu có
+        if (audio) {{
+            audio.pause();
+            audio.remove();
+        }}
         
-        if (musicBase64) {{
-            audio = new Audio('data:audio/mp3;base64,' + musicBase64);
-            audio.loop = true;
-            audioContainer.appendChild(audio);
-            
-            // Khởi tạo các nút điều khiển (dựa trên các id trong HTML)
-            const playPauseBtn = window.parent.document.querySelector('#play-pause-btn');
-            
-            if(playPauseBtn) {{
-                playPauseBtn.onclick = () => {{
-                    if (isPlaying) {{
-                        audio.pause();
-                        playPauseBtn.textContent = '▶';
-                    }} else {{
-                        audio.play().catch(e => console.error("Error playing audio:", e));
-                        playPauseBtn.textContent = '⏸';
-                    }}
-                    isPlaying = !isPlaying;
-                }};
-            }}
-            
-            // Tự động phát sau 100ms
+        // Tạo player mới
+        audio = new Audio(newSrc);
+        audio.loop = false; // Tắt loop
+        audioContainer.appendChild(audio);
+        console.log(`Loaded track: ${{fileName}}`);
+
+        // Cập nhật thông tin bài hát và tự động chuyển bài khi kết thúc
+        audio.onloadedmetadata = () => {{
+            updateMusicDisplay(audio.duration);
+        }};
+        
+        audio.onended = () => {{
+            console.log("Track ended. Playing next track.");
+            playNext();
+        }};
+        
+        if (isPlaying) {{
+            audio.play().catch(e => console.error("Error playing audio:", e));
+        }}
+    }}
+    
+    function playNext() {{
+        loadTrack(currentTrackIndex + 1);
+        if (isPlaying) {{
+            // Đợi 100ms để đảm bảo metadata được load trước khi play
             setTimeout(() => {{
-                if (stApp.classList.contains('main-content-revealed')) {{
-                    playPauseBtn.click(); // Kích hoạt phát nhạc (sau khi video xong)
-                }}
+                audio.play().catch(e => console.error("Error playing next track:", e));
             }}, 100);
         }}
+    }}
+    
+    function playPrev() {{
+        loadTrack(currentTrackIndex - 1);
+        if (isPlaying) {{
+             setTimeout(() => {{
+                audio.play().catch(e => console.error("Error playing previous track:", e));
+            }}, 100);
+        }}
+    }}
+
+    function initMusicPlayer() {{
+        if (musicPlayerInitialized || musicFiles.length === 0) return;
+        musicPlayerInitialized = true;
+        
+        // Bắt đầu từ một bài ngẫu nhiên
+        currentTrackIndex = Math.floor(Math.random() * musicFiles.length);
+        loadTrack(currentTrackIndex);
+        
+        const playPauseBtn = window.parent.document.querySelector('#play-pause-btn');
+        const prevBtn = window.parent.document.querySelector('#prev-btn');
+        const nextBtn = window.parent.document.querySelector('#next-btn');
+
+        if(playPauseBtn) {{
+            playPauseBtn.onclick = () => {{
+                if (isPlaying) {{
+                    audio.pause();
+                    playPauseBtn.textContent = '▶';
+                }} else {{
+                    audio.play().catch(e => console.error("Error playing audio:", e));
+                    playPauseBtn.textContent = '⏸';
+                }}
+                isPlaying = !isPlaying;
+            }};
+        }}
+        
+        // ✅ Xử lý nút Previous/Next
+        if(nextBtn) {{
+            nextBtn.onclick = playNext;
+        }}
+        if(prevBtn) {{
+            prevBtn.onclick = playPrev;
+        }}
+
+        // Tự động phát sau 100ms
+        setTimeout(() => {{
+            if (stApp.classList.contains('main-content-revealed')) {{
+                playPauseBtn.click(); // Kích hoạt phát nhạc
+            }}
+        }}, 100);
         console.log("Music Player Initialized.");
     }}
 
@@ -326,78 +435,80 @@ js_callback_video = f"""
         cells.forEach((cell, index) => {{
             setTimeout(() => {{
                 cell.style.opacity = '0';
-            }}, index * 10); // Hiệu ứng quét nhanh 
+            }}, index * 10); 
         }});
 
-        // Sau khi hiệu ứng hoàn tất, xóa lưới
         setTimeout(() => {{
             revealGrid.remove();
-        }}, 1000); // Đợi 1s để hoàn tất fade
-        
-        console.log("Reveal Effect Initialized.");
+        }}, 1000); 
     }}
 
     function sendBackToStreamlit() {{
         console.log("Video ended or skipped, revealing main content");
         
-        // 1. Gửi tín hiệu về Streamlit (Dùng Streamlit.setComponentValue nếu là custom component, nhưng ở đây dùng logic CSS)
         if (stApp) {{
             stApp.classList.add('video-finished', 'main-content-revealed');
             stApp.classList.remove('video-not-finished'); 
         }}
         
-        // 2. Kích hoạt hiệu ứng reveal
         initRevealEffect();
         
-        // 3. Khởi tạo Music Player sau khi hiệu ứng bắt đầu
         setTimeout(initMusicPlayer, 100); 
     }}
     
-    // --- ✅ LOGIC MỚI: KIỂM TRA THAM SỐ SKIP_INTRO ---
+    // --- LOGIC SKIP INTRO VÀ REVEAL ---
     const urlParams = new URLSearchParams(window.parent.location.search);
     const skipIntro = urlParams.get('skip_intro');
     
     if (skipIntro === '1') {{
         console.log("Skip intro detected. Directly revealing main content and skipping reveal effect.");
         
-        // 1. Kích hoạt trạng thái video-finished và main-content-revealed trên .stApp
         if (stApp) {{
             stApp.classList.add('video-finished', 'main-content-revealed');
             stApp.classList.remove('video-not-finished');
         }}
 
-        // 2. Loại bỏ lưới reveal grid ngay lập tức (BỎ QUA HIỆU ỨNG REVEAL CHẬM)
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
         if (revealGrid) {{
             revealGrid.remove();
-            console.log("Reveal grid removed instantly.");
         }}
         
-        // 3. Khởi tạo Music Player ngay lập tức
         initMusicPlayer();
 
-        // 4. Ẩn iframe video ngay lập tức
         const iframe = window.frameElement;
         if (iframe) {{
             iframe.style.opacity = 0;
             iframe.style.visibility = 'hidden';
             iframe.style.pointerEvents = 'none';
-            console.log("Video iframe hidden instantly.");
         }}
         
-        return; // Dừng mọi hoạt động khởi tạo video/audio/event listeners
+        return; 
     }}
 
-    // --- LOGIC VIDEO BÌNH THƯỜNG ---
-    const videoBase64 = "{video_base64}";
+    // --- LOGIC VIDEO BÌNH THƯỜNG (CHỌN NGUỒN) ---
     const iframe = window.frameElement;
     
-    if (videoBase64) {{
+    let videoSourceBase64;
+    let deviceType = isMobile() ? 'Mobile' : 'PC';
+
+    if (isMobile() && mobileVideoBase64) {{
+        videoSourceBase64 = mobileVideoBase64;
+    }} else if (!isMobile() && pcVideoBase64) {{
+        videoSourceBase64 = pcVideoBase64;
+    }}
+    
+    if (!videoSourceBase64) {{
+        console.log(`Fallback: ${{deviceType}} video not found. Trying other video source.`);
+        videoSourceBase64 = isMobile() ? pcVideoBase64 : mobileVideoBase64;
+    }}
+    
+    if (videoSourceBase64) {{
+        console.log(`Playing video for: ${{deviceType}}`);
         // Tạo video element
         const video = document.createElement('video');
-        video.src = 'data:video/mp4;base64,' + videoBase64;
+        video.src = 'data:video/mp4;base64,' + videoSourceBase64;
         video.autoplay = true;
-        video.muted = true; // Bắt buộc để autoplay hoạt động
+        video.muted = true; 
         video.playsInline = true;
         video.style.width = '100%';
         video.style.height = '100%';
@@ -405,45 +516,38 @@ js_callback_video = f"""
         video.style.opacity = 1;
         video.style.transition = 'opacity 1s';
         
-        // Chèn video vào body của iframe
         document.body.appendChild(video);
         document.body.style.margin = '0';
         document.body.style.overflow = 'hidden';
 
-        // Lắng nghe sự kiện kết thúc
         video.onended = () => {{
             console.log("Video Ended.");
             
-            // Ẩn iframe video một cách mượt mà
             if (iframe) {{
                 iframe.style.opacity = 0;
                 setTimeout(() => {{
                     iframe.style.visibility = 'hidden';
                     iframe.style.pointerEvents = 'none';
-                }}, 500); // Đợi fade out
+                }}, 500); 
             }}
 
-            // Bắt đầu hiệu ứng reveal và hiển thị nội dung chính
             sendBackToStreamlit();
         }};
         
-        // Tự động phát
         video.play().catch(e => {{
             console.error("Auto-play failed:", e);
-            // Có thể hiển thị nút Play nếu auto-play bị chặn
-            // sendBackToStreamlit(); // Hoặc bỏ qua video nếu không thể tự động phát
+            sendBackToStreamlit(); 
         }});
         
     }} else {{
-        console.log("Video Base64 not found, skipping video and revealing content.");
-        // Nếu không có video, chuyển thẳng
+        console.log("No Video Base64 found for any device, skipping video and revealing content.");
         setTimeout(sendBackToStreamlit, 500); 
     }}
     
     // Khởi tạo các ô lưới reveal
     const revealGrid = window.parent.document.querySelector('.reveal-grid');
     if (revealGrid) {{
-        for (let i = 0; i < 100; i++) {{ // 10x10 = 100 ô
+        for (let i = 0; i < 100; i++) {{ 
             const cell = document.createElement('div');
             cell.classList.add('reveal-cell');
             revealGrid.appendChild(cell);
@@ -452,7 +556,7 @@ js_callback_video = f"""
 </script>
 """
 
-# Thêm logic để kiểm tra nếu đã video đã chạy xong (để reload trang không phải xem lại)
+# Thêm logic để kiểm tra nếu đã video đã chạy xong
 if st.session_state.video_ended:
     st.markdown(f'<script>window.onload = function() {{ if(window.parent.document.querySelector(".stApp")) {{ window.parent.document.querySelector(".stApp").classList.add("video-finished", "main-content-revealed"); }} if(window.parent.document.querySelector(".reveal-grid")) {{ window.parent.document.querySelector(".reveal-grid").remove(); }} }};</script>', unsafe_allow_html=True)
 else:
@@ -460,15 +564,14 @@ else:
     import streamlit.components.v1 as components
     components.html(
         js_callback_video,
-        height=0, # Ẩn component, chỉ dùng để chạy script trong iframe
+        height=0, 
         width=0,
         scrolling=False,
         key="video_callback_intro"
     )
-    # Cần set state sau khi component chạy xong (vì component chạy bất đồng bộ)
-    st.session_state.video_ended = True # Đặt là True để lần sau reload không chạy lại video
+    st.session_state.video_ended = True 
 
-# --- TIÊU ĐỀ CHÍNH (FIXED TRÊN CÙNG MÀU) ---
+# --- TIÊU ĐỀ CHÍNH ---
 main_title_text = "TỔ BẢO DƯỠNG SỐ 1"
 
 # Nhúng tiêu đề
@@ -479,8 +582,7 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 # --- MUSIC PLAYER ---
-music_files = ["music/BGM.mp3"] # Dùng để kiểm tra len
-if len(music_files) > 0:
+if len(music_base64_dict) > 0: # Chỉ hiển thị nếu có nhạc
     st.markdown("""
 <div id="music-player-container">
     <div class="controls">
@@ -499,7 +601,6 @@ if len(music_files) > 0:
 """, unsafe_allow_html=True)
 
 # --- NAVIGATION BUTTON MỚI (UIverse Style) ---
-# Tên trang phụ là partnumber.py nên link href là /partnumber
 st.markdown("""
 <div class="nav-container">
     <a href="/partnumber" target="_self" class="button">
@@ -514,8 +615,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- NỘI DUNG CHÍNH (Được hiển thị sau khi video xong) ---
-# ... (Phần nội dung chính của trang chủ app.txt) ...
+# --- NỘI DUNG CHÍNH ---
 st.markdown("""
 <div class="main-content-area" style="padding-top: 150px; padding-bottom: 50px;">
     <h2 style="color: white; text-align: center; margin-bottom: 50px;">Chào mừng đến với Hệ Thống Tra Cứu Nội Bộ</h2>
@@ -527,4 +627,3 @@ st.markdown("""
     </div>
 </div>
 """, unsafe_allow_html=True)
-# ...
