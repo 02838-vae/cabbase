@@ -16,48 +16,71 @@ def get_base64_encoded_file(file_path):
     if "pages/" not in path_to_check:
         # Thử tìm trong thư mục gốc nếu nó là logo.jpg
         if not os.path.exists(path_to_check):
-            # Giả định file gốc là ở thư mục cha của thư mục hiện tại (nếu đang ở pages)
-            path_to_check = os.path.join(os.path.dirname(os.path.dirname(__file__)), file_path)
-        
+            path_to_check = os.path.join(os.path.dirname(__file__), file_path)
+    
     if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
-        return "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=" # Transparent 1x1
+        return "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
     try:
         with open(path_to_check, "rb") as f:
             return base64.b64encode(f.read()).decode("utf-8")
+    except Exception:
+        return "iVBORw0KGgoAAAANHHEAAAABJRU5ErkJggg=="
+
+@st.cache_data(show_spinner="Đang tải dữ liệu...")
+def load_and_clean(excel_file, sheet):
+    """Tải và làm sạch dữ liệu từ sheet Excel."""
+    
+    try:
+        # Đường dẫn file excel, giả định nó nằm trong thư mục pages/
+        excel_path = os.path.join(os.path.dirname(__file__), excel_file.replace("pages/", ""))
+        
+        df = pd.read_excel(excel_path, sheet_name=sheet)
+        df.columns = df.columns.str.strip().str.upper()
+        df = df.replace(r'^\s*$', pd.NA, regex=True).dropna(how="all")
+        for col in df.columns:
+            if df[col].dtype == "object":
+                df[col] = df[col].fillna("").astype(str).str.strip()
+            if col in ["A/C", "DESCRIPTION", "ITEM", "PART NUMBER"] and df[col].eq("").all():
+                return pd.DataFrame()
+        return df
     except Exception as e:
-        st.error(f"Lỗi khi đọc file {file_path}: {str(e)}")
-        return "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+        return pd.DataFrame()
 
+# --- BIẾN VÀ ĐƯỜNG DẪN ---
+CHOOSE_PROMPT = "-- CHỌN --"
+excel_file = "pages/A787.xlsx" # Giả định file excel nằm cùng cấp với thư mục pages/
 
-# --- KHAI BÁO MEDIA ---
-pn_bg_base64 = get_base64_encoded_file("bg_partnumber.jpg")
-pn_bg_mobile_base64 = get_base64_encoded_file("bg_partnumber_mobile.jpg")
+try:
+    # Cần đảm bảo các file này nằm trong thư mục 'pages/'
+    pn_bg_pc_base64 = get_base64_encoded_file("pages/PN_PC.jpg")
+    pn_bg_mobile_base64 = get_base64_encoded_file("pages/PN_mobile.jpg")
+except Exception as e:
+    st.error(f"❌ Lỗi khi đọc file ảnh nền: {str(e)}")
+    st.stop()
 
+# --- CSS ---
+hide_streamlit_style = f"""
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap');
+#MainMenu, footer, header {{visibility: hidden;}}
 
-# --- CSS CHÍNH CHO TRANG PART NUMBER (ĐÃ SỬA VỊ TRÍ TIÊU ĐỀ) ---
-css = f"""
-/* 1. Reset và Font */
-@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@100;300;400;700&display=swap');
-* {{
-    font-family: 'Roboto', sans-serif;
+.main {{
+    padding: 0;
+    margin: 0;
+    background-color: transparent !important;
+    z-index: 10 !important;
 }}
 
-/* 2. Background chính */
 .stApp {{
-    background: url("data:image/jpeg;base64,{pn_bg_base64}") no-repeat center top fixed !important;
+    background: url("data:image/jpeg;base64,{pn_bg_pc_base64}") no-repeat center top fixed !important;
     background-size: cover !important;
+    font-family: 'Oswald', sans-serif !important;
+    filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) !important;
 }}
 
-/* 3. Tùy chỉnh Streamlit mặc định */
-#MainMenu, footer {{visibility: hidden;}}
-.stSidebar, .st-emotion-cache-1c9vj0f, .st-emotion-cache-1c9vj0f {{ /* Ẩn sidebar và các thành phần không cần thiết */
-    visibility: hidden !important;
-    width: 0 !important;
-}}
-
-/* ✅ SỬA ĐỔI: ĐẨY NỘI DUNG XUỐNG THẤP HƠN */
 .main > div:first-child {{
-    padding-top: 450px !important; /* ✅ ĐÃ TĂNG: Đẩy nội dung (bao gồm tiêu đề phụ) xuống thấp hơn */
+    padding-top: 350px !important;
     padding-left: 20px;
     padding-right: 20px;
 }}
@@ -67,9 +90,95 @@ css = f"""
         background: url("data:image/jpeg;base64,{pn_bg_mobile_base64}") no-repeat center top scroll !important;
         background-size: cover !important;
     }}
-    .main > div:first-child {{ 
-        padding-top: 300px !important; /* ✅ ĐÃ TĂNG: Đẩy nội dung xuống thấp hơn trên Mobile */
+    .main > div:first-child {{ padding-top: 200px !important; }}
+}}
+
+/* ✅ KEYFRAMES CHO TIÊU ĐỀ CHẠY - GIỐNG TRANG CHÍNH */
+@keyframes scrollText {{
+    0% {{ transform: translate(100vw, 0); }}
+    100% {{ transform: translate(-100%, 0); }}
+}}
+
+@keyframes colorShift {{
+    0% {{ background-position: 0% 50%; }}
+    50% {{ background-position: 100% 50%; }}
+    100% {{ background-position: 0% 50%; }}
+}}
+
+/* ✅ TIÊU ĐỀ CHẠY - GIỐNG Y HỆT TRANG CHÍNH */
+#main-title-container {{
+    position: fixed;
+    top: 5vh;
+    left: 0;
+    width: 100%;
+    height: 10vh;
+    overflow: hidden;
+    z-index: 20;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 2s;
+}}
+
+#main-title-container h1 {{
+    font-family: 'Playfair Display', serif;
+    font-size: 3.5vw;
+    margin: 0;
+    font-weight: 900;
+    font-feature-settings: "lnum" 1;
+    letter-spacing: 5px;
+    white-space: nowrap;
+    display: inline-block;
+    animation: scrollText 15s linear infinite;
+    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
+    background-size: 400% 400%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: colorShift 10s ease infinite, scrollText 15s linear infinite;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}}
+
+@media (max-width: 768px) {{
+    #main-title-container {{
+        height: 8vh;
+        width: 100%;
+        left: 0;
     }}
+    
+    #main-title-container h1 {{
+        font-size: 6.5vw;
+        animation-duration: 8s;
+    }}
+}}
+
+/* ✅ NÚT VỀ TRANG CHỦ - FIXED */
+#back-to-home-btn-container {{
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 1001;
+}}
+
+a#manual-home-btn {{
+    background-color: rgba(0, 0, 0, 0.85);
+    color: #FFEA00;
+    border: 2px solid #FFEA00;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 16px;
+    transition: all 0.3s;
+    cursor: pointer;
+    font-family: 'Oswald', sans-serif;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}}
+
+a#manual-home-btn:hover {{
+    background-color: #FFEA00;
+    color: black;
+    transform: scale(1.05);
 }}
 
 /* ✅ TIÊU ĐỀ PHỤ TĨNH */
@@ -81,154 +190,225 @@ css = f"""
     background: transparent !important;
     text-align: center;
 }}
+
 #sub-static-title h2 {{
-    font-size: 3rem;
-    color: #00FF00;
-    text-shadow: 0 0 10px #00FF00, 0 0 5px #000;
-    margin: 0;
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    color: #FFEA00;
+    text-align: center;
+    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8);
+    margin-bottom: 20px;
 }}
 
-/* ✅ NÚT VỀ TRANG CHỦ */
-#back-to-home-btn-container {{
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 1000;
+.result-title h3 {{
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    color: #FFEA00;
+    text-align: center;
+    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8);
+    margin-bottom: 20px;
 }}
 
-/* Style cơ bản cho nút */
-#manual-home-btn {{
-    text-decoration: none;
-    background-color: #000;
-    color: #00FF00;
-    padding: 10px 20px;
-    border-radius: 8px;
-    border: 2px solid #00FF00;
+@media (max-width: 768px) {{
+    #sub-static-title h2, .result-title h3 {{
+        font-size: 1.2rem;
+        white-space: nowrap;
+    }}
+}}
+
+/* --- CSS CHO DROPDOWN & BẢNG KẾT QUẢ --- */
+div.stSelectbox label p, div[data-testid*="column"] label p {{
+    color: #00FF00 !important;
+    font-size: 1.25rem !important;
     font-weight: bold;
-    box-shadow: 0 0 10px #00FF00;
-    transition: all 0.3s;
+    text-shadow: 0 0 5px rgba(0,255,0,0.5);
 }}
-#manual-home-btn:hover {{
-    background-color: #00FF00;
-    color: #000;
-    box-shadow: 0 0 20px #00FF00;
+
+.stSelectbox div[data-baseweb="select"] {{
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 1px solid #00FF00;
+    border-radius: 8px;
 }}
+
+.stSelectbox div[data-baseweb="select"] div[data-testid="stTextInput"] {{
+    color: #FFFFFF !important;
+}}
+
+.custom-table th {{
+    background-color: #1E8449 !important;
+    color: #FFFFFF !important;
+    padding: 14px;
+    border: 2px solid #2ECC71;
+    font-size: 1.1rem;
+    font-weight: bold;
+    text-align: center !important;
+    font-family: 'Oswald', sans-serif;
+}}
+
+.custom-table td {{
+    padding: 12px;
+    text-align: center !important;
+    border: 1px solid #333333;
+    vertical-align: middle;
+    font-size: 1rem;
+    color: #000000;
+    background-color: #FFFFFF !important;
+    font-family: Arial, sans-serif;
+}}
+
+.table-container {{
+    display: flex;
+    justify-content: flex-start;
+    width: 100%;
+    margin-top: 20px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 15px;
+}}
+
+.custom-table {{
+    min-width: 100%;
+    width: max-content;
+    margin: 0;
+    border-collapse: collapse;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}}
+
+</style>
 """
-st.markdown(f'<style>{css}</style>', unsafe_allow_html=True)
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+# --- LOGIC CHÍNH ---
+
+# ✅ NÚT VỀ TRANG CHỦ - BỎ HIỆU ỨNG REVEAL VÀ VIDEO
+st.markdown("""
+<div id="back-to-home-btn-container">
+    <a id="manual-home-btn" href="/?skip_intro=1" target="_self">
+        🏠 Về Trang Chủ
+    </a>
+</div>
+""", unsafe_allow_html=True)
+
+
+# --- ✅ HIỂN THỊ TIÊU ĐỀ CHẠY GIỐNG TRANG CHÍNH ---
+main_title_text = "Tổ Bảo Dưỡng Số 1"
+st.markdown(f'<div id="main-title-container"><h1>{main_title_text}</h1></div>', unsafe_allow_html=True)
 
 # --- TIÊU ĐỀ PHỤ - ĐẨY XUỐNG THẤP HƠN ---
 st.markdown('<div id="sub-static-title"><h2>TRA CỨU PART NUMBER</h2></div>', unsafe_allow_html=True)
 
-# ✅ NÚT VỀ TRANG CHỦ - BỎ HIỆU ỨNG REVEAL VÀ VIDEO 
-# Link đã có /?skip_intro=1 để báo cho trang chính bỏ qua intro
-st.markdown(""" 
-<div id="back-to-home-btn-container"> 
-<a id="manual-home-btn" href="/?skip_intro=1" target="_self"> 🏠 Về Trang Chủ </a> 
-</div> 
-""", unsafe_allow_html=True)
+# --- DROPDOWN & XỬ LÝ DỮ LIỆU ---
+try:
+    if not os.path.exists(excel_file):
+        st.error(f"❌ Không tìm thấy file Excel: {excel_file}")
+        st.stop()
 
+    excel_path = os.path.join(os.path.dirname(__file__), excel_file.replace("pages/", ""))
+    sheet_names = pd.ExcelFile(excel_path).sheet_names
+except Exception as e:
+    st.error(f"❌ Lỗi khi đọc file Excel: {str(e)}")
+    st.stop()
 
-# --- LOGIC TRA CỨU PART NUMBER (GIỮ NGUYÊN) ---
+sheet_options = [CHOOSE_PROMPT] + sheet_names
 
-# Giả lập dữ liệu tra cứu (thay thế bằng file Excel/CSV của bạn)
-data = {
-    'Zone': ['F41', 'F41', 'F42', 'F42', 'F43'],
-    'Aircraft': ['A320', 'A321', 'A320', 'A321', 'A320'],
-    'Description': ['FLAP TRACK', 'FLAP TRACK', 'LANDING GEAR DOOR', 'LANDING GEAR DOOR', 'WHEEL'],
-    'Item': ['Track 1', 'Track 2', 'LGD L/H', 'LGD R/H', 'Wheel Main'],
-    'Part_Number': ['PN-F41-A320-1', 'PN-F41-A321-2', 'PN-F42-A320-3', 'PN-F42-A321-4', 'PN-F43-A320-5']
-}
-df = pd.DataFrame(data)
-
-st.markdown("""
-<div style="background: rgba(0, 0, 0, 0.7); padding: 20px; border-radius: 10px; margin-top: 20px; border: 1px solid rgba(0, 255, 0, 0.5);">
-    <h3 style="color: #00FF00; margin-top: 0;">Bộ lọc Tra Cứu</h3>
-""", unsafe_allow_html=True)
-
-# Lấy danh sách các giá trị duy nhất
-zones = df['Zone'].unique().tolist()
-aircrafts = df['Aircraft'].unique().tolist()
-
+st.markdown("<div style='text-align:center;'>", unsafe_allow_html=True)
 col1, col2, col3, col4 = st.columns(4)
+df_base = pd.DataFrame()
+df_filtered = pd.DataFrame()
+aircraft = CHOOSE_PROMPT
+desc = CHOOSE_PROMPT
+item = CHOOSE_PROMPT
 
-# 1. Chọn Zone
-zone_selected = col1.selectbox("Chọn Zone", [''] + zones, index=0)
-
-# Khởi tạo các biến để kiểm tra điều kiện
-df_filtered = df
-aircraft_selected = None
-desc_selected = None
-item_selected = None
-
-# Lọc theo Zone
+with col1:
+    zone = st.selectbox("📂 Zone", sheet_options, key="zone_select")
+zone_selected = (zone and zone != CHOOSE_PROMPT)
 if zone_selected:
-    df_filtered = df_filtered[df_filtered['Zone'] == zone_selected]
-    ac_exists = not df_filtered['Aircraft'].empty
-    
-    # 2. Chọn Loại máy bay (nếu Zone đã chọn)
-    if ac_exists:
-        available_aircrafts = df_filtered['Aircraft'].unique().tolist()
-        aircraft_selected = col2.selectbox("Chọn Loại máy bay", [''] + available_aircrafts, index=0)
+    df_base = load_and_clean(excel_file, zone)
+    df_filtered = df_base.copy()
 
-        # Lọc theo Aircraft
-        if aircraft_selected:
-            df_filtered = df_filtered[df_filtered['Aircraft'] == aircraft_selected]
-            desc_exists = not df_filtered['Description'].empty
+ac_exists = "A/C" in df_base.columns
+aircraft_selected = False
+if zone_selected and ac_exists:
+    aircraft_options = [CHOOSE_PROMPT] + sorted(df_base["A/C"].dropna().unique().tolist())
+    with col2:
+        aircraft = st.selectbox("✈️ Loại máy bay", aircraft_options, key="aircraft_select")
+    aircraft_selected = (aircraft and aircraft != CHOOSE_PROMPT)
+    if aircraft_selected:
+        df_filtered = df_base[df_base["A/C"] == aircraft].copy()
+elif zone_selected:
+    aircraft_selected = True
+    df_filtered = df_base.copy()
 
-            # 3. Chọn Mô tả chi tiết (nếu Aircraft đã chọn)
-            if desc_exists:
-                available_desc = df_filtered['Description'].unique().tolist()
-                desc_selected = col3.selectbox("Chọn Mô tả chi tiết", [''] + available_desc, index=0)
-                
-                # Lọc theo Description
-                if desc_selected:
-                    df_filtered = df_filtered[df_filtered['Description'] == desc_selected]
-            
-            item_exists = not df_filtered['Item'].empty
-            
-            # 4. Chọn Item (nếu Mô tả đã chọn hoặc không có Mô tả)
-            if item_exists:
-                available_items = df_filtered['Item'].unique().tolist()
-                item_selected = col4.selectbox("Chọn Item", [''] + available_items, index=0)
+desc_exists = "DESCRIPTION" in df_filtered.columns
+desc_selected = False
+if aircraft_selected and zone_selected and desc_exists:
+    descs_options = [CHOOSE_PROMPT] + sorted(df_filtered["DESCRIPTION"].dropna().unique().tolist())
+    with col3:
+        desc = st.selectbox("🔑 Mô tả chi tiết", descs_options, key="desc_select")
+    desc_selected = (desc and desc != CHOOSE_PROMPT)
+    if desc_selected:
+        df_filtered = df_filtered[df_filtered["DESCRIPTION"] == desc].copy()
 
-                # Lọc theo Item
-                if item_selected:
-                    df_filtered = df_filtered[df_filtered['Item'] == item_selected]
-
+item_exists = "ITEM" in df_filtered.columns
+item_selected = False
+if (aircraft_selected and zone_selected) and item_exists and (desc_selected or not desc_exists):
+    items_options = [CHOOSE_PROMPT] + sorted(df_filtered["ITEM"].dropna().unique().tolist())
+    with col4:
+        item = st.selectbox("🔌 Item", items_options, key="item_select")
+    item_selected = (item and item != CHOOSE_PROMPT)
+    if item_selected:
+        df_filtered = df_filtered[df_filtered["ITEM"] == item].copy()
 
 st.markdown("</div>", unsafe_allow_html=True)
+st.markdown("---")
 
 # --- HIỂN THỊ KẾT QUẢ ---
-all_criteria_met = (zone_selected and aircraft_selected) and \
-                   (not desc_exists or (desc_exists and desc_selected)) and \
-                   (not item_exists or (item_exists and item_selected))
+all_criteria_met = zone_selected and aircraft_selected and (desc_selected or not desc_exists) and (item_selected or not item_exists)
 
-if st.button("🔍 Tra Cứu", type="primary"):
-    st.markdown("---")
-    
+if zone_selected:
     if all_criteria_met:
-        st.markdown(f'<h4 style="color: #00FF00;">Kết quả tra cứu cho **{zone_selected} / {aircraft_selected}**</h4>', unsafe_allow_html=True)
-        
-        if not df_filtered.empty:
-            # Chỉ hiển thị các cột quan trọng
-            df_display = df_filtered[['Zone', 'Aircraft', 'Description', 'Item', 'Part_Number']].reset_index(drop=True)
-            
-            # Tùy chỉnh hiển thị DataFrame
-            st.dataframe(
-                df_display,
-                hide_index=True,
-                use_container_width=True,
-                column_config={
-                    "Part_Number": st.column_config.TextColumn(
-                        "Part Number",
-                        help="Part Number cần tìm",
-                        max_chars=50,
-                        width="medium"
-                    ),
-                }
-            )
+        df_display = df_filtered.copy()
+
+        if "DESCRIPTION" in df_display.columns:
+            df_display = df_display.drop(columns=["DESCRIPTION"])
+        if "ITEM" in df_display.columns:
+            df_display = df_display.drop(columns=["ITEM"])
+        if "A/C" in df_display.columns:
+            df_display = df_display.drop(columns=["A/C"])
+
+        if len(df_display) > 0:
+            st.markdown('<div class="result-title"><h3>KẾT QUẢ TRA CỨU</h3></div>', unsafe_allow_html=True)
+
+            df_display = df_display.reset_index(drop=True)
+            df_display.insert(0, "STT", range(1, len(df_display) + 1))
+
+            if "PART NUMBER" in df_display.columns:
+                pn_col = df_display.pop("PART NUMBER")
+                df_display.insert(1, "PART NUMBER", pn_col)
+
+            html_parts = ['<div class="table-container">']
+            html_parts.append('<table class="custom-table">')
+
+            html_parts.append('<thead><tr>')
+            for col in df_display.columns:
+                html_parts.append(f'<th>{str(col)}</th>')
+            html_parts.append('</tr></thead>')
+
+            html_parts.append('<tbody>')
+            for idx, row in df_display.iterrows():
+                html_parts.append('<tr>')
+                for col in df_display.columns:
+                    val = row[col]
+                    style = "color: #FF69B4; font-weight: bold;" if col == "PART NUMBER" else ""
+                    html_parts.append(f'<td style="{style}">{str(val)}</td>')
+                html_parts.append('</tr>')
+            html_parts.append('</tbody></table>')
+            html_parts.append('</div>')
+
+            st.markdown(''.join(html_parts), unsafe_allow_html=True)
         else:
-            st.markdown("---\r\n            st.warning(\"⚠️ **Không tìm thấy kết quả phù hợp** với các tiêu chí đã chọn.\")
+            st.markdown("---")
+            st.warning("⚠️ **Không tìm thấy kết quả phù hợp** với các tiêu chí đã chọn.")
 
     elif not all_criteria_met:
         st.markdown("---")
@@ -260,4 +440,7 @@ if st.button("🔍 Tra Cứu", type="primary"):
                 </p>
             </div>
             """, unsafe_allow_html=True)
-# ... (Phần code còn lại của bạn) ...
+
+    else:
+        st.markdown("---")
+        st.warning("⚠️ **Không có dữ liệu Part Number** trong Zone này.")
