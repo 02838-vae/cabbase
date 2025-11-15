@@ -408,7 +408,7 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === CSS MỚI CHO NAVIGATION BUTTON (UIverse Dark Mode) === */
+/* === NAVIGATION BUTTON MỚI (UIverse Dark Mode) === */
 
 .nav-container {{
     position: fixed;
@@ -640,6 +640,124 @@ iframe:first-of-type {{
     animation-delay: 3.2s;
     opacity: 0;
 }}
+
+/* === CSS MỚI CHO ĐỒNG HỒ CƠ (TRÁI) === */
+#analog-clock-container {
+    position: fixed;
+    top: 50%; /* Canh giữa dọc */
+    left: 20px; /* Cách lề trái 20px */
+    transform: translateY(-50%);
+    width: 150px;
+    height: 150px;
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 1s ease-out 3.5s; /* Hiện sau khi reveal xong */
+}
+
+.video-finished #analog-clock-container {
+    opacity: 1;
+}
+
+.analog-clock {
+    width: 100%;
+    height: 100%;
+    border: 5px solid #FFD700; /* Vàng Gold */
+    border-radius: 50%;
+    background-color: rgba(0, 0, 0, 0.7);
+    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
+    position: relative;
+}
+
+.hand {
+    position: absolute;
+    width: 50%;
+    height: 3px;
+    background: white;
+    top: 50%;
+    left: 50%;
+    transform-origin: 0% 50%;
+    transform: rotate(90deg); /* Bắt đầu từ 12h */
+    border-radius: 5px;
+}
+
+.hour-hand {
+    background: #FFD700; /* Vàng */
+    width: 30%;
+    height: 5px;
+    margin-top: -2.5px;
+}
+
+.minute-hand {
+    background: white;
+    width: 40%;
+    height: 3px;
+    margin-top: -1.5px;
+}
+
+.second-hand {
+    background: #FF0000; /* Đỏ */
+    width: 45%;
+    height: 1px;
+    margin-top: -0.5px;
+}
+
+.center-dot {
+    width: 10px;
+    height: 10px;
+    background: #111;
+    border: 2px solid white;
+    border-radius: 50%;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+}
+
+
+/* === CSS MỚI CHO LỊCH (PHẢI) === */
+#calendar-container {
+    position: fixed;
+    top: 50%;
+    right: 20px; /* Cách lề phải 20px */
+    transform: translateY(-50%);
+    width: 250px;
+    min-height: 200px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    border-radius: 12px;
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+    z-index: 999;
+    opacity: 0;
+    transition: opacity 1s ease-out 3.5s;
+    font-family: Arial, sans-serif;
+    text-align: center;
+}
+
+.video-finished #calendar-container {
+    opacity: 1;
+}
+
+#calendar-container h3 {
+    margin: 0 0 10px 0;
+    color: #00FF00; /* Xanh lá */
+    text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+}
+
+#calendar-container .date-display {
+    font-size: 3rem;
+    font-weight: bold;
+    color: #FFD700;
+    line-height: 1;
+    margin-bottom: 5px;
+}
+
+#calendar-container .day-display {
+    font-size: 1.2rem;
+    margin-bottom: 0;
+    color: #fff;
+}
 </style>
 """
 
@@ -1053,3 +1171,71 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# --- PHẦN 4: ĐỒNG HỒ CƠ VÀ LỊCH XEM NGÀY/THÁNG ---
+
+clock_calendar_html = """
+<div id="analog-clock-container">
+    <div class="analog-clock">
+        <div class="hand hour-hand" id="hour-hand"></div>
+        <div class="hand minute-hand" id="minute-hand"></div>
+        <div class="hand second-hand" id="second-hand"></div>
+        <div class="center-dot"></div>
+    </div>
+</div>
+
+<div id="calendar-container">
+    <h3>📅 LỊCH VIỆT NAM 🇻🇳</h3>
+    <div class="date-display" id="current-date">01</div>
+    <div class="day-display" id="current-month-year">Tháng 1, 2024</div>
+    <div class="day-display" id="current-day-of-week">Thứ Hai</div>
+</div>
+
+<script>
+    function updateClockAndCalendar() {
+        const now = new Date();
+        
+        // --- CẬP NHẬT ĐỒNG HỒ CƠ ---
+        const seconds = now.getSeconds();
+        const minutes = now.getMinutes();
+        const hours = now.getHours();
+
+        // Tính góc xoay (cộng 90deg để bù trừ cho vị trí ban đầu của kim tại 3 giờ)
+        const secondDeg = (seconds / 60) * 360 + 90;
+        const minuteDeg = (minutes / 60) * 360 + (seconds / 60) * 6 + 90;
+        const hourDeg = (hours / 12) * 360 + (minutes / 60) * 30 + 90;
+
+        const hourHand = window.parent.document.getElementById('hour-hand');
+        const minuteHand = window.parent.document.getElementById('minute-hand');
+        const secondHand = window.parent.document.getElementById('second-hand');
+
+        if (hourHand && minuteHand && secondHand) {
+            hourHand.style.transform = `rotate(${hourDeg}deg)`;
+            minuteHand.style.transform = `rotate(${minuteDeg}deg)`;
+            secondHand.style.transform = `rotate(${secondDeg}deg)`;
+        }
+
+        // --- CẬP NHẬT LỊCH ---
+        const dayNames = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
+        const monthNames = ["Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"];
+
+        const currentDateEl = window.parent.document.getElementById('current-date');
+        const currentMonthYearEl = window.parent.document.getElementById('current-month-year');
+        const currentDayOfWeekEl = window.parent.document.getElementById('current-day-of-week');
+
+        if (currentDateEl && currentMonthYearEl && currentDayOfWeekEl) {
+            currentDateEl.textContent = now.getDate().toString().padStart(2, '0');
+            currentMonthYearEl.textContent = `${monthNames[now.getMonth()]}, ${now.getFullYear()}`;
+            currentDayOfWeekEl.textContent = dayNames[now.getDay()];
+        }
+    }
+
+    // Chạy lần đầu và thiết lập Interval để cập nhật mỗi giây
+    // Sử dụng setTimeout để đảm bảo các phần tử được tạo ra trong DOM của Streamlit trước
+    setTimeout(() => {
+        updateClockAndCalendar();
+        setInterval(updateClockAndCalendar, 1000); // Cập nhật mỗi 1 giây
+    }, 4000); // Bắt đầu chạy sau 4 giây (sau khi reveal/intro kết thúc)
+</script>
+"""
+
+st.markdown(clock_calendar_html, unsafe_allow_html=True)
