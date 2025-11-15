@@ -33,7 +33,6 @@ def get_base64_encoded_file(file_path):
 # Mã hóa các file media chính (bắt buộc)
 try:
     # Đảm bảo các file này nằm cùng thư mục với app.py
-    # Ghi chú: Các file này phải có sẵn trong thư mục
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
@@ -87,13 +86,15 @@ if len(music_files) == 0:
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
-"""
+<link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&display=swap" rel="stylesheet"> """
 st.markdown(font_links, unsafe_allow_html=True)
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Major+Mono+Display&display=swap');
+
 /* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
 
@@ -642,141 +643,89 @@ iframe:first-of-type {{
     opacity: 0;
 }}
 
-/* === CSS ĐÃ SỬA: ĐỒNG HỒ CƠ (TRÁI) === */
-#analog-clock-container {{
+/* === CSS MỚI: ĐỒNG HỒ ĐIỆN TỬ (TRÁI) === */
+@keyframes blink {{
+    0% {{ opacity: 1; }}
+    49% {{ opacity: 1; }}
+    50% {{ opacity: 0; }}
+    100% {{ opacity: 0; }}
+}}
+
+#digital-clock-container {{
     position: fixed;
-    top: 25vh; /* Đặt dưới tiêu đề */
+    top: 20vh; /* Đặt dưới tiêu đề */
     left: 20px; 
-    /* Bỏ transform: translateY(-50%) */
-    width: 120px; /* Thu gọn */
-    height: 120px; /* Thu gọn */
+    width: 150px; /* Thu gọn hơn */
+    padding: 10px 5px;
+    background: rgba(0, 0, 0, 0.8); 
+    border: 3px solid #00FF00; /* Màu xanh neon */
+    border-radius: 8px;
+    box-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
     z-index: 999;
     opacity: 0;
     transition: opacity 1s ease-out 3.5s;
+    text-align: center;
+    font-family: 'Major Mono Display', monospace; /* Font số đặc biệt */
 }}
 
-.video-finished #analog-clock-container {{
+.video-finished #digital-clock-container {{
     opacity: 1;
 }}
 
-.analog-clock {{
-    width: 100%;
-    height: 100%;
-    border: 5px solid #FFD700; 
-    border-radius: 50%;
-    background-color: rgba(0, 0, 0, 0.7);
-    box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
-    position: relative;
+#digital-clock {{
+    font-size: 2.2rem;
+    color: #00FF00; /* Màu xanh neon */
+    text-shadow: 0 0 5px #00FF00;
 }}
 
-.hand {{
-    position: absolute;
-    width: 50%;
-    height: 3px;
-    background: white;
-    top: 50%;
-    left: 50%;
-    transform-origin: 0% 50%;
-    transform: rotate(90deg); 
-    border-radius: 5px;
+.blinking-colon {{
+    animation: blink 1s step-end infinite;
 }}
 
-.hour-hand {{
-    background: #FFD700; 
-    width: 30%;
-    height: 5px;
-    margin-top: -2.5px;
-}}
-
-.minute-hand {{
-    background: white;
-    width: 40%;
-    height: 3px;
-    margin-top: -1.5px;
-}}
-
-.second-hand {{
-    background: #FF0000; 
-    width: 45%;
-    height: 1px;
-    margin-top: -0.5px;
-}}
-
-.center-dot {{
-    width: 10px;
-    height: 10px;
-    background: #111;
-    border: 2px solid white;
-    border-radius: 50%;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 10;
-}}
-
-
-/* === CSS ĐÃ SỬA: LỊCH (PHẢI) - Thiết kế cuốn lịch tối giản === */
+/* === CSS MỚI: LỊCH TỜ LỊCH (PHẢI) === */
 #calendar-container {{
     position: fixed;
-    top: 25vh; /* Đặt dưới tiêu đề */
+    top: 20vh; /* Đặt dưới tiêu đề */
     right: 20px; 
-    /* Bỏ transform: translateY(-50%) */
-    width: 100px; 
-    height: 140px; 
+    width: 100px; /* Rất thu gọn */
+    height: 120px; 
     padding: 0;
-    background: rgba(0, 0, 0, 0.7);
-    color: white;
-    border-radius: 5px 5px 12px 12px;
-    box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
-    border: 3px solid #FFD700; /* Viền màu vàng */
+    background: #FFD700; /* Nền vàng Gold */
+    color: #111;
+    border-radius: 4px;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5); /* Tạo bóng 3D */
     z-index: 999;
     opacity: 0;
     transition: opacity 1s ease-out 3.5s;
     font-family: Arial, sans-serif;
     text-align: center;
     overflow: hidden; 
+    border: 1px solid #C0C0C0; /* Viền xám nhạt */
 }}
 
 .video-finished #calendar-container {{
     opacity: 1;
 }}
 
-/* Thêm hiệu ứng ghim/khoen trên đầu cuốn lịch */
-#calendar-container::before,
-#calendar-container::after {{
-    content: '';
-    position: absolute;
-    top: -5px; /* Đặt cao hơn viền */
-    width: 10px;
-    height: 10px;
-    background: #00FF00; /* Màu ghim */
-    border: 2px solid #111;
-    border-radius: 50%;
-    z-index: 10;
-}}
-
-#calendar-container::before {{
-    left: 10px;
-}}
-
-#calendar-container::after {{
-    right: 10px;
+/* Lớp trên cùng (Tháng & Năm) */
+#calendar-container .top-strip {{
+    background-color: #8B0000; /* Đỏ đậm */
+    color: white;
+    font-weight: bold;
+    font-size: 0.75rem;
+    padding: 3px 0;
+    height: 15px;
+    line-height: 15px;
+    text-transform: uppercase;
 }}
 
 /* Style cho Ngày (số) */
 #calendar-container .date-display {{
-    font-size: 3rem;
+    font-size: 3.5rem;
     font-weight: 900;
-    color: #111; /* Màu chữ tối */
-    background-color: #f0f0f0; /* Nền giấy/cuốn lịch */
-    line-height: 1.2;
-    margin: 25px 0 0 0; /* Đẩy xuống để chừa chỗ cho ghim */
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-sizing: border-box;
+    color: #111; 
+    line-height: 1.1;
+    padding: 5px 0 0 0;
     font-family: 'Playfair Display', serif;
 }}
 </style>
@@ -786,7 +735,7 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Giữ nguyên) ---
 
 # Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
@@ -1192,59 +1141,56 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- PHẦN 4: ĐỒNG HỒ CƠ VÀ LỊCH XEM NGÀY/THÁNG (ĐÃ SỬA) ---
+# --- PHẦN 4: ĐỒNG HỒ ĐIỆN TỬ VÀ LỊCH TỜ LỊCH (ĐÃ SỬA) ---
 
 clock_calendar_html = """
-<div id="analog-clock-container">
-    <div class="analog-clock">
-        <div class="hand hour-hand" id="hour-hand"></div>
-        <div class="hand minute-hand" id="minute-hand"></div>
-        <div class="hand second-hand" id="second-hand"></div>
-        <div class="center-dot"></div>
-    </div>
+<div id="digital-clock-container">
+    <span id="digital-clock">12<span class="blinking-colon">:</span>00</span>
 </div>
 
 <div id="calendar-container">
+    <div class="top-strip" id="calendar-month-year">THÁNG 1 / 2024</div>
     <div class="date-display" id="current-date">01</div>
 </div>
 
 <script>
     function updateClockAndCalendar() {
+        // Lấy thời gian hiện tại
         const now = new Date();
         
-        // --- CẬP NHẬT ĐỒNG HỒ CƠ ---
-        const seconds = now.getSeconds();
-        const minutes = now.getMinutes();
-        const hours = now.getHours();
+        // --- CẬP NHẬT ĐỒNG HỒ ĐIỆN TỬ ---
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
 
-        // Tính góc xoay (cộng 90deg để bù trừ cho vị trí ban đầu của kim tại 3 giờ)
-        const secondDeg = (seconds / 60) * 360 + 90;
-        const minuteDeg = (minutes / 60) * 360 + (seconds / 60) * 6 + 90;
-        const hourDeg = (hours / 12) * 360 + (minutes / 60) * 30 + 90;
+        const digitalClockEl = window.parent.document.getElementById('digital-clock');
 
-        const hourHand = window.parent.document.getElementById('hour-hand');
-        const minuteHand = window.parent.document.getElementById('minute-hand');
-        const secondHand = window.parent.document.getElementById('second-hand');
-
-        if (hourHand && minuteHand && secondHand) {
-            hourHand.style.transform = `rotate(${hourDeg}deg)`;
-            minuteHand.style.transform = `rotate(${minuteDeg}deg)`;
-            secondHand.style.transform = `rotate(${secondDeg}deg)`;
+        if (digitalClockEl) {
+            // Hiển thị giờ và phút. Dấu hai chấm (:) sẽ nhấp nháy nhờ CSS
+            digitalClockEl.innerHTML = `${hours}<span class="blinking-colon">:</span>${minutes}`;
         }
 
-        // --- CẬP NHẬT LỊCH (Chỉ cập nhật Ngày) ---
-        const currentDateEl = window.parent.document.getElementById('current-date');
+        // --- CẬP NHẬT LỊCH ---
+        const monthNames = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"];
 
-        if (currentDateEl) {
-            // Hiển thị ngày (số), thêm số 0 ở đầu nếu cần
+        const currentDateEl = window.parent.document.getElementById('current-date');
+        const monthYearEl = window.parent.document.getElementById('calendar-month-year');
+
+        if (currentDateEl && monthYearEl) {
+            // Hiển thị Ngày
             currentDateEl.textContent = now.getDate().toString().padStart(2, '0');
+            
+            // Hiển thị Tháng và Năm (dạng số)
+            const currentMonth = monthNames[now.getMonth()];
+            const currentYear = now.getFullYear();
+            monthYearEl.textContent = `THÁNG ${currentMonth} / ${currentYear}`;
         }
     }
 
-    // Chạy lần đầu và thiết lập Interval để cập nhật mỗi giây (đảm bảo độ chính xác)
+    // Thiết lập Interval để cập nhật mỗi giây (đảm bảo thời gian chính xác theo máy client)
+    // Cần đảm bảo rằng các element đã được tạo ra (sau khi intro và reveal chạy)
     setTimeout(() => {
         updateClockAndCalendar();
-        setInterval(updateClockAndCalendar, 1000); // Cập nhật mỗi 1 giây
+        setInterval(updateClockAndCalendar, 1000); 
     }, 4000); 
 </script>
 """
