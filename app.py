@@ -409,7 +409,7 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === NAVIGATION BUTTON MỚI (UIverse Dark Mode) === */
+/* === CSS MỚI CHO NAVIGATION BUTTON (UIverse Dark Mode) === */
 
 .nav-container {{
     position: fixed;
@@ -642,17 +642,17 @@ iframe:first-of-type {{
     opacity: 0;
 }}
 
-/* === CSS MỚI CHO ĐỒNG HỒ CƠ (TRÁI) === */
+/* === CSS ĐÃ SỬA: ĐỒNG HỒ CƠ (TRÁI) === */
 #analog-clock-container {{
     position: fixed;
-    top: 50%; /* Canh giữa dọc */
-    left: 20px; /* Cách lề trái 20px */
-    transform: translateY(-50%);
-    width: 150px;
-    height: 150px;
+    top: 25vh; /* Đặt dưới tiêu đề */
+    left: 20px; 
+    /* Bỏ transform: translateY(-50%) */
+    width: 120px; /* Thu gọn */
+    height: 120px; /* Thu gọn */
     z-index: 999;
     opacity: 0;
-    transition: opacity 1s ease-out 3.5s; /* Hiện sau khi reveal xong */
+    transition: opacity 1s ease-out 3.5s;
 }}
 
 .video-finished #analog-clock-container {{
@@ -662,7 +662,7 @@ iframe:first-of-type {{
 .analog-clock {{
     width: 100%;
     height: 100%;
-    border: 5px solid #FFD700; /* Vàng Gold */
+    border: 5px solid #FFD700; 
     border-radius: 50%;
     background-color: rgba(0, 0, 0, 0.7);
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
@@ -677,12 +677,12 @@ iframe:first-of-type {{
     top: 50%;
     left: 50%;
     transform-origin: 0% 50%;
-    transform: rotate(90deg); /* Bắt đầu từ 12h */
+    transform: rotate(90deg); 
     border-radius: 5px;
 }}
 
 .hour-hand {{
-    background: #FFD700; /* Vàng */
+    background: #FFD700; 
     width: 30%;
     height: 5px;
     margin-top: -2.5px;
@@ -696,7 +696,7 @@ iframe:first-of-type {{
 }}
 
 .second-hand {{
-    background: #FF0000; /* Đỏ */
+    background: #FF0000; 
     width: 45%;
     height: 1px;
     margin-top: -0.5px;
@@ -716,48 +716,68 @@ iframe:first-of-type {{
 }}
 
 
-/* === CSS MỚI CHO LỊCH (PHẢI) === */
+/* === CSS ĐÃ SỬA: LỊCH (PHẢI) - Thiết kế cuốn lịch tối giản === */
 #calendar-container {{
     position: fixed;
-    top: 50%;
-    right: 20px; /* Cách lề phải 20px */
-    transform: translateY(-50%);
-    width: 250px;
-    min-height: 200px;
-    padding: 15px;
+    top: 25vh; /* Đặt dưới tiêu đề */
+    right: 20px; 
+    /* Bỏ transform: translateY(-50%) */
+    width: 100px; 
+    height: 140px; 
+    padding: 0;
     background: rgba(0, 0, 0, 0.7);
     color: white;
-    border-radius: 12px;
+    border-radius: 5px 5px 12px 12px;
     box-shadow: 0 0 15px rgba(255, 255, 255, 0.3);
+    border: 3px solid #FFD700; /* Viền màu vàng */
     z-index: 999;
     opacity: 0;
     transition: opacity 1s ease-out 3.5s;
     font-family: Arial, sans-serif;
     text-align: center;
+    overflow: hidden; 
 }}
 
 .video-finished #calendar-container {{
     opacity: 1;
 }}
 
-#calendar-container h3 {{
-    margin: 0 0 10px 0;
-    color: #00FF00; /* Xanh lá */
-    text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
+/* Thêm hiệu ứng ghim/khoen trên đầu cuốn lịch */
+#calendar-container::before,
+#calendar-container::after {{
+    content: '';
+    position: absolute;
+    top: -5px; /* Đặt cao hơn viền */
+    width: 10px;
+    height: 10px;
+    background: #00FF00; /* Màu ghim */
+    border: 2px solid #111;
+    border-radius: 50%;
+    z-index: 10;
 }}
 
+#calendar-container::before {{
+    left: 10px;
+}}
+
+#calendar-container::after {{
+    right: 10px;
+}}
+
+/* Style cho Ngày (số) */
 #calendar-container .date-display {{
     font-size: 3rem;
-    font-weight: bold;
-    color: #FFD700;
-    line-height: 1;
-    margin-bottom: 5px;
-}}
-
-#calendar-container .day-display {{
-    font-size: 1.2rem;
-    margin-bottom: 0;
-    color: #fff;
+    font-weight: 900;
+    color: #111; /* Màu chữ tối */
+    background-color: #f0f0f0; /* Nền giấy/cuốn lịch */
+    line-height: 1.2;
+    margin: 25px 0 0 0; /* Đẩy xuống để chừa chỗ cho ghim */
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-sizing: border-box;
+    font-family: 'Playfair Display', serif;
 }}
 </style>
 """
@@ -774,7 +794,7 @@ if len(music_files) > 0:
 else:
     music_sources_js = ""
 
-# ✅ PHẦN JS ĐÃ CHỈNH SỬA (Thêm skipReveal vào sendBackToStreamlit và logic skipIntro)
+# ✅ PHẦN JS ĐÃ CHỈNH SỬA (Giữ nguyên logic chính xác)
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
@@ -962,7 +982,7 @@ js_callback_video = f"""
                     }}).catch(err => {{
                         console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
                         // Khi lỗi/không thể tự động phát, chuyển tiếp và vẫn chạy reveal (mặc định)
-                        setTimeout(sendBackToStreamlit, 2000); 
+                        setTimeout(() => sendBackToStreamlit(false), 2000); 
                     }});
                     audio.play().catch(e => {{
                         console.log("Audio autoplay blocked (normal), waiting for video end.");
@@ -979,12 +999,12 @@ js_callback_video = f"""
     
                     introTextContainer.style.opacity = 0;
                     // Gọi hàm mặc định (skipReveal=false), vẫn chạy reveal
-                    setTimeout(sendBackToStreamlit, 500);
+                    setTimeout(() => sendBackToStreamlit(false), 500);
                 }});
                 video.addEventListener('error', (e) => {{
                     console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
                     // Gọi hàm mặc định (skipReveal=false), vẫn chạy reveal
-                    sendBackToStreamlit();
+                    sendBackToStreamlit(false);
                 }});
                 const clickHandler = () => {{
                     console.log("User interaction detected, forcing play attempt.");
@@ -1010,7 +1030,7 @@ js_callback_video = f"""
             if (video && !video.src) {{
                 console.warn("Timeout before video source set. Force transitioning to main content.");
                 // Gọi hàm mặc định (skipReveal=false), vẫn chạy reveal
-                sendBackToStreamlit();
+                sendBackToStreamlit(false);
             }}
   
         }}, 5000);
@@ -1172,7 +1192,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- PHẦN 4: ĐỒNG HỒ CƠ VÀ LỊCH XEM NGÀY/THÁNG ---
+# --- PHẦN 4: ĐỒNG HỒ CƠ VÀ LỊCH XEM NGÀY/THÁNG (ĐÃ SỬA) ---
 
 clock_calendar_html = """
 <div id="analog-clock-container">
@@ -1185,10 +1205,7 @@ clock_calendar_html = """
 </div>
 
 <div id="calendar-container">
-    <h3>📅 LỊCH VIỆT NAM 🇻🇳</h3>
     <div class="date-display" id="current-date">01</div>
-    <div class="day-display" id="current-month-year">Tháng 1, 2024</div>
-    <div class="day-display" id="current-day-of-week">Thứ Hai</div>
 </div>
 
 <script>
@@ -1215,27 +1232,20 @@ clock_calendar_html = """
             secondHand.style.transform = `rotate(${secondDeg}deg)`;
         }
 
-        // --- CẬP NHẬT LỊCH ---
-        const dayNames = ["Chủ Nhật", "Thứ Hai", "Thứ Ba", "Thứ Tư", "Thứ Năm", "Thứ Sáu", "Thứ Bảy"];
-        const monthNames = ["Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12"];
-
+        // --- CẬP NHẬT LỊCH (Chỉ cập nhật Ngày) ---
         const currentDateEl = window.parent.document.getElementById('current-date');
-        const currentMonthYearEl = window.parent.document.getElementById('current-month-year');
-        const currentDayOfWeekEl = window.parent.document.getElementById('current-day-of-week');
 
-        if (currentDateEl && currentMonthYearEl && currentDayOfWeekEl) {
+        if (currentDateEl) {
+            // Hiển thị ngày (số), thêm số 0 ở đầu nếu cần
             currentDateEl.textContent = now.getDate().toString().padStart(2, '0');
-            currentMonthYearEl.textContent = `${monthNames[now.getMonth()]}, ${now.getFullYear()}`;
-            currentDayOfWeekEl.textContent = dayNames[now.getDay()];
         }
     }
 
-    // Chạy lần đầu và thiết lập Interval để cập nhật mỗi giây
-    // Sử dụng setTimeout để đảm bảo các phần tử được tạo ra trong DOM của Streamlit trước
+    // Chạy lần đầu và thiết lập Interval để cập nhật mỗi giây (đảm bảo độ chính xác)
     setTimeout(() => {
         updateClockAndCalendar();
         setInterval(updateClockAndCalendar, 1000); // Cập nhật mỗi 1 giây
-    }, 4000); // Bắt đầu chạy sau 4 giây (sau khi reveal/intro kết thúc)
+    }, 4000); 
 </script>
 """
 
