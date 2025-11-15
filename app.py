@@ -188,12 +188,12 @@ iframe:first-of-type {{
     100% {{ background-position: 0% 50%; }}
 }}
 
-/* === TIÊU ĐỀ TRANG CHÍNH === */
+/* === TIÊU ĐỀ TRANG CHÍNH (Đã sửa lỗi không full size) === */
 #main-title-container {{
     position: fixed;
     top: 5vh;
     left: 0;
-    width: 100%;
+    width: 100vw; /* Đảm bảo tràn màn hình */
     height: 10vh;
     overflow: hidden;
     z-index: 20;
@@ -410,7 +410,7 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === CSS MỚI CHO NAVIGATION BUTTON (UIverse Dark Mode) === */
+/* === NAVIGATION BUTTON (Giữ nguyên) === */
 
 .nav-container {{
     position: fixed;
@@ -643,7 +643,7 @@ iframe:first-of-type {{
     opacity: 0;
 }}
 
-/* === CSS MỚI NHẤT: ĐỒNG HỒ VÀ LỊCH PHONG CÁCH MATRIX NEON (TỐI GIẢN) === */
+/* === CSS MỚI NHẤT: ĐỒNG HỒ VÀ LỊCH PHONG CÁCH MATRIX NEON (ĐÃ CĂN CHỈNH) === */
 @keyframes blink {{
     0% {{ opacity: 1; }}
     49% {{ opacity: 1; }}
@@ -651,40 +651,51 @@ iframe:first-of-type {{
     100% {{ opacity: 0; }}
 }}
 
-.info-container-left {{
+.info-wrapper {{
     position: fixed;
     top: 18vh;
-    left: 20px;
+    left: 50%; /* Căn giữa */
+    transform: translateX(-50%); /* Dịch chuyển sang trái 50% chiều rộng */
     width: fit-content;
     z-index: 999;
     opacity: 0;
     transition: opacity 1s ease-out 3.5s;
-    text-align: left;
-    color: #00FF00; /* Màu neon chính */
-    text-shadow: 0 0 5px #00FF00, 0 0 10px rgba(0, 255, 0, 0.5); 
-    font-family: 'Share Tech Mono', monospace; /* Font monospace cho hiệu ứng Matrix */
+    /* Dùng Flexbox để đặt clock và calendar cùng 1 hàng */
+    display: flex;
+    align-items: flex-start; /* Căn chỉnh các item theo đỉnh */
+    gap: 20px; /* Khoảng cách giữa đồng hồ và lịch */
+    
+    font-family: 'Share Tech Mono', monospace; 
 }}
 
-.video-finished .info-container-left {{
+.video-finished .info-wrapper {{
     opacity: 1;
 }}
 
-/* Đồng hồ (Giờ:Phút:Giây) */
+.info-container-clock,
+.info-container-calendar {{
+    padding: 0;
+    line-height: 1.2;
+}
+
+/* Đồng hồ (Giờ:Phút) - VÀNG NEON */
 #digital-clock {{
-    font-size: 2.0rem; /* Kích thước vừa phải */
+    font-size: 2.5rem; /* Tăng kích thước Giờ/Phút */
     margin: 0;
     line-height: 1;
     white-space: nowrap;
+    color: #FFFF33; /* VÀNG NEON */
+    text-shadow: 0 0 7px #FFFF33, 0 0 15px rgba(255, 255, 51, 0.7); 
 }}
 
-/* Lịch (Thứ, Ngày/Tháng/Năm) */
+/* Lịch (Thứ, Ngày/Tháng/Năm) - XANH DƯƠNG NEON */
 #calendar-display {{
     font-size: 1.0rem; 
-    margin: 5px 0 0 0;
-    padding-left: 2px; /* Căn chỉnh với đồng hồ */
+    margin: 0; /* Bỏ margin trên dưới */
+    padding-top: 5px; /* Tạo khoảng cách với đồng hồ */
     line-height: 1.2;
-    color: #00FF7F; /* Màu xanh nhạt hơn */
-    text-shadow: 0 0 3px #00FF7F; 
+    color: #00FFFF; /* XANH DƯƠNG NEON */
+    text-shadow: 0 0 5px #00FFFF; 
     white-space: nowrap;
 }}
 
@@ -693,17 +704,24 @@ iframe:first-of-type {{
 }}
 
 @media (max-width: 768px) {{
-    .info-container-left {{
+    .info-wrapper {{
+        /* Giữ căn giữa trên mobile */
         top: 15vh;
         left: 50%;
         transform: translateX(-50%);
-        text-align: center;
+        flex-direction: column; /* Xếp dọc trên mobile */
+        align-items: center; /* Căn giữa các item */
+        gap: 5px;
     }}
+    
     #digital-clock {{
-        font-size: 1.8rem;
+        font-size: 2.0rem;
+        text-align: center;
     }}
     #calendar-display {{
         font-size: 0.9rem;
+        padding-top: 0; 
+        text-align: center;
     }}
 }}
 
@@ -1120,12 +1138,16 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- PHẦN 4: ĐỒNG HỒ VÀ LỊCH PHONG CÁCH MATRIX NEON ---
+# --- PHẦN 4: ĐỒNG HỒ VÀ LỊCH PHONG CÁCH MATRIX NEON (ĐÃ CHỈNH SỬA) ---
 
 clock_calendar_html = """
-<div class="info-container-left">
-    <p id="digital-clock">12<span class="blinking-colon">:</span>00<span class="blinking-colon">:</span>00</p>
-    <p id="calendar-display">TH 7, 15 THÁNG 11 2025</p>
+<div class="info-wrapper">
+    <div class="info-container-clock">
+        <p id="digital-clock">12<span class="blinking-colon">:</span>00</p>
+    </div>
+    <div class="info-container-calendar">
+        <p id="calendar-display">TH 7, 15 THÁNG 11 2025</p>
+    </div>
 </div>
 
 <script>
@@ -1133,21 +1155,22 @@ clock_calendar_html = """
         // Lấy thời gian hiện tại từ máy khách
         const now = new Date();
         
-        // --- ĐỒNG HỒ (HH:MM:SS) ---
+        // --- ĐỒNG HỒ (HH:MM) ---
         const hours = now.getHours().toString().padStart(2, '0');
         const minutes = now.getMinutes().toString().padStart(2, '0');
-        const seconds = now.getSeconds().toString().padStart(2, '0');
 
         const digitalClockEl = window.parent.document.getElementById('digital-clock');
 
         if (digitalClockEl) {
-            // Hiển thị giờ, phút, giây với dấu hai chấm nhấp nháy
+            // Hiển thị giờ và phút với dấu hai chấm nhấp nháy
             digitalClockEl.innerHTML = 
-                `${hours}<span class="blinking-colon">:</span>${minutes}<span class="blinking-colon">:</span>${seconds}`;
+                `${hours}<span class="blinking-colon">:</span>${minutes}`;
         }
 
         // --- LỊCH (Thứ, Ngày/Tháng/Năm) ---
+        // Tên thứ (Việt hóa)
         const days = ["CN", "TH 2", "TH 3", "TH 4", "TH 5", "TH 6", "TH 7"];
+        // Tên tháng (Việt hóa)
         const monthNames = ["THÁNG 1", "THÁNG 2", "THÁNG 3", "THÁNG 4", "THÁNG 5", "THÁNG 6", "THÁNG 7", "THÁNG 8", "THÁNG 9", "THÁNG 10", "THÁNG 11", "THÁNG 12"];
 
         const dayOfWeek = days[now.getDay()];
@@ -1158,13 +1181,13 @@ clock_calendar_html = """
         const calendarEl = window.parent.document.getElementById('calendar-display');
 
         if (calendarEl) {
-            // TH 6, 15 THÁNG 11 2025
+            // Định dạng: TH 7, 15 THÁNG 11 2025
             calendarEl.textContent = `${dayOfWeek}, ${date} ${month} ${year}`;
         }
     }
 
-    // Thiết lập Interval để cập nhật mỗi 500ms (đảm bảo độ chính xác cao hơn)
-    // Cần đảm bảo rằng các element đã được tạo ra (sau khi intro và reveal chạy)
+    // Thiết lập Interval để cập nhật mỗi 500ms 
+    // Chạy lần đầu sau 4 giây để chờ hiệu ứng intro/reveal
     setTimeout(() => {
         updateClockAndCalendar();
         // Cập nhật mỗi nửa giây
