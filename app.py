@@ -90,7 +90,6 @@ font_links = """
 st.markdown(font_links, unsafe_allow_html=True)
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
-# ĐÃ SỬA: Đảm bảo tất cả các dấu ngoặc nhọn CSS đều được escape (}} thay vì })
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -654,7 +653,8 @@ iframe:first-of-type {{
 
 .info-wrapper {{
     position: fixed;
-    top: 18vh;
+    /* ✅ CHỈNH SỬA: Đưa vị trí lên cao hơn một chút */
+    top: 15vh; 
     left: 50%; /* Căn giữa */
     transform: translateX(-50%); /* Dịch chuyển sang trái 50% chiều rộng */
     width: fit-content;
@@ -664,7 +664,8 @@ iframe:first-of-type {{
     /* Dùng Flexbox để đặt clock và calendar cùng 1 hàng */
     display: flex;
     align-items: flex-start; /* Căn chỉnh các item theo đỉnh */
-    gap: 20px; /* Khoảng cách giữa đồng hồ và lịch */
+    /* ✅ GIẢM: Khoảng cách giữa đồng hồ và lịch */
+    gap: 15px; 
     
     font-family: 'Share Tech Mono', monospace; 
 }}
@@ -677,11 +678,12 @@ iframe:first-of-type {{
 .info-container-calendar {{
     padding: 0;
     line-height: 1.2;
-}} /* FIX: Sửa lỗi thiếu dấu ngoặc nhọn đôi ở đây */
+}} 
 
 /* Đồng hồ (Giờ:Phút) - VÀNG NEON */
 #digital-clock {{
-    font-size: 2.5rem; /* Tăng kích thước Giờ/Phút */
+    /* ✅ GIẢM KÍCH THƯỚC: Gọn hơn */
+    font-size: 2.2rem; 
     margin: 0;
     line-height: 1;
     white-space: nowrap;
@@ -689,14 +691,16 @@ iframe:first-of-type {{
     text-shadow: 0 0 7px #FFFF33, 0 0 15px rgba(255, 255, 51, 0.7); 
 }}
 
-/* Lịch (Thứ, Ngày/Tháng/Năm) - XANH DƯƠNG NEON */
+/* Lịch (Thứ, Ngày/Tháng/Năm) - XANH LÁ NEON */
 #calendar-display {{
-    font-size: 1.0rem; 
-    margin: 0; /* Bỏ margin trên dưới */
+    /* ✅ GIẢM KÍCH THƯỚC: Gọn hơn */
+    font-size: 0.9rem; 
+    margin: 0; 
     padding-top: 5px; /* Tạo khoảng cách với đồng hồ */
     line-height: 1.2;
-    color: #00FFFF; /* XANH DƯƠNG NEON */
-    text-shadow: 0 0 5px #00FFFF; 
+    /* ✅ CHỈNH SỬA MÀU: Xanh Lá Neon (Dễ nhìn hơn) */
+    color: #39FF14; 
+    text-shadow: 0 0 5px #39FF14; 
     white-space: nowrap;
 }}
 
@@ -706,21 +710,23 @@ iframe:first-of-type {{
 
 @media (max-width: 768px) {{
     .info-wrapper {{
-        /* Giữ căn giữa trên mobile */
         top: 15vh;
         left: 50%;
         transform: translateX(-50%);
-        flex-direction: column; /* Xếp dọc trên mobile */
-        align-items: center; /* Căn giữa các item */
-        gap: 5px;
+        flex-direction: column; 
+        align-items: center; 
+        /* ✅ GIẢM GAP cho mobile */
+        gap: 0px; 
     }} 
     
     #digital-clock {{
-        font-size: 2.0rem;
+        /* ✅ GIẢM KÍCH THƯỚC cho mobile */
+        font-size: 1.8rem; 
         text-align: center;
     }} 
     #calendar-display {{
-        font-size: 0.9rem;
+        /* ✅ GIẢM KÍCH THƯỚC cho mobile */
+        font-size: 0.8rem; 
         padding-top: 0; 
         text-align: center;
     }} 
@@ -1188,12 +1194,12 @@ clock_calendar_html = """
     }
 
     // Thiết lập Interval để cập nhật mỗi 500ms 
-    // Chạy lần đầu sau 4 giây để chờ hiệu ứng intro/reveal
+    // ✅ CHỈNH SỬA: Giảm thời gian chờ ban đầu (2s) để đồng hồ hiển thị sớm và chính xác hơn
     setTimeout(() => {
         updateClockAndCalendar();
         // Cập nhật mỗi nửa giây
         setInterval(updateClockAndCalendar, 500); 
-    }, 4000); 
+    }, 2000); 
 </script>
 """
 
