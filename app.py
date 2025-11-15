@@ -90,6 +90,7 @@ font_links = """
 st.markdown(font_links, unsafe_allow_html=True)
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
+# ĐÃ SỬA: Đảm bảo tất cả các dấu ngoặc nhọn CSS đều được escape (}} thay vì })
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -676,7 +677,7 @@ iframe:first-of-type {{
 .info-container-calendar {{
     padding: 0;
     line-height: 1.2;
-}
+}} /* FIX: Sửa lỗi thiếu dấu ngoặc nhọn đôi ở đây */
 
 /* Đồng hồ (Giờ:Phút) - VÀNG NEON */
 #digital-clock {{
@@ -712,17 +713,17 @@ iframe:first-of-type {{
         flex-direction: column; /* Xếp dọc trên mobile */
         align-items: center; /* Căn giữa các item */
         gap: 5px;
-    }}
+    }} 
     
     #digital-clock {{
         font-size: 2.0rem;
         text-align: center;
-    }}
+    }} 
     #calendar-display {{
         font-size: 0.9rem;
         padding-top: 0; 
         text-align: center;
-    }}
+    }} 
 }}
 
 </style>
