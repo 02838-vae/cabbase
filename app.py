@@ -33,6 +33,7 @@ def get_base64_encoded_file(file_path):
 # Mã hóa các file media chính (bắt buộc)
 try:
     # Đảm bảo các file này nằm cùng thư mục với app.py
+    # Ghi chú: Các file này phải có sẵn trong thư mục
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
@@ -642,7 +643,7 @@ iframe:first-of-type {{
 }}
 
 /* === CSS MỚI CHO ĐỒNG HỒ CƠ (TRÁI) === */
-#analog-clock-container {
+#analog-clock-container {{
     position: fixed;
     top: 50%; /* Canh giữa dọc */
     left: 20px; /* Cách lề trái 20px */
@@ -652,13 +653,13 @@ iframe:first-of-type {{
     z-index: 999;
     opacity: 0;
     transition: opacity 1s ease-out 3.5s; /* Hiện sau khi reveal xong */
-}
+}}
 
-.video-finished #analog-clock-container {
+.video-finished #analog-clock-container {{
     opacity: 1;
-}
+}}
 
-.analog-clock {
+.analog-clock {{
     width: 100%;
     height: 100%;
     border: 5px solid #FFD700; /* Vàng Gold */
@@ -666,9 +667,9 @@ iframe:first-of-type {{
     background-color: rgba(0, 0, 0, 0.7);
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.5);
     position: relative;
-}
+}}
 
-.hand {
+.hand {{
     position: absolute;
     width: 50%;
     height: 3px;
@@ -678,30 +679,30 @@ iframe:first-of-type {{
     transform-origin: 0% 50%;
     transform: rotate(90deg); /* Bắt đầu từ 12h */
     border-radius: 5px;
-}
+}}
 
-.hour-hand {
+.hour-hand {{
     background: #FFD700; /* Vàng */
     width: 30%;
     height: 5px;
     margin-top: -2.5px;
-}
+}}
 
-.minute-hand {
+.minute-hand {{
     background: white;
     width: 40%;
     height: 3px;
     margin-top: -1.5px;
-}
+}}
 
-.second-hand {
+.second-hand {{
     background: #FF0000; /* Đỏ */
     width: 45%;
     height: 1px;
     margin-top: -0.5px;
-}
+}}
 
-.center-dot {
+.center-dot {{
     width: 10px;
     height: 10px;
     background: #111;
@@ -712,11 +713,11 @@ iframe:first-of-type {{
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 10;
-}
+}}
 
 
 /* === CSS MỚI CHO LỊCH (PHẢI) === */
-#calendar-container {
+#calendar-container {{
     position: fixed;
     top: 50%;
     right: 20px; /* Cách lề phải 20px */
@@ -733,31 +734,31 @@ iframe:first-of-type {{
     transition: opacity 1s ease-out 3.5s;
     font-family: Arial, sans-serif;
     text-align: center;
-}
+}}
 
-.video-finished #calendar-container {
+.video-finished #calendar-container {{
     opacity: 1;
-}
+}}
 
-#calendar-container h3 {
+#calendar-container h3 {{
     margin: 0 0 10px 0;
     color: #00FF00; /* Xanh lá */
     text-shadow: 0 0 5px rgba(0, 255, 0, 0.5);
-}
+}}
 
-#calendar-container .date-display {
+#calendar-container .date-display {{
     font-size: 3rem;
     font-weight: bold;
     color: #FFD700;
     line-height: 1;
     margin-bottom: 5px;
-}
+}}
 
-#calendar-container .day-display {
+#calendar-container .day-display {{
     font-size: 1.2rem;
     margin-bottom: 0;
     color: #fff;
-}
+}}
 </style>
 """
 
