@@ -66,7 +66,6 @@ if not 'logo_base64' in locals() or not logo_base64:
 
 
 # --- SỬ DỤNG URL TRỰC TIẾP TỪ GITHUB RAW CONTENT (TỐC ĐỘ CAO HƠN) ---
-# Đảm bảo repository của bạn là PUBLIC để các URL này hoạt động
 BASE_MUSIC_URL = "https://raw.githubusercontent.com/02838-vae/cabbase/main/"
 music_urls = []
 
@@ -86,14 +85,15 @@ if len(music_files) == 0:
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&display=swap" rel="stylesheet"> """
+<link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+"""
 st.markdown(font_links, unsafe_allow_html=True)
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Major+Mono+Display&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=Share+Tech+Mono&display=swap');
 
 /* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
@@ -643,7 +643,7 @@ iframe:first-of-type {{
     opacity: 0;
 }}
 
-/* === CSS MỚI: ĐỒNG HỒ ĐIỆN TỬ (TRÁI) === */
+/* === CSS MỚI NHẤT: ĐỒNG HỒ VÀ LỊCH PHONG CÁCH MATRIX NEON (TỐI GIẢN) === */
 @keyframes blink {{
     0% {{ opacity: 1; }}
     49% {{ opacity: 1; }}
@@ -651,83 +651,62 @@ iframe:first-of-type {{
     100% {{ opacity: 0; }}
 }}
 
-#digital-clock-container {{
+.info-container-left {{
     position: fixed;
-    top: 20vh; /* Đặt dưới tiêu đề */
-    left: 20px; 
-    width: 150px; /* Thu gọn hơn */
-    padding: 10px 5px;
-    background: rgba(0, 0, 0, 0.8); 
-    border: 3px solid #00FF00; /* Màu xanh neon */
-    border-radius: 8px;
-    box-shadow: 0 0 15px rgba(0, 255, 0, 0.6);
+    top: 18vh;
+    left: 20px;
+    width: fit-content;
     z-index: 999;
     opacity: 0;
     transition: opacity 1s ease-out 3.5s;
-    text-align: center;
-    font-family: 'Major Mono Display', monospace; /* Font số đặc biệt */
+    text-align: left;
+    color: #00FF00; /* Màu neon chính */
+    text-shadow: 0 0 5px #00FF00, 0 0 10px rgba(0, 255, 0, 0.5); 
+    font-family: 'Share Tech Mono', monospace; /* Font monospace cho hiệu ứng Matrix */
 }}
 
-.video-finished #digital-clock-container {{
+.video-finished .info-container-left {{
     opacity: 1;
 }}
 
+/* Đồng hồ (Giờ:Phút:Giây) */
 #digital-clock {{
-    font-size: 2.2rem;
-    color: #00FF00; /* Màu xanh neon */
-    text-shadow: 0 0 5px #00FF00;
+    font-size: 2.0rem; /* Kích thước vừa phải */
+    margin: 0;
+    line-height: 1;
+    white-space: nowrap;
+}}
+
+/* Lịch (Thứ, Ngày/Tháng/Năm) */
+#calendar-display {{
+    font-size: 1.0rem; 
+    margin: 5px 0 0 0;
+    padding-left: 2px; /* Căn chỉnh với đồng hồ */
+    line-height: 1.2;
+    color: #00FF7F; /* Màu xanh nhạt hơn */
+    text-shadow: 0 0 3px #00FF7F; 
+    white-space: nowrap;
 }}
 
 .blinking-colon {{
     animation: blink 1s step-end infinite;
 }}
 
-/* === CSS MỚI: LỊCH TỜ LỊCH (PHẢI) === */
-#calendar-container {{
-    position: fixed;
-    top: 20vh; /* Đặt dưới tiêu đề */
-    right: 20px; 
-    width: 100px; /* Rất thu gọn */
-    height: 120px; 
-    padding: 0;
-    background: #FFD700; /* Nền vàng Gold */
-    color: #111;
-    border-radius: 4px;
-    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5); /* Tạo bóng 3D */
-    z-index: 999;
-    opacity: 0;
-    transition: opacity 1s ease-out 3.5s;
-    font-family: Arial, sans-serif;
-    text-align: center;
-    overflow: hidden; 
-    border: 1px solid #C0C0C0; /* Viền xám nhạt */
+@media (max-width: 768px) {{
+    .info-container-left {{
+        top: 15vh;
+        left: 50%;
+        transform: translateX(-50%);
+        text-align: center;
+    }}
+    #digital-clock {{
+        font-size: 1.8rem;
+    }}
+    #calendar-display {{
+        font-size: 0.9rem;
+    }}
 }}
 
-.video-finished #calendar-container {{
-    opacity: 1;
-}}
-
-/* Lớp trên cùng (Tháng & Năm) */
-#calendar-container .top-strip {{
-    background-color: #8B0000; /* Đỏ đậm */
-    color: white;
-    font-weight: bold;
-    font-size: 0.75rem;
-    padding: 3px 0;
-    height: 15px;
-    line-height: 15px;
-    text-transform: uppercase;
-}}
-
-/* Style cho Ngày (số) */
-#calendar-container .date-display {{
-    font-size: 3.5rem;
-    font-weight: 900;
-    color: #111; 
-    line-height: 1.1;
-    padding: 5px 0 0 0;
-    font-family: 'Playfair Display', serif;
-}}
 </style>
 """
 
@@ -1141,56 +1120,55 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- PHẦN 4: ĐỒNG HỒ ĐIỆN TỬ VÀ LỊCH TỜ LỊCH (ĐÃ SỬA) ---
+# --- PHẦN 4: ĐỒNG HỒ VÀ LỊCH PHONG CÁCH MATRIX NEON ---
 
 clock_calendar_html = """
-<div id="digital-clock-container">
-    <span id="digital-clock">12<span class="blinking-colon">:</span>00</span>
-</div>
-
-<div id="calendar-container">
-    <div class="top-strip" id="calendar-month-year">THÁNG 1 / 2024</div>
-    <div class="date-display" id="current-date">01</div>
+<div class="info-container-left">
+    <p id="digital-clock">12<span class="blinking-colon">:</span>00<span class="blinking-colon">:</span>00</p>
+    <p id="calendar-display">TH 7, 15 THÁNG 11 2025</p>
 </div>
 
 <script>
     function updateClockAndCalendar() {
-        // Lấy thời gian hiện tại
+        // Lấy thời gian hiện tại từ máy khách
         const now = new Date();
         
-        // --- CẬP NHẬT ĐỒNG HỒ ĐIỆN TỬ ---
+        // --- ĐỒNG HỒ (HH:MM:SS) ---
         const hours = now.getHours().toString().padStart(2, '0');
         const minutes = now.getMinutes().toString().padStart(2, '0');
+        const seconds = now.getSeconds().toString().padStart(2, '0');
 
         const digitalClockEl = window.parent.document.getElementById('digital-clock');
 
         if (digitalClockEl) {
-            // Hiển thị giờ và phút. Dấu hai chấm (:) sẽ nhấp nháy nhờ CSS
-            digitalClockEl.innerHTML = `${hours}<span class="blinking-colon">:</span>${minutes}`;
+            // Hiển thị giờ, phút, giây với dấu hai chấm nhấp nháy
+            digitalClockEl.innerHTML = 
+                `${hours}<span class="blinking-colon">:</span>${minutes}<span class="blinking-colon">:</span>${seconds}`;
         }
 
-        // --- CẬP NHẬT LỊCH ---
-        const monthNames = ["01", "02", "03", "04", "05", "06", "07", "08", "09", "10", "11", "12"];
+        // --- LỊCH (Thứ, Ngày/Tháng/Năm) ---
+        const days = ["CN", "TH 2", "TH 3", "TH 4", "TH 5", "TH 6", "TH 7"];
+        const monthNames = ["THÁNG 1", "THÁNG 2", "THÁNG 3", "THÁNG 4", "THÁNG 5", "THÁNG 6", "THÁNG 7", "THÁNG 8", "THÁNG 9", "THÁNG 10", "THÁNG 11", "THÁNG 12"];
 
-        const currentDateEl = window.parent.document.getElementById('current-date');
-        const monthYearEl = window.parent.document.getElementById('calendar-month-year');
+        const dayOfWeek = days[now.getDay()];
+        const date = now.getDate().toString().padStart(2, '0');
+        const month = monthNames[now.getMonth()];
+        const year = now.getFullYear();
 
-        if (currentDateEl && monthYearEl) {
-            // Hiển thị Ngày
-            currentDateEl.textContent = now.getDate().toString().padStart(2, '0');
-            
-            // Hiển thị Tháng và Năm (dạng số)
-            const currentMonth = monthNames[now.getMonth()];
-            const currentYear = now.getFullYear();
-            monthYearEl.textContent = `THÁNG ${currentMonth} / ${currentYear}`;
+        const calendarEl = window.parent.document.getElementById('calendar-display');
+
+        if (calendarEl) {
+            // TH 6, 15 THÁNG 11 2025
+            calendarEl.textContent = `${dayOfWeek}, ${date} ${month} ${year}`;
         }
     }
 
-    // Thiết lập Interval để cập nhật mỗi giây (đảm bảo thời gian chính xác theo máy client)
+    // Thiết lập Interval để cập nhật mỗi 500ms (đảm bảo độ chính xác cao hơn)
     // Cần đảm bảo rằng các element đã được tạo ra (sau khi intro và reveal chạy)
     setTimeout(() => {
         updateClockAndCalendar();
-        setInterval(updateClockAndCalendar, 1000); 
+        // Cập nhật mỗi nửa giây
+        setInterval(updateClockAndCalendar, 500); 
     }, 4000); 
 </script>
 """
