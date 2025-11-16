@@ -19,7 +19,7 @@ def read_docx_paragraphs(source):
     except Exception as e:
         st.error(f"Không thể đọc file .docx: {e}")
         return []
-    return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
+    [cite_start]return [p.text.strip() for p in doc.paragraphs if p.text.strip()] [cite: 1, 2]
 
 
 # ====================================================
@@ -31,15 +31,15 @@ def parse_cabbank(source):
         return []
 
     questions = []
-    current = {"question": "", "options": [], "answer": ""}
+    [cite_start]current = {"question": "", "options": [], "answer": ""} [cite: 2]
     opt_pat = re.compile(r'(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s+')
 
     for p in paras:
         matches = list(opt_pat.finditer(p))
         if not matches:
             if current["options"]:
-                questions.append(current)
-                current = {"question": clean_text(p), "options": [], "answer": ""}
+                [cite_start]questions.append(current) [cite: 3]
+                [cite_start]current = {"question": clean_text(p), "options": [], "answer": ""} [cite: 3]
             else:
                 current["question"] += " " + clean_text(p)
             continue
@@ -47,15 +47,15 @@ def parse_cabbank(source):
         pre_text = p[:matches[0].start()].strip()
         if pre_text:
             if current["options"]:
-                questions.append(current)
-                current = {"question": clean_text(pre_text), "options": [], "answer": ""}
+                [cite_start]questions.append(current) [cite: 4]
+                [cite_start]current = {"question": clean_text(pre_text), "options": [], "answer": ""} [cite: 4]
             else:
-                current["question"] = clean_text(pre_text)
+                [cite_start]current["question"] = clean_text(pre_text) [cite: 4]
 
         for i, m in enumerate(matches):
-            s, e = m.end(), matches[i + 1].start() if i + 1 < len(matches) else len(p)
+            [cite_start]s, e = m.end(), matches[i + 1].start() if i + 1 < len(matches) else len(p) [cite: 5]
             opt_body = clean_text(p[s:e])
-            opt = f"{m.group('letter').lower()}. {opt_body}"
+            [cite_start]opt = f"{m.group('letter').lower()}. {opt_body}" [cite: 6]
             current["options"].append(opt)
             if m.group("star"):
                 current["answer"] = opt
@@ -75,7 +75,7 @@ def parse_lawbank(source):
         return []
 
     questions = []
-    current = {"question": "", "options": [], "answer": ""}
+    [cite_start]current = {"question": "", "options": [], "answer": ""} [cite: 7]
     opt_pat = re.compile(r'(?<![A-Za-z0-9/])(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s+')
 
     for p in paras:
@@ -87,11 +87,11 @@ def parse_lawbank(source):
             if current["options"]:
                 if current["question"] and current["options"]:
                     if not current["answer"]:
-                        current["answer"] = current["options"][0]
-                    questions.append(current)
-                current = {"question": clean_text(p), "options": [], "answer": ""}
+                        [cite_start]current["answer"] = current["options"][0] [cite: 8]
+                    [cite_start]questions.append(current) [cite: 8]
+                [cite_start]current = {"question": clean_text(p), "options": [], "answer": ""} [cite: 8]
             else:
-                current["question"] += " " + clean_text(p)
+                [cite_start]current["question"] += " " + clean_text(p) [cite: 9]
             continue
 
         first_match = matches[0]
@@ -100,18 +100,18 @@ def parse_lawbank(source):
             if current["options"]:
                 if current["question"] and current["options"]:
                     if not current["answer"]:
-                        current["answer"] = current["options"][0]
-                    questions.append(current)
-                current = {"question": clean_text(pre_text), "options": [], "answer": ""}
+                        [cite_start]current["answer"] = current["options"][0] [cite: 10]
+                    [cite_start]questions.append(current) [cite: 10]
+                [cite_start]current = {"question": clean_text(pre_text), "options": [], "answer": ""} [cite: 10]
             else:
-                current["question"] += " " + clean_text(pre_text)
+                [cite_start]current["question"] += " " + clean_text(pre_text) [cite: 11]
 
         for i, m in enumerate(matches):
             s = m.end()
             e = matches[i+1].start() if i+1 < len(matches) else len(p)
             opt_body = clean_text(p[s:e])
             letter = m.group("letter").lower()
-            option = f"{letter}. {opt_body}"
+            [cite_start]option = f"{letter}. {opt_body}" [cite: 12]
             current["options"].append(option)
             if m.group("star"):
                 current["answer"] = option
@@ -130,43 +130,61 @@ def parse_lawbank(source):
 st.set_page_config(page_title="Ngân hàng trắc nghiệm", layout="wide")
 
 # === ẢNH NỀN ===
-with open("IMG-a6d291ba3c85a15a6dd4201070bb76e5-V.jpg", "rb") as f:
-    img_base64 = base64.b64encode(f.read()).decode()
+# ⚠️ HÃY THAY THẾ CHUỖI BASE64 NÀY BẰNG CHUỖI THỰC TẾ CỦA bank_PC.jpg
+img_pc_base64 = "..." 
 
-# === CSS: rõ nét, dễ nhìn trên mobile ===
+# ⚠️ HÃY THAY THẾ CHUỖI BASE64 NÀY BẰNG CHUỖI THỰC TẾ CỦA bank_mobile.jpg
+img_mobile_base64 = "..."
+
+# === CSS: rõ nét, dễ nhìn trên mobile (ĐÃ CHỈNH SỬA) ===
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Crimson+Text&display=swap');
 
+/* --- CẤU HÌNH CHUNG --- */
 [data-testid="stAppViewContainer"] {{
-    background-image: url("data:image/jpeg;base64,{img_base64}");
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
+    [cite_start]background-size: cover; [cite: 14]
+    [cite_start]background-position: center; [cite: 14]
+    [cite_start]background-attachment: fixed; [cite: 14]
 }}
 [data-testid="stAppViewContainer"]::before {{
     content: "";
     position: absolute; inset: 0;
     background: rgba(255,248,235,0.85);
     backdrop-filter: blur(3px);
-    z-index: 0;
+    [cite_start]z-index: 0; [cite: 15]
 }}
+
+/* --- ẢNH NỀN CHO PC/MÀN HÌNH RỘNG HƠN (>= 768px) --- */
+@media (min-width: 768px) {{
+    [data-testid="stAppViewContainer"] {{
+        background-image: url("data:image/jpeg;base64,{img_pc_base64}");
+    }}
+}}
+
+/* --- ẢNH NỀN CHO MOBILE/MÀN HÌNH NHỎ HƠN (< 768px) --- */
+@media (max-width: 767px) {{
+    [data-testid="stAppViewContainer"] {{
+        background-image: url("data:image/jpeg;base64,{img_mobile_base64}");
+    }}
+}}
+
 h1 {{
     text-align: center;
     font-family: 'Playfair Display', serif;
     font-size: 2.5em;
     color: #2a1f0f;
     margin-top: 0.2em;
-    z-index: 1;
+    [cite_start]z-index: 1; [cite: 16]
 }}
 /* Tăng độ tương phản câu hỏi và đáp án */
 .stRadio label {{
     color: #1a1a1a !important;
-    font-size: 1.1em !important;
-    font-weight: 500;
+    [cite_start]font-size: 1.1em !important; [cite: 17]
+    [cite_start]font-weight: 500; [cite: 17]
 }}
 div[data-testid="stMarkdownContainer"] p {{
-    color: #1a1a1a !important;
+    [cite_start]color: #1a1a1a !important; [cite: 18]
 }}
 .stSelectbox label {{
     font-size: 1.2em;
@@ -174,14 +192,14 @@ div[data-testid="stMarkdownContainer"] p {{
 }}
 .stButton>button {{
     background-color: #b0854c !important;
-    color: white !important;
+    [cite_start]color: white !important; [cite: 19]
     border-radius: 10px;
     font-size: 1.05em;
     font-family: 'Crimson Text', serif;
 }}
 .stButton>button:hover {{
     background-color: #8a693c !important;
-    transform: scale(1.03);
+    [cite_start]transform: scale(1.03); [cite: 20]
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -210,7 +228,7 @@ tab1, tab2 = st.tabs(["🧠 Làm bài", "🔍 Tra cứu toàn bộ câu hỏi"])
 with tab1:
     group_size = 10
     total = len(questions)
-    groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
+    [cite_start]groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))] [cite: 21]
     selected = st.selectbox("Chọn nhóm câu:", groups)
     idx = groups.index(selected)
     start, end = idx * group_size, min((idx+1) * group_size, total)
@@ -221,7 +239,7 @@ with tab1:
 
     if not st.session_state.submitted:
         for i, q in enumerate(batch, start=start+1):
-            st.markdown(f"<p style='color:#1a1a1a; font-size:1.15em; font-weight:600;'>{i}. {q['question']}</p>", unsafe_allow_html=True)
+            [cite_start]st.markdown(f"<p style='color:#1a1a1a; font-size:1.15em; font-weight:600;'>{i}. {q['question']}</p>", unsafe_allow_html=True) [cite: 22]
             st.radio("", q["options"], key=f"q_{i}")
             st.markdown("---")
         if st.button("✅ Nộp bài"):
@@ -230,7 +248,7 @@ with tab1:
     else:
         score = 0
         for i, q in enumerate(batch, start=start+1):
-            selected = st.session_state.get(f"q_{i}")
+            [cite_start]selected = st.session_state.get(f"q_{i}") [cite: 23]
             correct = clean_text(q["answer"])
             is_correct = clean_text(selected) == correct
 
@@ -238,17 +256,18 @@ with tab1:
 
             for opt in q["options"]:
                 opt_clean = clean_text(opt)
-                if opt_clean == correct:
-                    style = "color:#006400; font-weight:700;"
+                
+                [cite_start]if opt_clean == correct: [cite: 24]
+                    [cite_start]style = "color:#006400; font-weight:700;" [cite: 25]
                 elif opt_clean == clean_text(selected):
-                    style = "color:#cc0000; font-weight:700; text-decoration: underline;"
+                    [cite_start]style = "color:#cc0000; font-weight:700; text-decoration: underline;" [cite: 26]
                 else:
                     style = "color:#1a1a1a;"
                 st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
 
             if is_correct:
                 st.success(f"✅ Đúng — {q['answer']}")
-                score += 1
+                [cite_start]score += 1 [cite: 27]
             else:
                 st.error(f"❌ Sai — Đáp án đúng: {q['answer']}")
             st.markdown("---")
@@ -257,7 +276,7 @@ with tab1:
 
         if st.button("🔁 Làm lại nhóm này"):
             for i in range(start+1, end+1):
-                st.session_state.pop(f"q_{i}", None)
+                [cite_start]st.session_state.pop(f"q_{i}", None) [cite: 28]
             st.session_state.submitted = False
             st.rerun()
 
@@ -269,12 +288,12 @@ with tab2:
         {
             "STT": i+1,
             "Câu hỏi": q["question"],
-            "Đáp án A": q["options"][0] if len(q["options"])>0 else "",
-            "Đáp án B": q["options"][1] if len(q["options"])>1 else "",
-            "Đáp án C": q["options"][2] if len(q["options"])>2 else "",
-            "Đáp án D": q["options"][3] if len(q["options"])>3 else "",
-            "Đáp án đúng": q["answer"]
-        } for i, q in enumerate(questions)
+            [cite_start]"Đáp án A": q["options"][0] if len(q["options"])>0 else "", [cite: 29]
+            [cite_start]"Đáp án B": q["options"][1] if len(q["options"])>1 else "", [cite: 29]
+            [cite_start]"Đáp án C": q["options"][2] if len(q["options"])>2 else "", [cite: 29]
+            [cite_start]"Đáp án D": q["options"][3] if len(q["options"])>3 else "", [cite: 29]
+            [cite_start]"Đáp án đúng": q["answer"] [cite: 29]
+        [cite_start]} for i, q in enumerate(questions) [cite: 30]
     ])
 
     keyword = st.text_input("🔍 Tìm theo từ khóa:").strip().lower()
