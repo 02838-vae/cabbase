@@ -109,9 +109,9 @@ header {{
     padding: 0 !important;
     margin: 0 !important;
 }}
-.st-emotion-cache-1v04u9 {
+.st-emotion-cache-1v04u9 {{
     padding: 0px 0px;
-}
+}}
 
 /* --- VIDEO CONTAINER --- */
 #video-container {{
@@ -248,7 +248,7 @@ header {{
 
 /* === CSS MỚI CHO NAVIGATION BUTTON (UIverse Dark Mode) === */
 
-.nav-container {
+.nav-container {{
     position: fixed;
     /* Định vị container ở giữa chiều cao màn hình */
     top: 50%; 
@@ -266,13 +266,13 @@ header {{
     opacity: 0;
     transition: opacity 2s ease-out 3s;
     z-index: 10000;
-}
+}}
 
-.video-finished .nav-container {
+.video-finished .nav-container {{
     opacity: 1;
-}
+}}
 
-.button {
+.button {{
     position: relative;
     background-color: var(--color-bg-card);
     border: 1px solid var(--color-border-card);
@@ -288,26 +288,26 @@ header {{
     align-items: center;
     transition: all 0.3s cubic-bezier(0.165, 0.84, 0.44, 1);
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
-}
+}}
 
-.button:hover {
+.button:hover {{
     transform: scale(1.05);
     box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5), 0 0 30px var(--color-secondary);
-}
+}}
 
-.button:active {
+.button:active {{
     transform: scale(0.98);
-}
+}}
 
-.sparkle {
+.sparkle {{
     width: 20px;
     height: 20px;
     margin-right: 10px;
     color: var(--color-secondary);
-}
+}}
 
 /* Hiệu ứng viền chuyển động */
-.dots_border {
+.dots_border {{
     position: absolute;
     top: 0;
     left: 0;
@@ -316,9 +316,9 @@ header {{
     border-radius: 12px;
     overflow: hidden;
     pointer-events: none;
-}
+}}
 
-.dots_border::before {
+.dots_border::before {{
     content: "";
     position: absolute;
     width: 300%;
@@ -338,34 +338,34 @@ header {{
     left: -100%;
     z-index: -1;
     animation: rotate 4s linear infinite;
-}
+}}
 
-.button:hover .dots_border::before {
+.button:hover .dots_border::before {{
     animation: rotate 1s linear infinite; /* Tăng tốc khi hover */
-}
+}}
 
-@keyframes rotate {
-    0% {
+@keyframes rotate {{
+    0% {{
         transform: rotate(0deg);
-    }
-    100% {
+    }}
+    100% {{
         transform: rotate(360deg);
-    }
-}
+    }}
+}}
 
 /* --- MEDIA QUERIES (RESPONSIVE) --- */
-@media (max-width: 1024px) {
-    #main-title-container h1 {
+@media (max-width: 1024px) {{
+    #main-title-container h1 {{
         font-size: 4rem;
-    }
-}
+    }}
+}}
 
-@media (max-width: 768px) {
-    #main-title-container h1 {
+@media (max-width: 768px) {{
+    #main-title-container h1 {{
         font-size: 3rem;
-    }
+    }}
     
-    .nav-container {
+    .nav-container {{
         left: 50%;
         transform: translate(-50%, -50%);
         width: 100%;
@@ -373,28 +373,28 @@ header {{
         /* THAY ĐỔI LỚN: Trên mobile, các button xếp chồng lên nhau theo cột (column) */
         flex-direction: column; 
         gap: 15px;
-    }
+    }}
 
-    .button {
+    .button {{
         width: 90%;
         justify-content: center;
         padding: 15px 10px;
-    }
+    }}
     
-    #music-player-container {
+    #music-player-container {{
         right: 50%;
         transform: translateX(50%);
         bottom: 10px;
         gap: 10px;
-    }
-    .progress-container {
+    }}
+    .progress-container {{
         width: 70px;
-    }
-    .control-btn {
+    }}
+    .control-btn {{
         padding: 6px 10px;
         font-size: 1rem;
-    }
-}
+    }}
+}}
 
 
 </style>
