@@ -4,10 +4,11 @@ from docx import Document
 import re
 import math
 import pandas as pd
-import base64 # Vẫn giữ lại Base64 nhưng không dùng, bạn có thể xóa nếu muốn
+import base64
+import os # Import os để xử lý đường dẫn file
 
 # ====================================================
-# ⚙️ HÀM CHUNG
+# ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
 # ====================================================
 def clean_text(s: str) -> str:
     if s is None:
@@ -16,12 +17,31 @@ def clean_text(s: str) -> str:
 
 def read_docx_paragraphs(source):
     try:
-        doc = Document(source)
+        # Đường dẫn file docx giả định nằm cùng thư mục với script
+        doc = Document(os.path.join(os.path.dirname(__file__), source))
     except Exception as e:
         st.error(f"Không thể đọc file .docx: {e}")
         return []
     return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
 
+def get_base64_encoded_file(file_path):
+    """Mã hóa file ảnh sang base64 để sử dụng trong CSS (Tương tự partnumber.py)."""
+    try:
+        # Thử tìm file trong cùng thư mục với script
+        path_to_check = os.path.join(os.path.dirname(__file__), file_path)
+        if not os.path.exists(path_to_check):
+             # Nếu không tìm thấy, thử đường dẫn trực tiếp
+             path_to_check = file_path
+             if not os.path.exists(path_to_check):
+                 st.error(f"Lỗi: Không tìm thấy file ảnh {file_path}")
+                 return None
+
+        with open(path_to_check, "rb") as f:
+            return base64.b64encode(f.read()).decode("utf-8")
+    except Exception as e:
+        st.error(f"Lỗi khi mã hóa ảnh {file_path}: {str(e)}")
+        # Base64 cho ảnh 1x1 trong suốt
+        return "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
 
 # ====================================================
 # 🧩 PARSER NGÂN HÀNG KỸ THUẬT (CABBANK)
@@ -130,11 +150,16 @@ def parse_lawbank(source):
 # ====================================================
 st.set_page_config(page_title="Ngân hàng trắc nghiệm", layout="wide")
 
-# === KHAI BÁO ĐƯỜNG DẪN ẢNH ===
-PC_IMAGE_PATH = "/pages/bank_PC.jpg"
-MOBILE_IMAGE_PATH = "/pages/bank_mobile.jpg"
+# === KHAI BÁO VÀ CHUYỂN ĐỔI ẢNH NỀN SANG BASE64 ===
+PC_IMAGE_FILE = "bank_PC.jpg"
+MOBILE_IMAGE_FILE = "bank_mobile.jpg"
 
-# === CSS: rõ nét, dễ nhìn trên mobile (SỬ DỤNG ĐƯỜNG DẪN ẢNH) ===
+img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
+img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
+
+# Base64 fallback (đã được xử lý trong hàm get_base64_encoded_file)
+
+# === CSS: rõ nét, dễ nhìn trên mobile (SỬ DỤNG BASE64 VÀ MEDIA QUERY) ===
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Crimson+Text&display=swap');
@@ -155,18 +180,16 @@ st.markdown(f"""
 }}
 
 /* --- ẢNH NỀN CHO PC/MÀN HÌNH RỘNG HƠN (>= 768px) --- */
-@media (min-width: 768px) {{
-    [data-testid="stAppViewContainer"] {{
-        /* SỬ DỤNG ĐƯỜNG DẪN FILE TRỰC TIẾP */
-        background-image: url("{PC_IMAGE_PATH}");
-    }}
+/* Đặt mặc định Base64 cho PC */
+[data-testid="stAppViewContainer"] {{
+    background-image: url("data:image/jpeg;base64,{img_pc_base64}");
 }}
 
 /* --- ẢNH NỀN CHO MOBILE/MÀN HÌNH NHỎ HƠN (< 768px) --- */
 @media (max-width: 767px) {{
+    /* Ghi đè Base64 của PC bằng Base64 của Mobile */
     [data-testid="stAppViewContainer"] {{
-        /* SỬ DỤNG ĐƯỜNG DẪN FILE TRỰC TIẾP */
-        background-image: url("{MOBILE_IMAGE_PATH}");
+        background-image: url("data:image/jpeg;base64,{img_mobile_base64}");
     }}
 }}
 
@@ -211,12 +234,15 @@ div[data-testid="stMarkdownContainer"] p {{
 # ====================================================
 st.markdown("<h1>📜 Ngân hàng trắc nghiệm</h1>", unsafe_allow_html=True)
 
-bank_choice = st.selectbox("Chọn ngân hàng:", ["Ngân hàng Kỹ thuật", "Ngân hàng Luật"])
+# Đặt khóa cho selectbox để quản lý trạng thái
+bank_choice = st.selectbox("Chọn ngân hàng:", ["Ngân hàng Kỹ thuật", "Ngân hàng Luật"], key="bank_selector")
 source = "cabbank.docx" if "Kỹ thuật" in bank_choice else "lawbank.docx"
 
 questions = parse_cabbank(source) if "Kỹ thuật" in bank_choice else parse_lawbank(source)
 if not questions:
-    st.error("❌ Không đọc được câu hỏi nào.")
+    st.error("❌ Không đọc được câu hỏi nào. Vui lòng đảm bảo file .docx có sẵn.")
+    st.stop() 
+
 
 # ====================================================
 # 🧭 TAB: LÀM BÀI / TRA CỨU
@@ -227,79 +253,93 @@ tab1, tab2 = st.tabs(["🧠 Làm bài", "🔍 Tra cứu toàn bộ câu hỏi"])
 with tab1:
     group_size = 10
     total = len(questions)
-    groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
-    selected = st.selectbox("Chọn nhóm câu:", groups)
-    idx = groups.index(selected)
-    start, end = idx * group_size, min((idx+1) * group_size, total)
-    batch = questions[start:end]
 
-    if "submitted" not in st.session_state:
-        st.session_state.submitted = False
+    # Đảm bảo total > 0 trước khi tính groups
+    if total > 0:
+        groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
+        
+        # SỬA LỖI TRUY CẬP INDEX: sử dụng index=0 và key để đảm bảo giá trị hợp lệ
+        selected = st.selectbox("Chọn nhóm câu:", groups, index=0, key="group_selector")
+        
+        idx = groups.index(selected)
+        
+        start, end = idx * group_size, min((idx+1) * group_size, total)
+        batch = questions[start:end]
 
-    if not st.session_state.submitted:
-        for i, q in enumerate(batch, start=start+1):
-            st.markdown(f"<p style='color:#1a1a1a; font-size:1.15em; font-weight:600;'>{i}. {q['question']}</p>", unsafe_allow_html=True)
-            st.radio("", q["options"], key=f"q_{i}")
-            st.markdown("---")
-        if st.button("✅ Nộp bài"):
-            st.session_state.submitted = True
-            st.rerun()
-    else:
-        score = 0
-        for i, q in enumerate(batch, start=start+1):
-            selected = st.session_state.get(f"q_{i}")
-            correct = clean_text(q["answer"])
-            is_correct = clean_text(selected) == correct
-
-            st.markdown(f"<p style='color:#1a1a1a; font-size:1.15em; font-weight:600;'>{i}. {q['question']}</p>", unsafe_allow_html=True)
-
-            for opt in q["options"]:
-                opt_clean = clean_text(opt)
-                
-                if opt_clean == correct:
-                    style = "color:#006400; font-weight:700;" 
-                elif opt_clean == clean_text(selected):
-                    style = "color:#cc0000; font-weight:700; text-decoration: underline;" 
-                else:
-                    style = "color:#1a1a1a;" 
-                st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
-
-            if is_correct:
-                st.success(f"✅ Đúng — {q['answer']}")
-                score += 1
-            else:
-                st.error(f"❌ Sai — Đáp án đúng: {q['answer']}")
-            st.markdown("---")
-
-        st.subheader(f"🎯 Kết quả: {score}/{len(batch)}")
-
-        if st.button("🔁 Làm lại nhóm này"):
-            for i in range(start+1, end+1):
-                st.session_state.pop(f"q_{i}", None)
+        if "submitted" not in st.session_state:
             st.session_state.submitted = False
-            st.rerun()
+        
+        # Đảm bảo batch có nội dung trước khi hiển thị
+        if batch:
+            if not st.session_state.submitted:
+                for i, q in enumerate(batch, start=start+1):
+                    st.markdown(f"<p style='color:#1a1a1a; font-size:1.15em; font-weight:600;'>{i}. {q['question']}</p>", unsafe_allow_html=True)
+                    st.radio("", q["options"], key=f"q_{i}")
+                    st.markdown("---")
+                if st.button("✅ Nộp bài"):
+                    st.session_state.submitted = True
+                    st.rerun()
+            else:
+                score = 0
+                for i, q in enumerate(batch, start=start+1):
+                    selected_opt = st.session_state.get(f"q_{i}")
+                    correct = clean_text(q["answer"])
+                    is_correct = clean_text(selected_opt) == correct
+
+                    st.markdown(f"<p style='color:#1a1a1a; font-size:1.15em; font-weight:600;'>{i}. {q['question']}</p>", unsafe_allow_html=True)
+
+                    for opt in q["options"]:
+                        opt_clean = clean_text(opt)
+                        
+                        if opt_clean == correct:
+                            style = "color:#006400; font-weight:700;" 
+                        elif opt_clean == clean_text(selected_opt):
+                            style = "color:#cc0000; font-weight:700; text-decoration: underline;" 
+                        else:
+                            style = "color:#1a1a1a;" 
+                        st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
+
+                    if is_correct:
+                        st.success(f"✅ Đúng — {q['answer']}")
+                        score += 1
+                    else:
+                        st.error(f"❌ Sai — Đáp án đúng: {q['answer']}")
+                    st.markdown("---")
+
+                st.subheader(f"🎯 Kết quả: {score}/{len(batch)}")
+
+                if st.button("🔁 Làm lại nhóm này"):
+                    for i in range(start+1, end+1):
+                        st.session_state.pop(f"q_{i}", None)
+                    st.session_state.submitted = False
+                    st.rerun()
+        else:
+             st.warning("Không có câu hỏi trong nhóm này.")
 
 
 # ========== TAB 2 (Tra cứu) ==========
 with tab2:
     st.markdown("### 🔎 Tra cứu toàn bộ câu hỏi trong ngân hàng")
-    df = pd.DataFrame([
-        {
-            "STT": i+1,
-            "Câu hỏi": q["question"],
-            "Đáp án A": q["options"][0] if len(q["options"])>0 else "",
-            "Đáp án B": q["options"][1] if len(q["options"])>1 else "",
-            "Đáp án C": q["options"][2] if len(q["options"])>2 else "",
-            "Đáp án D": q["options"][3] if len(q["options"])>3 else "",
-            "Đáp án đúng": q["answer"]
-        } for i, q in enumerate(questions)
-    ])
+    if len(questions) > 0:
+        df = pd.DataFrame([
+            {
+                "STT": i+1,
+                "Câu hỏi": q["question"],
+                "Đáp án A": q["options"][0] if len(q["options"])>0 else "",
+                "Đáp án B": q["options"][1] if len(q["options"])>1 else "",
+                "Đáp án C": q["options"][2] if len(q["options"])>2 else "",
+                "Đáp án D": q["options"][3] if len(q["options"])>3 else "",
+                "Đáp án đúng": q["answer"]
+            } for i, q in enumerate(questions)
+        ])
 
-    keyword = st.text_input("🔍 Tìm theo từ khóa:").strip().lower()
-    df_filtered = df[df.apply(lambda r: keyword in " ".join(r.values.astype(str)).lower(), axis=1)] if keyword else df
+        keyword = st.text_input("🔍 Tìm theo từ khóa:").strip().lower()
+        df_filtered = df[df.apply(lambda r: keyword in " ".join(r.values.astype(str)).lower(), axis=1)] if keyword else df
 
-    st.write(f"Hiển thị {len(df_filtered)}/{len(df)} câu hỏi")
-    st.dataframe(df_filtered, use_container_width=True)
+        st.write(f"Hiển thị {len(df_filtered)}/{len(df)} câu hỏi")
+        st.dataframe(df_filtered, use_container_width=True)
 
-    csv = df_filtered.to_csv(index=False).encode("utf-8-sig")
-    st.download_button("⬇️ Tải danh sách (CSV)", csv, "ngan_hang_cau_hoi.csv", "text/csv")
+        csv = df_filtered.to_csv(index=False).encode("utf-8-sig")
+        st.download_button("⬇️ Tải danh sách (CSV)", csv, "ngan_hang_cau_hoi.csv", "text/csv")
+    else:
+        st.info("Không có dữ liệu câu hỏi để tra cứu.")
