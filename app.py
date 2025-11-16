@@ -414,8 +414,8 @@ iframe:first-of-type {{
 
 .nav-container {{
     position: fixed;
-    /* ✅ ĐÃ SỬA: Lệch trái 25% (để tách xa hơn) */
-    left: 25%; 
+    /* ✅ ĐÃ SỬA: Lệch trái 5% (để sát trái hơn) */
+    left: 5%; 
     top: 50%;
     transform: translate(-50%, -50%);
     display: flex;
@@ -431,8 +431,8 @@ iframe:first-of-type {{
 /* ✅ CONTAINER MỚI CHO BUTTON BÊN PHẢI */
 .nav-container-right {{
     position: fixed;
-    /* ✅ ĐÃ SỬA: Lệch phải 25% (để tách xa hơn) */
-    right: 25%; 
+    /* ✅ ĐÃ SỬA: Lệch phải 5% (để sát phải hơn) */
+    right: 5%; 
     top: 50%;
     transform: translate(50%, -50%); 
     display: flex;
@@ -619,7 +619,7 @@ iframe:first-of-type {{
 }}
 
 @media (max-width: 768px) {{
-    /* ✅ Vị trí mới cho mobile: dùng flexbox để xếp dọc */
+    /* Vị trí mới cho mobile: dùng flexbox để xếp dọc */
     #nav-buttons-wrapper {{
         position: fixed;
         bottom: 120px; /* Đặt phía trên music player */
