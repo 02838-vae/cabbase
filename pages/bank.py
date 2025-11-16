@@ -36,7 +36,7 @@ def get_base64_encoded_file(file_path):
         with open(path_to_check, "rb") as f:
             return base64.b64encode(f.read()).decode("utf-8")
     except Exception as e:
-        # print(f"Lỗi khi mã hóa ảnh {file_path}: {str(e)}") # Bỏ in lỗi
+        print(f"Lỗi khi mã hóa ảnh {file_path}: {str(e)}")
         return fallback_base64
 
 # ====================================================
@@ -163,27 +163,31 @@ img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
 
-# === CSS: FIX FULL SCREEN & STYLING (TINH CHỈNH MẠNH) ====================
+# === CSS: FIX FULL SCREEN & STYLING ======================================
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Crimson+Text:wght@400;700&display=swap');
 
-/* ======================= AGGRESSIVE FULL SCREEN FIX (Quan trọng) ======================= */
+/* ======================= FULL SCREEN FIX (Quan trọng) ======================= */
+/* Áp dụng fix full screen cho các container chính của Streamlit */
 
-/* Target the Streamlit wrapper (stAppViewContainer) */
+/* Container gốc (body-like) */
+.stApp {{
+    min-height: 100vh;
+    padding: 0 !important;
+}}
+
+/* stAppViewContainer - chứa toàn bộ ứng dụng */
 [data-testid="stAppViewContainer"] {{
     min-height: 100vh !important;
     padding: 0 !important;
     margin: 0 !important;
-    max-width: 100vw !important;
-    width: 100vw !important; /* Buộc full width */
 }}
 
-/* Target the main content block */
+/* stMainBlock - main content wrapper */
 [data-testid="stMainBlock"] {{
     padding: 0 !important;
     margin: 0 !important;
-    width: 100% !important;
 }}
 
 /* Các wrappers khác */
@@ -192,40 +196,48 @@ st.markdown(f"""
     margin: 0 !important;
 }}
 
-/* ======================= BACKGROUND & VINTAGE (Adjusted) ======================= */
+/* ======================= BACKGROUND & VINTAGE ======================= */
 [data-testid="stAppViewContainer"] {{
     background-size: cover; 
     background-position: center;
     background-attachment: fixed;
-    /* TĂNG NGẢ VÀNG VÀ LÀM MỜ NỀN */
-    filter: sepia(25%) grayscale(5%) brightness(0.9); 
+    filter: sepia(15%) grayscale(5%); /* Ngả vàng nhẹ */
 }}
 
-/* Lớp phủ (Overlay) - Tăng độ mờ/tối */
+/* Lớp phủ (Overlay) */
 [data-testid="stAppViewContainer"]::before {{
     content: "";
     position: absolute; inset: 0;
-    /* TĂNG OPACITY để làm mờ background và tăng độ tương phản */
-    background: rgba(255, 255, 255, 0.4); 
-    backdrop-filter: blur(2px); /* Mờ hơn */
+    background: rgba(255, 255, 255, 0.25); /* Trắng trong suốt */
+    backdrop-filter: blur(1px);
     z-index: 0;
+}}
+
+/* --- ÁP DỤNG ẢNH NỀN --- */
+[data-testid="stAppViewContainer"] {{
+    background-image: url("data:image/jpeg;base64,{img_pc_base64}");
+}}
+@media (max-width: 767px) {{
+    [data-testid="stAppViewContainer"] {{
+        background-image: url("data:image/jpeg;base64,{img_mobile_base64}");
+    }}
 }}
 
 /* ======================= HEADER & MARQUEE FIXED ======================= */
 
-/* Tiêu đề chạy - Cố định trên cùng, ĐẢM BẢO KHÔNG BIẾN MẤT */
+/* Tiêu đề chạy - Cố định trên cùng (Giống app.py) */
 .running-title-fixed {{
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
-    height: 35px; 
+    height: 35px; /* Chiều cao cố định cho marquee */
     padding: 5px 0;
     background-color: rgba(0, 0, 0, 0.9); /* Nền đen đậm */
-    color: #FFD700; 
+    color: #FFD700; /* Vàng Gold */
     z-index: 1000;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.5);
-    overflow: hidden; 
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    overflow: hidden; /* Cần thiết cho marquee */
 }}
 .running-title {{
     font-size: 1.15em;
@@ -238,7 +250,7 @@ st.markdown(f"""
 
 /* Tạo khoảng trống phía trên cho nội dung chính */
 .main-content-start {{
-    padding-top: 50px; /* Lớn hơn chiều cao của header cố định */
+    padding-top: 50px; /* Lớn hơn chiều cao của header chạy */
 }}
 
 /* Tiêu đề Ngân hàng trắc nghiệm (Tông Vàng Cũ/partnumber.py) */
@@ -262,7 +274,7 @@ st.markdown(f"""
     font-weight: 700;
 }}
 
-/* Ẩn các tiêu đề mặc định của Streamlit */
+/* Ẩn các tiêu đề mặc định */
 h1, h2 {{ display: none; }} 
 
 /* ======================= STYLING NỘI DUNG CHÍNH ======================= */
@@ -275,7 +287,7 @@ h1, h2 {{ display: none; }}
 
 /* Câu hỏi & Nội dung (Màu chữ dễ nhìn) */
 div[data-testid="stMarkdownContainer"] p {{
-    color: #1a1a1a !important; /* Đen đậm (High Contrast) */
+    color: #1a1a1a !important; /* Xanh đậm gần như đen */
     font-weight: 600;
     font-size: 1.1em;
 }}
@@ -352,9 +364,9 @@ if not questions:
 if st.session_state.get('last_bank_choice') != bank_choice:
     st.session_state.current_group_idx = 0
     st.session_state.submitted = False
+    # Lưu lại lựa chọn ngân hàng hiện tại
     st.session_state.last_bank_choice = bank_choice
-    # Rerun để áp dụng bank mới ngay lập tức
-    st.rerun() 
+    # Không cần rerun ở đây vì các câu lệnh dưới sẽ dùng giá trị mới
 
 # --- Xử lý Nhóm câu hỏi ---
 tab1, tab2 = st.tabs(["🧠 Làm bài", "🔍 Tra cứu toàn bộ câu hỏi"])
@@ -367,19 +379,19 @@ with tab1:
     if total > 0:
         groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
         
-        # Đảm bảo index nằm trong giới hạn
+        # Đảm bảo index nằm trong giới hạn và cập nhật selectbox
         if st.session_state.current_group_idx >= len(groups):
             st.session_state.current_group_idx = 0
         
-        # Selectbox
+        # Selectbox sẽ hiển thị tên nhóm dựa trên index hiện tại
         selected = st.selectbox("Chọn nhóm câu:", groups, index=st.session_state.current_group_idx, key="group_selector")
         
-        # Kiểm tra nếu người dùng chọn nhóm khác qua selectbox, thì reset trạng thái nộp bài
+        # Cập nhật lại current_group_idx nếu người dùng chọn bằng tay qua selectbox
+        # Đây là điểm mấu chốt để nút "Tiếp tục" hoạt động, vì nó sẽ thay đổi index
         new_idx = groups.index(selected)
         if st.session_state.current_group_idx != new_idx:
             st.session_state.current_group_idx = new_idx
-            st.session_state.submitted = False 
-            st.rerun() # Rerun để tải nhóm câu mới
+            st.session_state.submitted = False # Khi chọn nhóm mới, reset trạng thái nộp bài
 
         idx = st.session_state.current_group_idx
         start, end = idx * group_size, min((idx+1) * group_size, total)
@@ -414,7 +426,7 @@ with tab1:
                         elif opt_clean == clean_text(selected_opt):
                             style = "color:#cc0000; font-weight:700; text-decoration: underline;" # Đáp án sai người dùng chọn (Đỏ)
                         else:
-                            style = "color:#1a1a1a;" # Các đáp án còn lại (Đen đậm)
+                            style = "color:#1a1a1a;" # Các đáp án còn lại (Xanh đậm)
                         st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
 
                     if is_correct:
@@ -440,7 +452,7 @@ with tab1:
                 with col_next:
                     if st.session_state.current_group_idx < len(groups) - 1:
                         if st.button("➡️ Tiếp tục nhóm sau"):
-                            # FIX LOGIC: Tăng index và reset trạng thái nộp bài
+                            # Logic fix: Tăng index và reset trạng thái nộp bài
                             st.session_state.current_group_idx += 1
                             st.session_state.submitted = False 
                             st.rerun()
