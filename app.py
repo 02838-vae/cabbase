@@ -678,8 +678,8 @@ iframe:first-of-type {{
         max-width: 450px; 
         display: flex;
         flex-direction: column; /* Xếp dọc */
-        gap: 0px; /* SỬA LẠI: GIẢM XUỐNG CỰC TIỂU 0PX */
-        padding: 0; /* ĐẢM BẢO KHÔNG CÓ PADDING NGANG LỚN */
+        gap: 8px; /* GIẢM KHOẢNG CÁCH: từ 1px lên 8px để dễ nhìn hơn */
+        padding: 0; /* Bỏ padding 80px trên desktop */
     }}
     
     /* ĐẢO NGƯỢC THỨ TỰ HIỂN THỊ TRÊN MOBILE */
@@ -1165,3 +1165,4 @@ nav_buttons_html_cleaned = nav_buttons_html_cleaned.replace('\n', '')
 
 # Hiển thị chuỗi HTML đã được làm sạch
 st.markdown(nav_buttons_html_cleaned, unsafe_allow_html=True)
+
