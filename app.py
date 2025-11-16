@@ -655,32 +655,19 @@ if len(music_files) > 0:
 else:
     music_sources_js = ""
 
-# ✅ PHẦN JS ĐÃ CHỈNH SỬA (Thêm skipReveal vào sendBackToStreamlit và logic skipIntro)
+# ✅ PHẦN JS ĐÃ CHỈNH SỬA
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
 
-    // === CHỈNH SỬA 1: THÊM THAM SỐ skipReveal ===
-    function sendBackToStreamlit(skipReveal = false) {{
-        console.log("Video ended or skipped, revealing main content. Skip Reveal:", skipReveal);
+    // Hàm thực hiện chuyển đổi sang nội dung chính
+    function sendBackToStreamlit() {{
+        console.log("Video ended or skipped, revealing main content");
         const stApp = window.parent.document.querySelector('.stApp');
         if (stApp) {{
             stApp.classList.add('video-finished', 'main-content-revealed');
         }}
-        
-        // CHỈ CHẠY REVEAL NẾU KHÔNG SKIP
-        if (!skipReveal) {{ 
-            initRevealEffect();
-        }} else {{
-            // Nếu skip reveal, ẩn ngay lập tức lớp grid
-            const revealGrid = window.parent.document.querySelector('.reveal-grid');
-            if (revealGrid) {{
-                // Tăng tốc độ ẩn grid nếu skip reveal
-                revealGrid.style.opacity = 0;
-                setTimeout(() => {{ revealGrid.remove(); }}, 100); 
-            }}
-        }}
-
+        initRevealEffect();
         setTimeout(initMusicPlayer, 100);
     }}
     
@@ -799,20 +786,20 @@ js_callback_video = f"""
     document.addEventListener("DOMContentLoaded", function() {{
         console.log("DOM loaded, waiting for elements...");
 
-        // ✅ CHỈNH SỬA 2: SỬ DỤNG skipReveal=true KHI skipIntro='1'
+        // ✅ LOGIC MỚI: KIỂM TRA THAM SỐ SKIP_INTRO
         const urlParams = new URLSearchParams(window.parent.location.search);
         const skipIntro = urlParams.get('skip_intro');
         
         if (skipIntro === '1') {{
-            console.log("Skip intro detected. Directly revealing main content, skipping reveal effect.");
-            // Truyền true để bỏ qua hiệu ứng reveal
-            sendBackToStreamlit(true);
+            console.log("Skip intro detected. Directly revealing main content.");
+            // Giả lập sự kiện video kết thúc
+            sendBackToStreamlit();
             // Ẩn ngay lập tức video iframe
             const iframe = window.frameElement;
             if (iframe) {{
                  iframe.style.opacity = 0;
                  iframe.style.visibility = 'hidden';
-                 // Đảm bảo iframe không chặn tương tác
+                 // Đảm bảo iframe không chặn tương tác (mặc dù opacity=0 đã làm điều này)
                  iframe.style.pointerEvents = 'none'; 
             }}
             return; // Dừng khởi tạo video/audio
@@ -842,8 +829,8 @@ js_callback_video = f"""
                         console.log("✅ Video is playing!");
                     }}).catch(err => {{
                         console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
-                        // Khi lỗi/không thể tự động phát, chuyển tiếp và vẫn chạy reveal (mặc định)
-                        setTimeout(sendBackToStreamlit, 2000); 
+                
+                        setTimeout(sendBackToStreamlit, 2000);
                     }});
                     audio.play().catch(e => {{
                         console.log("Audio autoplay blocked (normal), waiting for video end.");
@@ -859,12 +846,10 @@ js_callback_video = f"""
                     audio.currentTime = 0;
     
                     introTextContainer.style.opacity = 0;
-                    // Gọi hàm mặc định (skipReveal=false), vẫn chạy reveal
                     setTimeout(sendBackToStreamlit, 500);
                 }});
                 video.addEventListener('error', (e) => {{
                     console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
-                    // Gọi hàm mặc định (skipReveal=false), vẫn chạy reveal
                     sendBackToStreamlit();
                 }});
                 const clickHandler = () => {{
@@ -890,7 +875,6 @@ js_callback_video = f"""
             const video = document.getElementById('intro-video');
             if (video && !video.src) {{
                 console.warn("Timeout before video source set. Force transitioning to main content.");
-                // Gọi hàm mặc định (skipReveal=false), vẫn chạy reveal
                 sendBackToStreamlit();
             }}
   
@@ -1020,9 +1004,8 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
-# --- MUSIC PLAYER ---
-if len(music_files) > 0:
-    st.markdown("""
+# --- MUSIC PLAYER ---\nif len(music_files) > 0:
+st.markdown("""
 <div id="music-player-container">
     <div class="controls">
         <button class="control-btn" id="prev-btn">⏮</button>
@@ -1039,40 +1022,15 @@ if len(music_files) > 0:
 </div>
 """, unsafe_allow_html=True)
 
-# --- NAVIGATION BUTTON MỚI (UIverse Style) ---
-# Tên trang phụ là partnumber.py nên link href là /partnumber
+# --- NAVIGATION BUTTON MỚI (UIverse Style) ---\n# Tên trang phụ là partnumber.py nên link href là /partnumber
 st.markdown("""
 <div class="nav-container">
-
-    <!-- BUTTON 1 -->
     <a href="/partnumber" target="_self" class="button">
         <div class="dots_border"></div>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" 
-             viewBox="0 0 24 24" class="sparkle"> 
-            <path class="path" stroke-linejoin="round" 
-                  stroke-linecap="round" stroke="currentColor" 
-                  fill="currentColor" 
-                  d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4"></path>
-        </svg>
-        <span class="text_button">TRA CỨU PART NUMBER</span>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="sparkle" > 
+            <path class="path" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" fill="currentColor" d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4" ></path> 
+        </svg> 
+        <span class="text_button">TRA CỨU PART NUMBER</span> 
     </a>
-
-    <!-- BUTTON 2 -->
-    <a href="/tracnghiem" target="_self" class="button">
-        <div class="dots_border"></div>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" 
-             viewBox="0 0 24 24" class="sparkle"> 
-            <path class="path" stroke-linejoin="round" 
-                  stroke-linecap="round" stroke="currentColor" 
-                  fill="currentColor" 
-                  d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4"></path>
-        </svg>
-        <span class="text_button">NGÂN HÀNG TRẮC NGHIỆM</span>
-    </a>
-
 </div>
 """, unsafe_allow_html=True)
-
-
-
-
