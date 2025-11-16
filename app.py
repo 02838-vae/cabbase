@@ -1000,7 +1000,7 @@ intro_chars_html = ''.join([
     for char in intro_title
 ])
 html_content_modified = html_content_modified.replace(
-    "<div id=\"intro-text-container\">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>",
+    "<div id=\"intro-text-container\">KHÁM PHẢ THẾ GIỚI CÙNG CHÚNG TÔI</div>",
     f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
 )
 
@@ -1069,7 +1069,7 @@ st.markdown("""
         <a href="/quiz" target="_self" class="button">
             <div class="dots_border"></div>
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" class="sparkle">
-                <path class="path" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="currentColor" d="M15.545 4.582l-7.234 7.234a.75.75 0 00-.197.359l-.499 1.996a.75.75 0 00.92 1.057l1.996-.499a.75.75 0 00.36-.197l7.233-7.234a2.25 2.25 0 000-3.182l-.567-.567a2.25 2.25 0 00-3.182 0zM15.75 14.5L14.25 19.5" />
+                <path class="path" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="currentColor" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
             </svg>
             <span class="text_button">NGÂN HÀNG TRẮC NGHIỆM</span> 
         </a>
