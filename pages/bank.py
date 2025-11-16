@@ -5,7 +5,7 @@ import re
 import math
 import pandas as pd
 import base64
-import os # Import os để xử lý đường dẫn file
+import os
 
 # ====================================================
 # ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
@@ -25,28 +25,29 @@ def read_docx_paragraphs(source):
     return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
 
 def get_base64_encoded_file(file_path):
-    """Mã hóa file ảnh sang base64 để sử dụng trong CSS (Tương tự partnumber.py)."""
+    """Mã hóa file ảnh sang base64 để sử dụng trong CSS."""
+    # Base64 cho ảnh 1x1 trong suốt (fallback)
+    fallback_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
     try:
         # Thử tìm file trong cùng thư mục với script
         path_to_check = os.path.join(os.path.dirname(__file__), file_path)
         if not os.path.exists(path_to_check):
-             # Nếu không tìm thấy, thử đường dẫn trực tiếp
              path_to_check = file_path
-             if not os.path.exists(path_to_check):
-                 st.error(f"Lỗi: Không tìm thấy file ảnh {file_path}")
-                 return None
 
+        if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
+            return fallback_base64
+            
         with open(path_to_check, "rb") as f:
             return base64.b64encode(f.read()).decode("utf-8")
     except Exception as e:
-        st.error(f"Lỗi khi mã hóa ảnh {file_path}: {str(e)}")
-        # Base64 cho ảnh 1x1 trong suốt
-        return "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+        print(f"Lỗi khi mã hóa ảnh {file_path}: {str(e)}")
+        return fallback_base64
 
 # ====================================================
 # 🧩 PARSER NGÂN HÀNG KỸ THUẬT (CABBANK)
 # ====================================================
 def parse_cabbank(source):
+    # Sử dụng lại logic parser từ file gốc
     paras = read_docx_paragraphs(source)
     if not paras:
         return []
@@ -91,6 +92,7 @@ def parse_cabbank(source):
 # 🧩 PARSER NGÂN HÀNG LUẬT (LAWBANK)
 # ====================================================
 def parse_lawbank(source):
+    # Sử dụng lại logic parser từ file gốc
     paras = read_docx_paragraphs(source)
     if not paras:
         return []
@@ -157,25 +159,29 @@ MOBILE_IMAGE_FILE = "bank_mobile.jpg"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
-# Base64 fallback (đã được xử lý trong hàm get_base64_encoded_file)
 
-# === CSS: rõ nét, dễ nhìn trên mobile (SỬ DỤNG BASE64 VÀ MEDIA QUERY) ===
+# === CSS: ẢNH NỀN VINTAGE FULL MÀN HÌNH ===
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Crimson+Text&display=swap');
 
-/* --- CẤU HÌNH CHUNG --- */
+/* --- CẤU HÌNH CHUNG: Vintage & Full Screen --- */
 [data-testid="stAppViewContainer"] {{
-    background-size: cover;
+    /* Đảm bảo full màn hình */
+    background-size: cover; 
     background-position: center;
     background-attachment: fixed;
+    /* Áp dụng filter Vintage */
+    filter: sepia(50%) grayscale(10%); 
 }}
-/* Lớp phủ mờ giúp chữ dễ đọc hơn */
+
+/* Lớp phủ MỜ NHẠT (opacity) giúp chữ dễ đọc hơn */
 [data-testid="stAppViewContainer"]::before {{
     content: "";
     position: absolute; inset: 0;
-    background: rgba(255,248,235,0.85); /* Màu kem nhạt, độ trong suốt 85% */
-    backdrop-filter: blur(3px);
+    /* Dùng màu be nhạt hoặc kem để tăng cảm giác hoài cổ */
+    background: rgba(255, 250, 240, 0.75); 
+    backdrop-filter: blur(1px);
     z-index: 0;
 }}
 
@@ -193,37 +199,42 @@ st.markdown(f"""
     }}
 }}
 
+/* --- STYLING NỘI DUNG (Để nổi bật trên nền Vintage) --- */
 h1 {{
     text-align: center;
     font-family: 'Playfair Display', serif;
     font-size: 2.5em;
-    color: #2a1f0f;
+    color: #4a3e2e; /* Màu nâu đậm hơn */
     margin-top: 0.2em;
     z-index: 1; /* Đặt H1 lên trên lớp phủ */
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5); /* Tạo hiệu ứng nổi nhẹ */
 }}
 /* Tăng độ tương phản câu hỏi và đáp án */
 .stRadio label {{
-    color: #1a1a1a !important;
+    color: #333333 !important;
     font-size: 1.1em !important;
     font-weight: 500;
 }}
 div[data-testid="stMarkdownContainer"] p {{
-    color: #1a1a1a !important;
+    color: #333333 !important;
 }}
 .stSelectbox label {{
     font-size: 1.2em;
-    color: #2a1f0f;
+    color: #4a3e2e;
 }}
 .stButton>button {{
-    background-color: #b0854c !important; /* Màu nâu vàng ấm */
-    color: white !important;
-    border-radius: 10px;
+    background-color: #a89073 !important; /* Màu nâu vàng vintage */
+    color: #f7f7f7 !important;
+    border-radius: 8px;
     font-size: 1.05em;
     font-family: 'Crimson Text', serif;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
 }}
 .stButton>button:hover {{
-    background-color: #8a693c !important;
-    transform: scale(1.03);
+    background-color: #8c765f !important;
+    transform: translateY(-1px);
+    box-shadow: 3px 3px 7px rgba(0, 0, 0, 0.3);
 }}
 </style>
 """, unsafe_allow_html=True)
