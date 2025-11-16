@@ -1,7 +1,7 @@
 import streamlit as st
 import base64
 import os
-import re # Đảm bảo thư viện re được import để làm sạch chuỗi HTML
+import re
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
@@ -18,7 +18,6 @@ if 'video_ended' not in st.session_state:
 
 def get_base64_encoded_file(file_path):
     """Đọc file và trả về Base64 encoded string."""
-    # Sửa đường dẫn nếu cần thiết để phù hợp với môi trường triển khai
     path_to_check = os.path.join(os.path.dirname(__file__), file_path)
     
     if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
@@ -35,14 +34,11 @@ def get_base64_encoded_file(file_path):
 
 # Mã hóa các file media chính (bắt buộc)
 try:
-    # Đảm bảo các file này nằm cùng thư mục với app.py
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
-    
-    # MÃ HÓA CHO LOGO
     logo_base64 = get_base64_encoded_file("logo.jpg")
 
     # Kiểm tra file bắt buộc
@@ -62,17 +58,15 @@ except Exception as e:
     st.error(f"❌ Lỗi khi đọc file: {str(e)}")
     st.stop()
 
-# Đảm bảo logo_base64 được khởi tạo nếu file không tồn tại
 if not 'logo_base64' in locals() or not logo_base64:
     logo_base64 = "" 
     st.info("ℹ️ Không tìm thấy file logo.jpg. Music player sẽ không có hình nền logo.")
 
 
-# --- SỬ DỤNG URL TRỰC TIẾP TỪ GITHUB RAW CONTENT (TỐC ĐỘ CAO HƠN) ---
+# --- SỬ DỤNG URL TRỰC TIẾP TỪ GITHUB RAW CONTENT ---
 BASE_MUSIC_URL = "https://raw.githubusercontent.com/02838-vae/cabbase/main/"
 music_urls = []
 
-# Thêm 6 file nhạc nền vào danh sách URL
 for i in range(1, 7):
     url = f"{BASE_MUSIC_URL}background{i}.mp3"
     music_urls.append(url)
@@ -94,7 +88,6 @@ st.markdown(font_links, unsafe_allow_html=True)
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
-/* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
 
 .main {{
@@ -108,7 +101,6 @@ div.block-container {{
     max-width: 100% !important;
 }}
 
-/* Iframe Video Intro */
 iframe:first-of-type {{
     transition: opacity 1s ease-out, visibility 1s ease-out;
     opacity: 1;
@@ -118,7 +110,6 @@ iframe:first-of-type {{
     position: fixed;
     top: 0;
     left: 0;
-    /* Tăng Z-index để đảm bảo video ở trên cùng */
     z-index: 1000;
 }}
 
@@ -174,20 +165,17 @@ iframe:first-of-type {{
     }}
 }}
 
-/* Keyframes cho hiệu ứng chữ chạy đơn */
 @keyframes scrollText {{
     0% {{ transform: translate(100vw, 0); }}
     100% {{ transform: translate(-100%, 0); }}
 }}
 
-/* Keyframes cho hiệu ứng Đổi Màu Gradient */
 @keyframes colorShift {{
     0% {{ background-position: 0% 50%; }}
     50% {{ background-position: 100% 50%; }}
     100% {{ background-position: 0% 50%; }}
 }}
 
-/* === TIÊU ĐỀ TRANG CHÍNH === */
 #main-title-container {{
     position: fixed;
     top: 5vh;
@@ -237,8 +225,6 @@ iframe:first-of-type {{
     }}
 }}
 
-
-/* 🌟 KEYFRAMES: HIỆU ỨNG TỎA SÁNG MÀU NGẪU NHIÊN (Giữ nguyên cho Music Player) */
 @keyframes glow-random-color {{
     0%, 57.14%, 100% {{
         box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
@@ -265,8 +251,6 @@ iframe:first-of-type {{
     }}
 }}
 
-
-/* === MUSIC PLAYER STYLES (Giữ nguyên) === */
 #music-player-container {{
     position: fixed;
     bottom: 20px;
@@ -303,12 +287,10 @@ iframe:first-of-type {{
     z-index: -1; 
     
     border-radius: 12px;
-    
     box-sizing: border-box; 
     animation: glow-random-color 7s linear infinite;
 }}
 
-/* Đảm bảo các thành phần con ở trên lớp giả */
 #music-player-container * {{
     position: relative;
     z-index: 5; 
@@ -319,7 +301,6 @@ iframe:first-of-type {{
     transform: translateY(0);
 }}
 
-/* Các style khác của player (giữ nguyên) */
 #music-player-container .controls,
 #music-player-container .time-info {{
     color: #fff;
@@ -409,10 +390,7 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === CSS MỚI CHO NAVIGATION BUTTON (UIverse Dark Mode) === */
-
-/* SỬ DỤNG FLEXBOX CHO WRAPPER ĐỂ ĐỊNH VỊ 2 NÚT */
-#nav-buttons-wrapper {
+#nav-buttons-wrapper {{
     position: fixed;
     top: 50%;
     left: 0;
@@ -427,10 +405,10 @@ iframe:first-of-type {{
     opacity: 0;
     transition: opacity 2s ease-out 3s;
     z-index: 10000;
-}
+}}
 
 .nav-container,
-.nav-container-right {
+.nav-container-right {{
     position: static; 
     left: unset;
     right: unset;
@@ -442,14 +420,13 @@ iframe:first-of-type {{
     display: flex; 
     justify-content: center;
     align-items: center;
-}
+}}
 
-.video-finished #nav-buttons-wrapper {
+.video-finished #nav-buttons-wrapper {{
     opacity: 1;
-}
+}}
 
-/* KHỞI TẠO CÁC BIẾN CSS (Giữ nguyên) */
-.button {
+.button {{
     --black-700: hsla(0, 0%, 12%, 1);
     --border_radius: 9999px; 
     --transtion: 0.3s ease-in-out;
@@ -472,10 +449,9 @@ iframe:first-of-type {{
     transition: transform var(--transtion);
     
     text-decoration: none; 
-}
+}}
 
-/* NỀN ĐEN CỦA BUTTON (Giữ nguyên) */
-.button::before {
+.button::before {{
     content: "";
     position: absolute;
     top: 50%;
@@ -492,10 +468,9 @@ iframe:first-of-type {{
         0 0 0 calc(var(--active, 0) * 0.375rem) var(--hover-color);
     transition: all var(--transtion);
     z-index: 0;
-}
+}}
 
-/* HIỆU ỨNG TIA SÁNG BÊN TRONG KHI HOVER (Background Gradient) - Giữ nguyên */
-.button::after {
+.button::after {{
     content: "";
     position: absolute;
     top: 50%;
@@ -513,17 +488,14 @@ iframe:first-of-type {{
     border-radius: var(--border_radius);
     transition: opacity var(--transtion);
     z-index: 2;
-}
+}}
 
-/* KÍCH HOẠT TRẠNG THÁI HOVER (Giữ nguyên) */
-.button:is(:hover, :focus-visible) {
+.button:is(:hover, :focus-visible) {{
     --active: 1;
-}
+}}
 
-/* HIỆU ỨNG ÁNH SÁNG CHẠY VIỀN LIÊN TỤC (dots_border) */
-.button .dots_border {
-    /* Tăng kích thước bao phủ ra ngoài thêm 4px (thay vì 2px) để chắc chắn */
-    --size_border: calc(100% + 4px); 
+.button .dots_border {{
+    --size_border: calc(100% + 2px);
     overflow: hidden;
 
     position: absolute;
@@ -537,18 +509,16 @@ iframe:first-of-type {{
 
     border-radius: var(--border_radius);
     z-index: -1; 
-}
+}}
 
-/* LỚP GIẢ TẠO DÒNG ÁNH SÁNG XOAY */
-.button .dots_border::before {
+.button .dots_border::before {{
     content: "";
     position: absolute;
     top: 50%; 
     left: 50%;
     
-    /* Tăng kích thước vùng mask lên 400% để đảm bảo ánh sáng đủ lớn */
-    width: 400%; 
-    height: 400%; 
+    width: 300%; 
+    height: 300%; 
     
     transform: translate(-50%, -50%) rotate(0deg); 
     transform-origin: center;
@@ -565,39 +535,38 @@ iframe:first-of-type {{
     );
                           
     animation: rotate 3s linear infinite;
-}
+}}
 
-@keyframes rotate {
-    to { transform: translate(-50%, -50%) rotate(360deg); }
-}
+@keyframes rotate {{
+    to {{ transform: translate(-50%, -50%) rotate(360deg); }}
+}}
 
-/* ICON và TEXT (Giữ nguyên) */
-.button .sparkle {
+.button .sparkle {{
     position: relative;
     z-index: 10;
     width: 1.75rem;
-}
+}}
 
-.button .sparkle .path {
+.button .sparkle .path {{
     fill: currentColor;
     stroke: currentColor;
     transform-origin: center;
     color: var(--text-color); 
     transition: transform var(--transtion);
-}
+}}
 
-.button:is(:hover, :focus) .sparkle .path {
+.button:is(:hover, :focus) .sparkle .path {{
     animation: path 1.5s linear 0.5s infinite;
-}
+}}
 
-@keyframes path {
-    0%, 34%, 71%, 100% { transform: scale(1); }
-    17% { transform: scale(1.2); }
-    49% { transform: scale(1.2); }
-    83% { transform: scale(1.2); }
-}
+@keyframes path {{
+    0%, 34%, 71%, 100% {{ transform: scale(1); }}
+    17% {{ transform: scale(1.2); }}
+    49% {{ transform: scale(1.2); }}
+    83% {{ transform: scale(1.2); }}
+}}
 
-.button .text_button {
+.button .text_button {{
     position: relative;
     z-index: 10;
     background-image: linear-gradient(
@@ -613,12 +582,10 @@ iframe:first-of-type {{
     letter-spacing: 1px;
     white-space: nowrap;
     text-shadow: 0 0 5px rgba(0, 0, 0, 0.5); 
-}
+}}
 
-/* --- MEDIA QUERY CHO MOBILE (Giữ nguyên logic Flexbox) --- */
-@media (max-width: 768px) {
-    /* Vị trí mới cho mobile: dùng flexbox để xếp dọc */
-    #nav-buttons-wrapper {
+@media (max-width: 768px) {{
+    #nav-buttons-wrapper {{
         position: fixed;
         bottom: 120px; 
         left: 50%;
@@ -626,70 +593,65 @@ iframe:first-of-type {{
         width: calc(100% - 40px);
         max-width: 450px; 
         display: flex;
-        flex-direction: column; /* Xếp dọc */
+        flex-direction: column;
         gap: 15px; 
-        padding: 0; /* Bỏ padding 80px trên desktop */
-    }
+        padding: 0;
+    }}
     
-    /* Cả hai container vẫn là static và xếp chồng lên nhau */
     .nav-container,
-    .nav-container-right {
+    .nav-container-right {{
         position: static; 
         width: 100%;
-    }
+    }}
 
-    .button {
+    .button {{
         padding: 0.8rem 1.5rem;
         gap: 0.4rem;
         width: 100%;
         max-width: 450px;
         justify-content: center;
-    }
-    .button .sparkle {
+    }}
+    .button .sparkle {{
         width: 1.5rem;
-    }
-    .button .text_button {
+    }}
+    .button .text_button {{
         font-size: 1.1rem;
         white-space: nowrap;
-    }
-}
+    }}
+}}
 
-@keyframes fadeInUp {
-    from {
+@keyframes fadeInUp {{
+    from {{
         opacity: 0;
         transform: translateY(50px) scale(0.9);
-    }
-    to {
+    }}
+    to {{
         opacity: 1;
         transform: translateY(0) scale(1);
-    }
-}
+    }}
+}}
 
-.video-finished .button {
+.video-finished .button {{
     animation: fadeInUp 1s ease-out forwards;
     animation-delay: 3.2s;
     opacity: 0;
-}
+}}
 </style>
 """
 
-# Thêm CSS vào trang chính
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Giữ nguyên) ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
-# Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
     music_sources_js = ",\n\t\t\t".join([f"'{url}'" for url in music_files])
 else:
     music_sources_js = ""
 
-# PHẦN JS
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
-    // Hàm thực hiện chuyển đổi sang nội dung chính
     function sendBackToStreamlit() {{
         console.log("Video ended or skipped, revealing main content");
         const stApp = window.parent.document.querySelector('.stApp');
@@ -815,23 +777,19 @@ js_callback_video = f"""
     document.addEventListener("DOMContentLoaded", function() {{
         console.log("DOM loaded, waiting for elements...");
 
-        // LOGIC MỚI: KIỂM TRA THAM SỐ SKIP_INTRO
         const urlParams = new URLSearchParams(window.parent.location.search);
         const skipIntro = urlParams.get('skip_intro');
         
         if (skipIntro === '1') {{
             console.log("Skip intro detected. Directly revealing main content.");
-            // Giả lập sự kiện video kết thúc
             sendBackToStreamlit();
-            // Ẩn ngay lập tức video iframe
             const iframe = window.frameElement;
             if (iframe) {{
                  iframe.style.opacity = 0;
                  iframe.style.visibility = 'hidden';
-                 // Đảm bảo iframe không chặn tương tác
                  iframe.style.pointerEvents = 'none'; 
             }}
-            return; // Dừng khởi tạo video/audio
+            return;
         }}
 
 
@@ -992,52 +950,44 @@ html_content_modified = f"""
 </html>
 """
 
-# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
 intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
-    f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'
+    f'<span class="intro-char">{{char}}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'
     for char in intro_title
 ])
 html_content_modified = html_content_modified.replace(
     "<div id=\"intro-text-container\">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>",
-    f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
+    f"<div id=\"intro-text-container\">{{intro_chars_html}}</div>"
 )
 
-# --- HIỂN THỊ IFRAME VIDEO ---
 st.components.v1.html(html_content_modified, height=1080, scrolling=False)
 
-# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
-
-# Tạo Lưới Reveal
 grid_cells_html = ""
 for i in range(240):
     grid_cells_html += f'<div class="grid-cell"></div>'
 
 reveal_grid_html = f"""
 <div class="reveal-grid">
-    {grid_cells_html}
+    {{grid_cells_html}}
 </div>
 """
 st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
-# --- NỘI DUNG CHÍNH (TIÊU ĐỀ ĐƠN, ĐỔI MÀU) ---
 main_title_text = "TỔ BẢO DƯỠNG SỐ 1"
 
-# Nhúng tiêu đề
 st.markdown(f"""
 <div id="main-title-container">
-    <h1>{main_title_text}</h1>
+    <h1>{{main_title_text}}</h1>
 </div>
 """, unsafe_allow_html=True)
 
-# --- MUSIC PLAYER ---
 if len(music_files) > 0:
     st.markdown("""
 <div id="music-player-container">
     <div class="controls">
-        <button class="control-btn" id="prev-btn">⏮</button>
+        <button class="control-btn" id="prev-btn">⮜</button>
         <button class="control-btn play-pause" id="play-pause-btn">▶</button>
-        <button class="control-btn" id="next-btn">⏭</button>
+        <button class="control-btn" id="next-btn">⮞</button>
     </div>
     <div class="progress-container" id="progress-container">
         <div class="progress-bar" id="progress-bar"></div>
@@ -1049,39 +999,30 @@ if len(music_files) > 0:
 </div>
 """, unsafe_allow_html=True)
 
-# --- NAVIGATION BUTTON MỚI (UIverse Style) ---
+# === PHẦN QUAN TRỌNG: CODE BUTTON ĐÃ SỬA ===
+svg_part_number = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="sparkle"><path class="path" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" fill="currentColor" d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4"></path></svg>'
+svg_quiz = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" class="sparkle"><path class="path" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="currentColor" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>'
 
-# Định nghĩa SVG trong biến Python đơn dòng
-svg_part_number = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="sparkle" ><path class="path" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" fill="currentColor" d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4" ></path></svg>'
-svg_quiz = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" class="sparkle"><path class="path" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="currentColor" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
-
-# Gộp toàn bộ HTML vào một chuỗi Python đa dòng
 nav_buttons_html = f"""
 <div id="nav-buttons-wrapper">
     <div class="nav-container">
         <a href="/partnumber" target="_self" class="button">
             <div class="dots_border"></div>
-            {svg_part_number} 
-            <span class="text_button">TRA CỨU PART NUMBER</span> 
+            {{svg_part_number}}
+            <span class="text_button">TRA CỨU PART NUMBER</span>
         </a>
     </div>
-    
     <div class="nav-container-right">
         <a href="/quiz" target="_self" class="button">
-            <div class="dots_border"></div> 
-            {svg_quiz}
-            <span class="text_button">NGÂN HÀNG TRẮC NGHIỆM</span> 
+            <div class="dots_border"></div>
+            {{svg_quiz}}
+            <span class="text_button">NGÂN HÀNG TRẮC NGHIỆM</span>
         </a>
     </div>
 </div>
 """
 
-# *** BƯỚC KHẮC PHỤC TRIỆT ĐỂ: LÀM SẠCH CHUỖI HTML (Phải được thực hiện) ***
-# 1. Loại bỏ tất cả khoảng trắng ở đầu mỗi dòng và giữa các thẻ HTML để tránh lỗi phân tích cú pháp Markdown.
 nav_buttons_html_cleaned = re.sub(r'>\s+<', '><', nav_buttons_html.strip())
-# 2. Loại bỏ tất cả ký tự xuống dòng (\n) để tạo thành chuỗi một dòng.
 nav_buttons_html_cleaned = nav_buttons_html_cleaned.replace('\n', '')
 
-# Hiển thị chuỗi HTML đã được làm sạch
 st.markdown(nav_buttons_html_cleaned, unsafe_allow_html=True)
-
