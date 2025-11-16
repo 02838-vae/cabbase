@@ -163,22 +163,35 @@ img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
 
-# === CSS: FIX FULL SCREEN, VINTAGE NHẸ & HEADER TUYỆT ĐỐI ===
+# === CSS: FIX FULL SCREEN & STYLING ======================================
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Crimson+Text:wght@400;700&display=swap');
 
-/* ======================= FULL SCREEN FIX ======================= */
+/* ======================= FULL SCREEN FIX (Quan trọng) ======================= */
 /* Áp dụng fix full screen cho các container chính của Streamlit */
-/* 1. Đảm bảo toàn bộ ứng dụng chiếm 100% viewport */
-.st-emotion-cache-18ni5p {{ /* stAppViewContainer - chứa toàn bộ ứng dụng */
+
+/* Container gốc (body-like) */
+.stApp {{
+    min-height: 100vh;
+    padding: 0 !important;
+}}
+
+/* stAppViewContainer - chứa toàn bộ ứng dụng */
+[data-testid="stAppViewContainer"] {{
     min-height: 100vh !important;
     padding: 0 !important;
     margin: 0 !important;
 }}
-/* 2. Đảm bảo các wrapper bên trong cũng không có padding/margin */
-.st-emotion-cache-1gsv8h, .st-emotion-cache-1aehpbu, 
+
+/* stMainBlock - main content wrapper */
 [data-testid="stMainBlock"] {{
+    padding: 0 !important;
+    margin: 0 !important;
+}}
+
+/* Các wrappers khác */
+.st-emotion-cache-1gsv8h, .st-emotion-cache-1aehpbu {{ 
     padding: 0 !important;
     margin: 0 !important;
 }}
@@ -188,16 +201,14 @@ st.markdown(f"""
     background-size: cover; 
     background-position: center;
     background-attachment: fixed;
-    /* Vintage nhẹ, cho ảnh nền ngả vàng 1 chút */
-    filter: sepia(15%) grayscale(5%); 
+    filter: sepia(15%) grayscale(5%); /* Ngả vàng nhẹ */
 }}
 
-/* Lớp phủ (Overlay) - Rất trong suốt để ảnh nền rõ */
+/* Lớp phủ (Overlay) */
 [data-testid="stAppViewContainer"]::before {{
     content: "";
     position: absolute; inset: 0;
-    /* Màu trắng trong suốt, opacity thấp để làm rõ nội dung */
-    background: rgba(255, 255, 255, 0.25); 
+    background: rgba(255, 255, 255, 0.25); /* Trắng trong suốt */
     backdrop-filter: blur(1px);
     z-index: 0;
 }}
@@ -214,17 +225,19 @@ st.markdown(f"""
 
 /* ======================= HEADER & MARQUEE FIXED ======================= */
 
-/* Tiêu đề chạy - Lên trên cùng, cố định, full width (Giống app.py) */
+/* Tiêu đề chạy - Cố định trên cùng (Giống app.py) */
 .running-title-fixed {{
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
-    padding: 2px 0;
-    background-color: rgba(0, 0, 0, 0.85); /* Nền đen đậm */
+    height: 35px; /* Chiều cao cố định cho marquee */
+    padding: 5px 0;
+    background-color: rgba(0, 0, 0, 0.9); /* Nền đen đậm */
     color: #FFD700; /* Vàng Gold */
     z-index: 1000;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+    overflow: hidden; /* Cần thiết cho marquee */
 }}
 .running-title {{
     font-size: 1.15em;
@@ -232,21 +245,21 @@ st.markdown(f"""
     color: #FFD700; 
     text-shadow: 0 0 5px rgba(255, 255, 0, 0.8);
     font-family: 'Playfair Display', serif;
-    padding: 0 15px; /* Giữ khoảng cách với lề */
+    white-space: nowrap;
 }}
 
-/* Tạo khoảng trống phía trên cho header cố định */
+/* Tạo khoảng trống phía trên cho nội dung chính */
 .main-content-start {{
-    padding-top: 40px; /* Chiều cao tương đương của header chạy */
+    padding-top: 50px; /* Lớn hơn chiều cao của header chạy */
 }}
 
-/* Tiêu đề Ngân hàng trắc nghiệm (Nằm dưới, khung vàng) */
+/* Tiêu đề Ngân hàng trắc nghiệm (Tông Vàng Cũ/partnumber.py) */
 .main-title-box {{
-    margin: 10px 15px 15px 15px; /* Margin để tránh header chạy và có khoảng cách */
+    margin: 10px 15px 15px 15px;
     padding: 8px 15px;
     border: 1px solid #FFD700; /* Viền vàng */
     border-radius: 8px;
-    background-color: rgba(0, 0, 0, 0.6); /* Nền đen mờ */
+    background-color: rgba(0, 0, 0, 0.7); /* Nền đen mờ */
     text-align: center;
     max-width: 500px;
     margin-left: auto;
@@ -256,7 +269,7 @@ st.markdown(f"""
     font-family: 'Playfair Display', serif;
     font-size: 1.3em;
     margin: 0;
-    color: #FFD700; 
+    color: #FFD700; /* Vàng Gold */
     text-shadow: 0 0 5px rgba(255, 255, 0, 0.5);
     font-weight: 700;
 }}
@@ -266,26 +279,25 @@ h1, h2 {{ display: none; }}
 
 /* ======================= STYLING NỘI DUNG CHÍNH ======================= */
 
-/* Câu hỏi */
+/* Nội dung chung có padding để không chạm vào lề */
+[data-testid="stMainBlock"] > div:nth-child(1) {{
+    padding-left: 1rem;
+    padding-right: 1rem;
+}}
+
+/* Câu hỏi & Nội dung (Màu chữ dễ nhìn) */
 div[data-testid="stMarkdownContainer"] p {{
-    color: #4A3E2E !important; /* Nâu đậm hơn, dễ đọc */
+    color: #1a1a1a !important; /* Xanh đậm gần như đen */
     font-weight: 600;
     font-size: 1.1em;
 }}
 
 /* Câu trả lời (Radio button label) */
 .stRadio label {{
-    color: #4A3E2E !important;
+    color: #1a1a1a !important;
     font-size: 1.05em !important;
     font-weight: 500;
     font-family: 'Crimson Text', serif;
-}}
-
-/* Select box (Chọn ngân hàng/Nhóm câu) */
-.stSelectbox label {{
-    font-size: 1.2em;
-    color: #4A3E2E;
-    font-weight: 700;
 }}
 
 /* Nút bấm (Style vintage) */
@@ -301,8 +313,6 @@ div[data-testid="stMarkdownContainer"] p {{
 }}
 .stButton>button:hover {{
     background-color: #8c765f !important;
-    transform: translateY(-1px);
-    box-shadow: 3px 3px 7px rgba(0, 0, 0, 0.3);
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -314,7 +324,7 @@ div[data-testid="stMarkdownContainer"] p {{
 # TIÊU ĐỀ CHẠY CỐ ĐỊNH TRÊN CÙNG
 st.markdown("""
 <div class="running-title-fixed">
-    <marquee behavior="scroll" direction="left" scrollamount="6">
+    <marquee behavior="scroll" direction="left" scrollamount="6" style="line-height: 25px;">
         <span class="running-title">TỔ BẢO DƯỠNG SỐ 1 - ⚜️ CHỦ ĐỘNG, SÁNG TẠO, VƯỢT KHÓ ⚜️ - TỔ BẢO DƯỠNG SỐ 1</span>
     </marquee>
 </div>
@@ -334,9 +344,11 @@ st.markdown("""
 # ====================================================
 # 🧭 NỘI DUNG ỨNG DỤNG
 # ====================================================
-# Lấy index nhóm câu hỏi hiện tại để xử lý nút Tiếp tục
+# Khởi tạo trạng thái
 if "current_group_idx" not in st.session_state:
     st.session_state.current_group_idx = 0
+if "submitted" not in st.session_state:
+    st.session_state.submitted = False
 
 # --- Lựa chọn Ngân hàng ---
 bank_choice = st.selectbox("Chọn ngân hàng:", ["Ngân hàng Kỹ thuật", "Ngân hàng Luật"], key="bank_selector")
@@ -348,6 +360,13 @@ if not questions:
     st.error("❌ Không đọc được câu hỏi nào. Vui lòng đảm bảo file .docx có sẵn.")
     st.stop() 
 
+# --- Xử lý Reset khi đổi Ngân hàng ---
+if st.session_state.get('last_bank_choice') != bank_choice:
+    st.session_state.current_group_idx = 0
+    st.session_state.submitted = False
+    # Lưu lại lựa chọn ngân hàng hiện tại
+    st.session_state.last_bank_choice = bank_choice
+    # Không cần rerun ở đây vì các câu lệnh dưới sẽ dùng giá trị mới
 
 # --- Xử lý Nhóm câu hỏi ---
 tab1, tab2 = st.tabs(["🧠 Làm bài", "🔍 Tra cứu toàn bộ câu hỏi"])
@@ -360,60 +379,54 @@ with tab1:
     if total > 0:
         groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
         
-        # Cập nhật index nhóm câu hỏi nếu thay đổi ngân hàng (reset về 0)
-        if st.session_state.get('last_bank_choice') != bank_choice:
-             st.session_state.current_group_idx = 0
-             st.session_state.last_bank_choice = bank_choice
-             # Xóa trạng thái nộp bài để bắt đầu nhóm mới
-             st.session_state.submitted = False
-
-        # Đảm bảo index nằm trong giới hạn
+        # Đảm bảo index nằm trong giới hạn và cập nhật selectbox
         if st.session_state.current_group_idx >= len(groups):
             st.session_state.current_group_idx = 0
-
+        
         # Selectbox sẽ hiển thị tên nhóm dựa trên index hiện tại
-        selected_group = groups[st.session_state.current_group_idx]
         selected = st.selectbox("Chọn nhóm câu:", groups, index=st.session_state.current_group_idx, key="group_selector")
         
-        # Cập nhật lại current_group_idx nếu người dùng chọn bằng tay
-        st.session_state.current_group_idx = groups.index(selected)
-        
+        # Cập nhật lại current_group_idx nếu người dùng chọn bằng tay qua selectbox
+        # Đây là điểm mấu chốt để nút "Tiếp tục" hoạt động, vì nó sẽ thay đổi index
+        new_idx = groups.index(selected)
+        if st.session_state.current_group_idx != new_idx:
+            st.session_state.current_group_idx = new_idx
+            st.session_state.submitted = False # Khi chọn nhóm mới, reset trạng thái nộp bài
+
         idx = st.session_state.current_group_idx
-        
         start, end = idx * group_size, min((idx+1) * group_size, total)
         batch = questions[start:end]
 
-        if "submitted" not in st.session_state:
-            st.session_state.submitted = False
-        
-        # Đảm bảo batch có nội dung trước khi hiển thị
         if batch:
             if not st.session_state.submitted:
+                # HIỂN THỊ CÂU HỎI
                 for i, q in enumerate(batch, start=start+1):
-                    st.markdown(f"<p style='color:#4A3E2E; font-size:1.15em; font-weight:600;'>{i}. {q['question']}</p>", unsafe_allow_html=True)
+                    # Sử dụng màu chữ mới
+                    st.markdown(f"<p style='color:#1a1a1a; font-size:1.15em; font-weight:600;'>{i}. {q['question']}</p>", unsafe_allow_html=True)
                     st.radio("", q["options"], key=f"q_{i}")
                     st.markdown("---")
                 if st.button("✅ Nộp bài"):
                     st.session_state.submitted = True
                     st.rerun()
             else:
+                # HIỂN THỊ KẾT QUẢ
                 score = 0
                 for i, q in enumerate(batch, start=start+1):
                     selected_opt = st.session_state.get(f"q_{i}")
                     correct = clean_text(q["answer"])
                     is_correct = clean_text(selected_opt) == correct
 
-                    st.markdown(f"<p style='color:#4A3E2E; font-size:1.15em; font-weight:600;'>{i}. {q['question']}</p>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='color:#1a1a1a; font-size:1.15em; font-weight:600;'>{i}. {q['question']}</p>", unsafe_allow_html=True)
 
                     for opt in q["options"]:
                         opt_clean = clean_text(opt)
                         
                         if opt_clean == correct:
-                            style = "color:#006400; font-weight:700;" 
+                            style = "color:#006400; font-weight:700;" # Đáp án đúng (Xanh lá)
                         elif opt_clean == clean_text(selected_opt):
-                            style = "color:#cc0000; font-weight:700; text-decoration: underline;" 
+                            style = "color:#cc0000; font-weight:700; text-decoration: underline;" # Đáp án sai người dùng chọn (Đỏ)
                         else:
-                            style = "color:#4A3E2E;" 
+                            style = "color:#1a1a1a;" # Các đáp án còn lại (Xanh đậm)
                         st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
 
                     if is_correct:
@@ -430,6 +443,7 @@ with tab1:
 
                 with col_reset:
                     if st.button("🔁 Làm lại nhóm này"):
+                        # Xóa kết quả chọn và reset trạng thái nộp bài
                         for i in range(start+1, end+1):
                             st.session_state.pop(f"q_{i}", None)
                         st.session_state.submitted = False
@@ -438,9 +452,8 @@ with tab1:
                 with col_next:
                     if st.session_state.current_group_idx < len(groups) - 1:
                         if st.button("➡️ Tiếp tục nhóm sau"):
-                            # Chuyển sang nhóm tiếp theo
+                            # Logic fix: Tăng index và reset trạng thái nộp bài
                             st.session_state.current_group_idx += 1
-                            # Xóa trạng thái nộp bài để nhóm mới hiển thị câu hỏi
                             st.session_state.submitted = False 
                             st.rerun()
                     else:
