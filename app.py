@@ -678,8 +678,8 @@ iframe:first-of-type {{
         max-width: 450px; 
         display: flex;
         flex-direction: column; /* Xếp dọc */
-        gap: 8px; /* GIẢM KHOẢNG CÁCH: từ 1px lên 8px để dễ nhìn hơn */
-        padding: 0; /* Bỏ padding 80px trên desktop */
+        gap: 0px; /* SỬA LẠI: GIẢM XUỐNG CỰC TIỂU 0PX */
+        padding: 0; /* ĐẢM BẢO KHÔNG CÓ PADDING NGANG LỚN */
     }}
     
     /* ĐẢO NGƯỢC THỨ TỰ HIỂN THỊ TRÊN MOBILE */
@@ -688,12 +688,16 @@ iframe:first-of-type {{
         order: 1; 
         position: static; 
         width: 100%;
+        margin-top: 0 !important; /* ĐẢM BẢO KHÔNG CÓ MARGIN THỪA */
+        margin-bottom: 0 !important; /* ĐẢM BẢO KHÔNG CÓ MARGIN THỪA */
     }}
     /* Tra cứu Part Number (nav-container) xuống dưới */
     .nav-container {{
         order: 2; 
         position: static; 
         width: 100%;
+        margin-top: 0 !important; /* ĐẢM BẢO KHÔNG CÓ MARGIN THỪA */
+        margin-bottom: 0 !important; /* ĐẢM BẢO KHÔNG CÓ MARGIN THỪA */
     }}
     
     .button {{
@@ -1161,4 +1165,3 @@ nav_buttons_html_cleaned = nav_buttons_html_cleaned.replace('\n', '')
 
 # Hiển thị chuỗi HTML đã được làm sạch
 st.markdown(nav_buttons_html_cleaned, unsafe_allow_html=True)
-
