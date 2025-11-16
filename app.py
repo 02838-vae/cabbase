@@ -20,22 +20,19 @@ def get_base64_encoded_file(file_path):
     # Sửa đường dẫn nếu cần thiết để phù hợp với môi trường triển khai
     path_to_check = os.path.join(os.path.dirname(__file__), file_path)
     if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
-        # Nếu file không tồn tại hoặc rỗng, trả về chuỗi rỗng để tránh lỗi Base64
-        return "" 
+        return None
     try:
         with open(path_to_check, "rb") as f:
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except Exception as e:
         st.error(f"Lỗi khi đọc file {file_path}: {str(e)}")
-        # Trả về chuỗi rỗng nếu có lỗi
-        return ""
+        return None
 
 
 # Mã hóa các file media chính (bắt buộc)
 try:
     # Đảm bảo các file này nằm cùng thư mục với app.py
-    # Kích thước file video nên nhỏ (dưới 5MB) để tránh lỗi Base64 quá lớn
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
@@ -46,14 +43,14 @@ try:
     logo_base64 = get_base64_encoded_file("logo.jpg")
 
     # Kiểm tra file bắt buộc
-    missing_files = []
-    if not video_pc_base64: missing_files.append("airplane.mp4")
-    if not video_mobile_base64: missing_files.append("mobile.mp4")
-    if not audio_base64: missing_files.append("plane_fly.mp3")
-    if not bg_pc_base64: missing_files.append("cabbase.jpg")
-    if not bg_mobile_base64: missing_files.append("mobile.jpg")
-    
-    if len(missing_files) > 0:
+    if not all([video_pc_base64, video_mobile_base64, audio_base64, bg_pc_base64, bg_mobile_base64]):
+        missing_files = []
+        if not video_pc_base64: missing_files.append("airplane.mp4")
+        if not video_mobile_base64: missing_files.append("mobile.mp4")
+        if not audio_base64: missing_files.append("plane_fly.mp3")
+        if not bg_pc_base64: missing_files.append("cabbase.jpg")
+        if not bg_mobile_base64: missing_files.append("mobile.jpg")
+        
         st.error(f"⚠️ Thiếu các file media cần thiết hoặc file rỗng. Vui lòng kiểm tra lại các file sau trong thư mục:")
         st.write(" - " + "\n - ".join(missing_files))
         st.stop()
@@ -63,7 +60,7 @@ except Exception as e:
     st.stop()
 
 # Đảm bảo logo_base64 được khởi tạo nếu file không tồn tại
-if not logo_base64:
+if not 'logo_base64' in locals() or not logo_base64:
     logo_base64 = "" 
     st.info("ℹ️ Không tìm thấy file logo.jpg. Music player sẽ không có hình nền logo.")
 
@@ -413,14 +410,13 @@ iframe:first-of-type {{
 
 /* === CSS MỚI CHO NAVIGATION BUTTON (UIverse Dark Mode) === */
 
-.nav-container-wrapper {{
+.nav-container {{
     position: fixed;
     /* Lệch trái 15% */
     left: 15%; 
     top: 50%;
     transform: translate(-50%, -50%);
     display: flex;
-    flex-direction: column; /* Xếp chồng dọc */
     justify-content: center;
     align-items: center;
     padding: 40px;
@@ -428,18 +424,11 @@ iframe:first-of-type {{
     transition: opacity 2s ease-out 3s;
     /* ✅ QUAN TRỌNG: Đảm bảo button ở trên cùng */
     z-index: 10000;
-    gap: 20px; /* Khoảng cách giữa 2 button */
 }}
 
-.video-finished .nav-container-wrapper {{
+.video-finished .nav-container {{
     opacity: 1;
 }}
-
-/* 2. Điều chỉnh lại animation delay cho button thứ 2 */
-.video-finished .button:nth-child(2) {{
-    animation-delay: 3.5s; /* Tạo độ trễ nhẹ so với button đầu */
-}}
-
 
 /* KHỞI TẠO CÁC BIẾN CSS */
 .button {{
@@ -612,12 +601,11 @@ iframe:first-of-type {{
 }}
 
 @media (max-width: 768px) {{
-    .nav-container-wrapper {{
+    .nav-container {{
         left: 50%;
         transform: translate(-50%, -50%);
         width: 100%;
         padding: 20px;
-        gap: 15px; /* Khoảng cách nhỏ hơn cho mobile */
     }}
     
     .button {{
@@ -855,7 +843,7 @@ js_callback_video = f"""
                     }}).catch(err => {{
                         console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
                         // Khi lỗi/không thể tự động phát, chuyển tiếp và vẫn chạy reveal (mặc định)
-                        setTimeout(() => sendBackToStreamlit(false), 2000); 
+                        setTimeout(sendBackToStreamlit, 2000); 
                     }});
                     audio.play().catch(e => {{
                         console.log("Audio autoplay blocked (normal), waiting for video end.");
@@ -872,12 +860,12 @@ js_callback_video = f"""
     
                     introTextContainer.style.opacity = 0;
                     // Gọi hàm mặc định (skipReveal=false), vẫn chạy reveal
-                    setTimeout(() => sendBackToStreamlit(false), 500);
+                    setTimeout(sendBackToStreamlit, 500);
                 }});
                 video.addEventListener('error', (e) => {{
                     console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
                     // Gọi hàm mặc định (skipReveal=false), vẫn chạy reveal
-                    sendBackToStreamlit(false);
+                    sendBackToStreamlit();
                 }});
                 const clickHandler = () => {{
                     console.log("User interaction detected, forcing play attempt.");
@@ -903,7 +891,7 @@ js_callback_video = f"""
             if (video && !video.src) {{
                 console.warn("Timeout before video source set. Force transitioning to main content.");
                 // Gọi hàm mặc định (skipReveal=false), vẫn chạy reveal
-                sendBackToStreamlit(false);
+                sendBackToStreamlit();
             }}
   
         }}, 5000);
@@ -1052,10 +1040,9 @@ if len(music_files) > 0:
 """, unsafe_allow_html=True)
 
 # --- NAVIGATION BUTTON MỚI (UIverse Style) ---
-# ĐÃ CHỈNH SỬA: Đổi tên container và thêm button thứ hai
+# Tên trang phụ là partnumber.py nên link href là /partnumber
 st.markdown("""
-<div class="nav-container-wrapper">
-    
+<div class="nav-container">
     <a href="/partnumber" target="_self" class="button">
         <div class="dots_border"></div>
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="sparkle" > 
@@ -1063,14 +1050,6 @@ st.markdown("""
         </svg> 
         <span class="text_button">TRA CỨU PART NUMBER</span> 
     </a>
-    
-    <a href="/quizbank" target="_self" class="button">
-        <div class="dots_border"></div>
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="sparkle" > 
-            <path class="path" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
-        </svg> 
-        <span class="text_button">NGÂN HÀNG TRẮC NGHIỆM</span> 
-    </a>
-    
 </div>
 """, unsafe_allow_html=True)
+
