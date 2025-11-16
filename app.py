@@ -605,4 +605,616 @@ iframe:first-of-type {{
         transparent 30%, 
         white 31%, 
         white 35%, 
-        transparent 36%,
+        transparent 36%, 
+        transparent 100%
+    );
+                          
+    animation: rotate 3s linear infinite;
+}}
+
+@keyframes rotate {{
+    to {{ transform: translate(-50%, -50%) rotate(360deg); }}
+}}
+
+
+/* 💡 CSS MỚI: HIỆU ỨNG ÁNH SÁNG PHẢN CHIẾU QUÉT QUA BÊN TRONG */
+@keyframes innerScanLight {{
+    0% {{ background-position: -200% 0; }}
+    100% {{ background-position: 200% 0; }}
+}}
+
+.button .inner-scan-light {{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: var(--border_radius);
+    overflow: hidden; 
+    pointer-events: none; 
+    z-index: 5; /* Đảm bảo nằm trên nền đen */
+    opacity: 0; 
+    transition: opacity var(--transtion);
+}}
+
+.button:is(:hover, :focus-visible) .inner-scan-light {{
+    opacity: 1; /* Hiển thị khi hover */
+}}
+
+.button .inner-scan-light::before {{
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 200%; /* Độ rộng của vùng quét */
+    height: 100%;
+    background: linear-gradient(
+        90deg, 
+        transparent 0%, 
+        rgba(255, 255, 255, 0.2) 20%, 
+        rgba(255, 255, 255, 0.4) 50%, /* Phần sáng nhất */
+        rgba(255, 255, 255, 0.2) 80%, 
+        transparent 100%
+    );
+    background-size: 50% 100%; 
+    background-repeat: no-repeat;
+    animation: innerScanLight 2s infinite linear; 
+    animation-play-state: paused; 
+}}
+
+.button:is(:hover, :focus-visible) .inner-scan-light::before {{
+    animation-play-state: running; /* Chạy khi hover */
+}}
+
+/* ICON và TEXT (Giữ nguyên) */
+.button .sparkle {{
+    position: relative;
+    z-index: 10;
+    width: 1.75rem;
+}}
+
+.button .sparkle .path {{
+    /* Đã bỏ fill: currentColor; */
+    stroke: currentColor;
+    transform-origin: center;
+    color: var(--text-color); 
+    transition: transform var(--transtion);
+}}
+
+/* CSS cho dấu tích: thiết lập màu stroke riêng */
+.button .sparkle .path.checkmark {{
+    stroke: #000000 !important; /* Dấu tích màu đen tĩnh để tương phản */
+    fill: none;
+    color: #000000 !important; /* Dùng để thiết lập currentColor nếu cần */
+}}
+
+.button:is(:hover, :focus) .sparkle .path {{
+    animation: path 1.5s linear 0.5s infinite;
+}}
+
+@keyframes path {{
+    0%, 34%, 71%, 100% {{ transform: scale(1); }}
+    17% {{ transform: scale(1.2); }}
+    49% {{ transform: scale(1.2); }}
+    83% {{ transform: scale(1.2); }}
+}}
+
+.button .text_button {{
+    position: relative;
+    z-index: 10;
+    background-image: linear-gradient(
+        90deg, 
+        var(--text-color) 0%, 
+        hsla(0, 0%, 100%, var(--active, 0.5)) 120% 
+    );
+    background-clip: text;
+    -webkit-background-clip: text; 
+    font-size: 1.1rem;
+    color: transparent; 
+    font-weight: 600;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.5); 
+}}
+
+/* --- MEDIA QUERY CHO MOBILE --- */
+@media (max-width: 768px) {{
+    /* Vị trí mới cho mobile: dùng flexbox để xếp dọc */
+    #nav-buttons-wrapper {{
+        position: fixed;
+        bottom: 120px; 
+        left: 50%;
+        transform: translateX(-50%);
+        width: calc(100% - 40px);
+        max-width: 450px; 
+        display: flex;
+        flex-direction: column; /* Xếp dọc */
+        gap: 0px; 
+        padding: 0; 
+        height: auto; /* Điều chỉnh để fix gap */
+    }}
+    
+    /* ĐẢO NGƯỢC THỨ TỰ HIỂN THỊ TRÊN MOBILE */
+    /* Ngân hàng Trắc nghiệm (nav-container-right) lên trên */
+    #nav-buttons-wrapper .nav-container-right {{ 
+        order: 1; 
+        position: static; 
+        width: 100%;
+        margin-top: 0 !important; 
+        /* 🚨 ĐIỀU CHỈNH TRIỆT ĐỂ: Dùng margin âm để ép sát 2 nút */
+        margin-bottom: -15px !important; 
+    }}
+    /* Tra cứu Part Number (nav-container) xuống dưới */
+    #nav-buttons-wrapper .nav-container {{ 
+        order: 2; 
+        position: static; 
+        width: 100%;
+        margin-top: 0 !important; 
+        margin-bottom: 0 !important;
+    }}
+    
+    .button {{
+        padding: 0.8rem 1.5rem;
+        gap: 0.4rem;
+        width: 100%;
+        max-width: 450px;
+        justify-content: center;
+    }}
+    .button .sparkle {{
+        width: 1.5rem;
+    }}
+    .button .text_button {{
+        font-size: 1.1rem;
+        white-space: nowrap;
+    }}
+}}
+
+@keyframes fadeInUp {{
+    from {{
+        opacity: 0;
+        transform: translateY(50px) scale(0.9);
+    }}
+    to {{
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }}
+}}
+
+.video-finished .button {{
+    animation: fadeInUp 1s ease-out forwards;
+    animation-delay: 3.2s;
+    opacity: 0;
+}}
+</style>
+""" # 💡 ĐÃ KHẮC PHỤC LỖI CÚ PHÁP: DẤU ĐÓNG TRIPLE QUOTE Ở ĐÂY
+
+# Thêm CSS vào trang chính
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
+
+# Tạo danh sách music sources cho JavaScript 
+if len(music_files) > 0:
+    music_sources_js = ",\n\t\t\t".join([f"'{url}'" for url in music_files])
+else:
+    music_sources_js = ""
+
+# PHẦN JS
+js_callback_video = f"""
+<script>
+    console.log("Script loaded");
+    
+    // Hàm thực hiện chuyển đổi sang nội dung chính
+    // MODIFICATION 2: Thêm tham số isSkipped để điều khiển hiệu ứng reveal
+    function sendBackToStreamlit(isSkipped = false) {{
+        console.log("Transitioning to main content. Is Skipped:", isSkipped);
+        const stApp = window.parent.document.querySelector('.stApp');
+        if (stApp) {{
+            stApp.classList.add('video-finished', 'main-content-revealed');
+        }}
+        
+        const revealGrid = window.parent.document.querySelector('.reveal-grid');
+
+        if (!isSkipped) {{
+            // Chạy hiệu ứng reveal khi video phát xong
+            initRevealEffect();
+        }} else {{
+            // Xóa lưới reveal ngay lập tức khi skip (quay về trang chủ)
+            if (revealGrid) {{
+                revealGrid.remove();
+            }}
+        }}
+
+        setTimeout(initMusicPlayer, 100);
+    }}
+    
+    function initRevealEffect() {{
+        const revealGrid = window.parent.document.querySelector('.reveal-grid');
+        if (!revealGrid) {{ return; }}
+
+        const cells = revealGrid.querySelectorAll('.grid-cell');
+        const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
+
+        shuffledCells.forEach((cell, index) => {{
+            setTimeout(() => {{
+                cell.style.opacity = 0;
+            }}, index * 10);
+        }});
+        setTimeout(() => {{
+             revealGrid.remove();
+        }}, shuffledCells.length * 10 + 1000);
+    }}
+
+    function initMusicPlayer() {{
+        console.log("Initializing music player");
+        const musicSources = [{music_sources_js}];
+        
+        if (musicSources.length === 0) {{
+            console.log("No music files available");
+            return;
+        }}
+        
+        let currentTrack = 0;
+        let isPlaying = false;
+        
+        const audio = new Audio();
+        audio.volume = 0.3;
+        
+        const playPauseBtn = window.parent.document.getElementById('play-pause-btn');
+        const prevBtn = window.parent.document.getElementById('prev-btn');
+        const nextBtn = window.parent.document.getElementById('next-btn');
+        const progressBar = window.parent.document.getElementById('progress-bar');
+        const progressContainer = window.parent.document.getElementById('progress-container');
+        const currentTimeEl = window.parent.document.getElementById('current-time');
+        const durationEl = window.parent.document.getElementById('duration');
+        if (!playPauseBtn || !prevBtn || !nextBtn) {{
+            console.error("Music player elements not found in parent document");
+            return;
+        }}
+        
+        function loadTrack(index) {{
+            console.log("Loading track", index + 1, "from URL:", musicSources[index]);
+            audio.src = musicSources[index]; 
+            audio.load();
+        }}
+        
+        function togglePlayPause() {{
+            if (isPlaying) {{
+                audio.pause();
+                playPauseBtn.textContent = '▶';
+            }} else {{
+                audio.play().catch(e => console.error("Play error:", e));
+                playPauseBtn.textContent = '⏸';
+            }}
+            isPlaying = !isPlaying;
+        }}
+        
+        function nextTrack() {{
+            currentTrack = (currentTrack + 1) % musicSources.length;
+            loadTrack(currentTrack);
+            if (isPlaying) {{
+                audio.play().catch(e => console.error("Play error:", e));
+            }}
+        }}
+        
+        function prevTrack() {{
+            currentTrack = (currentTrack - 1 + musicSources.length) % musicSources.length;
+            loadTrack(currentTrack);
+            if (isPlaying) {{
+                audio.play().catch(e => console.error("Play error:", e));
+            }}
+        }}
+        
+        function formatTime(seconds) {{
+            if (isNaN(seconds)) return '0:00';
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${{mins}}:${{secs.toString().padStart(2, '0')}}`;
+        }}
+        
+        audio.addEventListener('timeupdate', () => {{
+            const progress = (audio.currentTime / audio.duration) * 100;
+            progressBar.style.width = progress + '%';
+            currentTimeEl.textContent = formatTime(audio.currentTime);
+        }});
+        audio.addEventListener('loadedmetadata', () => {{
+            durationEl.textContent = formatTime(audio.duration);
+        }});
+        audio.addEventListener('ended', () => {{
+            nextTrack();
+        }});
+        audio.addEventListener('error', (e) => {{ 
+            console.error("Error loading music track:", e);
+            nextTrack();
+        }});
+        playPauseBtn.addEventListener('click', togglePlayPause);
+        nextBtn.addEventListener('click', nextTrack);
+        prevBtn.addEventListener('click', prevTrack);
+        
+        progressContainer.addEventListener('click', (e) => {{
+            const rect = progressContainer.getBoundingClientRect();
+            const percent = (e.clientX - rect.left) / rect.width;
+            audio.currentTime = percent * audio.duration;
+        }});
+        loadTrack(0);
+        console.log("Music player initialized successfully");
+    }}
+
+    document.addEventListener("DOMContentLoaded", function() {{
+        console.log("DOM loaded, waiting for elements...");
+
+        // LOGIC MỚI: KIỂM TRA THAM SỐ SKIP_INTRO
+        const urlParams = new URLSearchParams(window.parent.location.search);
+        const skipIntro = urlParams.get('skip_intro');
+        
+        if (skipIntro === '1') {{
+            console.log("Skip intro detected. Directly revealing main content.");
+            // Giả lập sự kiện video kết thúc và bỏ hiệu ứng reveal
+            sendBackToStreamlit(true); // Pass true to skip reveal
+            // Ẩn ngay lập tức video iframe
+            const iframe = window.frameElement;
+            if (iframe) {{
+                 iframe.style.opacity = 0;
+                 iframe.style.visibility = 'hidden';
+                 // Đảm bảo iframe không chặn tương tác
+                 iframe.style.pointerEvents = 'none'; 
+            }}
+            return; // Dừng khởi tạo video/audio
+        }}
+
+
+        const waitForElements = setInterval(() => {{
+            const video = document.getElementById('intro-video');
+            const audio = document.getElementById('background-audio');
+            const introTextContainer = document.getElementById('intro-text-container');
+           
+            if (video && audio && introTextContainer) {{
+                clearInterval(waitForElements);
+                console.log("All elements found, initializing...");
+                
+                const isMobile = window.innerWidth <= 768;
+         
+                const videoSource = isMobile ? 'data:video/mp4;base64,{video_mobile_base64}' : 'data:video/mp4;base64,{video_pc_base64}';
+                video.src = videoSource;
+                audio.src = 'data:audio/mp3;base64,{audio_base64}';
+
+                console.log("Video/Audio source set. Loading metadata...");
+                const tryToPlay = () => {{
+                    console.log("Attempting to play video (User interaction or Canplay event)");
+                    video.play().then(() => {{
+                        console.log("✅ Video is playing!");
+                    }}).catch(err => {{
+                        console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
+                        setTimeout(() => sendBackToStreamlit(false), 2000); // Pass false: video failed
+                    }});
+                    audio.play().catch(e => {{
+                        console.log("Audio autoplay blocked (normal), waiting for video end.");
+                    }});
+                }};
+
+                video.addEventListener('canplaythrough', tryToPlay, {{ once: true }});
+                
+                video.addEventListener('ended', () => {{
+                    console.log("Video ended, transitioning...");
+                    video.style.opacity = 0;
+                    audio.pause();
+                    audio.currentTime = 0;
+                    
+                    introTextContainer.style.opacity = 0;
+                    setTimeout(() => sendBackToStreamlit(false), 500); // Pass false: video ended normally
+                }});
+                video.addEventListener('error', (e) => {{
+                    console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
+                    sendBackToStreamlit(false); // Pass false: video failed
+                }});
+                const clickHandler = () => {{
+                    console.log("User interaction detected, forcing play attempt.");
+                    tryToPlay();
+                    document.removeEventListener('click', clickHandler);
+                    document.removeEventListener('touchstart', clickHandler);
+                }};
+                
+                document.addEventListener('click', clickHandler, {{ once: true }});
+                document.addEventListener('touchstart', clickHandler, {{ once: true }});
+                
+                video.load();
+                const chars = introTextContainer.querySelectorAll('.intro-char');
+                chars.forEach((char, index) => {{
+                    char.style.animationDelay = `${{index * 0.1}}s`;
+                    char.classList.add('char-shown');
+                }});
+            }}
+        }}, 100);
+        setTimeout(() => {{
+            clearInterval(waitForElements);
+            const video = document.getElementById('intro-video');
+            if (video && !video.src) {{
+                console.warn("Timeout before video source set. Force transitioning to main content.");
+                sendBackToStreamlit(false); // Pass false: timed out
+            }}
+        }}, 5000);
+    }});
+</script>
+"""
+
+html_content_modified = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        html, body {{
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            background-color: #000;
+        }}
+        
+        #intro-video {{
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            z-index: 0;
+            transition: opacity 1s;
+        }}
+
+        #intro-text-container {{
+            position: fixed;
+            top: 5vh;
+            width: 100%;
+            text-align: center;
+            color: #FFD700;
+            font-size: 3vw;
+            font-family: 'Sacramento', cursive;
+            font-weight: 400;
+            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+            z-index: 100;
+            pointer-events: none;
+            display: flex;
+            justify-content: center;
+            opacity: 1;
+            transition: opacity 0.5s;
+        }}
+        
+        .intro-char {{
+            display: inline-block;
+            opacity: 0;
+            transform: translateY(-50px);
+            animation-fill-mode: forwards;
+            animation-duration: 0.8s;
+            animation-timing-function: ease-out;
+        }}
+
+        @keyframes charDropIn {{
+            from {{
+                opacity: 0;
+                transform: translateY(-50px);
+            }}
+            to {{
+                opacity: 1;
+                transform: translateY(0);
+            }}
+        }}
+
+        .intro-char.char-shown {{
+            animation-name: charDropIn;
+        }}
+
+        @media (max-width: 768px) {{
+            #intro-text-container {{
+                font-size: 6vw;
+            }}
+        }}
+    </style>
+</head>
+<body>
+    <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+    <video id="intro-video" muted playsinline></video>
+    <audio id="background-audio"></audio>
+    {js_callback_video}
+</body>
+</html>
+"""
+
+# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
+intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
+intro_chars_html = ''.join([
+    f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'
+    for char in intro_title
+])
+html_content_modified = html_content_modified.replace(
+    "<div id=\"intro-text-container\">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>",
+    f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
+)
+
+# --- HIỂN THỊ IFRAME VIDEO ---
+st.components.v1.html(html_content_modified, height=1080, scrolling=False)
+
+# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
+
+# Tạo Lưới Reveal
+grid_cells_html = ""
+for i in range(240):
+    grid_cells_html += f'<div class="grid-cell"></div>'
+
+reveal_grid_html = f"""
+<div class="reveal-grid">
+    {grid_cells_html}
+</div>
+"""
+st.markdown(reveal_grid_html, unsafe_allow_html=True)
+
+# --- NỘI DUNG CHÍNH (TIÊU ĐỀ ĐƠN, ĐỔI MÀU) ---
+main_title_text = "TỔ BẢO DƯỠNG SỐ 1"
+
+# Nhúng tiêu đề
+st.markdown(f"""
+<div id="main-title-container">
+    <h1>{main_title_text}</h1>
+</div>
+""", unsafe_allow_html=True)
+
+# --- MUSIC PLAYER ---
+if len(music_files) > 0:
+    st.markdown("""
+<div id="music-player-container">
+    <div class="controls">
+        <button class="control-btn" id="prev-btn">⏮</button>
+        <button class="control-btn play-pause" id="play-pause-btn">▶</button>
+        <button class="control-btn" id="next-btn">⏭</button>
+    </div>
+    <div class="progress-container" id="progress-container">
+        <div class="progress-bar" id="progress-bar"></div>
+    </div>
+    <div class="time-info">
+        <span id="current-time">0:00</span>
+        <span id="duration">0:00</span>
+    </div>
+</div>
+""", unsafe_allow_html=True)
+
+# --- NAVIGATION BUTTON MỚI (UIverse Style) ---
+
+# Định nghĩa SVG trong biến Python đơn dòng
+svg_part_number = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="sparkle" ><path class="path" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" fill="currentColor" d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4" ></path></svg>'
+
+# ICON TRẮC NGHIỆM (ĐÃ CHIA THÀNH 2 PATH):
+paper_path = 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6'
+check_path = 'M9 15l2 2 4-4'
+svg_quiz = f"""<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" class="sparkle">
+    <path class="path" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" d="{paper_path}" />
+    <path class="path checkmark" stroke-linecap="round" stroke-linejoin="round" stroke="#000000" d="{check_path}" />
+</svg>"""
+
+# Gộp toàn bộ HTML vào một chuỗi Python đa dòng (ĐÃ CẬP NHẬT THÊM DIV inner-scan-light)
+nav_buttons_html = f"""
+<div id="nav-buttons-wrapper">
+    <div class="nav-container">
+        <a href="/partnumber" target="_self" class="button">
+            <div class="dots_border"></div> <div class="inner-scan-light"></div> {svg_part_number} 
+            <span class="text_button">TRA CỨU PART NUMBER</span> 
+        </a>
+    </div>
+    
+    <div class="nav-container-right">
+        <a href="/quiz" target="_self" class="button">
+            <div class="blue_dots_border"></div> <div class="inner-scan-light"></div> {svg_quiz}
+            <span class="text_button">NGÂN HÀNG TRẮC NGHIỆM</span> 
+        </a>
+    </div>
+</div>
+"""
+
+# *** BƯỚC KHẮC PHỤC TRIỆT ĐỂ: LÀM SẠCH CHUỖI HTML ***
+# 1. Loại bỏ tất cả khoảng trắng ở đầu mỗi dòng và giữa các thẻ HTML để tránh lỗi phân tích cú pháp Markdown.
+nav_buttons_html_cleaned = re.sub(r'>\s+<', '><', nav_buttons_html.strip())
+# 2. Loại bỏ tất cả ký tự xuống dòng (\n) để tạo thành chuỗi một dòng.
+nav_buttons_html_cleaned = nav_buttons_html_cleaned.replace('\n', '')
+
+# Hiển thị chuỗi HTML đã được làm sạch
+st.markdown(nav_buttons_html_cleaned, unsafe_allow_html=True)
