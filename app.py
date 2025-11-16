@@ -91,7 +91,7 @@ font_links = """
 st.markdown(font_links, unsafe_allow_html=True)
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
-# Dùng f-string để chèn biến Python, nên tất cả ngoặc nhọn CSS phải được thoát: {{ và }}
+# Đảm bảo tất cả ngoặc nhọn CSS đều được thoát: {{ và }}
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -554,7 +554,14 @@ iframe:first-of-type {{
     transform: translate(-50%, -50%) rotate(0deg); 
     transform-origin: center;
     
-    background: white;
+    /* MODIFICATION 1: Sử dụng gradient màu vàng kim sáng cho hiệu ứng nổi bật hơn */
+    background: linear-gradient(
+        45deg, 
+        #FFEB3B, /* Bright Yellow */
+        #FFC107, /* Amber */
+        #FFD700  /* Gold */
+    );
+    
     mask: conic-gradient(
         from 0deg at 50% 50%, 
         transparent 0%, 
@@ -678,7 +685,7 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Giữ nguyên) ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
 # Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
@@ -690,14 +697,28 @@ else:
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
+    
     // Hàm thực hiện chuyển đổi sang nội dung chính
-    function sendBackToStreamlit() {{
-        console.log("Video ended or skipped, revealing main content");
+    // MODIFICATION 2: Thêm tham số isSkipped để điều khiển hiệu ứng reveal
+    function sendBackToStreamlit(isSkipped = false) {{
+        console.log("Transitioning to main content. Is Skipped:", isSkipped);
         const stApp = window.parent.document.querySelector('.stApp');
         if (stApp) {{
             stApp.classList.add('video-finished', 'main-content-revealed');
         }}
-        initRevealEffect();
+        
+        const revealGrid = window.parent.document.querySelector('.reveal-grid');
+
+        if (!isSkipped) {{
+            // Chạy hiệu ứng reveal khi video phát xong
+            initRevealEffect();
+        }} else {{
+            // Xóa lưới reveal ngay lập tức khi skip (quay về trang chủ)
+            if (revealGrid) {{
+                revealGrid.remove();
+            }}
+        }}
+
         setTimeout(initMusicPlayer, 100);
     }}
     
@@ -717,7 +738,7 @@ js_callback_video = f"""
              revealGrid.remove();
         }}, shuffledCells.length * 10 + 1000);
     }}
-    
+
     function initMusicPlayer() {{
         console.log("Initializing music player");
         const musicSources = [{music_sources_js}];
@@ -822,8 +843,8 @@ js_callback_video = f"""
         
         if (skipIntro === '1') {{
             console.log("Skip intro detected. Directly revealing main content.");
-            // Giả lập sự kiện video kết thúc
-            sendBackToStreamlit();
+            // Giả lập sự kiện video kết thúc và bỏ hiệu ứng reveal
+            sendBackToStreamlit(true); // Pass true to skip reveal
             // Ẩn ngay lập tức video iframe
             const iframe = window.frameElement;
             if (iframe) {{
@@ -858,7 +879,7 @@ js_callback_video = f"""
                         console.log("✅ Video is playing!");
                     }}).catch(err => {{
                         console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
-                        setTimeout(sendBackToStreamlit, 2000);
+                        setTimeout(() => sendBackToStreamlit(false), 2000); // Pass false: video failed
                     }});
                     audio.play().catch(e => {{
                         console.log("Audio autoplay blocked (normal), waiting for video end.");
@@ -874,11 +895,11 @@ js_callback_video = f"""
                     audio.currentTime = 0;
                     
                     introTextContainer.style.opacity = 0;
-                    setTimeout(sendBackToStreamlit, 500);
+                    setTimeout(() => sendBackToStreamlit(false), 500); // Pass false: video ended normally
                 }});
                 video.addEventListener('error', (e) => {{
                     console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
-                    sendBackToStreamlit();
+                    sendBackToStreamlit(false); // Pass false: video failed
                 }});
                 const clickHandler = () => {{
                     console.log("User interaction detected, forcing play attempt.");
@@ -903,7 +924,7 @@ js_callback_video = f"""
             const video = document.getElementById('intro-video');
             if (video && !video.src) {{
                 console.warn("Timeout before video source set. Force transitioning to main content.");
-                sendBackToStreamlit();
+                sendBackToStreamlit(false); // Pass false: timed out
             }}
         }}, 5000);
     }});
@@ -1077,7 +1098,7 @@ nav_buttons_html = f"""
 </div>
 """
 
-# *** BƯỚC KHẮC PHỤC TRIỆT ĐỂ: LÀM SẠCH CHUỖI HTML (Phải được thực hiện) ***
+# *** BƯỚC KHẮC PHỤC TRIỆT ĐỂ: LÀM SẠCH CHUỖI HTML ***
 # 1. Loại bỏ tất cả khoảng trắng ở đầu mỗi dòng và giữa các thẻ HTML để tránh lỗi phân tích cú pháp Markdown.
 nav_buttons_html_cleaned = re.sub(r'>\s+<', '><', nav_buttons_html.strip())
 # 2. Loại bỏ tất cả ký tự xuống dòng (\n) để tạo thành chuỗi một dòng.
