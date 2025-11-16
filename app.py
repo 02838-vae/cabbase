@@ -20,19 +20,22 @@ def get_base64_encoded_file(file_path):
     # Sửa đường dẫn nếu cần thiết để phù hợp với môi trường triển khai
     path_to_check = os.path.join(os.path.dirname(__file__), file_path)
     if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
-        return None
+        # Nếu file không tồn tại hoặc rỗng, trả về chuỗi rỗng để tránh lỗi Base64
+        return "" 
     try:
         with open(path_to_check, "rb") as f:
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except Exception as e:
         st.error(f"Lỗi khi đọc file {file_path}: {str(e)}")
-        return None
+        # Trả về chuỗi rỗng nếu có lỗi
+        return ""
 
 
 # Mã hóa các file media chính (bắt buộc)
 try:
     # Đảm bảo các file này nằm cùng thư mục với app.py
+    # Kích thước file video nên nhỏ (dưới 5MB) để tránh lỗi Base64 quá lớn
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
@@ -43,14 +46,14 @@ try:
     logo_base64 = get_base64_encoded_file("logo.jpg")
 
     # Kiểm tra file bắt buộc
-    if not all([video_pc_base64, video_mobile_base64, audio_base64, bg_pc_base64, bg_mobile_base64]):
-        missing_files = []
-        if not video_pc_base64: missing_files.append("airplane.mp4")
-        if not video_mobile_base64: missing_files.append("mobile.mp4")
-        if not audio_base64: missing_files.append("plane_fly.mp3")
-        if not bg_pc_base64: missing_files.append("cabbase.jpg")
-        if not bg_mobile_base64: missing_files.append("mobile.jpg")
-        
+    missing_files = []
+    if not video_pc_base64: missing_files.append("airplane.mp4")
+    if not video_mobile_base64: missing_files.append("mobile.mp4")
+    if not audio_base64: missing_files.append("plane_fly.mp3")
+    if not bg_pc_base64: missing_files.append("cabbase.jpg")
+    if not bg_mobile_base64: missing_files.append("mobile.jpg")
+    
+    if len(missing_files) > 0:
         st.error(f"⚠️ Thiếu các file media cần thiết hoặc file rỗng. Vui lòng kiểm tra lại các file sau trong thư mục:")
         st.write(" - " + "\n - ".join(missing_files))
         st.stop()
@@ -60,7 +63,7 @@ except Exception as e:
     st.stop()
 
 # Đảm bảo logo_base64 được khởi tạo nếu file không tồn tại
-if not 'logo_base64' in locals() or not logo_base64:
+if not logo_base64:
     logo_base64 = "" 
     st.info("ℹ️ Không tìm thấy file logo.jpg. Music player sẽ không có hình nền logo.")
 
@@ -852,7 +855,7 @@ js_callback_video = f"""
                     }}).catch(err => {{
                         console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
                         // Khi lỗi/không thể tự động phát, chuyển tiếp và vẫn chạy reveal (mặc định)
-                        setTimeout(sendBackToStreamlit, 2000); 
+                        setTimeout(() => sendBackToStreamlit(false), 2000); 
                     }});
                     audio.play().catch(e => {{
                         console.log("Audio autoplay blocked (normal), waiting for video end.");
@@ -869,12 +872,12 @@ js_callback_video = f"""
     
                     introTextContainer.style.opacity = 0;
                     // Gọi hàm mặc định (skipReveal=false), vẫn chạy reveal
-                    setTimeout(sendBackToStreamlit, 500);
+                    setTimeout(() => sendBackToStreamlit(false), 500);
                 }});
                 video.addEventListener('error', (e) => {{
                     console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
                     // Gọi hàm mặc định (skipReveal=false), vẫn chạy reveal
-                    sendBackToStreamlit();
+                    sendBackToStreamlit(false);
                 }});
                 const clickHandler = () => {{
                     console.log("User interaction detected, forcing play attempt.");
@@ -900,7 +903,7 @@ js_callback_video = f"""
             if (video && !video.src) {{
                 console.warn("Timeout before video source set. Force transitioning to main content.");
                 // Gọi hàm mặc định (skipReveal=false), vẫn chạy reveal
-                sendBackToStreamlit();
+                sendBackToStreamlit(false);
             }}
   
         }}, 5000);
