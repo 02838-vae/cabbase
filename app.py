@@ -1,7 +1,6 @@
 import streamlit as st
 import base64
 import os
-import re 
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
@@ -91,7 +90,6 @@ font_links = """
 st.markdown(font_links, unsafe_allow_html=True)
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
-# Đảm bảo tất cả ngoặc nhọn CSS đều được thoát: {{ và }}
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -473,7 +471,6 @@ iframe:first-of-type {{
     transition: transform var(--transtion);
     
     text-decoration: none; 
-    overflow: hidden; /* Quan trọng để hiệu ứng quét không tràn ra ngoài */
 }}
 
 /* NỀN ĐEN CỦA BUTTON (Giữ nguyên) */
@@ -496,7 +493,7 @@ iframe:first-of-type {{
     z-index: 0;
 }}
 
-/* HIỆU ỨNG TIA SÁNG BÊN TRONG KHI HOVER (Background Gradient) - Giữ nguyên) */
+/* HIỆU ỨNG TIA SÁNG BÊN TRONG KHI HOVER (Background Gradient) - Giữ nguyên */
 .button::after {{
     content: "";
     position: absolute;
@@ -522,11 +519,9 @@ iframe:first-of-type {{
     --active: 1;
 }}
 
-/* --- CSS CHUNG CHO CẢ HAI HIỆU ỨNG ÁNH SÁNG CHẠY VIỀN LIÊN TỤC --- */
-.button .dots_border,
-.button .blue_dots_border {{
-    /* Tăng kích thước bao phủ ra ngoài thêm 4px (thay vì 2px) để chắc chắn */
-    --size_border: calc(100% + 4px); 
+/* HIỆU ỨNG ÁNH SÁNG CHẠY VIỀN LIÊN TỤC (dots_border) - Giữ nguyên */
+.button .dots_border {{
+    --size_border: calc(100% + 2px);
     overflow: hidden;
 
     position: absolute;
@@ -542,63 +537,20 @@ iframe:first-of-type {{
     z-index: -1; 
 }}
 
-/* LỚP GIẢ TẠO DÒNG ÁNH SÁNG XOAY (MÀU VÀNG KIM - Dành cho nút Part Number) */
+/* LỚP GIẢ TẠO DÒNG ÁNH SÁNG XOAY (Giữ nguyên) */
 .button .dots_border::before {{
     content: "";
     position: absolute;
     top: 50%; 
     left: 50%;
     
-    /* Tăng kích thước vùng mask lên 400% để đảm bảo ánh sáng đủ lớn */
-    width: 400%; 
-    height: 400%; 
+    width: 300%; 
+    height: 300%; 
     
     transform: translate(-50%, -50%) rotate(0deg); 
     transform-origin: center;
     
-    /* MÀU VÀNG KIM */
-    background: linear-gradient(
-        45deg, 
-        #FFEB3B, /* Bright Yellow */
-        #FFC107, /* Amber */
-        #FFD700  /* Gold */
-    );
-    
-    mask: conic-gradient(
-        from 0deg at 50% 50%, 
-        transparent 0%, 
-        transparent 30%, 
-        white 31%, 
-        white 35%, 
-        transparent 36%, 
-        transparent 100%
-    );
-                          
-    animation: rotate 3s linear infinite;
-}}
-
-/* LỚP GIẢ TẠO DÒNG ÁNH SÁNG XOAY (MÀU XANH LAM ĐẬM - Dành cho nút Trắc Nghiệm) */
-.button .blue_dots_border::before {{
-    content: "";
-    position: absolute;
-    top: 50%; 
-    left: 50%;
-    
-    /* Tăng kích thước vùng mask lên 400% để đảm bảo ánh sáng đủ lớn */
-    width: 400%; 
-    height: 400%; 
-    
-    transform: translate(-50%, -50%) rotate(0deg); 
-    transform-origin: center;
-    
-    /* MÀU XANH LAM ĐẬM - TƯƠNG PHẢN MẠNH HƠN (Giữ nguyên theo yêu cầu) */
-    background: linear-gradient(
-        45deg, 
-        #00008B, /* Dark Blue */
-        #4B0082, /* Indigo */
-        #483D8B  /* Dark Slate Blue */
-    );
-    
+    background: white;
     mask: conic-gradient(
         from 0deg at 50% 50%, 
         transparent 0%, 
@@ -616,56 +568,6 @@ iframe:first-of-type {{
     to {{ transform: translate(-50%, -50%) rotate(360deg); }}
 }}
 
-
-/* 💡 CSS MỚI: HIỆU ỨNG ÁNH SÁNG PHẢN CHIẾU QUÉT QUA BÊN TRONG */
-@keyframes innerScanLight {{
-    0% {{ background-position: -200% 0; }}
-    100% {{ background-position: 200% 0; }}
-}}
-
-.button .inner-scan-light {{
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: var(--border_radius);
-    overflow: hidden; 
-    pointer-events: none; 
-    z-index: 5; /* Đảm bảo nằm trên nền đen */
-    opacity: 0; 
-    transition: opacity var(--transtion);
-}}
-
-.button:is(:hover, :focus-visible) .inner-scan-light {{
-    opacity: 1; /* Hiển thị khi hover */
-}}
-
-.button .inner-scan-light::before {{
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 200%; /* Độ rộng của vùng quét */
-    height: 100%;
-    background: linear-gradient(
-        90deg, 
-        transparent 0%, 
-        rgba(255, 255, 255, 0.2) 20%, 
-        rgba(255, 255, 255, 0.4) 50%, /* Phần sáng nhất */
-        rgba(255, 255, 255, 0.2) 80%, 
-        transparent 100%
-    );
-    background-size: 50% 100%; 
-    background-repeat: no-repeat;
-    animation: innerScanLight 2s infinite linear; 
-    animation-play-state: paused; 
-}}
-
-.button:is(:hover, :focus-visible) .inner-scan-light::before {{
-    animation-play-state: running; /* Chạy khi hover */
-}}
-
 /* ICON và TEXT (Giữ nguyên) */
 .button .sparkle {{
     position: relative;
@@ -674,18 +576,11 @@ iframe:first-of-type {{
 }}
 
 .button .sparkle .path {{
-    /* Đã bỏ fill: currentColor; */
+    fill: currentColor;
     stroke: currentColor;
     transform-origin: center;
     color: var(--text-color); 
     transition: transform var(--transtion);
-}}
-
-/* CSS cho dấu tích: thiết lập màu stroke riêng */
-.button .sparkle .path.checkmark {{
-    stroke: #000000 !important; /* Dấu tích màu đen tĩnh để tương phản */
-    fill: none;
-    color: #000000 !important; /* Dùng để thiết lập currentColor nếu cần */
 }}
 
 .button:is(:hover, :focus) .sparkle .path {{
@@ -717,7 +612,7 @@ iframe:first-of-type {{
     text-shadow: 0 0 5px rgba(0, 0, 0, 0.5); 
 }}
 
-/* --- MEDIA QUERY CHO MOBILE --- */
+/* --- MEDIA QUERY CHO MOBILE (Giữ nguyên logic Flexbox) --- */
 @media (max-width: 768px) {{
     /* Vị trí mới cho mobile: dùng flexbox để xếp dọc */
     #nav-buttons-wrapper {{
@@ -729,30 +624,17 @@ iframe:first-of-type {{
         max-width: 450px; 
         display: flex;
         flex-direction: column; /* Xếp dọc */
-        gap: 0px; 
-        padding: 0; 
-        height: auto; /* Điều chỉnh để fix gap */
+        gap: 15px; 
+        padding: 0; /* Bỏ padding 80px trên desktop */
     }}
     
-    /* ĐẢO NGƯỢC THỨ TỰ HIỂN THỊ TRÊN MOBILE */
-    /* Ngân hàng Trắc nghiệm (nav-container-right) lên trên */
-    #nav-buttons-wrapper .nav-container-right {{ 
-        order: 1; 
+    /* Cả hai container vẫn là static và xếp chồng lên nhau */
+    .nav-container,
+    .nav-container-right {{
         position: static; 
         width: 100%;
-        margin-top: 0 !important; 
-        /* 🚨 ĐIỀU CHỈNH TRIỆT ĐỂ: Dùng margin âm để ép sát 2 nút */
-        margin-bottom: -15px !important; 
     }}
-    /* Tra cứu Part Number (nav-container) xuống dưới */
-    #nav-buttons-wrapper .nav-container {{ 
-        order: 2; 
-        position: static; 
-        width: 100%;
-        margin-top: 0 !important; 
-        margin-bottom: 0 !important;
-    }}
-    
+
     .button {{
         padding: 0.8rem 1.5rem;
         gap: 0.4rem;
@@ -786,13 +668,13 @@ iframe:first-of-type {{
     opacity: 0;
 }}
 </style>
-""" # 💡 ĐÃ KHẮC PHỤC LỖI CÚ PHÁP: DẤU ĐÓNG TRIPLE QUOTE Ở ĐÂY
+"""
 
 # Thêm CSS vào trang chính
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Giữ nguyên) ---
 
 # Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
@@ -804,28 +686,14 @@ else:
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
-    
     // Hàm thực hiện chuyển đổi sang nội dung chính
-    // MODIFICATION 2: Thêm tham số isSkipped để điều khiển hiệu ứng reveal
-    function sendBackToStreamlit(isSkipped = false) {{
-        console.log("Transitioning to main content. Is Skipped:", isSkipped);
+    function sendBackToStreamlit() {{
+        console.log("Video ended or skipped, revealing main content");
         const stApp = window.parent.document.querySelector('.stApp');
         if (stApp) {{
             stApp.classList.add('video-finished', 'main-content-revealed');
         }}
-        
-        const revealGrid = window.parent.document.querySelector('.reveal-grid');
-
-        if (!isSkipped) {{
-            // Chạy hiệu ứng reveal khi video phát xong
-            initRevealEffect();
-        }} else {{
-            // Xóa lưới reveal ngay lập tức khi skip (quay về trang chủ)
-            if (revealGrid) {{
-                revealGrid.remove();
-            }}
-        }}
-
+        initRevealEffect();
         setTimeout(initMusicPlayer, 100);
     }}
     
@@ -845,7 +713,7 @@ js_callback_video = f"""
              revealGrid.remove();
         }}, shuffledCells.length * 10 + 1000);
     }}
-
+    
     function initMusicPlayer() {{
         console.log("Initializing music player");
         const musicSources = [{music_sources_js}];
@@ -950,8 +818,8 @@ js_callback_video = f"""
         
         if (skipIntro === '1') {{
             console.log("Skip intro detected. Directly revealing main content.");
-            // Giả lập sự kiện video kết thúc và bỏ hiệu ứng reveal
-            sendBackToStreamlit(true); // Pass true to skip reveal
+            // Giả lập sự kiện video kết thúc
+            sendBackToStreamlit();
             // Ẩn ngay lập tức video iframe
             const iframe = window.frameElement;
             if (iframe) {{
@@ -986,7 +854,7 @@ js_callback_video = f"""
                         console.log("✅ Video is playing!");
                     }}).catch(err => {{
                         console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
-                        setTimeout(() => sendBackToStreamlit(false), 2000); // Pass false: video failed
+                        setTimeout(sendBackToStreamlit, 2000);
                     }});
                     audio.play().catch(e => {{
                         console.log("Audio autoplay blocked (normal), waiting for video end.");
@@ -1002,11 +870,11 @@ js_callback_video = f"""
                     audio.currentTime = 0;
                     
                     introTextContainer.style.opacity = 0;
-                    setTimeout(() => sendBackToStreamlit(false), 500); // Pass false: video ended normally
+                    setTimeout(sendBackToStreamlit, 500);
                 }});
                 video.addEventListener('error', (e) => {{
                     console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
-                    sendBackToStreamlit(false); // Pass false: video failed
+                    sendBackToStreamlit();
                 }});
                 const clickHandler = () => {{
                     console.log("User interaction detected, forcing play attempt.");
@@ -1031,7 +899,7 @@ js_callback_video = f"""
             const video = document.getElementById('intro-video');
             if (video && !video.src) {{
                 console.warn("Timeout before video source set. Force transitioning to main content.");
-                sendBackToStreamlit(false); // Pass false: timed out
+                sendBackToStreamlit();
             }}
         }}, 5000);
     }});
@@ -1179,42 +1047,32 @@ if len(music_files) > 0:
 """, unsafe_allow_html=True)
 
 # --- NAVIGATION BUTTON MỚI (UIverse Style) ---
+# **Định nghĩa SVG trong biến Python đơn dòng để tránh lỗi phân tích cú pháp của Streamlit.**
 
-# Định nghĩa SVG trong biến Python đơn dòng
+# Icon Tra cứu Part Number (Kính lúp)
 svg_part_number = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="sparkle" ><path class="path" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" fill="currentColor" d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4" ></path></svg>'
 
-# ICON TRẮC NGHIỆM (ĐÃ CHIA THÀNH 2 PATH):
-paper_path = 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6'
-check_path = 'M9 15l2 2 4-4'
-svg_quiz = f"""<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" class="sparkle">
-    <path class="path" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" d="{paper_path}" />
-    <path class="path checkmark" stroke-linecap="round" stroke-linejoin="round" stroke="#000000" d="{check_path}" />
-</svg>"""
+# Icon Ngân hàng trắc nghiệm (Dấu Check trong Vòng tròn)
+svg_quiz = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" class="sparkle"><path class="path" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="currentColor" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
 
-# Gộp toàn bộ HTML vào một chuỗi Python đa dòng (ĐÃ CẬP NHẬT THÊM DIV inner-scan-light)
-nav_buttons_html = f"""
+# **SỬ DỤNG st.write() VÀ TRIPLE-QUOTED STRING**
+html_buttons_final = f"""
 <div id="nav-buttons-wrapper">
     <div class="nav-container">
         <a href="/partnumber" target="_self" class="button">
-            <div class="dots_border"></div> <div class="inner-scan-light"></div> {svg_part_number} 
+            <div class="dots_border"></div>
+            {svg_part_number} 
             <span class="text_button">TRA CỨU PART NUMBER</span> 
         </a>
     </div>
     
     <div class="nav-container-right">
         <a href="/quiz" target="_self" class="button">
-            <div class="blue_dots_border"></div> <div class="inner-scan-light"></div> {svg_quiz}
+            <div class="dots_border"></div>
+            {svg_quiz}
             <span class="text_button">NGÂN HÀNG TRẮC NGHIỆM</span> 
         </a>
     </div>
 </div>
 """
-
-# *** BƯỚC KHẮC PHỤC TRIỆT ĐỂ: LÀM SẠCH CHUỖI HTML ***
-# 1. Loại bỏ tất cả khoảng trắng ở đầu mỗi dòng và giữa các thẻ HTML để tránh lỗi phân tích cú pháp Markdown.
-nav_buttons_html_cleaned = re.sub(r'>\s+<', '><', nav_buttons_html.strip())
-# 2. Loại bỏ tất cả ký tự xuống dòng (\n) để tạo thành chuỗi một dòng.
-nav_buttons_html_cleaned = nav_buttons_html_cleaned.replace('\n', '')
-
-# Hiển thị chuỗi HTML đã được làm sạch
-st.markdown(nav_buttons_html_cleaned, unsafe_allow_html=True)
+st.write(html_buttons_final, unsafe_allow_html=True)
