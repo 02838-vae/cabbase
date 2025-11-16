@@ -160,71 +160,105 @@ img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
 
-# === CSS: FIX FULL SCREEN VÀ GIẢM HIỆU ỨNG VINTAGE ===
+# === CSS: FIX FULL SCREEN, RÕ NÉT HƠN VÀ HEADER VÀNG ===
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Crimson+Text&display=swap');
 
-/* --- FIX FULL SCREEN: Loại bỏ khoảng trắng và thanh header/footer mặc định --- */
-/* Target toàn bộ trang */
-#root > div:nth-child(1) > div > div > div {{
-    padding: 0; /* Loại bỏ padding mặc định xung quanh toàn bộ nội dung */
+/* --- FIX FULL SCREEN TỐI ĐA (Loại bỏ padding/margin mặc định) --- */
+/* Target root container và các thành phần chính để loại bỏ padding */
+.st-emotion-cache-1gsv8h, 
+.st-emotion-cache-1aehpbu, 
+[data-testid="stMainBlock"], 
+.main {{ 
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100vw !important;
 }}
-/* Target main-block để loại bỏ khoảng trắng trên cùng */
+/* Loại bỏ khoảng trắng trên cùng và dưới cùng của main content wrapper */
+[data-testid="stAppViewContainer"] > .main {{
+    padding-top: 0rem !important;
+    padding-bottom: 0rem !important;
+}}
+/* Đảm bảo sidebar đồng màu với lớp phủ */
 [data-testid="stSidebar"] {{
-    background-color: rgba(255, 250, 240, 0.95); /* Làm Sidebar đồng màu với lớp phủ */
-}}
-/* Ẩn các thanh header và footer mặc định nếu cần full tuyệt đối */
-.st-emotion-cache-1g83g3 {{ /* Streamlit Header */
-    display: none !important;
-}}
-.st-emotion-cache-nahz7x {{ /* Streamlit Footer */
-    display: none !important;
+    background-color: rgba(255, 255, 255, 0.95);
 }}
 
-/* --- CẤU HÌNH CHUNG: Vintage & Full Screen --- */
+/* --- BACKGROUND FIX: Rõ nét hơn, ít ngả vàng --- */
 [data-testid="stAppViewContainer"] {{
-    /* Đảm bảo full màn hình */
     background-size: cover; 
     background-position: center;
     background-attachment: fixed;
-    /* Áp dụng filter Vintage NHẸ HƠN */
-    filter: sepia(20%) grayscale(5%); /* Giảm sepia từ 50% xuống 20% */
+    /* Giảm filter xuống mức rất nhẹ */
+    filter: sepia(10%) grayscale(2%); 
 }}
 
-/* Lớp phủ MỜ NHẠT (opacity) giúp chữ dễ đọc hơn */
+/* Lớp phủ (Overlay) */
 [data-testid="stAppViewContainer"]::before {{
     content: "";
     position: absolute; inset: 0;
-    /* Dùng màu be nhạt, giảm độ trong suốt để ảnh nền rõ hơn */
-    background: rgba(255, 250, 240, 0.55); /* Giảm opacity từ 0.75 xuống 0.55 */
+    /* Màu trắng trong suốt, giảm opacity tối đa để ảnh nền rõ nét */
+    background: rgba(255, 255, 255, 0.4); 
     backdrop-filter: blur(1px);
     z-index: 0;
 }}
 
-/* --- ẢNH NỀN CHO PC/MÀN HÌNH RỘNG HƠN (>= 768px) --- */
+/* --- ÁP DỤNG ẢNH NỀN --- */
+/* PC/MÀN HÌNH RỘNG HƠN (>= 768px) */
 [data-testid="stAppViewContainer"] {{
     background-image: url("data:image/jpeg;base64,{img_pc_base64}");
 }}
 
-/* --- ẢNH NỀN CHO MOBILE/MÀN HÌNH NHỎ HƠN (< 768px) --- */
+/* MOBILE/MÀN HÌNH NHỎ HƠN (< 768px) */
 @media (max-width: 767px) {{
     [data-testid="stAppViewContainer"] {{
         background-image: url("data:image/jpeg;base64,{img_mobile_base64}");
     }}
 }}
 
-/* --- STYLING NỘI DUNG --- */
-h1 {{
-    text-align: center;
-    font-family: 'Playfair Display', serif;
-    font-size: 2.5em;
-    color: #4a3e2e;
-    margin-top: 0.2em;
-    z-index: 1; 
-    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5); 
+/* --- HEADER & MARQUEE STYLING (Vàng, 1 hàng) --- */
+.custom-header-row {{
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 5px 15px;
+    background-color: rgba(0, 0, 0, 0.6); /* Nền đen mờ cho tiêu đề */
+    color: #FFD700; /* Màu vàng Gold */
+    z-index: 1000;
+    position: sticky; /* Giữ header cố định trên cùng */
+    top: 0;
+    width: 100%;
 }}
-/* Tăng độ tương phản câu hỏi và đáp án */
+.marquee-col {{
+    flex-grow: 1;
+    overflow: hidden;
+    white-space: nowrap;
+    text-align: left;
+    max-width: 50%; /* Giới hạn chiều rộng cho marquee */
+}}
+.main-title-col {{
+    flex-shrink: 0;
+    text-align: right;
+    margin-left: 15px;
+}}
+.running-title {{
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #FFD700; /* Vàng */
+    text-shadow: 0 0 3px black;
+}}
+.main-title-small {{
+    font-family: 'Playfair Display', serif;
+    font-size: 1.4em; /* Thu nhỏ tiêu đề chính */
+    margin: 0;
+    color: #FFD700; /* Vàng */
+    text-shadow: 0 0 5px rgba(255, 255, 0, 0.5);
+}}
+/* Ẩn H1/H2 mặc định để tránh xung đột với header tùy chỉnh */
+h1, h2 {{ display: none; }} 
+
+/* --- STYLING NỘI DUNG CHÍNH --- */
 .stRadio label {{
     color: #333333 !important;
     font-size: 1.1em !important;
@@ -256,11 +290,23 @@ div[data-testid="stMarkdownContainer"] p {{
 
 
 # ====================================================
-# 🏷️ GIAO DIỆN CHÍNH
+# 🏷️ GIAO DIỆN CHÍNH (SỬ DỤNG HEADER MỚI)
 # ====================================================
-st.markdown("<h1>📜 Ngân hàng trắc nghiệm</h1>", unsafe_allow_html=True)
+# TIÊU ĐỀ CHẠY VÀ TIÊU ĐỀ CHÍNH TRÊN 1 HÀNG
+st.markdown("""
+<div class="custom-header-row">
+    <div class="marquee-col">
+        <marquee behavior="scroll" direction="left" scrollamount="4">
+            <span class="running-title">Tổ bảo dưỡng số 1</span>
+        </marquee>
+    </div>
+    <div class="main-title-col">
+        <h1 class="main-title-small">📜 Ngân hàng trắc nghiệm</h1>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
-# Đặt khóa cho selectbox để quản lý trạng thái
+# Nội dung chính của ứng dụng bắt đầu ở đây
 bank_choice = st.selectbox("Chọn ngân hàng:", ["Ngân hàng Kỹ thuật", "Ngân hàng Luật"], key="bank_selector")
 source = "cabbank.docx" if "Kỹ thuật" in bank_choice else "lawbank.docx"
 
@@ -287,8 +333,12 @@ with tab1:
         # SỬA LỖI TRUY CẬP INDEX: sử dụng index=0 và key để đảm bảo giá trị hợp lệ
         selected = st.selectbox("Chọn nhóm câu:", groups, index=0, key="group_selector")
         
-        idx = groups.index(selected)
-        
+        try:
+            idx = groups.index(selected)
+        except ValueError:
+            # Nếu giá trị cũ không còn trong danh sách mới, mặc định chọn 0
+            idx = 0
+            
         start, end = idx * group_size, min((idx+1) * group_size, total)
         batch = questions[start:end]
 
