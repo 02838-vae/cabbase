@@ -1106,9 +1106,9 @@ if len(music_files) > 0:
     st.markdown("""
 <div id="music-player-container">
     <div class="controls">
-        <button class="control-btn" id="prev-btn">⮜</button>
+        <button class="control-btn" id="prev-btn">◄</button>
         <button class="control-btn play-pause" id="play-pause-btn">▶</button>
-        <button class="control-btn" id="next-btn">⮞</button>
+        <button class="control-btn" id="next-btn">►</button>
     </div>
     <div class="progress-container" id="progress-container">
         <div class="progress-bar" id="progress-bar"></div>
