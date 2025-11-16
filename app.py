@@ -521,8 +521,9 @@ iframe:first-of-type {{
     --active: 1;
 }}
 
-/* HIỆU ỨNG ÁNH SÁNG CHẠY VIỀN LIÊN TỤC (dots_border) */
-.button .dots_border {{
+/* --- CSS CHUNG CHO CẢ HAI HIỆU ỨNG ÁNH SÁNG CHẠY VIỀN LIÊN TỤC --- */
+.button .dots_border,
+.button .blue_dots_border {{
     /* Tăng kích thước bao phủ ra ngoài thêm 4px (thay vì 2px) để chắc chắn */
     --size_border: calc(100% + 4px); 
     overflow: hidden;
@@ -540,7 +541,7 @@ iframe:first-of-type {{
     z-index: -1; 
 }}
 
-/* LỚP GIẢ TẠO DÒNG ÁNH SÁNG XOAY */
+/* LỚP GIẢ TẠO DÒNG ÁNH SÁNG XOAY (MÀU VÀNG KIM - Dành cho nút Part Number) */
 .button .dots_border::before {{
     content: "";
     position: absolute;
@@ -554,12 +555,47 @@ iframe:first-of-type {{
     transform: translate(-50%, -50%) rotate(0deg); 
     transform-origin: center;
     
-    /* MODIFICATION 1: Sử dụng gradient màu vàng kim sáng cho hiệu ứng nổi bật hơn */
+    /* MÀU VÀNG KIM */
     background: linear-gradient(
         45deg, 
         #FFEB3B, /* Bright Yellow */
         #FFC107, /* Amber */
         #FFD700  /* Gold */
+    );
+    
+    mask: conic-gradient(
+        from 0deg at 50% 50%, 
+        transparent 0%, 
+        transparent 30%, 
+        white 31%, 
+        white 35%, 
+        transparent 36%, 
+        transparent 100%
+    );
+                          
+    animation: rotate 3s linear infinite;
+}}
+
+/* LỚP GIẢ TẠO DÒNG ÁNH SÁNG XOAY (MÀU XANH LAM - Dành cho nút Trắc Nghiệm) */
+.button .blue_dots_border::before {{
+    content: "";
+    position: absolute;
+    top: 50%; 
+    left: 50%;
+    
+    /* Tăng kích thước vùng mask lên 400% để đảm bảo ánh sáng đủ lớn */
+    width: 400%; 
+    height: 400%; 
+    
+    transform: translate(-50%, -50%) rotate(0deg); 
+    transform-origin: center;
+    
+    /* MÀU XANH LAM - TƯƠNG PHẢN VỚI NỀN VÀNG */
+    background: linear-gradient(
+        45deg, 
+        #00FFFF, /* Cyan */
+        #00BFFF, /* Deep Sky Blue */
+        #1E90FF  /* Dodger Blue */
     );
     
     mask: conic-gradient(
@@ -1077,21 +1113,19 @@ if len(music_files) > 0:
 svg_part_number = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="sparkle" ><path class="path" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" fill="currentColor" d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4" ></path></svg>'
 svg_quiz = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" class="sparkle"><path class="path" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="currentColor" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
 
-# Gộp toàn bộ HTML vào một chuỗi Python đa dòng
+# Gộp toàn bộ HTML vào một chuỗi Python đa dòng (ĐÃ CẬP NHẬT LỚP CSS cho nút Quiz)
 nav_buttons_html = f"""
 <div id="nav-buttons-wrapper">
     <div class="nav-container">
         <a href="/partnumber" target="_self" class="button">
-            <div class="dots_border"></div>
-            {svg_part_number} 
+            <div class="dots_border"></div> {svg_part_number} 
             <span class="text_button">TRA CỨU PART NUMBER</span> 
         </a>
     </div>
     
     <div class="nav-container-right">
         <a href="/quiz" target="_self" class="button">
-            <div class="dots_border"></div> 
-            {svg_quiz}
+            <div class="blue_dots_border"></div> {svg_quiz}
             <span class="text_button">NGÂN HÀNG TRẮC NGHIỆM</span> 
         </a>
     </div>
