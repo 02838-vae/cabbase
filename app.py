@@ -671,7 +671,7 @@ iframe:first-of-type {{
         max-width: 450px; 
         display: flex;
         flex-direction: column; /* Xếp dọc */
-        gap: 8px; /* ĐÃ SỬA: Giảm khoảng cách từ 15px xuống 8px */
+        gap: 5px; /* ĐÃ SỬA: Giảm khoảng cách từ 8px xuống 5px */
         padding: 0; /* Bỏ padding 80px trên desktop */
     }}
     
@@ -1118,8 +1118,8 @@ if len(music_files) > 0:
 
 # Định nghĩa SVG trong biến Python đơn dòng
 svg_part_number = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="sparkle" ><path class="path" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" fill="currentColor" d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4" ></path></svg>'
-# ICON MỚI: Cuốn sổ có dấu tích
-svg_quiz = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" class="sparkle"><path class="path" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 15l2 2 4-4" /></svg>'
+# ICON MỚI: Cuốn sổ có dấu tích (ĐÃ BỎ fill="currentColor" trong path)
+svg_quiz = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" class="sparkle"><path class="path" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6M9 15l2 2 4-4" /></svg>'
 
 # Gộp toàn bộ HTML vào một chuỗi Python đa dòng (ĐÃ CẬP NHẬT LỚP CSS cho nút Quiz)
 nav_buttons_html = f"""
