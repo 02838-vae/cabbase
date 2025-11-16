@@ -691,16 +691,17 @@ iframe:first-of-type {{
     text-shadow: 0 0 7px #FFFF33, 0 0 15px rgba(255, 255, 51, 0.7); 
 }}
 
-/* Lịch (Thứ, Ngày/Tháng/Năm) - XANH LÁ NEON */
+/* Lịch (Thứ, Ngày/Tháng/Năm) - XANH LÁ NEON (TĂNG TƯƠNG PHẢN) */
 #calendar-display {{
     /* ✅ GIẢM KÍCH THƯỚC: Gọn hơn */
     font-size: 0.9rem; 
     margin: 0; 
     padding-top: 5px; /* Tạo khoảng cách với đồng hồ */
     line-height: 1.2;
-    /* ✅ CHỈNH SỬA MÀU: Xanh Lá Neon (Dễ nhìn hơn) */
-    color: #39FF14; 
-    text-shadow: 0 0 5px #39FF14; 
+    /* ✅ V9 FIX: CHUYỂN SANG TRẮNG để tăng độ tương phản tuyệt đối */
+    color: #FFFFFF; 
+    /* ✅ VẪN GIỮ ĐỔ BÓNG Xanh Lá Neon (Sử dụng shadow mạnh hơn) */
+    text-shadow: 0 0 7px #39FF14, 0 0 10px rgba(57, 255, 20, 0.7); 
     white-space: nowrap;
 }}
 
