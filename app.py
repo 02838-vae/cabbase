@@ -678,7 +678,7 @@ iframe:first-of-type {{
         max-width: 450px; 
         display: flex;
         flex-direction: column; /* Xếp dọc */
-        gap: 3px; /* ĐÃ SỬA: Giảm khoảng cách từ 5px xuống 3px */
+        gap: 1px; /* ĐÃ SỬA: GIẢM XUỐNG CỰC TIỂU TỪ 3PX XUỐNG 1PX */
         padding: 0; /* Bỏ padding 80px trên desktop */
     }}
     
