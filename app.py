@@ -66,6 +66,7 @@ if not 'logo_base64' in locals() or not logo_base64:
 
 
 # --- SỬ DỤNG URL TRỰC TIẾP TỪ GITHUB RAW CONTENT (TỐC ĐỘ CAO HƠN) ---
+# Đảm bảo repository của bạn là PUBLIC để các URL này hoạt động
 BASE_MUSIC_URL = "https://raw.githubusercontent.com/02838-vae/cabbase/main/"
 music_urls = []
 
@@ -85,7 +86,6 @@ if len(music_files) == 0:
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=Share+Tech+Mono&display=swap" rel="stylesheet">
 """
 st.markdown(font_links, unsafe_allow_html=True)
 
@@ -93,8 +93,6 @@ st.markdown(font_links, unsafe_allow_html=True)
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Major+Mono+Display&family=Share+Tech+Mono&display=swap');
-
 /* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
 
@@ -188,12 +186,12 @@ iframe:first-of-type {{
     100% {{ background-position: 0% 50%; }}
 }}
 
-/* === TIÊU ĐỀ TRANG CHÍNH (Đã sửa lỗi không full size) === */
+/* === TIÊU ĐỀ TRANG CHÍNH === */
 #main-title-container {{
     position: fixed;
     top: 5vh;
     left: 0;
-    width: 100vw; /* Đảm bảo trên màn hình */
+    width: 100%;
     height: 10vh;
     overflow: hidden;
     z-index: 20;
@@ -410,7 +408,7 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === NAVIGATION BUTTON (Giữ nguyên) === */
+/* === CSS MỚI CHO NAVIGATION BUTTON (UIverse Dark Mode) === */
 
 .nav-container {{
     position: fixed;
@@ -480,7 +478,7 @@ iframe:first-of-type {{
     z-index: 0;
 }}
 
-/* HIỆU ỨNG TIA SÁNG BÊNTRONG KHI HOVER (Background Gradient) */
+/* HIỆU ỨNG TIA SÁNG BÊN TRONG KHI HOVER (Background Gradient) */
 .button::after {{
     content: "";
     position: absolute;
@@ -642,90 +640,6 @@ iframe:first-of-type {{
     animation-delay: 3.2s;
     opacity: 0;
 }}
-
-/* === CSS MỚI NHẤT: ĐỒNG HỒ VÀ LỊCH PHONG CÁCH MATRIX NEON (ĐÃ FIX HOÀN TOÀN) === */
-@keyframes blink {{
-    0% {{ opacity: 1; }}
-    49% {{ opacity: 1; }}
-    50% {{ opacity: 0; }}
-    100% {{ opacity: 0; }}
-}}
-
-.info-wrapper {{
-    position: fixed;
-    top: 15vh; 
-    left: 50%;
-    transform: translateX(-50%);
-    width: auto;
-    z-index: 999;
-    opacity: 0;
-    transition: opacity 1s ease-out 3.5s;
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    justify-content: center;
-    gap: 20px;
-    font-family: 'Share Tech Mono', monospace;
-}}
-
-.video-finished .info-wrapper {{
-    opacity: 1;
-}}
-
-.info-container-clock,
-.info-container-calendar {{
-    padding: 0;
-    margin: 0;
-    line-height: 1;
-    display: inline-block;
-}} 
-
-/* Đồng hồ (Giờ:Phút) - VÀNG NEON */
-#digital-clock {{
-    font-size: 2.2rem; 
-    margin: 0;
-    padding: 0;
-    line-height: 1;
-    white-space: nowrap;
-    color: #FFFF33;
-    text-shadow: 0 0 7px #FFFF33, 0 0 15px rgba(255, 255, 51, 0.7);
-    display: inline-block;
-}}
-
-/* Lịch (Thứ, Ngày/Tháng/Năm) - XANH LÁ NEON */
-#calendar-display {{
-    font-size: 0.9rem; 
-    margin: 0;
-    padding: 0;
-    line-height: 1;
-    color: #FFFFFF; 
-    text-shadow: 0 0 7px #39FF14, 0 0 10px rgba(57, 255, 20, 0.7); 
-    white-space: nowrap;
-    display: inline-block;
-}}
-
-.blinking-colon {{
-    animation: blink 1s step-end infinite;
-}}
-
-@media (max-width: 768px) {{
-    .info-wrapper {{
-        top: 15vh;
-        flex-direction: column;
-        align-items: center; 
-        gap: 5px; 
-    }} 
-    
-    #digital-clock {{
-        font-size: 1.8rem; 
-        text-align: center;
-    }} 
-    #calendar-display {{
-        font-size: 0.8rem; 
-        text-align: center;
-    }} 
-}}
-
 </style>
 """
 
@@ -733,7 +647,7 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Giữ nguyên) ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
 # Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
@@ -741,7 +655,7 @@ if len(music_files) > 0:
 else:
     music_sources_js = ""
 
-# ✅ PHẦN JS ĐÃ CHỈNH SỬA (Giữ nguyên logic chính xác)
+# ✅ PHẦN JS ĐÃ CHỈNH SỬA (Thêm skipReveal vào sendBackToStreamlit và logic skipIntro)
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
@@ -929,7 +843,7 @@ js_callback_video = f"""
                     }}).catch(err => {{
                         console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
                         // Khi lỗi/không thể tự động phát, chuyển tiếp và vẫn chạy reveal (mặc định)
-                        setTimeout(() => sendBackToStreamlit(false), 2000); 
+                        setTimeout(sendBackToStreamlit, 2000); 
                     }});
                     audio.play().catch(e => {{
                         console.log("Audio autoplay blocked (normal), waiting for video end.");
@@ -946,12 +860,12 @@ js_callback_video = f"""
     
                     introTextContainer.style.opacity = 0;
                     // Gọi hàm mặc định (skipReveal=false), vẫn chạy reveal
-                    setTimeout(() => sendBackToStreamlit(false), 500);
+                    setTimeout(sendBackToStreamlit, 500);
                 }});
                 video.addEventListener('error', (e) => {{
                     console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
                     // Gọi hàm mặc định (skipReveal=false), vẫn chạy reveal
-                    sendBackToStreamlit(false);
+                    sendBackToStreamlit();
                 }});
                 const clickHandler = () => {{
                     console.log("User interaction detected, forcing play attempt.");
@@ -977,7 +891,7 @@ js_callback_video = f"""
             if (video && !video.src) {{
                 console.warn("Timeout before video source set. Force transitioning to main content.");
                 // Gọi hàm mặc định (skipReveal=false), vẫn chạy reveal
-                sendBackToStreamlit(false);
+                sendBackToStreamlit();
             }}
   
         }}, 5000);
@@ -1111,9 +1025,9 @@ if len(music_files) > 0:
     st.markdown("""
 <div id="music-player-container">
     <div class="controls">
-        <button class="control-btn" id="prev-btn">◄</button>
+        <button class="control-btn" id="prev-btn">⏮</button>
         <button class="control-btn play-pause" id="play-pause-btn">▶</button>
-        <button class="control-btn" id="next-btn">►</button>
+        <button class="control-btn" id="next-btn">⏭</button>
     </div>
     <div class="progress-container" id="progress-container">
         <div class="progress-bar" id="progress-bar"></div>
@@ -1139,63 +1053,3 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- PHẦN 4: ĐỒNG HỒ VÀ LỊCH PHONG CÁCH MATRIX NEON (ĐÃ CHỈNH SỬA) ---
-
-clock_calendar_html = """
-<div class="info-wrapper">
-    <div class="info-container-clock">
-        <p id="digital-clock">00<span class="blinking-colon">:</span>00</p>
-    </div>
-    <div class="info-container-calendar">
-        <p id="calendar-display">ĐANG TẢI...</p>
-    </div>
-</div>
-
-<script>
-(function() {
-    function updateClockAndCalendar() {
-        // ✅ FIX: Lấy thời gian hiện tại CHÍNH XÁC từ máy khách
-        const now = new Date();
-        
-        // --- ĐỒNG HỒ (HH:MM) ---
-        const hours = now.getHours().toString().padStart(2, '0');
-        const minutes = now.getMinutes().toString().padStart(2, '0');
-
-        const digitalClockEl = window.parent.document.getElementById('digital-clock');
-
-        if (digitalClockEl) {
-            digitalClockEl.innerHTML = 
-                `${'{'}hours}<span class="blinking-colon">:</span>${'{'}minutes}`;
-        }
-
-        // --- LỊCH (Thứ, Ngày/Tháng/Năm) ---
-        const days = ["CN", "TH 2", "TH 3", "TH 4", "TH 5", "TH 6", "TH 7"];
-        const monthNames = ["THÁNG 1", "THÁNG 2", "THÁNG 3", "THÁNG 4", "THÁNG 5", "THÁNG 6", 
-                           "THÁNG 7", "THÁNG 8", "THÁNG 9", "THÁNG 10", "THÁNG 11", "THÁNG 12"];
-
-        const dayOfWeek = days[now.getDay()];
-        const date = now.getDate();
-        const month = monthNames[now.getMonth()];
-        const year = now.getFullYear();
-
-        const calendarEl = window.parent.document.getElementById('calendar-display');
-
-        if (calendarEl) {
-            calendarEl.textContent = `${'{'}dayOfWeek}, ${'{'}date} ${'{'}month} ${'{'}year}`;
-        }
-    }
-
-    // ✅ FIX: Đảm bảo chạy ngay khi script load
-    // Thử cập nhật ngay lập tức
-    updateClockAndCalendar();
-    
-    // Thử lại sau 100ms để đảm bảo DOM đã sẵn sàng
-    setTimeout(updateClockAndCalendar, 100);
-    
-    // Sau đó cập nhật mỗi 1 giây
-    setInterval(updateClockAndCalendar, 1000);
-})();
-</script>
-"""
-
-st.markdown(clock_calendar_html, unsafe_allow_html=True)
