@@ -160,10 +160,27 @@ img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
 
-# === CSS: ẢNH NỀN VINTAGE FULL MÀN HÌNH ===
+# === CSS: FIX FULL SCREEN VÀ GIẢM HIỆU ỨNG VINTAGE ===
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Crimson+Text&display=swap');
+
+/* --- FIX FULL SCREEN: Loại bỏ khoảng trắng và thanh header/footer mặc định --- */
+/* Target toàn bộ trang */
+#root > div:nth-child(1) > div > div > div {{
+    padding: 0; /* Loại bỏ padding mặc định xung quanh toàn bộ nội dung */
+}}
+/* Target main-block để loại bỏ khoảng trắng trên cùng */
+[data-testid="stSidebar"] {{
+    background-color: rgba(255, 250, 240, 0.95); /* Làm Sidebar đồng màu với lớp phủ */
+}}
+/* Ẩn các thanh header và footer mặc định nếu cần full tuyệt đối */
+.st-emotion-cache-1g83g3 {{ /* Streamlit Header */
+    display: none !important;
+}}
+.st-emotion-cache-nahz7x {{ /* Streamlit Footer */
+    display: none !important;
+}}
 
 /* --- CẤU HÌNH CHUNG: Vintage & Full Screen --- */
 [data-testid="stAppViewContainer"] {{
@@ -171,43 +188,41 @@ st.markdown(f"""
     background-size: cover; 
     background-position: center;
     background-attachment: fixed;
-    /* Áp dụng filter Vintage */
-    filter: sepia(50%) grayscale(10%); 
+    /* Áp dụng filter Vintage NHẸ HƠN */
+    filter: sepia(20%) grayscale(5%); /* Giảm sepia từ 50% xuống 20% */
 }}
 
 /* Lớp phủ MỜ NHẠT (opacity) giúp chữ dễ đọc hơn */
 [data-testid="stAppViewContainer"]::before {{
     content: "";
     position: absolute; inset: 0;
-    /* Dùng màu be nhạt hoặc kem để tăng cảm giác hoài cổ */
-    background: rgba(255, 250, 240, 0.75); 
+    /* Dùng màu be nhạt, giảm độ trong suốt để ảnh nền rõ hơn */
+    background: rgba(255, 250, 240, 0.55); /* Giảm opacity từ 0.75 xuống 0.55 */
     backdrop-filter: blur(1px);
     z-index: 0;
 }}
 
 /* --- ẢNH NỀN CHO PC/MÀN HÌNH RỘNG HƠN (>= 768px) --- */
-/* Đặt mặc định Base64 cho PC */
 [data-testid="stAppViewContainer"] {{
     background-image: url("data:image/jpeg;base64,{img_pc_base64}");
 }}
 
 /* --- ẢNH NỀN CHO MOBILE/MÀN HÌNH NHỎ HƠN (< 768px) --- */
 @media (max-width: 767px) {{
-    /* Ghi đè Base64 của PC bằng Base64 của Mobile */
     [data-testid="stAppViewContainer"] {{
         background-image: url("data:image/jpeg;base64,{img_mobile_base64}");
     }}
 }}
 
-/* --- STYLING NỘI DUNG (Để nổi bật trên nền Vintage) --- */
+/* --- STYLING NỘI DUNG --- */
 h1 {{
     text-align: center;
     font-family: 'Playfair Display', serif;
     font-size: 2.5em;
-    color: #4a3e2e; /* Màu nâu đậm hơn */
+    color: #4a3e2e;
     margin-top: 0.2em;
-    z-index: 1; /* Đặt H1 lên trên lớp phủ */
-    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5); /* Tạo hiệu ứng nổi nhẹ */
+    z-index: 1; 
+    text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.5); 
 }}
 /* Tăng độ tương phản câu hỏi và đáp án */
 .stRadio label {{
@@ -223,7 +238,7 @@ div[data-testid="stMarkdownContainer"] p {{
     color: #4a3e2e;
 }}
 .stButton>button {{
-    background-color: #a89073 !important; /* Màu nâu vàng vintage */
+    background-color: #a89073 !important; 
     color: #f7f7f7 !important;
     border-radius: 8px;
     font-size: 1.05em;
