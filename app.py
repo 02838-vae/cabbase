@@ -643,7 +643,7 @@ iframe:first-of-type {{
     opacity: 0;
 }}
 
-/* === CSS MỚI NHẤT: ĐỒNG HỒ VÀ LỊCH PHONG CÁCH MATRIX NEON (ĐÃ FIX) === */
+/* === CSS MỚI NHẤT: ĐỒNG HỒ VÀ LỊCH PHONG CÁCH MATRIX NEON (ĐÃ FIX HOÀN TOÀN) === */
 @keyframes blink {{
     0% {{ opacity: 1; }}
     49% {{ opacity: 1; }}
@@ -656,16 +656,16 @@ iframe:first-of-type {{
     top: 15vh; 
     left: 50%;
     transform: translateX(-50%);
-    width: fit-content;
+    width: auto;
     z-index: 999;
     opacity: 0;
     transition: opacity 1s ease-out 3.5s;
-    /* ✅ FIX: Flexbox để đặt clock và calendar CÙNG 1 HÀNG cho cả Desktop */
     display: flex;
-    flex-direction: row; /* Đảm bảo nằm ngang */
-    align-items: center; /* Căn giữa theo chiều dọc */
-    gap: 20px; /* Khoảng cách giữa đồng hồ và lịch */
-    font-family: 'Share Tech Mono', monospace; 
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 20px;
+    font-family: 'Share Tech Mono', monospace;
 }}
 
 .video-finished .info-wrapper {{
@@ -675,28 +675,33 @@ iframe:first-of-type {{
 .info-container-clock,
 .info-container-calendar {{
     padding: 0;
+    margin: 0;
     line-height: 1;
+    display: inline-block;
 }} 
 
 /* Đồng hồ (Giờ:Phút) - VÀNG NEON */
 #digital-clock {{
     font-size: 2.2rem; 
     margin: 0;
+    padding: 0;
     line-height: 1;
     white-space: nowrap;
     color: #FFFF33;
-    text-shadow: 0 0 7px #FFFF33, 0 0 15px rgba(255, 255, 51, 0.7); 
+    text-shadow: 0 0 7px #FFFF33, 0 0 15px rgba(255, 255, 51, 0.7);
+    display: inline-block;
 }}
 
 /* Lịch (Thứ, Ngày/Tháng/Năm) - XANH LÁ NEON */
 #calendar-display {{
     font-size: 0.9rem; 
-    margin: 0; 
-    padding-top: 0; /* ✅ Bỏ padding-top để căn giữa với đồng hồ */
+    margin: 0;
+    padding: 0;
     line-height: 1;
     color: #FFFFFF; 
     text-shadow: 0 0 7px #39FF14, 0 0 10px rgba(57, 255, 20, 0.7); 
     white-space: nowrap;
+    display: inline-block;
 }}
 
 .blinking-colon {{
@@ -706,7 +711,7 @@ iframe:first-of-type {{
 @media (max-width: 768px) {{
     .info-wrapper {{
         top: 15vh;
-        flex-direction: column; /* Chỉ xếp dọc trên mobile */
+        flex-direction: column;
         align-items: center; 
         gap: 5px; 
     }} 
