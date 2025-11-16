@@ -1,7 +1,7 @@
 import streamlit as st
 import base64
 import os
-import re # Giữ lại import re phòng trường hợp cần dùng, nhưng không sử dụng ở bước này
+import re # Đảm bảo thư viện re được import để làm sạch chuỗi HTML
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
@@ -1054,7 +1054,6 @@ svg_part_number = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="
 svg_quiz = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" class="sparkle"><path class="path" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="currentColor" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
 
 # Gộp toàn bộ HTML vào một chuỗi Python đa dòng
-# Đảm bảo <div class="dots_border"></div> nằm ngay dưới thẻ <a>
 nav_buttons_html = f"""
 <div id="nav-buttons-wrapper">
     <div class="nav-container">
@@ -1075,9 +1074,11 @@ nav_buttons_html = f"""
 </div>
 """
 
-# *** BƯỚC KHẮC PHỤC HIỆU ỨNG ÁNH SÁNG: Loại bỏ nén chuỗi HTML quá mức ***
-# Chúng ta sẽ bỏ qua bước nén chuỗi bằng re.sub và replace('\n', '')
-# và chuyển trực tiếp chuỗi nav_buttons_html đã định dạng rõ ràng cho Streamlit.
+# *** BƯỚC KHẮC PHỤC TRIỆT ĐỂ: LÀM SẠCH CHUỖI HTML (Phải được thực hiện) ***
+# 1. Loại bỏ tất cả khoảng trắng ở đầu mỗi dòng và giữa các thẻ HTML để tránh lỗi phân tích cú pháp Markdown.
+nav_buttons_html_cleaned = re.sub(r'>\s+<', '><', nav_buttons_html.strip())
+# 2. Loại bỏ tất cả ký tự xuống dòng (\n) để tạo thành chuỗi một dòng.
+nav_buttons_html_cleaned = nav_buttons_html_cleaned.replace('\n', '')
 
-# Hiển thị chuỗi HTML
-st.markdown(nav_buttons_html, unsafe_allow_html=True)
+# Hiển thị chuỗi HTML đã được làm sạch
+st.markdown(nav_buttons_html_cleaned, unsafe_allow_html=True)
