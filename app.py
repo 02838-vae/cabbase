@@ -671,7 +671,7 @@ iframe:first-of-type {{
         max-width: 450px; 
         display: flex;
         flex-direction: column; /* Xếp dọc */
-        gap: 15px; 
+        gap: 8px; /* ĐÃ SỬA: Giảm khoảng cách từ 15px xuống 8px */
         padding: 0; /* Bỏ padding 80px trên desktop */
     }}
     
@@ -736,7 +736,7 @@ if len(music_files) > 0:
 else:
     music_sources_js = ""
 
-# PHẦN JS (ĐÃ FIX LỖI UNTERMINATED F-STRING)
+# PHẦN JS
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
