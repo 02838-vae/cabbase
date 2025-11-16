@@ -410,13 +410,14 @@ iframe:first-of-type {{
 
 /* === CSS MỚI CHO NAVIGATION BUTTON (UIverse Dark Mode) === */
 
-.nav-container {{
+.nav-container-wrapper {{
     position: fixed;
     /* Lệch trái 15% */
     left: 15%; 
     top: 50%;
     transform: translate(-50%, -50%);
     display: flex;
+    flex-direction: column; /* Xếp chồng dọc */
     justify-content: center;
     align-items: center;
     padding: 40px;
@@ -424,11 +425,18 @@ iframe:first-of-type {{
     transition: opacity 2s ease-out 3s;
     /* ✅ QUAN TRỌNG: Đảm bảo button ở trên cùng */
     z-index: 10000;
+    gap: 20px; /* Khoảng cách giữa 2 button */
 }}
 
-.video-finished .nav-container {{
+.video-finished .nav-container-wrapper {{
     opacity: 1;
 }}
+
+/* 2. Điều chỉnh lại animation delay cho button thứ 2 */
+.video-finished .button:nth-child(2) {{
+    animation-delay: 3.5s; /* Tạo độ trễ nhẹ so với button đầu */
+}}
+
 
 /* KHỞI TẠO CÁC BIẾN CSS */
 .button {{
@@ -601,11 +609,12 @@ iframe:first-of-type {{
 }}
 
 @media (max-width: 768px) {{
-    .nav-container {{
+    .nav-container-wrapper {{
         left: 50%;
         transform: translate(-50%, -50%);
         width: 100%;
         padding: 20px;
+        gap: 15px; /* Khoảng cách nhỏ hơn cho mobile */
     }}
     
     .button {{
@@ -1040,9 +1049,10 @@ if len(music_files) > 0:
 """, unsafe_allow_html=True)
 
 # --- NAVIGATION BUTTON MỚI (UIverse Style) ---
-# Tên trang phụ là partnumber.py nên link href là /partnumber
+# ĐÃ CHỈNH SỬA: Đổi tên container và thêm button thứ hai
 st.markdown("""
-<div class="nav-container">
+<div class="nav-container-wrapper">
+    
     <a href="/partnumber" target="_self" class="button">
         <div class="dots_border"></div>
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="sparkle" > 
@@ -1050,6 +1060,14 @@ st.markdown("""
         </svg> 
         <span class="text_button">TRA CỨU PART NUMBER</span> 
     </a>
+    
+    <a href="/quizbank" target="_self" class="button">
+        <div class="dots_border"></div>
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="sparkle" > 
+            <path class="path" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" fill="currentColor" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+        </svg> 
+        <span class="text_button">NGÂN HÀNG TRẮC NGHIỆM</span> 
+    </a>
+    
 </div>
 """, unsafe_allow_html=True)
-
