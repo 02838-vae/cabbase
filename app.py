@@ -1075,7 +1075,7 @@ if len(music_files) > 0:
 
 # Định nghĩa SVG trong biến Python đơn dòng
 svg_part_number = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="sparkle" ><path class="path" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" fill="currentColor" d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4" ></path></svg>'
-svg_quiz = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" class="sparkle"><path class="path" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="currentColor" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
+svg_bank = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" class="sparkle"><path class="path" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="currentColor" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
 
 # Gộp toàn bộ HTML vào một chuỗi Python đa dòng
 nav_buttons_html = f"""
@@ -1089,9 +1089,9 @@ nav_buttons_html = f"""
     </div>
     
     <div class="nav-container-right">
-        <a href="/quiz" target="_self" class="button">
+        <a href="/bank" target="_self" class="button">
             <div class="dots_border"></div> 
-            {svg_quiz}
+            {svg_bank}
             <span class="text_button">NGÂN HÀNG TRẮC NGHIỆM</span> 
         </a>
     </div>
@@ -1106,3 +1106,4 @@ nav_buttons_html_cleaned = nav_buttons_html_cleaned.replace('\n', '')
 
 # Hiển thị chuỗi HTML đã được làm sạch
 st.markdown(nav_buttons_html_cleaned, unsafe_allow_html=True)
+
