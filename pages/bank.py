@@ -160,46 +160,49 @@ img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
 
-# === CSS: FIX FULL SCREEN, RÕ NÉT HƠN VÀ HEADER VÀNG ===
+# === CSS: FIX FULL SCREEN, VINTAGE NHẸ & HEADER THEO PARTNUMBER.PY ===
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Crimson+Text&display=swap');
 
-/* --- FIX FULL SCREEN TỐI ĐA (Loại bỏ padding/margin mặc định) --- */
-/* Target root container và các thành phần chính để loại bỏ padding */
-.st-emotion-cache-1gsv8h, 
-.st-emotion-cache-1aehpbu, 
-[data-testid="stMainBlock"], 
-.main {{ 
+/* --- FIX FULL SCREEN TỐI ĐA (Quan trọng) --- */
+
+/* Loại bỏ padding và margin của các container chính */
+.st-emotion-cache-1gsv8h, .st-emotion-cache-1aehpbu {{ /* stApp và Root */
     padding: 0 !important;
     margin: 0 !important;
-    max-width: 100vw !important;
-}}
-/* Loại bỏ khoảng trắng trên cùng và dưới cùng của main content wrapper */
-[data-testid="stAppViewContainer"] > .main {{
-    padding-top: 0rem !important;
-    padding-bottom: 0rem !important;
-}}
-/* Đảm bảo sidebar đồng màu với lớp phủ */
-[data-testid="stSidebar"] {{
-    background-color: rgba(255, 255, 255, 0.95);
 }}
 
-/* --- BACKGROUND FIX: Rõ nét hơn, ít ngả vàng --- */
+/* Đảm bảo Main Content bao phủ toàn bộ chiều cao cửa sổ */
+.st-emotion-cache-18ni5p {{ /* stAppViewContainer - chứa toàn bộ ứng dụng */
+    min-height: 100vh;
+    padding: 0 !important;
+    margin: 0 !important;
+}}
+
+/* Đảm bảo MainBlock không có padding trên/dưới */
+.st-emotion-cache-z5fcl4 {{ /* stMainBlock */
+    padding-top: 0rem !important;
+    padding-bottom: 0rem !important;
+    padding-left: 1rem;
+    padding-right: 1rem;
+}}
+
+/* --- BACKGROUND FIX: Vintage nhẹ và rõ nét hơn --- */
 [data-testid="stAppViewContainer"] {{
     background-size: cover; 
     background-position: center;
     background-attachment: fixed;
-    /* Giảm filter xuống mức rất nhẹ */
-    filter: sepia(10%) grayscale(2%); 
+    /* Vintage nhẹ hơn */
+    filter: sepia(15%) grayscale(5%); 
 }}
 
-/* Lớp phủ (Overlay) */
+/* Lớp phủ (Overlay) - Rất trong suốt để ảnh nền rõ */
 [data-testid="stAppViewContainer"]::before {{
     content: "";
     position: absolute; inset: 0;
-    /* Màu trắng trong suốt, giảm opacity tối đa để ảnh nền rõ nét */
-    background: rgba(255, 255, 255, 0.4); 
+    /* Màu trắng trong suốt, opacity thấp */
+    background: rgba(255, 255, 255, 0.25); 
     backdrop-filter: blur(1px);
     z-index: 0;
 }}
@@ -223,67 +226,63 @@ st.markdown(f"""
     align-items: center;
     justify-content: space-between;
     padding: 5px 15px;
-    background-color: rgba(0, 0, 0, 0.6); /* Nền đen mờ cho tiêu đề */
-    color: #FFD700; /* Màu vàng Gold */
+    background-color: rgba(0, 0, 0, 0.8); /* Nền đen đậm hơn */
     z-index: 1000;
-    position: sticky; /* Giữ header cố định trên cùng */
+    position: sticky; 
     top: 0;
     width: 100%;
 }}
-.marquee-col {{
+
+/* Tiêu đề chạy - Tổ bảo dưỡng số 1 (Giống partnumber.py) */
+.running-title-box {{
     flex-grow: 1;
     overflow: hidden;
     white-space: nowrap;
     text-align: left;
-    max-width: 50%; /* Giới hạn chiều rộng cho marquee */
-}}
-.main-title-col {{
-    flex-shrink: 0;
-    text-align: right;
-    margin-left: 15px;
+    max-width: 60%;
+    padding: 2px 0;
 }}
 .running-title {{
     font-size: 1.1em;
     font-weight: bold;
-    color: #FFD700; /* Vàng */
-    text-shadow: 0 0 3px black;
+    color: #FFD700; /* Vàng Gold */
+    text-shadow: 0 0 5px rgba(255, 255, 0, 0.8);
+    font-family: 'Playfair Display', serif;
+}}
+
+/* Tiêu đề Ngân hàng trắc nghiệm (Giống tiêu đề Tra cứu trong partnumber.py) */
+.main-title-box {{
+    flex-shrink: 0;
+    padding: 5px 15px;
+    border: 1px solid #FFD700; /* Viền vàng */
+    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.5); /* Nền đen mờ */
+    text-align: right;
 }}
 .main-title-small {{
     font-family: 'Playfair Display', serif;
-    font-size: 1.4em; /* Thu nhỏ tiêu đề chính */
+    font-size: 1.1em; /* Thu nhỏ tiêu đề chính */
     margin: 0;
-    color: #FFD700; /* Vàng */
+    color: #FFD700; /* Vàng Gold */
     text-shadow: 0 0 5px rgba(255, 255, 0, 0.5);
+    font-weight: 700;
 }}
 /* Ẩn H1/H2 mặc định để tránh xung đột với header tùy chỉnh */
 h1, h2 {{ display: none; }} 
 
 /* --- STYLING NỘI DUNG CHÍNH --- */
-.stRadio label {{
-    color: #333333 !important;
-    font-size: 1.1em !important;
-    font-weight: 500;
+/* Đảm bảo nội dung chính có padding để không chạm vào lề */
+[data-testid="stMainBlock"] > div:nth-child(1) {{
+    padding-left: 1rem;
+    padding-right: 1rem;
 }}
-div[data-testid="stMarkdownContainer"] p {{
-    color: #333333 !important;
-}}
-.stSelectbox label {{
-    font-size: 1.2em;
-    color: #4a3e2e;
+
+.stRadio label, div[data-testid="stMarkdownContainer"] p {{
+    color: #1a1a1a !important; /* Màu chữ gần như đen */
 }}
 .stButton>button {{
     background-color: #a89073 !important; 
     color: #f7f7f7 !important;
-    border-radius: 8px;
-    font-size: 1.05em;
-    font-family: 'Crimson Text', serif;
-    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
-    transition: all 0.2s ease;
-}}
-.stButton>button:hover {{
-    background-color: #8c765f !important;
-    transform: translateY(-1px);
-    box-shadow: 3px 3px 7px rgba(0, 0, 0, 0.3);
 }}
 </style>
 """, unsafe_allow_html=True)
@@ -293,15 +292,15 @@ div[data-testid="stMarkdownContainer"] p {{
 # 🏷️ GIAO DIỆN CHÍNH (SỬ DỤNG HEADER MỚI)
 # ====================================================
 # TIÊU ĐỀ CHẠY VÀ TIÊU ĐỀ CHÍNH TRÊN 1 HÀNG
-st.markdown("""
+st.markdown(f"""
 <div class="custom-header-row">
-    <div class="marquee-col">
-        <marquee behavior="scroll" direction="left" scrollamount="4">
-            <span class="running-title">Tổ bảo dưỡng số 1</span>
+    <div class="running-title-box">
+        <marquee behavior="scroll" direction="left" scrollamount="6">
+            <span class="running-title">TỔ BẢO DƯỠNG SỐ 1 - ⚜️ CHỦ ĐỘNG, SÁNG TẠO, VƯỢT KHÓ ⚜️ - TỔ BẢO DƯỠNG SỐ 1</span>
         </marquee>
     </div>
-    <div class="main-title-col">
-        <h1 class="main-title-small">📜 Ngân hàng trắc nghiệm</h1>
+    <div class="main-title-box">
+        <p class="main-title-small">NGÂN HÀNG TRẮC NGHIỆM</p>
     </div>
 </div>
 """, unsafe_allow_html=True)
