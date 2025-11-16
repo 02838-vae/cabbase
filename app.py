@@ -412,7 +412,7 @@ iframe:first-of-type {{
 /* === CSS MỚI CHO NAVIGATION BUTTON (UIverse Dark Mode) === */
 
 /* SỬ DỤNG FLEXBOX CHO WRAPPER ĐỂ ĐỊNH VỊ 2 NÚT */
-#nav-buttons-wrapper {{
+#nav-buttons-wrapper {
     position: fixed;
     top: 50%;
     left: 0;
@@ -427,10 +427,10 @@ iframe:first-of-type {{
     opacity: 0;
     transition: opacity 2s ease-out 3s;
     z-index: 10000;
-}}
+}
 
 .nav-container,
-.nav-container-right {{
+.nav-container-right {
     position: static; 
     left: unset;
     right: unset;
@@ -442,14 +442,14 @@ iframe:first-of-type {{
     display: flex; 
     justify-content: center;
     align-items: center;
-}}
+}
 
-.video-finished #nav-buttons-wrapper {{
+.video-finished #nav-buttons-wrapper {
     opacity: 1;
-}}
+}
 
 /* KHỞI TẠO CÁC BIẾN CSS (Giữ nguyên) */
-.button {{
+.button {
     --black-700: hsla(0, 0%, 12%, 1);
     --border_radius: 9999px; 
     --transtion: 0.3s ease-in-out;
@@ -472,10 +472,10 @@ iframe:first-of-type {{
     transition: transform var(--transtion);
     
     text-decoration: none; 
-}}
+}
 
 /* NỀN ĐEN CỦA BUTTON (Giữ nguyên) */
-.button::before {{
+.button::before {
     content: "";
     position: absolute;
     top: 50%;
@@ -492,10 +492,10 @@ iframe:first-of-type {{
         0 0 0 calc(var(--active, 0) * 0.375rem) var(--hover-color);
     transition: all var(--transtion);
     z-index: 0;
-}}
+}
 
 /* HIỆU ỨNG TIA SÁNG BÊN TRONG KHI HOVER (Background Gradient) - Giữ nguyên */
-.button::after {{
+.button::after {
     content: "";
     position: absolute;
     top: 50%;
@@ -513,16 +513,17 @@ iframe:first-of-type {{
     border-radius: var(--border_radius);
     transition: opacity var(--transtion);
     z-index: 2;
-}}
+}
 
 /* KÍCH HOẠT TRẠNG THÁI HOVER (Giữ nguyên) */
-.button:is(:hover, :focus-visible) {{
+.button:is(:hover, :focus-visible) {
     --active: 1;
-}}
+}
 
-/* HIỆU ỨNG ÁNH SÁNG CHẠY VIỀN LIÊN TỤC (dots_border) - Giữ nguyên */
-.button .dots_border {{
-    --size_border: calc(100% + 2px);
+/* HIỆU ỨNG ÁNH SÁNG CHẠY VIỀN LIÊN TỤC (dots_border) */
+.button .dots_border {
+    /* Tăng kích thước bao phủ ra ngoài thêm 4px (thay vì 2px) để chắc chắn */
+    --size_border: calc(100% + 4px); 
     overflow: hidden;
 
     position: absolute;
@@ -536,17 +537,18 @@ iframe:first-of-type {{
 
     border-radius: var(--border_radius);
     z-index: -1; 
-}}
+}
 
-/* LỚP GIẢ TẠO DÒNG ÁNH SÁNG XOAY (Giữ nguyên) */
-.button .dots_border::before {{
+/* LỚP GIẢ TẠO DÒNG ÁNH SÁNG XOAY */
+.button .dots_border::before {
     content: "";
     position: absolute;
     top: 50%; 
     left: 50%;
     
-    width: 300%; 
-    height: 300%; 
+    /* Tăng kích thước vùng mask lên 400% để đảm bảo ánh sáng đủ lớn */
+    width: 400%; 
+    height: 400%; 
     
     transform: translate(-50%, -50%) rotate(0deg); 
     transform-origin: center;
@@ -563,39 +565,39 @@ iframe:first-of-type {{
     );
                           
     animation: rotate 3s linear infinite;
-}}
+}
 
-@keyframes rotate {{
-    to {{ transform: translate(-50%, -50%) rotate(360deg); }}
-}}
+@keyframes rotate {
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
 
 /* ICON và TEXT (Giữ nguyên) */
-.button .sparkle {{
+.button .sparkle {
     position: relative;
     z-index: 10;
     width: 1.75rem;
-}}
+}
 
-.button .sparkle .path {{
+.button .sparkle .path {
     fill: currentColor;
     stroke: currentColor;
     transform-origin: center;
     color: var(--text-color); 
     transition: transform var(--transtion);
-}}
+}
 
-.button:is(:hover, :focus) .sparkle .path {{
+.button:is(:hover, :focus) .sparkle .path {
     animation: path 1.5s linear 0.5s infinite;
-}}
+}
 
-@keyframes path {{
-    0%, 34%, 71%, 100% {{ transform: scale(1); }}
-    17% {{ transform: scale(1.2); }}
-    49% {{ transform: scale(1.2); }}
-    83% {{ transform: scale(1.2); }}
-}}
+@keyframes path {
+    0%, 34%, 71%, 100% { transform: scale(1); }
+    17% { transform: scale(1.2); }
+    49% { transform: scale(1.2); }
+    83% { transform: scale(1.2); }
+}
 
-.button .text_button {{
+.button .text_button {
     position: relative;
     z-index: 10;
     background-image: linear-gradient(
@@ -611,12 +613,12 @@ iframe:first-of-type {{
     letter-spacing: 1px;
     white-space: nowrap;
     text-shadow: 0 0 5px rgba(0, 0, 0, 0.5); 
-}}
+}
 
 /* --- MEDIA QUERY CHO MOBILE (Giữ nguyên logic Flexbox) --- */
-@media (max-width: 768px) {{
+@media (max-width: 768px) {
     /* Vị trí mới cho mobile: dùng flexbox để xếp dọc */
-    #nav-buttons-wrapper {{
+    #nav-buttons-wrapper {
         position: fixed;
         bottom: 120px; 
         left: 50%;
@@ -627,47 +629,47 @@ iframe:first-of-type {{
         flex-direction: column; /* Xếp dọc */
         gap: 15px; 
         padding: 0; /* Bỏ padding 80px trên desktop */
-    }}
+    }
     
     /* Cả hai container vẫn là static và xếp chồng lên nhau */
     .nav-container,
-    .nav-container-right {{
+    .nav-container-right {
         position: static; 
         width: 100%;
-    }}
+    }
 
-    .button {{
+    .button {
         padding: 0.8rem 1.5rem;
         gap: 0.4rem;
         width: 100%;
         max-width: 450px;
         justify-content: center;
-    }}
-    .button .sparkle {{
+    }
+    .button .sparkle {
         width: 1.5rem;
-    }}
-    .button .text_button {{
+    }
+    .button .text_button {
         font-size: 1.1rem;
         white-space: nowrap;
-    }}
-}}
+    }
+}
 
-@keyframes fadeInUp {{
-    from {{
+@keyframes fadeInUp {
+    from {
         opacity: 0;
         transform: translateY(50px) scale(0.9);
-    }}
-    to {{
+    }
+    to {
         opacity: 1;
         transform: translateY(0) scale(1);
-    }}
-}}
+    }
+}
 
-.video-finished .button {{
+.video-finished .button {
     animation: fadeInUp 1s ease-out forwards;
     animation-delay: 3.2s;
     opacity: 0;
-}}
+}
 </style>
 """
 
@@ -1082,3 +1084,4 @@ nav_buttons_html_cleaned = nav_buttons_html_cleaned.replace('\n', '')
 
 # Hiển thị chuỗi HTML đã được làm sạch
 st.markdown(nav_buttons_html_cleaned, unsafe_allow_html=True)
+
