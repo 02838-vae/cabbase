@@ -193,7 +193,7 @@ iframe:first-of-type {{
     position: fixed;
     top: 5vh;
     left: 0;
-    width: 100vw; /* Đảm bảo tràn màn hình */
+    width: 100vw; /* Đảm bảo trên màn hình */
     height: 10vh;
     overflow: hidden;
     z-index: 20;
@@ -480,7 +480,7 @@ iframe:first-of-type {{
     z-index: 0;
 }}
 
-/* HIỆU ỨNG TIA SÁNG BÊN TRONG KHI HOVER (Background Gradient) */
+/* HIỆU ỨNG TIA SÁNG BÊNTRONG KHI HOVER (Background Gradient) */
 .button::after {{
     content: "";
     position: absolute;
@@ -643,7 +643,7 @@ iframe:first-of-type {{
     opacity: 0;
 }}
 
-/* === CSS MỚI NHẤT: ĐỒNG HỒ VÀ LỊCH PHONG CÁCH MATRIX NEON (ĐÃ CĂN CHỈNH) === */
+/* === CSS MỚI NHẤT: ĐỒNG HỒ VÀ LỊCH PHONG CÁCH MATRIX NEON (ĐÃ FIX) === */
 @keyframes blink {{
     0% {{ opacity: 1; }}
     49% {{ opacity: 1; }}
@@ -653,20 +653,18 @@ iframe:first-of-type {{
 
 .info-wrapper {{
     position: fixed;
-    /* ✅ CHỈNH SỬA: Đưa vị trí lên cao hơn một chút */
     top: 15vh; 
-    left: 50%; /* Căn giữa */
-    transform: translateX(-50%); /* Dịch chuyển sang trái 50% chiều rộng */
+    left: 50%;
+    transform: translateX(-50%);
     width: fit-content;
     z-index: 999;
     opacity: 0;
     transition: opacity 1s ease-out 3.5s;
-    /* Dùng Flexbox để đặt clock và calendar cùng 1 hàng */
+    /* ✅ FIX: Flexbox để đặt clock và calendar CÙNG 1 HÀNG cho cả Desktop */
     display: flex;
-    align-items: flex-start; /* Căn chỉnh các item theo đỉnh */
-    /* ✅ GIẢM: Khoảng cách giữa đồng hồ và lịch */
-    gap: 15px; 
-    
+    flex-direction: row; /* Đảm bảo nằm ngang */
+    align-items: center; /* Căn giữa theo chiều dọc */
+    gap: 20px; /* Khoảng cách giữa đồng hồ và lịch */
     font-family: 'Share Tech Mono', monospace; 
 }}
 
@@ -677,30 +675,26 @@ iframe:first-of-type {{
 .info-container-clock,
 .info-container-calendar {{
     padding: 0;
-    line-height: 1.2;
+    line-height: 1;
 }} 
 
 /* Đồng hồ (Giờ:Phút) - VÀNG NEON */
 #digital-clock {{
-    /* ✅ GIẢM KÍCH THƯỚC: Gọn hơn */
     font-size: 2.2rem; 
     margin: 0;
     line-height: 1;
     white-space: nowrap;
-    color: #FFFF33; /* VÀNG NEON */
+    color: #FFFF33;
     text-shadow: 0 0 7px #FFFF33, 0 0 15px rgba(255, 255, 51, 0.7); 
 }}
 
-/* Lịch (Thứ, Ngày/Tháng/Năm) - XANH LÁ NEON (TĂNG TƯƠNG PHẢN) */
+/* Lịch (Thứ, Ngày/Tháng/Năm) - XANH LÁ NEON */
 #calendar-display {{
-    /* ✅ GIẢM KÍCH THƯỚC: Gọn hơn */
     font-size: 0.9rem; 
     margin: 0; 
-    padding-top: 5px; /* Tạo khoảng cách với đồng hồ */
-    line-height: 1.2;
-    /* ✅ V9 FIX: CHUYỂN SANG TRẮNG để tăng độ tương phản tuyệt đối */
+    padding-top: 0; /* ✅ Bỏ padding-top để căn giữa với đồng hồ */
+    line-height: 1;
     color: #FFFFFF; 
-    /* ✅ VẪN GIỮ ĐỔ BÓNG Xanh Lá Neon (Sử dụng shadow mạnh hơn) */
     text-shadow: 0 0 7px #39FF14, 0 0 10px rgba(57, 255, 20, 0.7); 
     white-space: nowrap;
 }}
@@ -712,23 +706,17 @@ iframe:first-of-type {{
 @media (max-width: 768px) {{
     .info-wrapper {{
         top: 15vh;
-        left: 50%;
-        transform: translateX(-50%);
-        flex-direction: column; 
+        flex-direction: column; /* Chỉ xếp dọc trên mobile */
         align-items: center; 
-        /* ✅ GIẢM GAP cho mobile */
-        gap: 0px; 
+        gap: 5px; 
     }} 
     
     #digital-clock {{
-        /* ✅ GIẢM KÍCH THƯỚC cho mobile */
         font-size: 1.8rem; 
         text-align: center;
     }} 
     #calendar-display {{
-        /* ✅ GIẢM KÍCH THƯỚC cho mobile */
         font-size: 0.8rem; 
-        padding-top: 0; 
         text-align: center;
     }} 
 }}
@@ -1118,9 +1106,9 @@ if len(music_files) > 0:
     st.markdown("""
 <div id="music-player-container">
     <div class="controls">
-        <button class="control-btn" id="prev-btn">⏮</button>
+        <button class="control-btn" id="prev-btn">⮜</button>
         <button class="control-btn play-pause" id="play-pause-btn">▶</button>
-        <button class="control-btn" id="next-btn">⏭</button>
+        <button class="control-btn" id="next-btn">⮞</button>
     </div>
     <div class="progress-container" id="progress-container">
         <div class="progress-bar" id="progress-bar"></div>
@@ -1151,56 +1139,55 @@ st.markdown("""
 clock_calendar_html = """
 <div class="info-wrapper">
     <div class="info-container-clock">
-        <p id="digital-clock">12<span class="blinking-colon">:</span>00</p>
+        <p id="digital-clock">00<span class="blinking-colon">:</span>00</p>
     </div>
     <div class="info-container-calendar">
-        <p id="calendar-display">TH 7, 15 THÁNG 11 2025</p>
+        <p id="calendar-display">ĐANG TẢI...</p>
     </div>
 </div>
 
 <script>
     function updateClockAndCalendar() {
-        // Lấy thời gian hiện tại từ máy khách
+        // ✅ FIX: Lấy thời gian hiện tại CHÍNH XÁC từ máy khách
         const now = new Date();
         
-        // --- ĐỒNG HỒ (HH:MM) ---
+        // --- ĐỒNG HỒ (HH:MM:SS) - Hiển thị cả giây để kiểm tra real-time ---
         const hours = now.getHours().toString().padStart(2, '0');
         const minutes = now.getMinutes().toString().padStart(2, '0');
+        const seconds = now.getSeconds().toString().padStart(2, '0');
 
         const digitalClockEl = window.parent.document.getElementById('digital-clock');
 
         if (digitalClockEl) {
-            // Hiển thị giờ và phút với dấu hai chấm nhấp nháy
+            // Hiển thị giờ:phút (có thể thêm giây nếu cần)
             digitalClockEl.innerHTML = 
                 `${hours}<span class="blinking-colon">:</span>${minutes}`;
         }
 
         // --- LỊCH (Thứ, Ngày/Tháng/Năm) ---
-        // Tên thứ (Việt hóa)
         const days = ["CN", "TH 2", "TH 3", "TH 4", "TH 5", "TH 6", "TH 7"];
-        // Tên tháng (Việt hóa)
-        const monthNames = ["THÁNG 1", "THÁNG 2", "THÁNG 3", "THÁNG 4", "THÁNG 5", "THÁNG 6", "THÁNG 7", "THÁNG 8", "THÁNG 9", "THÁNG 10", "THÁNG 11", "THÁNG 12"];
+        const monthNames = ["THÁNG 1", "THÁNG 2", "THÁNG 3", "THÁNG 4", "THÁNG 5", "THÁNG 6", 
+                           "THÁNG 7", "THÁNG 8", "THÁNG 9", "THÁNG 10", "THÁNG 11", "THÁNG 12"];
 
         const dayOfWeek = days[now.getDay()];
-        const date = now.getDate().toString().padStart(2, '0');
+        const date = now.getDate();
         const month = monthNames[now.getMonth()];
         const year = now.getFullYear();
 
         const calendarEl = window.parent.document.getElementById('calendar-display');
 
         if (calendarEl) {
-            // Định dạng: TH 7, 15 THÁNG 11 2025
+            // Định dạng: TH 7, 16 THÁNG 11 2025
             calendarEl.textContent = `${dayOfWeek}, ${date} ${month} ${year}`;
         }
     }
 
-    // Thiết lập Interval để cập nhật mỗi 500ms 
-    // ✅ CHỈNH SỬA: Giảm thời gian chờ ban đầu (2s) để đồng hồ hiển thị sớm và chính xác hơn
-    setTimeout(() => {
-        updateClockAndCalendar();
-        // Cập nhật mỗi nửa giây
-        setInterval(updateClockAndCalendar, 500); 
-    }, 2000); 
+    // ✅ FIX: Cập nhật NGAY LẬP TỨC khi load và sau đó mỗi giây
+    // Gọi hàm ngay lần đầu tiên
+    updateClockAndCalendar();
+    
+    // Sau đó cập nhật mỗi 1 giây (1000ms) để đảm bảo real-time chính xác
+    setInterval(updateClockAndCalendar, 1000);
 </script>
 """
 
