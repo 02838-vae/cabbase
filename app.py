@@ -414,15 +414,16 @@ iframe:first-of-type {{
 
 .nav-container {{
     position: fixed;
-    /* ✅ SỬA ĐỔI: Đặt sát mép trái (50px) */
-    left: 50px; 
+    /* ✅ SỬA LỖI: Tăng left lên 80px để tránh bị che khuất và loại bỏ padding */
+    left: 80px; 
     top: 50%;
     /* Chỉ dịch chuyển dọc, không dịch chuyển ngang */
     transform: translateY(-50%); 
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 40px;
+    /* ✅ SỬA LỖI: Xóa padding thừa */
+    padding: 0; 
     opacity: 0;
     transition: opacity 2s ease-out 3s;
     /* QUAN TRỌNG: Đảm bảo button ở trên cùng */
@@ -432,15 +433,16 @@ iframe:first-of-type {{
 /* ✅ CONTAINER MỚI CHO BUTTON BÊN PHẢI */
 .nav-container-right {{
     position: fixed;
-    /* ✅ SỬA ĐỔI: Đặt sát mép phải (50px) */
-    right: 50px; 
+    /* ✅ SỬA LỖI: Tăng right lên 80px và loại bỏ padding */
+    right: 80px; 
     top: 50%;
     /* Chỉ dịch chuyển dọc, không dịch chuyển ngang */
     transform: translateY(-50%); 
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 40px;
+    /* ✅ SỬA LỖI: Xóa padding thừa */
+    padding: 0;
     opacity: 0;
     transition: opacity 2s ease-out 3s;
     z-index: 10000;
