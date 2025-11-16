@@ -68,7 +68,6 @@ if not 'logo_base64' in locals() or not logo_base64:
 
 
 # --- SỬ DỤNG URL TRỰC TIẾP TỪ GITHUB RAW CONTENT (TỐC ĐỘ CAO HƠN) ---
-# Đảm bảo repository của bạn là PUBLIC để các URL này hoạt động
 BASE_MUSIC_URL = "https://raw.githubusercontent.com/02838-vae/cabbase/main/"
 music_urls = []
 
@@ -77,7 +76,6 @@ for i in range(1, 7):
     url = f"{BASE_MUSIC_URL}background{i}.mp3"
     music_urls.append(url)
     
-# Biến được sử dụng trong JS:
 music_files = music_urls 
 
 if len(music_files) == 0:
@@ -872,7 +870,7 @@ js_callback_video = f"""
                     audio.currentTime = 0;
                     
                     introTextContainer.style.opacity = 0;
-                    setTimeout(sendBackBackToStreamlit, 500);
+                    setTimeout(sendBackToStreamlit, 500);
                 }});
                 video.addEventListener('error', (e) => {{
                     console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
@@ -1049,14 +1047,21 @@ if len(music_files) > 0:
 """, unsafe_allow_html=True)
 
 # --- NAVIGATION BUTTON MỚI (UIverse Style) ---
-# Tên trang phụ là partnumber.py nên link href là /partnumber
-# Tên trang phụ là quiz.py nên link href là /quiz
-st.markdown("""
+# **Định nghĩa SVG trong biến Python đơn dòng để tránh lỗi phân tích cú pháp của Streamlit.**
+
+# Icon Tra cứu Part Number (Kính lúp)
+svg_part_number = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="sparkle" ><path class="path" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" fill="currentColor" d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4" ></path></svg>'
+
+# Icon Ngân hàng trắc nghiệm (Dấu Check trong Vòng tròn)
+svg_quiz = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" class="sparkle"><path class="path" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="currentColor" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
+
+# Sử dụng f-string để chèn các biến SVG vào HTML
+st.markdown(f"""
 <div id="nav-buttons-wrapper">
     <div class="nav-container">
         <a href="/partnumber" target="_self" class="button">
             <div class="dots_border"></div>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="sparkle" ><path class="path" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" fill="currentColor" d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4" ></path></svg> 
+            {svg_part_number} 
             <span class="text_button">TRA CỨU PART NUMBER</span> 
         </a>
     </div>
@@ -1064,7 +1069,7 @@ st.markdown("""
     <div class="nav-container-right">
         <a href="/quiz" target="_self" class="button">
             <div class="dots_border"></div>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" class="sparkle"><path class="path" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="currentColor" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+            {svg_quiz}
             <span class="text_button">NGÂN HÀNG TRẮC NGHIỆM</span> 
         </a>
     </div>
