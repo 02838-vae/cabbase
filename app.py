@@ -412,25 +412,24 @@ iframe:first-of-type {{
 
 /* === CSS MỚI CHO NAVIGATION BUTTON (UIverse Dark Mode) === */
 
-/* ✅ SỬA LỖI: Dùng wrapper làm container fixed và dùng Flexbox để căn chỉnh 2 nút */
+/* SỬ DỤNG FLEXBOX CHO WRAPPER ĐỂ ĐỊNH VỊ 2 NÚT */
 #nav-buttons-wrapper {{
     position: fixed;
     top: 50%;
     left: 0;
-    width: 100%; /* Chiếm toàn bộ chiều ngang */
+    width: 100%; 
     transform: translateY(-50%);
     
     display: flex;
-    justify-content: space-between; /* Đẩy 2 nút ra 2 mép */
+    justify-content: space-between; 
     align-items: center;
-    padding: 0 80px; /* Khoảng cách 80px từ mép trái và mép phải */
+    padding: 0 80px; 
     
     opacity: 0;
     transition: opacity 2s ease-out 3s;
     z-index: 10000;
 }}
 
-/* ❌ Loại bỏ định vị cố định/riêng lẻ cho container con */
 .nav-container,
 .nav-container-right {{
     position: static; 
@@ -439,10 +438,9 @@ iframe:first-of-type {{
     top: unset;
     transform: none; 
     padding: 0;
-    /* Đảm bảo chúng luôn hiển thị sau khi cha chúng hiện ra */
     opacity: 1 !important; 
     transition: none !important;
-    display: flex; /* Đảm bảo button bên trong được căn chỉnh */
+    display: flex; 
     justify-content: center;
     align-items: center;
 }}
@@ -874,7 +872,7 @@ js_callback_video = f"""
                     audio.currentTime = 0;
                     
                     introTextContainer.style.opacity = 0;
-                    setTimeout(sendBackToStreamlit, 500);
+                    setTimeout(sendBackBackToStreamlit, 500);
                 }});
                 video.addEventListener('error', (e) => {{
                     console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
@@ -1058,9 +1056,7 @@ st.markdown("""
     <div class="nav-container">
         <a href="/partnumber" target="_self" class="button">
             <div class="dots_border"></div>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="sparkle" > 
-                <path class="path" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" fill="currentColor" d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4" ></path> 
-            </svg> 
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="sparkle" ><path class="path" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" fill="currentColor" d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4" ></path></svg> 
             <span class="text_button">TRA CỨU PART NUMBER</span> 
         </a>
     </div>
@@ -1068,9 +1064,7 @@ st.markdown("""
     <div class="nav-container-right">
         <a href="/quiz" target="_self" class="button">
             <div class="dots_border"></div>
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" class="sparkle">
-                <path class="path" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="currentColor" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" class="sparkle"><path class="path" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="currentColor" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
             <span class="text_button">NGÂN HÀNG TRẮC NGHIỆM</span> 
         </a>
     </div>
