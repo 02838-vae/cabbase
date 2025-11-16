@@ -412,54 +412,51 @@ iframe:first-of-type {{
 
 /* === CSS MỚI CHO NAVIGATION BUTTON (UIverse Dark Mode) === */
 
-.nav-container {{
+/* ✅ SỬA LỖI: Dùng wrapper làm container fixed và dùng Flexbox để căn chỉnh 2 nút */
+#nav-buttons-wrapper {{
     position: fixed;
-    /* ✅ SỬA LỖI: Tăng left lên 80px để tránh bị che khuất và loại bỏ padding */
-    left: 80px; 
     top: 50%;
-    /* Chỉ dịch chuyển dọc, không dịch chuyển ngang */
-    transform: translateY(-50%); 
+    left: 0;
+    width: 100%; /* Chiếm toàn bộ chiều ngang */
+    transform: translateY(-50%);
+    
     display: flex;
-    justify-content: center;
+    justify-content: space-between; /* Đẩy 2 nút ra 2 mép */
     align-items: center;
-    /* ✅ SỬA LỖI: Xóa padding thừa */
-    padding: 0; 
+    padding: 0 80px; /* Khoảng cách 80px từ mép trái và mép phải */
+    
     opacity: 0;
     transition: opacity 2s ease-out 3s;
-    /* QUAN TRỌNG: Đảm bảo button ở trên cùng */
     z-index: 10000;
 }}
 
-/* ✅ CONTAINER MỚI CHO BUTTON BÊN PHẢI */
+/* ❌ Loại bỏ định vị cố định/riêng lẻ cho container con */
+.nav-container,
 .nav-container-right {{
-    position: fixed;
-    /* ✅ SỬA LỖI: Tăng right lên 80px và loại bỏ padding */
-    right: 80px; 
-    top: 50%;
-    /* Chỉ dịch chuyển dọc, không dịch chuyển ngang */
-    transform: translateY(-50%); 
-    display: flex;
+    position: static; 
+    left: unset;
+    right: unset;
+    top: unset;
+    transform: none; 
+    padding: 0;
+    /* Đảm bảo chúng luôn hiển thị sau khi cha chúng hiện ra */
+    opacity: 1 !important; 
+    transition: none !important;
+    display: flex; /* Đảm bảo button bên trong được căn chỉnh */
     justify-content: center;
     align-items: center;
-    /* ✅ SỬA LỖI: Xóa padding thừa */
-    padding: 0;
-    opacity: 0;
-    transition: opacity 2s ease-out 3s;
-    z-index: 10000;
 }}
 
-.video-finished .nav-container,
-.video-finished .nav-container-right {{
+.video-finished #nav-buttons-wrapper {{
     opacity: 1;
 }}
 
-/* KHỞI TẠO CÁC BIẾN CSS */
+/* KHỞI TẠO CÁC BIẾN CSS (Giữ nguyên) */
 .button {{
     --black-700: hsla(0, 0%, 12%, 1);
     --border_radius: 9999px; 
     --transtion: 0.3s ease-in-out;
     --active: 0; 
-    /* ĐIỀU CHỈNH: Màu ánh sáng hover SIÊU DỊU (Vàng Pastel) */
     --hover-color: hsl(40, 60%, 85%);
     --text-color: hsl(0, 0%, 100%); 
     
@@ -474,14 +471,13 @@ iframe:first-of-type {{
     border: none;
     border-radius: var(--border_radius);
     
-    /* ĐIỀU CHỈNH: Tăng hiệu ứng phóng to (scale 0.2) */
     transform: scale(calc(1 + (var(--active, 0) * 0.2)));
     transition: transform var(--transtion);
     
     text-decoration: none; 
 }}
 
-/* NỀN ĐEN CỦA BUTTON */
+/* NỀN ĐEN CỦA BUTTON (Giữ nguyên) */
 .button::before {{
     content: "";
     position: absolute;
@@ -501,7 +497,7 @@ iframe:first-of-type {{
     z-index: 0;
 }}
 
-/* HIỆU ỨNG TIA SÁNG BÊN TRONG KHI HOVER (Background Gradient) */
+/* HIỆU ỨNG TIA SÁNG BÊN TRONG KHI HOVER (Background Gradient) - Giữ nguyên */
 .button::after {{
     content: "";
     position: absolute;
@@ -510,7 +506,6 @@ iframe:first-of-type {{
     transform: translate(-50%, -50%);
     width: 90%;
     height: 90%;
-    /* Gradient bên trong button chuyển sang tông vàng/cam siêu dịu */
     background-color: hsla(40, 60%, 85%, 0.75);
     background-image: 
         radial-gradient(at 51% 89%, hsla(45, 60%, 90%, 1) 0px, transparent 50%), 
@@ -523,12 +518,12 @@ iframe:first-of-type {{
     z-index: 2;
 }}
 
-/* KÍCH HOẠT TRẠNG THÁI HOVER */
+/* KÍCH HOẠT TRẠNG THÁI HOVER (Giữ nguyên) */
 .button:is(:hover, :focus-visible) {{
     --active: 1;
 }}
 
-/* HIỆU ỨNG ÁNH SÁNG CHẠY VIỀN LIÊN TỤC (dots_border) */
+/* HIỆU ỨNG ÁNH SÁNG CHẠY VIỀN LIÊN TỤC (dots_border) - Giữ nguyên */
 .button .dots_border {{
     --size_border: calc(100% + 2px);
     overflow: hidden;
@@ -546,7 +541,7 @@ iframe:first-of-type {{
     z-index: -1; 
 }}
 
-/* LỚP GIẢ TẠO DÒNG ÁNH SÁNG XOAY */
+/* LỚP GIẢ TẠO DÒNG ÁNH SÁNG XOAY (Giữ nguyên) */
 .button .dots_border::before {{
     content: "";
     position: absolute;
@@ -560,13 +555,12 @@ iframe:first-of-type {{
     transform-origin: center;
     
     background: white;
-    /* Masking mới để ĐẢM BẢO chỉ 1 vệt sáng duy nhất */
     mask: conic-gradient(
         from 0deg at 50% 50%, 
         transparent 0%, 
         transparent 30%, 
         white 31%, 
-        white 35%, /* Giữ độ dày vệt sáng đủ để thấy */
+        white 35%, 
         transparent 36%, 
         transparent 100%
     );
@@ -622,36 +616,26 @@ iframe:first-of-type {{
     text-shadow: 0 0 5px rgba(0, 0, 0, 0.5); 
 }}
 
+/* --- MEDIA QUERY CHO MOBILE (Giữ nguyên logic Flexbox) --- */
 @media (max-width: 768px) {{
     /* Vị trí mới cho mobile: dùng flexbox để xếp dọc */
     #nav-buttons-wrapper {{
         position: fixed;
-        bottom: 120px; /* Đặt phía trên music player */
+        bottom: 120px; 
         left: 50%;
         transform: translateX(-50%);
         width: calc(100% - 40px);
-        max-width: 450px; /* Giới hạn độ rộng trên mobile */
+        max-width: 450px; 
         display: flex;
         flex-direction: column; /* Xếp dọc */
-        gap: 15px; /* Khoảng cách giữa 2 button */
-        z-index: 10000;
-        opacity: 0;
-        transition: opacity 2s ease-out 3s;
+        gap: 15px; 
+        padding: 0; /* Bỏ padding 80px trên desktop */
     }}
     
-    .video-finished #nav-buttons-wrapper {{
-        opacity: 1;
-    }}
-    
-    /* Cả hai container sẽ chuyển về giữa và xếp chồng */
+    /* Cả hai container vẫn là static và xếp chồng lên nhau */
     .nav-container,
     .nav-container-right {{
         position: static; 
-        left: unset;
-        right: unset;
-        top: unset;
-        transform: none; /* Bỏ transform */
-        padding: 0;
         width: 100%;
     }}
 
@@ -694,7 +678,7 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Giữ nguyên) ---
 
 # Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
