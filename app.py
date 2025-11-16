@@ -678,7 +678,7 @@ iframe:first-of-type {{
         max-width: 450px; 
         display: flex;
         flex-direction: column; /* Xếp dọc */
-        gap: 1px; /* ĐÃ SỬA: GIẢM XUỐNG CỰC TIỂU TỪ 3PX XUỐNG 1PX */
+        gap: 8px; /* GIẢM KHOẢNG CÁCH: từ 1px lên 8px để dễ nhìn hơn */
         padding: 0; /* Bỏ padding 80px trên desktop */
     }}
     
@@ -1161,3 +1161,4 @@ nav_buttons_html_cleaned = nav_buttons_html_cleaned.replace('\n', '')
 
 # Hiển thị chuỗi HTML đã được làm sạch
 st.markdown(nav_buttons_html_cleaned, unsafe_allow_html=True)
+
