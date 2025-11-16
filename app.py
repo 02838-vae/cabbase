@@ -1000,7 +1000,7 @@ intro_chars_html = ''.join([
     for char in intro_title
 ])
 html_content_modified = html_content_modified.replace(
-    "<div id=\"intro-text-container\">KHÁM PHẢ THẾ GIỚI CÙNG CHÚNG TÔI</div>",
+    "<div id=\"intro-text-container\">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>",
     f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
 )
 
