@@ -16,8 +16,9 @@ def clean_text(s: str) -> str:
     return re.sub(r'\s+', ' ', s).strip()
 
 def read_docx_paragraphs(source):
+    # Hàm đọc nội dung file docx
     try:
-        # Đường dẫn file docx giả định nằm cùng thư mục với script
+        # Giả định file docx nằm cùng thư mục với script
         doc = Document(os.path.join(os.path.dirname(__file__), source))
     except Exception as e:
         st.error(f"Không thể đọc file .docx: {e}")
@@ -26,14 +27,9 @@ def read_docx_paragraphs(source):
 
 def get_base64_encoded_file(file_path):
     """Mã hóa file ảnh sang base64 để sử dụng trong CSS."""
-    # Base64 cho ảnh 1x1 trong suốt (fallback)
     fallback_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
     try:
-        # Thử tìm file trong cùng thư mục với script
         path_to_check = os.path.join(os.path.dirname(__file__), file_path)
-        if not os.path.exists(path_to_check):
-             path_to_check = file_path
-
         if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
             return fallback_base64
             
@@ -47,7 +43,7 @@ def get_base64_encoded_file(file_path):
 # 🧩 PARSER NGÂN HÀNG KỸ THUẬT (CABBANK)
 # ====================================================
 def parse_cabbank(source):
-    # Sử dụng lại logic parser từ file gốc
+    # [Giữ nguyên logic parser cabbank]
     paras = read_docx_paragraphs(source)
     if not paras:
         return []
@@ -92,7 +88,7 @@ def parse_cabbank(source):
 # 🧩 PARSER NGÂN HÀNG LUẬT (LAWBANK)
 # ====================================================
 def parse_lawbank(source):
-    # Sử dụng lại logic parser từ file gốc
+    # [Giữ nguyên logic parser lawbank]
     paras = read_docx_paragraphs(source)
     if not paras:
         return []
@@ -139,6 +135,13 @@ def parse_lawbank(source):
             if m.group("star"):
                 current["answer"] = option
 
+        if current["question"] and current["options"]:
+            if not current["answer"]:
+                current["answer"] = current["options"][0]
+            questions.append(current)
+            current = {"question": "", "options": [], "answer": ""}
+
+
     if current["question"] and current["options"]:
         if not current["answer"]:
             current["answer"] = current["options"][0]
@@ -160,40 +163,32 @@ img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
 
-# === CSS: FIX FULL SCREEN, VINTAGE NHẸ & HEADER THEO PARTNUMBER.PY ===
+# === CSS: FIX FULL SCREEN, VINTAGE NHẸ & HEADER TUYỆT ĐỐI ===
 st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600&family=Crimson+Text&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Crimson+Text:wght@400;700&display=swap');
 
-/* --- FIX FULL SCREEN TỐI ĐA (Quan trọng) --- */
-
-/* Loại bỏ padding và margin của các container chính */
-.st-emotion-cache-1gsv8h, .st-emotion-cache-1aehpbu {{ /* stApp và Root */
-    padding: 0 !important;
-    margin: 0 !important;
-}}
-
-/* Đảm bảo Main Content bao phủ toàn bộ chiều cao cửa sổ */
+/* ======================= FULL SCREEN FIX ======================= */
+/* Áp dụng fix full screen cho các container chính của Streamlit */
+/* 1. Đảm bảo toàn bộ ứng dụng chiếm 100% viewport */
 .st-emotion-cache-18ni5p {{ /* stAppViewContainer - chứa toàn bộ ứng dụng */
-    min-height: 100vh;
+    min-height: 100vh !important;
+    padding: 0 !important;
+    margin: 0 !important;
+}}
+/* 2. Đảm bảo các wrapper bên trong cũng không có padding/margin */
+.st-emotion-cache-1gsv8h, .st-emotion-cache-1aehpbu, 
+[data-testid="stMainBlock"] {{
     padding: 0 !important;
     margin: 0 !important;
 }}
 
-/* Đảm bảo MainBlock không có padding trên/dưới */
-.st-emotion-cache-z5fcl4 {{ /* stMainBlock */
-    padding-top: 0rem !important;
-    padding-bottom: 0rem !important;
-    padding-left: 1rem;
-    padding-right: 1rem;
-}}
-
-/* --- BACKGROUND FIX: Vintage nhẹ và rõ nét hơn --- */
+/* ======================= BACKGROUND & VINTAGE ======================= */
 [data-testid="stAppViewContainer"] {{
     background-size: cover; 
     background-position: center;
     background-attachment: fixed;
-    /* Vintage nhẹ hơn */
+    /* Vintage nhẹ, cho ảnh nền ngả vàng 1 chút */
     filter: sepia(15%) grayscale(5%); 
 }}
 
@@ -201,123 +196,160 @@ st.markdown(f"""
 [data-testid="stAppViewContainer"]::before {{
     content: "";
     position: absolute; inset: 0;
-    /* Màu trắng trong suốt, opacity thấp */
+    /* Màu trắng trong suốt, opacity thấp để làm rõ nội dung */
     background: rgba(255, 255, 255, 0.25); 
     backdrop-filter: blur(1px);
     z-index: 0;
 }}
 
 /* --- ÁP DỤNG ẢNH NỀN --- */
-/* PC/MÀN HÌNH RỘNG HƠN (>= 768px) */
 [data-testid="stAppViewContainer"] {{
     background-image: url("data:image/jpeg;base64,{img_pc_base64}");
 }}
-
-/* MOBILE/MÀN HÌNH NHỎ HƠN (< 768px) */
 @media (max-width: 767px) {{
     [data-testid="stAppViewContainer"] {{
         background-image: url("data:image/jpeg;base64,{img_mobile_base64}");
     }}
 }}
 
-/* --- HEADER & MARQUEE STYLING (Vàng, 1 hàng) --- */
-.custom-header-row {{
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 5px 15px;
-    background-color: rgba(0, 0, 0, 0.8); /* Nền đen đậm hơn */
-    z-index: 1000;
-    position: sticky; 
-    top: 0;
-    width: 100%;
-}}
+/* ======================= HEADER & MARQUEE FIXED ======================= */
 
-/* Tiêu đề chạy - Tổ bảo dưỡng số 1 (Giống partnumber.py) */
-.running-title-box {{
-    flex-grow: 1;
-    overflow: hidden;
-    white-space: nowrap;
-    text-align: left;
-    max-width: 60%;
+/* Tiêu đề chạy - Lên trên cùng, cố định, full width (Giống app.py) */
+.running-title-fixed {{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
     padding: 2px 0;
+    background-color: rgba(0, 0, 0, 0.85); /* Nền đen đậm */
+    color: #FFD700; /* Vàng Gold */
+    z-index: 1000;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
 }}
 .running-title {{
-    font-size: 1.1em;
+    font-size: 1.15em;
     font-weight: bold;
-    color: #FFD700; /* Vàng Gold */
+    color: #FFD700; 
     text-shadow: 0 0 5px rgba(255, 255, 0, 0.8);
     font-family: 'Playfair Display', serif;
+    padding: 0 15px; /* Giữ khoảng cách với lề */
 }}
 
-/* Tiêu đề Ngân hàng trắc nghiệm (Giống tiêu đề Tra cứu trong partnumber.py) */
+/* Tạo khoảng trống phía trên cho header cố định */
+.main-content-start {{
+    padding-top: 40px; /* Chiều cao tương đương của header chạy */
+}}
+
+/* Tiêu đề Ngân hàng trắc nghiệm (Nằm dưới, khung vàng) */
 .main-title-box {{
-    flex-shrink: 0;
-    padding: 5px 15px;
+    margin: 10px 15px 15px 15px; /* Margin để tránh header chạy và có khoảng cách */
+    padding: 8px 15px;
     border: 1px solid #FFD700; /* Viền vàng */
     border-radius: 8px;
-    background-color: rgba(0, 0, 0, 0.5); /* Nền đen mờ */
-    text-align: right;
+    background-color: rgba(0, 0, 0, 0.6); /* Nền đen mờ */
+    text-align: center;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
 }}
 .main-title-small {{
     font-family: 'Playfair Display', serif;
-    font-size: 1.1em; /* Thu nhỏ tiêu đề chính */
+    font-size: 1.3em;
     margin: 0;
-    color: #FFD700; /* Vàng Gold */
+    color: #FFD700; 
     text-shadow: 0 0 5px rgba(255, 255, 0, 0.5);
     font-weight: 700;
 }}
-/* Ẩn H1/H2 mặc định để tránh xung đột với header tùy chỉnh */
+
+/* Ẩn các tiêu đề mặc định */
 h1, h2 {{ display: none; }} 
 
-/* --- STYLING NỘI DUNG CHÍNH --- */
-/* Đảm bảo nội dung chính có padding để không chạm vào lề */
-[data-testid="stMainBlock"] > div:nth-child(1) {{
-    padding-left: 1rem;
-    padding-right: 1rem;
+/* ======================= STYLING NỘI DUNG CHÍNH ======================= */
+
+/* Câu hỏi */
+div[data-testid="stMarkdownContainer"] p {{
+    color: #4A3E2E !important; /* Nâu đậm hơn, dễ đọc */
+    font-weight: 600;
+    font-size: 1.1em;
 }}
 
-.stRadio label, div[data-testid="stMarkdownContainer"] p {{
-    color: #1a1a1a !important; /* Màu chữ gần như đen */
+/* Câu trả lời (Radio button label) */
+.stRadio label {{
+    color: #4A3E2E !important;
+    font-size: 1.05em !important;
+    font-weight: 500;
+    font-family: 'Crimson Text', serif;
 }}
+
+/* Select box (Chọn ngân hàng/Nhóm câu) */
+.stSelectbox label {{
+    font-size: 1.2em;
+    color: #4A3E2E;
+    font-weight: 700;
+}}
+
+/* Nút bấm (Style vintage) */
 .stButton>button {{
     background-color: #a89073 !important; 
     color: #f7f7f7 !important;
+    border-radius: 8px;
+    font-size: 1.05em;
+    font-family: 'Crimson Text', serif;
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    transition: all 0.2s ease;
+    border: none !important;
+}}
+.stButton>button:hover {{
+    background-color: #8c765f !important;
+    transform: translateY(-1px);
+    box-shadow: 3px 3px 7px rgba(0, 0, 0, 0.3);
 }}
 </style>
 """, unsafe_allow_html=True)
 
 
 # ====================================================
-# 🏷️ GIAO DIỆN CHÍNH (SỬ DỤNG HEADER MỚI)
+# 🏷️ GIAO DIỆN HEADER CỐ ĐỊNH
 # ====================================================
-# TIÊU ĐỀ CHẠY VÀ TIÊU ĐỀ CHÍNH TRÊN 1 HÀNG
-st.markdown(f"""
-<div class="custom-header-row">
-    <div class="running-title-box">
-        <marquee behavior="scroll" direction="left" scrollamount="6">
-            <span class="running-title">TỔ BẢO DƯỠNG SỐ 1 - ⚜️ CHỦ ĐỘNG, SÁNG TẠO, VƯỢT KHÓ ⚜️ - TỔ BẢO DƯỠNG SỐ 1</span>
-        </marquee>
-    </div>
-    <div class="main-title-box">
-        <p class="main-title-small">NGÂN HÀNG TRẮC NGHIỆM</p>
-    </div>
+# TIÊU ĐỀ CHẠY CỐ ĐỊNH TRÊN CÙNG
+st.markdown("""
+<div class="running-title-fixed">
+    <marquee behavior="scroll" direction="left" scrollamount="6">
+        <span class="running-title">TỔ BẢO DƯỠNG SỐ 1 - ⚜️ CHỦ ĐỘNG, SÁNG TẠO, VƯỢT KHÓ ⚜️ - TỔ BẢO DƯỠNG SỐ 1</span>
+    </marquee>
 </div>
 """, unsafe_allow_html=True)
 
-# Nội dung chính của ứng dụng bắt đầu ở đây
+# Tạo khoảng trống để nội dung chính không bị header che mất
+st.markdown('<div class="main-content-start"></div>', unsafe_allow_html=True)
+
+# TIÊU ĐỀ NGÂN HÀNG TRẮC NGHIỆM
+st.markdown("""
+<div class="main-title-box">
+    <p class="main-title-small">NGÂN HÀNG TRẮC NGHIỆM</p>
+</div>
+""", unsafe_allow_html=True)
+
+
+# ====================================================
+# 🧭 NỘI DUNG ỨNG DỤNG
+# ====================================================
+# Lấy index nhóm câu hỏi hiện tại để xử lý nút Tiếp tục
+if "current_group_idx" not in st.session_state:
+    st.session_state.current_group_idx = 0
+
+# --- Lựa chọn Ngân hàng ---
 bank_choice = st.selectbox("Chọn ngân hàng:", ["Ngân hàng Kỹ thuật", "Ngân hàng Luật"], key="bank_selector")
 source = "cabbank.docx" if "Kỹ thuật" in bank_choice else "lawbank.docx"
 
+# Load questions
 questions = parse_cabbank(source) if "Kỹ thuật" in bank_choice else parse_lawbank(source)
 if not questions:
     st.error("❌ Không đọc được câu hỏi nào. Vui lòng đảm bảo file .docx có sẵn.")
     st.stop() 
 
 
-# ====================================================
-# 🧭 TAB: LÀM BÀI / TRA CỨU
-# ====================================================
+# --- Xử lý Nhóm câu hỏi ---
 tab1, tab2 = st.tabs(["🧠 Làm bài", "🔍 Tra cứu toàn bộ câu hỏi"])
 
 # ========== TAB 1 (Làm bài) ==========
@@ -325,19 +357,29 @@ with tab1:
     group_size = 10
     total = len(questions)
 
-    # Đảm bảo total > 0 trước khi tính groups
     if total > 0:
         groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
         
-        # SỬA LỖI TRUY CẬP INDEX: sử dụng index=0 và key để đảm bảo giá trị hợp lệ
-        selected = st.selectbox("Chọn nhóm câu:", groups, index=0, key="group_selector")
+        # Cập nhật index nhóm câu hỏi nếu thay đổi ngân hàng (reset về 0)
+        if st.session_state.get('last_bank_choice') != bank_choice:
+             st.session_state.current_group_idx = 0
+             st.session_state.last_bank_choice = bank_choice
+             # Xóa trạng thái nộp bài để bắt đầu nhóm mới
+             st.session_state.submitted = False
+
+        # Đảm bảo index nằm trong giới hạn
+        if st.session_state.current_group_idx >= len(groups):
+            st.session_state.current_group_idx = 0
+
+        # Selectbox sẽ hiển thị tên nhóm dựa trên index hiện tại
+        selected_group = groups[st.session_state.current_group_idx]
+        selected = st.selectbox("Chọn nhóm câu:", groups, index=st.session_state.current_group_idx, key="group_selector")
         
-        try:
-            idx = groups.index(selected)
-        except ValueError:
-            # Nếu giá trị cũ không còn trong danh sách mới, mặc định chọn 0
-            idx = 0
-            
+        # Cập nhật lại current_group_idx nếu người dùng chọn bằng tay
+        st.session_state.current_group_idx = groups.index(selected)
+        
+        idx = st.session_state.current_group_idx
+        
         start, end = idx * group_size, min((idx+1) * group_size, total)
         batch = questions[start:end]
 
@@ -348,7 +390,7 @@ with tab1:
         if batch:
             if not st.session_state.submitted:
                 for i, q in enumerate(batch, start=start+1):
-                    st.markdown(f"<p style='color:#1a1a1a; font-size:1.15em; font-weight:600;'>{i}. {q['question']}</p>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='color:#4A3E2E; font-size:1.15em; font-weight:600;'>{i}. {q['question']}</p>", unsafe_allow_html=True)
                     st.radio("", q["options"], key=f"q_{i}")
                     st.markdown("---")
                 if st.button("✅ Nộp bài"):
@@ -361,7 +403,7 @@ with tab1:
                     correct = clean_text(q["answer"])
                     is_correct = clean_text(selected_opt) == correct
 
-                    st.markdown(f"<p style='color:#1a1a1a; font-size:1.15em; font-weight:600;'>{i}. {q['question']}</p>", unsafe_allow_html=True)
+                    st.markdown(f"<p style='color:#4A3E2E; font-size:1.15em; font-weight:600;'>{i}. {q['question']}</p>", unsafe_allow_html=True)
 
                     for opt in q["options"]:
                         opt_clean = clean_text(opt)
@@ -371,7 +413,7 @@ with tab1:
                         elif opt_clean == clean_text(selected_opt):
                             style = "color:#cc0000; font-weight:700; text-decoration: underline;" 
                         else:
-                            style = "color:#1a1a1a;" 
+                            style = "color:#4A3E2E;" 
                         st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
 
                     if is_correct:
@@ -382,12 +424,27 @@ with tab1:
                     st.markdown("---")
 
                 st.subheader(f"🎯 Kết quả: {score}/{len(batch)}")
+                
+                # --- NÚT HÀNH ĐỘNG ---
+                col_reset, col_next = st.columns(2)
 
-                if st.button("🔁 Làm lại nhóm này"):
-                    for i in range(start+1, end+1):
-                        st.session_state.pop(f"q_{i}", None)
-                    st.session_state.submitted = False
-                    st.rerun()
+                with col_reset:
+                    if st.button("🔁 Làm lại nhóm này"):
+                        for i in range(start+1, end+1):
+                            st.session_state.pop(f"q_{i}", None)
+                        st.session_state.submitted = False
+                        st.rerun()
+                
+                with col_next:
+                    if st.session_state.current_group_idx < len(groups) - 1:
+                        if st.button("➡️ Tiếp tục nhóm sau"):
+                            # Chuyển sang nhóm tiếp theo
+                            st.session_state.current_group_idx += 1
+                            # Xóa trạng thái nộp bài để nhóm mới hiển thị câu hỏi
+                            st.session_state.submitted = False 
+                            st.rerun()
+                    else:
+                        st.info("🎉 Đã hoàn thành tất cả các nhóm câu hỏi!")
         else:
              st.warning("Không có câu hỏi trong nhóm này.")
 
