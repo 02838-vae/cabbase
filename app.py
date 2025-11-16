@@ -1,6 +1,7 @@
 import streamlit as st
 import base64
 import os
+import re 
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
@@ -90,6 +91,7 @@ font_links = """
 st.markdown(font_links, unsafe_allow_html=True)
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
+# Đảm bảo tất cả ngoặc nhọn CSS đều được thoát: {{ và }}
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -493,7 +495,7 @@ iframe:first-of-type {{
     z-index: 0;
 }}
 
-/* HIỆU ỨNG TIA SÁNG BÊN TRONG KHI HOVER (Background Gradient) - Giữ nguyên */
+/* HIỆU ỨNG TIA SÁNG BÊN TRONG KHI HOVER (Background Gradient) - Giữ nguyên) */
 .button::after {{
     content: "";
     position: absolute;
@@ -519,9 +521,10 @@ iframe:first-of-type {{
     --active: 1;
 }}
 
-/* HIỆU ỨNG ÁNH SÁNG CHẠY VIỀN LIÊN TỤC (dots_border) - Giữ nguyên */
+/* HIỆU ỨNG ÁNH SÁNG CHẠY VIỀN LIÊN TỤC (dots_border) */
 .button .dots_border {{
-    --size_border: calc(100% + 2px);
+    /* Tăng kích thước bao phủ ra ngoài thêm 4px (thay vì 2px) để chắc chắn */
+    --size_border: calc(100% + 4px); 
     overflow: hidden;
 
     position: absolute;
@@ -537,20 +540,28 @@ iframe:first-of-type {{
     z-index: -1; 
 }}
 
-/* LỚP GIẢ TẠO DÒNG ÁNH SÁNG XOAY (Giữ nguyên) */
+/* LỚP GIẢ TẠO DÒNG ÁNH SÁNG XOAY */
 .button .dots_border::before {{
     content: "";
     position: absolute;
     top: 50%; 
     left: 50%;
     
-    width: 300%; 
-    height: 300%; 
+    /* Tăng kích thước vùng mask lên 400% để đảm bảo ánh sáng đủ lớn */
+    width: 400%; 
+    height: 400%; 
     
     transform: translate(-50%, -50%) rotate(0deg); 
     transform-origin: center;
     
-    background: white;
+    /* MODIFICATION 1: Sử dụng gradient màu vàng kim sáng cho hiệu ứng nổi bật hơn */
+    background: linear-gradient(
+        45deg, 
+        #FFEB3B, /* Bright Yellow */
+        #FFC107, /* Amber */
+        #FFD700  /* Gold */
+    );
+    
     mask: conic-gradient(
         from 0deg at 50% 50%, 
         transparent 0%, 
@@ -674,7 +685,7 @@ iframe:first-of-type {{
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (Giữ nguyên) ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
 # Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
@@ -686,14 +697,28 @@ else:
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
+    
     // Hàm thực hiện chuyển đổi sang nội dung chính
-    function sendBackToStreamlit() {{
-        console.log("Video ended or skipped, revealing main content");
+    // MODIFICATION 2: Thêm tham số isSkipped để điều khiển hiệu ứng reveal
+    function sendBackToStreamlit(isSkipped = false) {{
+        console.log("Transitioning to main content. Is Skipped:", isSkipped);
         const stApp = window.parent.document.querySelector('.stApp');
         if (stApp) {{
             stApp.classList.add('video-finished', 'main-content-revealed');
         }}
-        initRevealEffect();
+        
+        const revealGrid = window.parent.document.querySelector('.reveal-grid');
+
+        if (!isSkipped) {{
+            // Chạy hiệu ứng reveal khi video phát xong
+            initRevealEffect();
+        }} else {{
+            // Xóa lưới reveal ngay lập tức khi skip (quay về trang chủ)
+            if (revealGrid) {{
+                revealGrid.remove();
+            }}
+        }}
+
         setTimeout(initMusicPlayer, 100);
     }}
     
@@ -713,7 +738,7 @@ js_callback_video = f"""
              revealGrid.remove();
         }}, shuffledCells.length * 10 + 1000);
     }}
-    
+
     function initMusicPlayer() {{
         console.log("Initializing music player");
         const musicSources = [{music_sources_js}];
@@ -818,8 +843,8 @@ js_callback_video = f"""
         
         if (skipIntro === '1') {{
             console.log("Skip intro detected. Directly revealing main content.");
-            // Giả lập sự kiện video kết thúc
-            sendBackToStreamlit();
+            // Giả lập sự kiện video kết thúc và bỏ hiệu ứng reveal
+            sendBackToStreamlit(true); // Pass true to skip reveal
             // Ẩn ngay lập tức video iframe
             const iframe = window.frameElement;
             if (iframe) {{
@@ -854,7 +879,7 @@ js_callback_video = f"""
                         console.log("✅ Video is playing!");
                     }}).catch(err => {{
                         console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
-                        setTimeout(sendBackToStreamlit, 2000);
+                        setTimeout(() => sendBackToStreamlit(false), 2000); // Pass false: video failed
                     }});
                     audio.play().catch(e => {{
                         console.log("Audio autoplay blocked (normal), waiting for video end.");
@@ -870,11 +895,11 @@ js_callback_video = f"""
                     audio.currentTime = 0;
                     
                     introTextContainer.style.opacity = 0;
-                    setTimeout(sendBackToStreamlit, 500);
+                    setTimeout(() => sendBackToStreamlit(false), 500); // Pass false: video ended normally
                 }});
                 video.addEventListener('error', (e) => {{
                     console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
-                    sendBackToStreamlit();
+                    sendBackToStreamlit(false); // Pass false: video failed
                 }});
                 const clickHandler = () => {{
                     console.log("User interaction detected, forcing play attempt.");
@@ -899,7 +924,7 @@ js_callback_video = f"""
             const video = document.getElementById('intro-video');
             if (video && !video.src) {{
                 console.warn("Timeout before video source set. Force transitioning to main content.");
-                sendBackToStreamlit();
+                sendBackToStreamlit(false); // Pass false: timed out
             }}
         }}, 5000);
     }});
@@ -1047,16 +1072,13 @@ if len(music_files) > 0:
 """, unsafe_allow_html=True)
 
 # --- NAVIGATION BUTTON MỚI (UIverse Style) ---
-# **Định nghĩa SVG trong biến Python đơn dòng để tránh lỗi phân tích cú pháp của Streamlit.**
 
-# Icon Tra cứu Part Number (Kính lúp)
+# Định nghĩa SVG trong biến Python đơn dòng
 svg_part_number = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="sparkle" ><path class="path" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" fill="currentColor" d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4" ></path></svg>'
-
-# Icon Ngân hàng trắc nghiệm (Dấu Check trong Vòng tròn)
 svg_quiz = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" class="sparkle"><path class="path" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="currentColor" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
 
-# **SỬ DỤNG st.write() VÀ TRIPLE-QUOTED STRING**
-html_buttons_final = f"""
+# Gộp toàn bộ HTML vào một chuỗi Python đa dòng
+nav_buttons_html = f"""
 <div id="nav-buttons-wrapper">
     <div class="nav-container">
         <a href="/partnumber" target="_self" class="button">
@@ -1068,11 +1090,19 @@ html_buttons_final = f"""
     
     <div class="nav-container-right">
         <a href="/quiz" target="_self" class="button">
-            <div class="dots_border"></div>
+            <div class="dots_border"></div> 
             {svg_quiz}
             <span class="text_button">NGÂN HÀNG TRẮC NGHIỆM</span> 
         </a>
     </div>
 </div>
 """
-st.write(html_buttons_final, unsafe_allow_html=True)
+
+# *** BƯỚC KHẮC PHỤC TRIỆT ĐỂ: LÀM SẠCH CHUỖI HTML ***
+# 1. Loại bỏ tất cả khoảng trắng ở đầu mỗi dòng và giữa các thẻ HTML để tránh lỗi phân tích cú pháp Markdown.
+nav_buttons_html_cleaned = re.sub(r'>\s+<', '><', nav_buttons_html.strip())
+# 2. Loại bỏ tất cả ký tự xuống dòng (\n) để tạo thành chuỗi một dòng.
+nav_buttons_html_cleaned = nav_buttons_html_cleaned.replace('\n', '')
+
+# Hiển thị chuỗi HTML đã được làm sạch
+st.markdown(nav_buttons_html_cleaned, unsafe_allow_html=True)
