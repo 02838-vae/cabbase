@@ -1,6 +1,7 @@
 import streamlit as st
 import base64
 import os
+import re # Thêm thư viện re để xử lý chuỗi
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
@@ -1047,16 +1048,13 @@ if len(music_files) > 0:
 """, unsafe_allow_html=True)
 
 # --- NAVIGATION BUTTON MỚI (UIverse Style) ---
-# **Định nghĩa SVG trong biến Python đơn dòng để tránh lỗi phân tích cú pháp của Streamlit.**
 
-# Icon Tra cứu Part Number (Kính lúp)
+# Định nghĩa SVG trong biến Python đơn dòng
 svg_part_number = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="sparkle" ><path class="path" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" fill="currentColor" d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4" ></path></svg>'
-
-# Icon Ngân hàng trắc nghiệm (Dấu Check trong Vòng tròn)
 svg_quiz = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" class="sparkle"><path class="path" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="currentColor" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
 
-# Sử dụng f-string để chèn các biến SVG vào HTML
-st.markdown(f"""
+# Gộp toàn bộ HTML vào một chuỗi Python đa dòng
+nav_buttons_html = f"""
 <div id="nav-buttons-wrapper">
     <div class="nav-container">
         <a href="/partnumber" target="_self" class="button">
@@ -1074,4 +1072,13 @@ st.markdown(f"""
         </a>
     </div>
 </div>
-""", unsafe_allow_html=True)
+"""
+
+# *** BƯỚC KHẮC PHỤC TRIỆT ĐỂ: LÀM SẠCH CHUỖI HTML ***
+# 1. Loại bỏ tất cả khoảng trắng ở đầu mỗi dòng và giữa các thẻ HTML để tránh lỗi phân tích cú pháp.
+nav_buttons_html_cleaned = re.sub(r'>\s+<', '><', nav_buttons_html.strip())
+# 2. Loại bỏ tất cả ký tự xuống dòng (\n)
+nav_buttons_html_cleaned = nav_buttons_html_cleaned.replace('\n', '')
+
+# Hiển thị chuỗi HTML đã được làm sạch
+st.markdown(nav_buttons_html_cleaned, unsafe_allow_html=True)
