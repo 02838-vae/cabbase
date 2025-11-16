@@ -20,7 +20,6 @@ def get_base64_encoded_file(file_path):
     # Sửa đường dẫn nếu cần thiết để phù hợp với môi trường triển khai
     path_to_check = os.path.join(os.path.dirname(__file__), file_path)
     
-    # ✅ LỖI ĐÃ ĐƯỢC SỬA: Đảm bảo dòng return None thụt lề đúng (4 khoảng trắng)
     if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
         return None 
     
@@ -415,8 +414,8 @@ iframe:first-of-type {{
 
 .nav-container {{
     position: fixed;
-    /* Lệch trái 15% */
-    left: 15%; 
+    /* ✅ ĐÃ SỬA: Lệch trái 25% (để tách xa hơn) */
+    left: 25%; 
     top: 50%;
     transform: translate(-50%, -50%);
     display: flex;
@@ -425,15 +424,15 @@ iframe:first-of-type {{
     padding: 40px;
     opacity: 0;
     transition: opacity 2s ease-out 3s;
-    /* ✅ QUAN TRỌNG: Đảm bảo button ở trên cùng */
+    /* QUAN TRỌNG: Đảm bảo button ở trên cùng */
     z-index: 10000;
 }}
 
 /* ✅ CONTAINER MỚI CHO BUTTON BÊN PHẢI */
 .nav-container-right {{
     position: fixed;
-    /* Lệch phải 15% */
-    right: 15%; 
+    /* ✅ ĐÃ SỬA: Lệch phải 25% (để tách xa hơn) */
+    right: 25%; 
     top: 50%;
     transform: translate(50%, -50%); 
     display: flex;
@@ -456,7 +455,7 @@ iframe:first-of-type {{
     --border_radius: 9999px; 
     --transtion: 0.3s ease-in-out;
     --active: 0; 
-    /* ✅ ĐIỀU CHỈNH: Màu ánh sáng hover SIÊU DỊU (Vàng Pastel) */
+    /* ĐIỀU CHỈNH: Màu ánh sáng hover SIÊU DỊU (Vàng Pastel) */
     --hover-color: hsl(40, 60%, 85%);
     --text-color: hsl(0, 0%, 100%); 
     
@@ -471,7 +470,7 @@ iframe:first-of-type {{
     border: none;
     border-radius: var(--border_radius);
     
-    /* ✅ ĐIỀU CHỈNH: Tăng hiệu ứng phóng to (scale 0.2) */
+    /* ĐIỀU CHỈNH: Tăng hiệu ứng phóng to (scale 0.2) */
     transform: scale(calc(1 + (var(--active, 0) * 0.2)));
     transition: transform var(--transtion);
     
@@ -507,7 +506,7 @@ iframe:first-of-type {{
     transform: translate(-50%, -50%);
     width: 90%;
     height: 90%;
-    /* ✅ ĐIỀU CHỈNH: Gradient bên trong button chuyển sang tông vàng/cam siêu dịu */
+    /* Gradient bên trong button chuyển sang tông vàng/cam siêu dịu */
     background-color: hsla(40, 60%, 85%, 0.75);
     background-image: 
         radial-gradient(at 51% 89%, hsla(45, 60%, 90%, 1) 0px, transparent 50%), 
@@ -557,7 +556,7 @@ iframe:first-of-type {{
     transform-origin: center;
     
     background: white;
-    /* ✅ ĐIỀU CHỈNH: Masking mới để ĐẢM BẢO chỉ 1 vệt sáng duy nhất */
+    /* Masking mới để ĐẢM BẢO chỉ 1 vệt sáng duy nhất */
     mask: conic-gradient(
         from 0deg at 50% 50%, 
         transparent 0%, 
@@ -699,7 +698,7 @@ if len(music_files) > 0:
 else:
     music_sources_js = ""
 
-# ✅ PHẦN JS ĐÃ CHỈNH SỬA
+# PHẦN JS
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
@@ -829,7 +828,7 @@ js_callback_video = f"""
     document.addEventListener("DOMContentLoaded", function() {{
         console.log("DOM loaded, waiting for elements...");
 
-        // ✅ LOGIC MỚI: KIỂM TRA THAM SỐ SKIP_INTRO
+        // LOGIC MỚI: KIỂM TRA THAM SỐ SKIP_INTRO
         const urlParams = new URLSearchParams(window.parent.location.search);
         const skipIntro = urlParams.get('skip_intro');
         
@@ -842,7 +841,7 @@ js_callback_video = f"""
             if (iframe) {{
                  iframe.style.opacity = 0;
                  iframe.style.visibility = 'hidden';
-                 // Đảm bảo iframe không chặn tương tác (mặc dù opacity=0 đã làm điều này)
+                 // Đảm bảo iframe không chặn tương tác
                  iframe.style.pointerEvents = 'none'; 
             }}
             return; // Dừng khởi tạo video/audio
