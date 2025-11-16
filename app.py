@@ -1041,18 +1041,18 @@ if len(music_files) > 0:
 
 # --- NAVIGATION BUTTON MỚI (UIverse Style) ---
 # Tên trang phụ là partnumber.py nên link href là /partnumber
-st.markdown(r"""
+st.markdown("""
 <div class="nav-container">
 
     <!-- BUTTON 1 -->
     <a href="/partnumber" target="_self" class="button">
         <div class="dots_border"></div>
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" 
-            viewBox="0 0 24 24" class="sparkle"> 
+             viewBox="0 0 24 24" class="sparkle"> 
             <path class="path" stroke-linejoin="round" 
-                stroke-linecap="round" stroke="currentColor" 
-                fill="currentColor" 
-                d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4"></path>
+                  stroke-linecap="round" stroke="currentColor" 
+                  fill="currentColor" 
+                  d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4"></path>
         </svg>
         <span class="text_button">TRA CỨU PART NUMBER</span>
     </a>
@@ -1061,17 +1061,18 @@ st.markdown(r"""
     <a href="/tracnghiem" target="_self" class="button">
         <div class="dots_border"></div>
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" 
-            viewBox="0 0 24 24" class="sparkle"> 
+             viewBox="0 0 24 24" class="sparkle"> 
             <path class="path" stroke-linejoin="round" 
-                stroke-linecap="round" stroke="currentColor" 
-                fill="currentColor" 
-                d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4"></path>
+                  stroke-linecap="round" stroke="currentColor" 
+                  fill="currentColor" 
+                  d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4"></path>
         </svg>
         <span class="text_button">NGÂN HÀNG TRẮC NGHIỆM</span>
     </a>
 
 </div>
 """, unsafe_allow_html=True)
+
 
 
 
