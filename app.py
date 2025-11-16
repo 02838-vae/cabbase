@@ -414,10 +414,11 @@ iframe:first-of-type {{
 
 .nav-container {{
     position: fixed;
-    /* ✅ ĐÃ SỬA: Lệch trái 5% (để sát trái hơn) */
-    left: 5%; 
+    /* ✅ SỬA ĐỔI: Đặt sát mép trái (50px) */
+    left: 50px; 
     top: 50%;
-    transform: translate(-50%, -50%);
+    /* Chỉ dịch chuyển dọc, không dịch chuyển ngang */
+    transform: translateY(-50%); 
     display: flex;
     justify-content: center;
     align-items: center;
@@ -431,10 +432,11 @@ iframe:first-of-type {{
 /* ✅ CONTAINER MỚI CHO BUTTON BÊN PHẢI */
 .nav-container-right {{
     position: fixed;
-    /* ✅ ĐÃ SỬA: Lệch phải 5% (để sát phải hơn) */
-    right: 5%; 
+    /* ✅ SỬA ĐỔI: Đặt sát mép phải (50px) */
+    right: 50px; 
     top: 50%;
-    transform: translate(50%, -50%); 
+    /* Chỉ dịch chuyển dọc, không dịch chuyển ngang */
+    transform: translateY(-50%); 
     display: flex;
     justify-content: center;
     align-items: center;
