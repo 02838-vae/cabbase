@@ -1147,21 +1147,20 @@ clock_calendar_html = """
 </div>
 
 <script>
+(function() {
     function updateClockAndCalendar() {
         // ✅ FIX: Lấy thời gian hiện tại CHÍNH XÁC từ máy khách
         const now = new Date();
         
-        // --- ĐỒNG HỒ (HH:MM:SS) - Hiển thị cả giây để kiểm tra real-time ---
+        // --- ĐỒNG HỒ (HH:MM) ---
         const hours = now.getHours().toString().padStart(2, '0');
         const minutes = now.getMinutes().toString().padStart(2, '0');
-        const seconds = now.getSeconds().toString().padStart(2, '0');
 
         const digitalClockEl = window.parent.document.getElementById('digital-clock');
 
         if (digitalClockEl) {
-            // Hiển thị giờ:phút (có thể thêm giây nếu cần)
             digitalClockEl.innerHTML = 
-                `${hours}<span class="blinking-colon">:</span>${minutes}`;
+                `${'{'}hours}<span class="blinking-colon">:</span>${'{'}minutes}`;
         }
 
         // --- LỊCH (Thứ, Ngày/Tháng/Năm) ---
@@ -1177,17 +1176,20 @@ clock_calendar_html = """
         const calendarEl = window.parent.document.getElementById('calendar-display');
 
         if (calendarEl) {
-            // Định dạng: TH 7, 16 THÁNG 11 2025
-            calendarEl.textContent = `${dayOfWeek}, ${date} ${month} ${year}`;
+            calendarEl.textContent = `${'{'}dayOfWeek}, ${'{'}date} ${'{'}month} ${'{'}year}`;
         }
     }
 
-    // ✅ FIX: Cập nhật NGAY LẬP TỨC khi load và sau đó mỗi giây
-    // Gọi hàm ngay lần đầu tiên
+    // ✅ FIX: Đảm bảo chạy ngay khi script load
+    // Thử cập nhật ngay lập tức
     updateClockAndCalendar();
     
-    // Sau đó cập nhật mỗi 1 giây (1000ms) để đảm bảo real-time chính xác
+    // Thử lại sau 100ms để đảm bảo DOM đã sẵn sàng
+    setTimeout(updateClockAndCalendar, 100);
+    
+    // Sau đó cập nhật mỗi 1 giây
     setInterval(updateClockAndCalendar, 1000);
+})();
 </script>
 """
 
