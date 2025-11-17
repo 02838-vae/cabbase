@@ -162,7 +162,7 @@ img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
 
-# === CSS: FIX FULL SCREEN & STYLING (ĐÃ TỐI ƯU TRIỆT ĐỂ LỖI KHOẢNG TRỐNG) ======================================
+# === CSS: FIX FULL SCREEN & STYLING (ĐÃ TỐI ƯU TRIỆT ĐỂ LỖI KHOẢNG TRỐNG VÀ THÊM BLUR/OVERLAY) ======================================
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Crimson+Text:wght@400;700&display=swap');
@@ -178,19 +178,21 @@ html, body, .stApp {{
     overflow: auto; 
 }}
 
-/* 1. Áp dụng background PC & filter (Vintage/Ngả vàng) cho container gốc .stApp */
+/* 1. Áp dụng background PC, Overlay đen mờ (rgba(0,0,0,0.2)) và Filter (Vintage/Blur) cho .stApp */
 .stApp {{
-    background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed !important;
+    background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), 
+                url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed !important;
     background-size: cover !important;
-    /* Hiệu ứng Vintage (Ngả vàng) */
-    filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) !important; 
+    /* Hiệu ứng Vintage (Ngả vàng) + Blur nhẹ */
+    filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) blur(1px) !important; 
     min-height: 100vh !important;
 }}
 
 /* 2. Background Mobile */
 @media (max-width: 767px) {{
     .stApp {{
-        background: url("data:image/jpeg;base64,{img_mobile_base64}") no-repeat center top scroll !important;
+        background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), 
+                    url("data:image/jpeg;base64,{img_mobile_base64}") no-repeat center top scroll !important;
         background-size: cover !important;
         background-attachment: scroll !important;
     }}
@@ -249,7 +251,8 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     pointer-events: none;
     opacity: 1;
     transition: opacity 2s;
-    background-color: rgba(0, 0, 0, 0.4); 
+    /* ✅ SỬA: Loại bỏ background đen để background ảnh xuyên qua */
+    background-color: transparent; 
     display: flex;
     align-items: center;
 }}
