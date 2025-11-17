@@ -162,30 +162,43 @@ img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
 
-# === CSS: FIX FULL SCREEN, TƯƠNG TÁC (Z-INDEX), LỖI TRẮNG CUỐI VÀ STATUS BAR ======================================
+# === CSS: FIX LỖI TRIỆT ĐỂ (ANIMATION, FILTER, KHOẢNG TRẮNG, MÀU CHỮ) ======================================
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Crimson+Text:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap');
 
-/* ======================= FULL SCREEN FIX & BACKGROUND (TỐI ƯU TRIỆT ĐỂ) ======================= */
+/* ✅ FIX ANIMATION KEYFRAMES */
+@keyframes scrollText {{
+    0% {{ transform: translate(100vw, 0); }}
+    100% {{ transform: translate(-100%, 0); }}
+}}
+
+@keyframes colorShift {{
+    0% {{ background-position: 0% 50%; }}
+    50% {{ background-position: 100% 50%; }}
+    100% {{ background-position: 0% 50%; }}
+}}
+
+
+/* ======================= FULL SCREEN FIX & BACKGROUND ======================= */
 
 /* 1. Root elements: Ensure full height và remove default margins/padding */
 html, body, .stApp {{
     height: 100% !important;
-    min-height: 100vh !important; /* Đảm bảo chiều cao tối thiểu là viewport */
+    min-height: 100vh !important; 
     margin: 0 !important;
     padding: 0 !important;
     overflow: auto; 
 }}
 
-/* 2. Áp dụng background PC, Overlay đen mờ (rgba(0,0,0,0.2)) và Filter (Vintage) cho .stApp */
+/* 2. Áp dụng background PC, Overlay đen mờ (rgba(0,0,0,0.2)) */
 .stApp {{
     background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), 
                 url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed !important;
     background-size: cover !important;
-    /* Giữ tông Vintage (Ngả vàng) */
-    filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) !important; 
+    /* ✅ FIX BACKGROUND: Thêm lại blur(1px) và giữ tông Vintage */
+    filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) blur(1px) !important; 
 }}
 
 /* 3. Background Mobile */
@@ -198,7 +211,7 @@ html, body, .stApp {{
     }}
 }}
 
-/* 4. **FIX KHOẢNG TRỐNG VÀ BẢO ĐẢM TƯƠNG TÁC**: Buộc padding/margin bằng 0 và transparent background cho các container ngoài cùng */
+/* 4. **FIX KHOẢNG TRỐNG VÀ TƯƠNG TÁC**: Transparent background, margin/padding 0, Z-index. */
 [data-testid="stAppViewContainer"], /* Container chính bao bọc nội dung */
 [data-testid="stMainBlock"], /* Khối nội dung chính */
 .st-emotion-cache-1oe02fs, 
@@ -208,33 +221,21 @@ html, body, .stApp {{
     background-color: transparent !important;
     margin: 0 !important;
     padding: 0 !important; 
-    /* TĂNG Z-INDEX CHO NỘI DUNG CHÍNH */
     z-index: 10; 
+    min-height: 100vh !important; /* Đảm bảo cả các container bên trong cũng có chiều cao tối thiểu */
 }}
 
-/* 5. ✅ FIX LỖI STATUS BAR BỊ ĐẨY LÊN GIỮA: Ẩn status widget (thanh trạng thái Streamlit) */
-[data-testid="stStatusWidget"] {{
-    display: none !important;
-    visibility: hidden !important;
-    height: 0 !important;
-}}
-
-/* 6. Ẩn Header và Toolbar để tránh màu trắng/đen mặc định và lỗi vị trí */
+/* 5. Ẩn Header, Toolbar, Footer và Status Widget */
 [data-testid="stHeader"], 
-[data-testid="stToolbar"] {{
+[data-testid="stToolbar"],
+[data-testid="stStatusWidget"],
+footer {{
     background-color: transparent !important;
     height: 0 !important;
     display: none !important;
     visibility: hidden !important;
-}}
-
-/* 7. Ẩn Footer mặc định (khắc phục khoảng trắng dưới cùng) */
-footer {{
-    visibility: hidden;
-    height: 0;
-    margin: 0;
-    padding: 0;
-    background-color: transparent !important;
+    margin: 0 !important;
+    padding: 0 !important;
 }}
 
 /* Ẩn các tiêu đề mặc định */
@@ -250,7 +251,6 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     width: 100%;
     height: 10vh;
     overflow: hidden;
-    /* Z-index thấp hơn nội dung chính (10) */
     z-index: 5; 
     pointer-events: none; /* Cho phép click xuyên qua */
     opacity: 1;
@@ -277,6 +277,7 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
+    /* ✅ FIX ANIMATION: Đảm bảo animation được gọi */
     animation: colorShift 10s ease infinite, scrollText 15s linear infinite;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }}
@@ -316,9 +317,9 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     height: auto;
     font-family: 'Playfair Display', serif;
     font-size: 2rem;
-    color: #FFEA00; /* Màu vàng từ partnumber.py */
+    color: #FFEA00; 
     text-align: center;
-    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8); /* Hiệu ứng glow */
+    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8); 
     margin-bottom: 20px;
 }}
 
@@ -329,22 +330,28 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     }}
 }}
 
-/* ======================= STYLING NỘI DUNG CHÍNH ======================= */
+/* ======================= STYLING NỘI DUNG CHÍNH (FIX MÀU CHỮ) ======================= */
 
 /* Câu hỏi & Nội dung (Màu chữ dễ nhìn) */
 div[data-testid="stMarkdownContainer"] p {{
-    color: #1a1a1a !important; 
+    /* ✅ FIX MÀU CHỮ: Trắng ngả vàng */
+    color: #f7f7e7 !important; 
     font-weight: 600;
     font-size: 1.1em;
     font-family: 'Crimson Text', serif;
+    /* Thêm bóng chữ để nổi bật */
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
 }}
 
 /* Câu trả lời (Radio button label) */
 .stRadio label {{
-    color: #1a1a1a !important;
+    /* ✅ FIX MÀU CHỮ: Trắng ngả vàng */
+    color: #f7f7e7 !important;
     font-size: 1.05em !important;
     font-weight: 500;
     font-family: 'Crimson Text', serif;
+    /* Thêm bóng chữ để nổi bật */
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
 }}
 
 /* Nút bấm (Style vintage) */
@@ -458,11 +465,11 @@ with tab1:
                         opt_clean = clean_text(opt)
                         
                         if opt_clean == correct:
-                            style = "color:#006400; font-weight:700;" # Đáp án đúng (Xanh lá)
+                            style = "color:#006400; font-weight:700; text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);" # Đáp án đúng (Xanh lá)
                         elif opt_clean == clean_text(selected_opt):
-                            style = "color:#cc0000; font-weight:700; text-decoration: underline;" # Đáp án sai người dùng chọn (Đỏ)
+                            style = "color:#cc0000; font-weight:700; text-decoration: underline; text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);" # Đáp án sai người dùng chọn (Đỏ)
                         else:
-                            style = "color:#1a1a1a;" # Các đáp án còn lại (Xanh đậm)
+                            style = "color:#f7f7e7; text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);" # Các đáp án còn lại (Trắng ngả vàng)
                         st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
 
                     if is_correct:
