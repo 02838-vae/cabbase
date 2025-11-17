@@ -18,8 +18,6 @@ def clean_text(s: str) -> str:
 def read_docx_paragraphs(source):
     # Hàm đọc nội dung file docx
     try:
-        # Giả định file docx nằm cùng thư mục với script
-        # Cần đảm bảo file .docx (cabbank.docx, lawbank.docx) nằm cùng thư mục
         doc = Document(os.path.join(os.path.dirname(__file__), source))
     except Exception as e:
         st.error(f"Không thể đọc file .docx: {e}")
@@ -32,7 +30,6 @@ def get_base64_encoded_file(file_path):
     try:
         path_to_check = os.path.join(os.path.dirname(__file__), file_path)
         if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
-            # Dùng ảnh trống nếu không tìm thấy file
             return fallback_base64
             
         with open(path_to_check, "rb") as f:
@@ -165,41 +162,63 @@ img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
 
-# === CSS: FIX FULL SCREEN & STYLING (ĐÃ TỐI ƯU) ======================================
+# === CSS: FIX FULL SCREEN & STYLING (ĐÃ SỬA LỖI KHOẢNG TRỐNG) ======================================
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Crimson+Text:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap');
 
-/* ======================= FULL SCREEN FIX & BACKGROUND (TỐI ƯU) ======================= */
+/* ======================= FULL SCREEN FIX & BACKGROUND (TỐI ƯU/SỬA LỖI) ======================= */
 
-/* 1. Áp dụng background PC & filter cho container ngoài cùng */
-[data-testid="stAppViewContainer"] {{
+/* Đảm bảo html và body không có margin/padding, kéo dài 100% chiều cao */
+html, body, .stApp {{
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    overflow: auto; /* Cho phép cuộn */
+}}
+
+/* 1. Áp dụng background PC & filter (Vintage/Ngả vàng) cho container gốc .stApp */
+.stApp {{
     background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed !important;
     background-size: cover !important;
-    filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) !important; /* Đồng bộ filter */
+    /* Hiệu ứng Vintage (Ngả vàng) */
+    filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) !important; 
     min-height: 100vh !important;
 }}
 
 /* 2. Background Mobile */
 @media (max-width: 767px) {{
-    [data-testid="stAppViewContainer"] {{
+    .stApp {{
         background: url("data:image/jpeg;base64,{img_mobile_base64}") no-repeat center top scroll !important;
         background-size: cover !important;
         background-attachment: scroll !important;
     }}
 }}
 
-/* 3. Đảm bảo các container nội dung trong suốt */
-[data-testid="stAppViewContainer"] > .stApp,
+/* 3. Đảm bảo các container nội dung trong suốt và KHÔNG CÓ PADDING/MARGIN thừa */
+[data-testid="stAppViewContainer"],
 [data-testid="stHeader"],
+[data-testid="stToolbar"],
 [data-testid="stMainBlock"],
-.st-emotion-cache-1gsv8h, /* Dòng stMainBlock bên trong */
-.st-emotion-cache-1oe02fs, /* stPageLink */
-.st-emotion-cache-1aehpbu, /* Content wrapper */
-.st-emotion-cache-1avcm0n {{ /* Tiền tố container chính */
+.st-emotion-cache-1gsv8h, 
+.st-emotion-cache-1oe02fs, 
+.st-emotion-cache-1aehpbu, 
+.st-emotion-cache-1avcm0n {{
+    background-color: transparent !important;
+    margin: 0 !important;
+    padding: 0 !important; 
+}}
+
+/* 4. Ẩn Footer mặc định (thường có màu trắng) */
+footer {{
+    visibility: hidden;
+    height: 0;
+    margin: 0;
+    padding: 0;
     background-color: transparent !important;
 }}
+
 
 /* Ẩn các tiêu đề mặc định */
 h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }} 
@@ -220,7 +239,7 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
 
 /* ✅ TIÊU ĐỀ CHẠY CONTAINER (FIXED) */
 #main-title-container {{
-    position: fixed; /* Cố định vị trí như partnumber.py */
+    position: fixed; 
     top: 0;
     left: 0;
     width: 100%;
@@ -230,14 +249,13 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     pointer-events: none;
     opacity: 1;
     transition: opacity 2s;
-    /* Background màu đen mờ để tiêu đề nổi bật */
     background-color: rgba(0, 0, 0, 0.4); 
     display: flex;
     align-items: center;
 }}
 
 #main-title-container h1 {{
-    visibility: visible; /* Hiện lại h1 này */
+    visibility: visible;
     height: auto;
     font-family: 'Playfair Display', serif;
     font-size: 3.5vw;
@@ -271,7 +289,7 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
 /* ======================= TẠO KHOẢNG TRỐNG CHO NỘI DUNG CHÍNH ======================= */
 /* Thêm padding top vào nội dung chính để tránh bị tiêu đề FIXED che mất */
 [data-testid="stMainBlock"] > div:nth-child(1) {{
-    padding-top: 12vh !important; /* Đã điều chỉnh để lớn hơn height của #main-title-container */
+    padding-top: 12vh !important; 
     padding-left: 1rem;
     padding-right: 1rem;
 }}
@@ -287,7 +305,7 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
 }}
 
 #sub-static-title h2, .result-title h3 {{
-    visibility: visible; /* Hiện lại h2, h3 này */
+    visibility: visible; 
     height: auto;
     font-family: 'Playfair Display', serif;
     font-size: 2rem;
@@ -308,7 +326,7 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
 
 /* Câu hỏi & Nội dung (Màu chữ dễ nhìn) */
 div[data-testid="stMarkdownContainer"] p {{
-    color: #1a1a1a !important; /* Xanh đậm gần như đen */
+    color: #1a1a1a !important; 
     font-weight: 600;
     font-size: 1.1em;
     font-family: 'Crimson Text', serif;
@@ -378,7 +396,6 @@ if st.session_state.get('last_bank_choice') != bank_choice:
     st.session_state.submitted = False
     # Lưu lại lựa chọn ngân hàng hiện tại
     st.session_state.last_bank_choice = bank_choice
-    # ĐÃ SỬA: Thay thế st.experimental_rerun() bằng st.rerun()
     st.rerun()
 
 # --- Xử lý Nhóm câu hỏi ---
