@@ -178,6 +178,13 @@ st.markdown(f"""
     100% {{ transform: translateX(-100%); }}
 }}
 
+/* ✅ FIX SỐ "1" CÙNG SIZE VỚI CHỮ */
+@keyframes colorShiftUniform {{
+    0% {{ background-position: 0% 50%; }}
+    50% {{ background-position: 100% 50%; }}
+    100% {{ background-position: 0% 50%; }}
+}}
+
 
 /* ======================= FULL SCREEN FIX & BACKGROUND ======================= */
 
