@@ -163,10 +163,11 @@ img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
 
-# === CSS: FIX FULL SCREEN & STYLING ======================================
+# === CSS: FIX FULL SCREEN & STYLING (ĐÃ ĐỒNG BỘ) ======================================
 st.markdown(f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Crimson+Text:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Crimson+Text:wght@400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap');
 
 /* ======================= FULL SCREEN FIX (Quan trọng) ======================= */
 /* Áp dụng fix full screen cho các container chính của Streamlit */
@@ -196,86 +197,123 @@ st.markdown(f"""
     margin: 0 !important;
 }}
 
-/* ======================= BACKGROUND & VINTAGE ======================= */
-[data-testid="stAppViewContainer"] {{
-    background-size: cover; 
-    background-position: center;
-    background-attachment: fixed;
-    filter: sepia(15%) grayscale(5%); /* Ngả vàng nhẹ */
+/* ======================= BACKGROUND & VINTAGE (ĐÃ ĐỒNG BỘ VỚI partnumber.py) ======================= */
+/* 1. Background trên stApp (Đồng bộ với partnumber.py) */
+.stApp {{
+    /* Áp dụng background PC & filter từ partnumber.py */
+    background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed !important;
+    background-size: cover !important;
+    filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) !important;
+    font-family: 'Crimson Text', serif; /* Giữ font chữ chính của bank.py */
 }}
 
-/* Lớp phủ (Overlay) */
-[data-testid="stAppViewContainer"]::before {{
-    content: "";
-    position: absolute; inset: 0;
-    background: rgba(255, 255, 255, 0.25); /* Trắng trong suốt */
-    backdrop-filter: blur(1px);
-    z-index: 0;
-}}
-
-/* --- ÁP DỤNG ẢNH NỀN --- */
-[data-testid="stAppViewContainer"] {{
-    background-image: url("data:image/jpeg;base64,{img_pc_base64}");
-}}
+/* Background Mobile (Đồng bộ với partnumber.py) */
 @media (max-width: 767px) {{
-    [data-testid="stAppViewContainer"] {{
-        background-image: url("data:image/jpeg;base64,{img_mobile_base64}");
+    .stApp {{
+        background: url("data:image/jpeg;base64,{img_mobile_base64}") no-repeat center top scroll !important;
+        background-size: cover !important;
     }}
 }}
 
-/* ======================= HEADER & MARQUEE FIXED ======================= */
-
-/* Tiêu đề chạy - Cố định trên cùng (Giống app.py) */
-.running-title-fixed {{
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 35px; /* Chiều cao cố định cho marquee */
-    padding: 5px 0;
-    background-color: rgba(0, 0, 0, 0.9); /* Nền đen đậm */
-    color: #FFD700; /* Vàng Gold */
-    z-index: 1000;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
-    overflow: hidden; /* Cần thiết cho marquee */
-}}
-.running-title {{
-    font-size: 1.15em;
-    font-weight: bold;
-    color: #FFD700; 
-    text-shadow: 0 0 5px rgba(255, 255, 0, 0.8);
-    font-family: 'Playfair Display', serif;
-    white-space: nowrap;
+/* Loại bỏ các style background/overlay cũ để tránh xung đột */
+[data-testid="stAppViewContainer"]::before,
+[data-testid="stAppViewContainer"] {{
+    background: none !important;
+    filter: none !important;
 }}
 
 /* Tạo khoảng trống phía trên cho nội dung chính */
 .main-content-start {{
-    padding-top: 50px; /* Lớn hơn chiều cao của header chạy */
-}}
-
-/* Tiêu đề Ngân hàng trắc nghiệm (Tông Vàng Cũ/partnumber.py) */
-.main-title-box {{
-    margin: 10px 15px 15px 15px;
-    padding: 8px 15px;
-    border: 1px solid #FFD700; /* Viền vàng */
-    border-radius: 8px;
-    background-color: rgba(0, 0, 0, 0.7); /* Nền đen mờ */
-    text-align: center;
-    max-width: 500px;
-    margin-left: auto;
-    margin-right: auto;
-}}
-.main-title-small {{
-    font-family: 'Playfair Display', serif;
-    font-size: 1.3em;
-    margin: 0;
-    color: #FFD700; /* Vàng Gold */
-    text-shadow: 0 0 5px rgba(255, 255, 0, 0.5);
-    font-weight: 700;
+    padding-top: 20px; /* Điều chỉnh lại khoảng trống */
 }}
 
 /* Ẩn các tiêu đề mặc định */
-h1, h2 {{ display: none; }} 
+h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }} 
+
+/* ======================= TIÊU ĐỀ CHẠY (ĐỒNG BỘ partnumber.py) ======================= */
+
+/* ✅ KEYFRAMES CHO TIÊU ĐỀ CHẠY */
+@keyframes scrollText {{
+    0% {{ transform: translate(100vw, 0); }}
+    100% {{ transform: translate(-100%, 0); }}
+}}
+
+@keyframes colorShift {{
+    0% {{ background-position: 0% 50%; }}
+    50% {{ background-position: 100% 50%; }}
+    100% {{ background-position: 0% 50%; }}
+}}
+
+/* ✅ TIÊU ĐỀ CHẠY CONTAINER */
+#main-title-container {{
+    position: relative; 
+    top: 0;
+    margin-top: 30px; 
+    left: 0;
+    width: 100%;
+    height: 10vh;
+    overflow: hidden;
+    z-index: 20;
+    pointer-events: none;
+    opacity: 1;
+    transition: opacity 2s;
+}}
+
+#main-title-container h1 {{
+    font-family: 'Playfair Display', serif;
+    font-size: 3.5vw;
+    margin: 0;
+    font-weight: 900;
+    font-feature-settings: "lnum" 1;
+    letter-spacing: 5px;
+    white-space: nowrap;
+    display: inline-block;
+    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
+    background-size: 400% 400%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: colorShift 10s ease infinite, scrollText 15s linear infinite;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+}}
+
+@media (max-width: 768px) {{
+    #main-title-container {{
+        margin-top: 20px; 
+        height: 8vh;
+    }}
+    
+    #main-title-container h1 {{
+        font-size: 6.5vw;
+        animation-duration: 8s;
+    }}
+}}
+
+/* ======================= TIÊU ĐỀ PHỤ TĨNH & KẾT QUẢ (ĐỒNG BỘ partnumber.py) ======================= */
+#sub-static-title, .result-title {{
+    position: static;
+    margin-top: 20px;
+    margin-bottom: 30px;
+    z-index: 90;
+    background: transparent !important;
+    text-align: center;
+}}
+
+#sub-static-title h2, .result-title h3 {{
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    color: #FFEA00; /* Màu vàng từ partnumber.py */
+    text-align: center;
+    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8); /* Hiệu ứng glow */
+    margin-bottom: 20px;
+}}
+
+@media (max-width: 768px) {{
+    #sub-static-title h2, .result-title h3 {{
+        font-size: 1.5rem; 
+        white-space: wrap; 
+    }}
+}}
 
 /* ======================= STYLING NỘI DUNG CHÍNH ======================= */
 
@@ -314,31 +352,25 @@ div[data-testid="stMarkdownContainer"] p {{
 .stButton>button:hover {{
     background-color: #8c765f !important;
 }}
+
 </style>
 """, unsafe_allow_html=True)
 
 
 # ====================================================
-# 🏷️ GIAO DIỆN HEADER CỐ ĐỊNH
+# 🏷️ GIAO DIỆN HEADER CỐ ĐỊNH (ĐÃ CẬP NHẬT)
 # ====================================================
-# TIÊU ĐỀ CHẠY CỐ ĐỊNH TRÊN CÙNG
-st.markdown("""
-<div class="running-title-fixed">
-    <marquee behavior="scroll" direction="left" scrollamount="6" style="line-height: 25px;">
-        <span class="running-title">TỔ BẢO DƯỠNG SỐ 1 - ⚜️ CHỦ ĐỘNG, SÁNG TẠO, VƯỢT KHÓ ⚜️ - TỔ BẢO DƯỠNG SỐ 1</span>
-    </marquee>
-</div>
-""", unsafe_allow_html=True)
+# (Đã loại bỏ marquee cũ)
 
 # Tạo khoảng trống để nội dung chính không bị header che mất
 st.markdown('<div class="main-content-start"></div>', unsafe_allow_html=True)
 
-# TIÊU ĐỀ NGÂN HÀNG TRẮC NGHIỆM
-st.markdown("""
-<div class="main-title-box">
-    <p class="main-title-small">NGÂN HÀNG TRẮC NGHIỆM</p>
-</div>
-""", unsafe_allow_html=True)
+# --- ✅ HIỂN THỊ TIÊU ĐỀ CHẠY LỚN TỪ partnumber.py ---
+main_title_text = "Tổ Bảo Dưỡng Số 1"
+st.markdown(f'<div id="main-title-container"><h1>{main_title_text}</h1></div>', unsafe_allow_html=True)
+
+# --- TIÊU ĐỀ PHỤ "NGÂN HÀNG TRẮC NGHIỆM" (ĐÃ ĐỒNG BỘ STYLE) ---
+st.markdown('<div id="sub-static-title"><h2>NGÂN HÀNG TRẮC NGHIỆM</h2></div>', unsafe_allow_html=True)
 
 
 # ====================================================
@@ -436,7 +468,8 @@ with tab1:
                         st.error(f"❌ Sai — Đáp án đúng: {q['answer']}")
                     st.markdown("---")
 
-                st.subheader(f"🎯 Kết quả: {score}/{len(batch)}")
+                # SỬ DỤNG STYLE TIÊU ĐỀ KẾT QUẢ MỚI
+                st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{len(batch)}</h3></div>', unsafe_allow_html=True)
                 
                 # --- NÚT HÀNH ĐỘNG ---
                 col_reset, col_next = st.columns(2)
