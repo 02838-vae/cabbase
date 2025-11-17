@@ -121,7 +121,7 @@ iframe:first-of-type {{
     left: 0;
     /* Tăng Z-index để đảm bảo video ở trên cùng */
     z-index: 1000;
-    /* 🌟 FIX: Cho phép tương tác click/touch trên iframe để bắt sự kiện */
+    /* FIX: Cho phép tương tác click/touch trên iframe để bắt sự kiện */
     pointer-events: all;
 }}
 
@@ -702,7 +702,6 @@ js_callback_video = f"""
     console.log("Script loaded");
     
     // Hàm thực hiện chuyển đổi sang nội dung chính
-    // MODIFICATION 2: Thêm tham số isSkipped để điều khiển hiệu ứng reveal
     function sendBackToStreamlit(isSkipped = false) {{
         console.log("Transitioning to main content. Is Skipped:", isSkipped);
         const stApp = window.parent.document.querySelector('.stApp');
@@ -864,7 +863,7 @@ js_callback_video = f"""
             const video = document.getElementById('intro-video');
             const audio = document.getElementById('background-audio');
             const introTextContainer = document.getElementById('intro-text-container');
-            // 🌟 FIX: Lấy lớp phủ
+            // FIX: Lấy lớp phủ
             const overlay = document.getElementById('click-to-play-overlay');
            
             if (video && audio && introTextContainer && overlay) {{
@@ -878,11 +877,27 @@ js_callback_video = f"""
                 audio.src = 'data:audio/mp3;base64,{audio_base64}';
 
                 console.log("Video/Audio source set. Loading metadata...");
+
+                let interactionHandled = false; // Biến cờ mới để ngăn chặn đa kích hoạt
                 
                 // 🌟 FIX: Hàm phát video và ẩn lớp phủ
-                const tryToPlayAndHideOverlay = () => {{
+                const tryToPlayAndHideOverlay = (e) => {{
+                    // 🌟 FIX: Ngăn chặn hành động mặc định của trình duyệt (ví dụ: double-click)
+                    e.preventDefault(); 
+                    
+                    if (interactionHandled) {{
+                        console.log("Interaction already handled, ignoring.");
+                        return;
+                    }}
+                    interactionHandled = true;
+
                     console.log("Attempting to play video (User interaction)");
                     
+                    // 🌟 FIX: Loại bỏ ngay lập tức các listener trên overlay 
+                    overlay.removeEventListener('click', tryToPlayAndHideOverlay);
+                    overlay.removeEventListener('touchstart', tryToPlayAndHideOverlay);
+                    overlay.removeEventListener('dblclick', tryToPlayAndHideOverlay); // Chặn double-click
+
                     video.play().then(() => {{
                         console.log("✅ Video is playing, hiding overlay!");
                         overlay.classList.add('hidden'); // Ẩn lớp phủ sau khi play thành công
@@ -899,7 +914,8 @@ js_callback_video = f"""
 
                 video.addEventListener('canplaythrough', () => {{
                     // Tự động phát nếu không cần tương tác (PC/Môi trường không chặn)
-                    tryToPlayAndHideOverlay();
+                    // Vẫn gọi hàm tryToPlayAndHideOverlay, nó sẽ kiểm tra interactionHandled
+                    tryToPlayAndHideOverlay({{ preventDefault: () => {{}} }}); 
                 }}, {{ once: true }});
                 
                 video.addEventListener('ended', () => {{
@@ -919,6 +935,7 @@ js_callback_video = f"""
                 // 🌟 FIX: Dùng lớp phủ để bắt tương tác
                 overlay.addEventListener('click', tryToPlayAndHideOverlay, {{ once: true }});
                 overlay.addEventListener('touchstart', tryToPlayAndHideOverlay, {{ once: true }});
+                overlay.addEventListener('dblclick', tryToPlayAndHideOverlay, {{ once: true }}); // Chặn double-click
                 
                 video.load();
                 const chars = introTextContainer.querySelectorAll('.intro-char');
@@ -1007,7 +1024,7 @@ html_content_modified = f"""
             animation-name: charDropIn;
         }}
         
-        /* 🌟 FIX: CSS cho lớp phủ chặn click */
+        /* FIX: CSS cho lớp phủ chặn click */
         #click-to-play-overlay {{
             position: absolute;
             top: 0;
@@ -1036,7 +1053,7 @@ html_content_modified = f"""
             #intro-text-container {{
                 font-size: 6vw;
             }}
-            /* 🌟 FIX: Cỡ chữ overlay trên mobile */
+            /* FIX: Cỡ chữ overlay trên mobile */
              #click-to-play-overlay {{
                 font-size: 4vw;
             }}
