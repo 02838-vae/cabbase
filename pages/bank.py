@@ -19,6 +19,7 @@ def read_docx_paragraphs(source):
     # Hàm đọc nội dung file docx
     try:
         # Giả định file docx nằm cùng thư mục với script
+        # Cần đảm bảo file .docx (cabbank.docx, lawbank.docx) nằm cùng thư mục
         doc = Document(os.path.join(os.path.dirname(__file__), source))
     except Exception as e:
         st.error(f"Không thể đọc file .docx: {e}")
@@ -31,6 +32,7 @@ def get_base64_encoded_file(file_path):
     try:
         path_to_check = os.path.join(os.path.dirname(__file__), file_path)
         if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
+            # Dùng ảnh trống nếu không tìm thấy file
             return fallback_base64
             
         with open(path_to_check, "rb") as f:
@@ -40,7 +42,7 @@ def get_base64_encoded_file(file_path):
         return fallback_base64
 
 # ====================================================
-# 🧩 PARSER NGÂN HÀNG KỸ THUẬT (CABBANK)
+# 🧩 PARSER NGÂN HÀNG KỸ THUẬT (CABBANK) - (GIỮ NGUYÊN)
 # ====================================================
 def parse_cabbank(source):
     # [Giữ nguyên logic parser cabbank]
@@ -85,7 +87,7 @@ def parse_cabbank(source):
 
 
 # ====================================================
-# 🧩 PARSER NGÂN HÀNG LUẬT (LAWBANK)
+# 🧩 PARSER NGÂN HÀNG LUẬT (LAWBANK) - (GIỮ NGUYÊN)
 # ====================================================
 def parse_lawbank(source):
     # [Giữ nguyên logic parser lawbank]
@@ -163,74 +165,46 @@ img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
 
-# === CSS: FIX FULL SCREEN & STYLING (ĐÃ ĐỒNG BỘ) ======================================
+# === CSS: FIX FULL SCREEN & STYLING (ĐÃ TỐI ƯU) ======================================
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Crimson+Text:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap');
 
-/* ======================= FULL SCREEN FIX (Quan trọng) ======================= */
-/* Áp dụng fix full screen cho các container chính của Streamlit */
+/* ======================= FULL SCREEN FIX & BACKGROUND (TỐI ƯU) ======================= */
 
-/* Container gốc (body-like) */
-.stApp {{
-    min-height: 100vh;
-    padding: 0 !important;
-}}
-
-/* stAppViewContainer - chứa toàn bộ ứng dụng */
+/* 1. Áp dụng background PC & filter cho container ngoài cùng */
 [data-testid="stAppViewContainer"] {{
-    min-height: 100vh !important;
-    padding: 0 !important;
-    margin: 0 !important;
-}}
-
-/* stMainBlock - main content wrapper */
-[data-testid="stMainBlock"] {{
-    padding: 0 !important;
-    margin: 0 !important;
-}}
-
-/* Các wrappers khác */
-.st-emotion-cache-1gsv8h, .st-emotion-cache-1aehpbu {{ 
-    padding: 0 !important;
-    margin: 0 !important;
-}}
-
-/* ======================= BACKGROUND & VINTAGE (ĐÃ ĐỒNG BỘ VỚI partnumber.py) ======================= */
-/* 1. Background trên stApp (Đồng bộ với partnumber.py) */
-.stApp {{
-    /* Áp dụng background PC & filter từ partnumber.py */
     background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed !important;
     background-size: cover !important;
-    filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) !important;
-    font-family: 'Crimson Text', serif; /* Giữ font chữ chính của bank.py */
+    filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) !important; /* Đồng bộ filter */
+    min-height: 100vh !important;
 }}
 
-/* Background Mobile (Đồng bộ với partnumber.py) */
+/* 2. Background Mobile */
 @media (max-width: 767px) {{
-    .stApp {{
+    [data-testid="stAppViewContainer"] {{
         background: url("data:image/jpeg;base64,{img_mobile_base64}") no-repeat center top scroll !important;
         background-size: cover !important;
+        background-attachment: scroll !important;
     }}
 }}
 
-/* Loại bỏ các style background/overlay cũ để tránh xung đột */
-[data-testid="stAppViewContainer"]::before,
-[data-testid="stAppViewContainer"] {{
-    background: none !important;
-    filter: none !important;
-}}
-
-/* Tạo khoảng trống phía trên cho nội dung chính */
-.main-content-start {{
-    padding-top: 20px; /* Điều chỉnh lại khoảng trống */
+/* 3. Đảm bảo các container nội dung trong suốt */
+[data-testid="stAppViewContainer"] > .stApp,
+[data-testid="stHeader"],
+[data-testid="stMainBlock"],
+.st-emotion-cache-1gsv8h, /* Dòng stMainBlock bên trong */
+.st-emotion-cache-1oe02fs, /* stPageLink */
+.st-emotion-cache-1aehpbu, /* Content wrapper */
+.st-emotion-cache-1avcm0n {{ /* Tiền tố container chính */
+    background-color: transparent !important;
 }}
 
 /* Ẩn các tiêu đề mặc định */
 h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }} 
 
-/* ======================= TIÊU ĐỀ CHẠY (ĐỒNG BỘ partnumber.py) ======================= */
+/* ======================= TIÊU ĐỀ CHẠY (FIXED POSITION) ======================= */
 
 /* ✅ KEYFRAMES CHO TIÊU ĐỀ CHẠY */
 @keyframes scrollText {{
@@ -244,11 +218,10 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     100% {{ background-position: 0% 50%; }}
 }}
 
-/* ✅ TIÊU ĐỀ CHẠY CONTAINER */
+/* ✅ TIÊU ĐỀ CHẠY CONTAINER (FIXED) */
 #main-title-container {{
-    position: relative; 
+    position: fixed; /* ĐÃ SỬA: Cố định vị trí như partnumber.py */
     top: 0;
-    margin-top: 30px; 
     left: 0;
     width: 100%;
     height: 10vh;
@@ -257,12 +230,19 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     pointer-events: none;
     opacity: 1;
     transition: opacity 2s;
+    /* Background màu đen mờ để tiêu đề nổi bật */
+    background-color: rgba(0, 0, 0, 0.4); 
+    display: flex;
+    align-items: center;
 }}
 
 #main-title-container h1 {{
+    visibility: visible; /* Hiện lại h1 này */
+    height: auto;
     font-family: 'Playfair Display', serif;
     font-size: 3.5vw;
     margin: 0;
+    padding: 0;
     font-weight: 900;
     font-feature-settings: "lnum" 1;
     letter-spacing: 5px;
@@ -279,7 +259,6 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
 
 @media (max-width: 768px) {{
     #main-title-container {{
-        margin-top: 20px; 
         height: 8vh;
     }}
     
@@ -289,7 +268,15 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     }}
 }}
 
-/* ======================= TIÊU ĐỀ PHỤ TĨNH & KẾT QUẢ (ĐỒNG BỘ partnumber.py) ======================= */
+/* ======================= TẠO KHOẢNG TRỐNG CHO NỘI DUNG CHÍNH ======================= */
+/* Thêm padding top vào nội dung chính để tránh bị tiêu đề FIXED che mất */
+[data-testid="stMainBlock"] > div:nth-child(1) {{
+    padding-top: 12vh !important; /* Đã điều chỉnh để lớn hơn height của #main-title-container */
+    padding-left: 1rem;
+    padding-right: 1rem;
+}}
+
+/* ======================= TIÊU ĐỀ PHỤ TĨNH & KẾT QUẢ (ĐỒNG BỘ) ======================= */
 #sub-static-title, .result-title {{
     position: static;
     margin-top: 20px;
@@ -300,6 +287,8 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
 }}
 
 #sub-static-title h2, .result-title h3 {{
+    visibility: visible; /* Hiện lại h2, h3 này */
+    height: auto;
     font-family: 'Playfair Display', serif;
     font-size: 2rem;
     color: #FFEA00; /* Màu vàng từ partnumber.py */
@@ -317,17 +306,12 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
 
 /* ======================= STYLING NỘI DUNG CHÍNH ======================= */
 
-/* Nội dung chung có padding để không chạm vào lề */
-[data-testid="stMainBlock"] > div:nth-child(1) {{
-    padding-left: 1rem;
-    padding-right: 1rem;
-}}
-
 /* Câu hỏi & Nội dung (Màu chữ dễ nhìn) */
 div[data-testid="stMarkdownContainer"] p {{
     color: #1a1a1a !important; /* Xanh đậm gần như đen */
     font-weight: 600;
     font-size: 1.1em;
+    font-family: 'Crimson Text', serif;
 }}
 
 /* Câu trả lời (Radio button label) */
@@ -358,18 +342,14 @@ div[data-testid="stMarkdownContainer"] p {{
 
 
 # ====================================================
-# 🏷️ GIAO DIỆN HEADER CỐ ĐỊNH (ĐÃ CẬP NHẬT)
+# 🏷️ GIAO DIỆN HEADER CỐ ĐỊNH VÀ TIÊU ĐỀ
 # ====================================================
-# (Đã loại bỏ marquee cũ)
 
-# Tạo khoảng trống để nội dung chính không bị header che mất
-st.markdown('<div class="main-content-start"></div>', unsafe_allow_html=True)
-
-# --- ✅ HIỂN THỊ TIÊU ĐỀ CHẠY LỚN TỪ partnumber.py ---
+# --- ✅ HIỂN THỊ TIÊU ĐỀ CHẠY LỚN (VỊ TRÍ FIXED) ---
 main_title_text = "Tổ Bảo Dưỡng Số 1"
 st.markdown(f'<div id="main-title-container"><h1>{main_title_text}</h1></div>', unsafe_allow_html=True)
 
-# --- TIÊU ĐỀ PHỤ "NGÂN HÀNG TRẮC NGHIỆM" (ĐÃ ĐỒNG BỘ STYLE) ---
+# --- TIÊU ĐỀ PHỤ "NGÂN HÀNG TRẮC NGHIỆM" (STYLE ĐÃ ĐỒNG BỘ) ---
 st.markdown('<div id="sub-static-title"><h2>NGÂN HÀNG TRẮC NGHIỆM</h2></div>', unsafe_allow_html=True)
 
 
@@ -398,7 +378,7 @@ if st.session_state.get('last_bank_choice') != bank_choice:
     st.session_state.submitted = False
     # Lưu lại lựa chọn ngân hàng hiện tại
     st.session_state.last_bank_choice = bank_choice
-    # Không cần rerun ở đây vì các câu lệnh dưới sẽ dùng giá trị mới
+    st.experimental_rerun()
 
 # --- Xử lý Nhóm câu hỏi ---
 tab1, tab2 = st.tabs(["🧠 Làm bài", "🔍 Tra cứu toàn bộ câu hỏi"])
@@ -419,7 +399,6 @@ with tab1:
         selected = st.selectbox("Chọn nhóm câu:", groups, index=st.session_state.current_group_idx, key="group_selector")
         
         # Cập nhật lại current_group_idx nếu người dùng chọn bằng tay qua selectbox
-        # Đây là điểm mấu chốt để nút "Tiếp tục" hoạt động, vì nó sẽ thay đổi index
         new_idx = groups.index(selected)
         if st.session_state.current_group_idx != new_idx:
             st.session_state.current_group_idx = new_idx
@@ -434,7 +413,7 @@ with tab1:
                 # HIỂN THỊ CÂU HỎI
                 for i, q in enumerate(batch, start=start+1):
                     # Sử dụng màu chữ mới
-                    st.markdown(f"<p style='color:#1a1a1a; font-size:1.15em; font-weight:600;'>{i}. {q['question']}</p>", unsafe_allow_html=True)
+                    st.markdown(f"<p>{i}. {q['question']}</p>", unsafe_allow_html=True)
                     st.radio("", q["options"], key=f"q_{i}")
                     st.markdown("---")
                 if st.button("✅ Nộp bài"):
@@ -448,7 +427,7 @@ with tab1:
                     correct = clean_text(q["answer"])
                     is_correct = clean_text(selected_opt) == correct
 
-                    st.markdown(f"<p style='color:#1a1a1a; font-size:1.15em; font-weight:600;'>{i}. {q['question']}</p>", unsafe_allow_html=True)
+                    st.markdown(f"<p>{i}. {q['question']}</p>", unsafe_allow_html=True)
 
                     for opt in q["options"]:
                         opt_clean = clean_text(opt)
@@ -468,7 +447,7 @@ with tab1:
                         st.error(f"❌ Sai — Đáp án đúng: {q['answer']}")
                     st.markdown("---")
 
-                # SỬ DỤNG STYLE TIÊU ĐỀ KẾT QUẢ MỚI
+                # ✅ SỬ DỤNG STYLE TIÊU ĐỀ KẾT QUẢ MỚI
                 st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{len(batch)}</h3></div>', unsafe_allow_html=True)
                 
                 # --- NÚT HÀNH ĐỘNG ---
