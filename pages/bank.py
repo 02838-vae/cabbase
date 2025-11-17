@@ -167,7 +167,7 @@ img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
 
-# === CSS ĐÃ ĐỒNG BỘ VÀ FIX LÀM SÁNG CHỮ ===
+# === CSS ĐÃ ĐỒNG BỘ VÀ FIX LÀM SÁNG CHỮ, GIẢM KHOẢNG CÁCH ===
 css_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Crimson+Text:wght@400;700&display=swap');
@@ -205,7 +205,7 @@ html, body, .stApp {{
     height: 100%;
     background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed;
     background-size: cover;
-    /* ✅ Filter vintage nhẹ, KHÔNG LÀM MỜ NỘI DUNG */
+    /* Filter vintage nhẹ, KHÔNG LÀM MỜ NỘI DUNG */
     filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) blur(1px);
     z-index: -1;
 }}
@@ -248,7 +248,7 @@ html, body, .stApp {{
     z-index: 10; 
     position: relative;
     min-height: 100vh !important;
-    filter: none !important; /* ✅ ĐẢM BẢO NỘI DUNG KHÔNG BỊ FILTER */
+    filter: none !important; /* ĐẢM BẢO NỘI DUNG KHÔNG BỊ FILTER */
 }}
 
 /* Ẩn Streamlit UI components */
@@ -298,7 +298,7 @@ a#manual-home-btn:hover {{
 /* ======================= TIÊU ĐỀ CHẠY (Fixed, Dưới nút Về trang chủ) ======================= */
 #main-title-container {{
     position: fixed;
-    top: 75px; /* ✅ ĐẶT DƯỚI NÚT 'VỀ TRANG CHỦ' (top: 15px + height: ~50px + margin) */
+    top: 75px; /* ĐẶT DƯỚI NÚT 'VỀ TRANG CHỦ' */
     left: 0;
     width: 100%;
     height: 10vh;
@@ -368,7 +368,7 @@ a#manual-home-btn:hover {{
     filter: none !important;
 }}
 
-/* ======================= STYLE DROPDOWN (Giữ style Partnumber) ======================= */
+/* ======================= STYLE DROPDOWN ======================= */
 /* Label (Tiêu đề dropdown): Màu xanh #00FF00 */
 div.stSelectbox label p, div[data-testid*="column"] label p {{
     color: #00FF00 !important; 
@@ -390,35 +390,33 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
     color: #FFFFFF !important;
 }}
 
-/* ======================= STYLE CÂU HỎI & ĐÁP ÁN (FIX LÀM SÁNG CHỮ) ======================= */
+/* ======================= STYLE CÂU HỎI & ĐÁP ÁN (FIX LÀM SÁNG CHỮ, GIẢM KHOẢNG CÁCH) ======================= */
 
-/* Câu hỏi & Nội dung: Đã bỏ text-shadow quá đậm */
+/* Câu hỏi & Nội dung: ✅ Đã bỏ text-shadow để chữ sắc nét */
 div[data-testid="stMarkdownContainer"] p {{
     color: #ffffff !important;
     font-weight: 700 !important;
     font-size: 1.2em !important;
     font-family: 'Crimson Text', serif; 
-    /* ✅ Đã làm nhẹ text-shadow để chữ không bị nhòe */
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9); 
+    text-shadow: none; /* ✅ XÓA ĐỔ BÓNG để chữ không mờ/nhấp nháy */
     background-color: transparent; 
     padding: 10px 15px;
     border-radius: 8px;
     margin-bottom: 10px;
 }}
 
-/* Câu trả lời (Radio button label): Đã bỏ text-shadow quá đậm */
+/* Câu trả lời (Radio button label): ✅ Đã bỏ text-shadow, giảm padding/margin */
 .stRadio label {{
     color: #f9f9f9 !important;
     font-size: 1.1em !important;
     font-weight: 600 !important;
     font-family: 'Crimson Text', serif; 
-    /* ✅ Đã làm nhẹ text-shadow để chữ không bị nhòe */
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8); 
+    text-shadow: none; /* ✅ XÓA ĐỔ BÓNG để chữ không mờ/nhấp nháy */
     background-color: transparent; 
-    padding: 8px 12px;
+    padding: 4px 12px; /* ✅ GIẢM PADDING */
     border-radius: 6px;
     display: inline-block;
-    margin: 5px 0;
+    margin: 2px 0; /* ✅ GIẢM MARGIN */
 }}
 
 /* Nút bấm */
@@ -455,7 +453,7 @@ st.markdown(css_style, unsafe_allow_html=True)
 # 🏷️ GIAO DIỆN HEADER CỐ ĐỊNH VÀ TIÊU ĐỀ
 # ====================================================
 
-# --- ✅ NÚT VỀ TRANG CHỦ (YÊU CẦU 1) ---
+# --- NÚT VỀ TRANG CHỦ ---
 st.markdown("""
 <div id="back-to-home-btn-container">
     <a id="manual-home-btn" href="/?skip_intro=1" target="_self">
@@ -464,7 +462,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- HIỂN THỊ TIÊU ĐỀ CHẠY LỚN (ĐÃ DI CHUYỂN VỊ TRÍ) ---
+# --- HIỂN THỊ TIÊU ĐỀ CHẠY LỚN ---
 main_title_text = "Tổ Bảo Dưỡng Số 1"
 st.markdown(f'<div id="main-title-container"><h1>{main_title_text}</h1></div>', unsafe_allow_html=True)
 
@@ -473,7 +471,7 @@ st.markdown('<div id="sub-static-title"><h2>NGÂN HÀNG TRẮC NGHIỆM</h2></di
 
 
 # ====================================================
-# 🧭 NỘI DUNG ỨNG DỤNG (BỎ TAB)
+# 🧭 NỘI DUNG ỨNG DỤNG
 # ====================================================
 
 # Khởi tạo trạng thái
@@ -553,11 +551,12 @@ if total > 0:
                     opt_clean = clean_text(opt)
   
                     # Fix làm sáng chữ: giảm text-shadow trên đáp án
-                    style = "color:#f9f9f9; text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.7);"
+                    # Sử dụng text-shadow nhẹ để tăng tương phản, nhưng không gây nhòe
+                    style = "color:#f9f9f9; text-shadow: 0 0 1px rgba(0, 0, 0, 0.5);" 
                     if opt_clean == correct:
-                        style = "color:#00ff00; font-weight:700; text-shadow: 0 0 5px rgba(0, 255, 0, 0.8);"
+                        style = "color:#00ff00; font-weight:700; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
                     elif opt_clean == clean_text(selected_opt):
-                        style = "color:#ff3333; font-weight:700; text-decoration: underline; text-shadow: 0 0 5px rgba(255, 0, 0, 0.8);"
+                        style = "color:#ff3333; font-weight:700; text-decoration: underline; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8);"
                     
                     st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
 
@@ -590,4 +589,3 @@ if total > 0:
                     st.info("🎉 Đã hoàn thành tất cả các nhóm câu hỏi!")
     else:
          st.warning("Không có câu hỏi trong nhóm này.")
-
