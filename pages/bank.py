@@ -162,18 +162,13 @@ img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
 
-# === CSS: FIX LỖI TRIỆT ĐỂ (ANIMATION, FILTER, KHOẢNG TRẮNG, MÀU CHỮ) ======================================
+# === CSS: FIX LỖI BLUR FONT & CHỈNH SỬA TIÊU ĐỀ CỐ ĐỊNH ======================================
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Crimson+Text:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap');
 
-/* ✅ FIX ANIMATION KEYFRAMES */
-@keyframes scrollText {{
-    0% {{ transform: translate(100vw, 0); }}
-    100% {{ transform: translate(-100%, 0); }}
-}}
-
+/* ✅ KEYFRAMES cho màu chữ, xóa keyframe chạy ngang (scrollText) */
 @keyframes colorShift {{
     0% {{ background-position: 0% 50%; }}
     50% {{ background-position: 100% 50%; }}
@@ -181,33 +176,43 @@ st.markdown(f"""
 }}
 
 
-/* ======================= FULL SCREEN FIX & BACKGROUND ======================= */
+/* ======================= FULL SCREEN FIX & BACKGROUND (DÙNG ::BEFORE CHO HIỆU ỨNG) ======================= */
 
-/* 1. Root elements: Ensure full height và remove default margins/padding */
+/* 1. Root elements: Đảm bảo full height */
 html, body, .stApp {{
     height: 100% !important;
     min-height: 100vh !important; 
     margin: 0 !important;
     padding: 0 !important;
     overflow: auto; 
+    position: relative; /* Quan trọng để ::before hoạt động */
 }}
 
-/* 2. Áp dụng background PC, Overlay đen mờ (rgba(0,0,0,0.2)) */
-.stApp {{
+/* 2. ✅ TẠO LỚP NỀN VÀ ÁP DỤNG HIỆU ỨNG LÊN LỚP NỀN (KHÔNG ẢNH HƯỞNG FONT CHỮ) */
+.stApp::before {{
+    content: "";
+    position: fixed; /* Giữ nền cố định */
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* Sử dụng ảnh PC làm nền mặc định */
     background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), 
-                url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed !important;
-    background-size: cover !important;
-    /* ✅ FIX BACKGROUND: Thêm lại blur(1px) và giữ tông Vintage */
-    filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) blur(1px) !important; 
+                url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed;
+    background-size: cover;
+    z-index: -1; /* Đặt nền dưới cùng */
+    /* ✅ ÁP DỤNG BLUR VÀ VINTAGE CHỈ TRÊN LỚP NỀN */
+    filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) blur(1px); 
 }}
 
 /* 3. Background Mobile */
 @media (max-width: 767px) {{
-    .stApp {{
+    .stApp::before {{
         background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), 
-                    url("data:image/jpeg;base64,{img_mobile_base64}") no-repeat center top scroll !important;
-        background-size: cover !important;
-        background-attachment: scroll !important;
+                    url("data:image/jpeg;base64,{img_mobile_base64}") no-repeat center top scroll;
+        background-size: cover;
+        background-attachment: scroll;
+        z-index: -1;
     }}
 }}
 
@@ -222,7 +227,6 @@ html, body, .stApp {{
     margin: 0 !important;
     padding: 0 !important; 
     z-index: 10; 
-    min-height: 100vh !important; /* Đảm bảo cả các container bên trong cũng có chiều cao tối thiểu */
 }}
 
 /* 5. Ẩn Header, Toolbar, Footer và Status Widget */
@@ -243,7 +247,7 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
 
 /* ======================= TIÊU ĐỀ CHẠY (FIXED POSITION) ======================= */
 
-/* ✅ TIÊU ĐỀ CHẠY CONTAINER (FIXED) */
+/* ✅ TIÊU ĐỀ CHẠY CONTAINER (FIXED & KHÔNG SCROLL NGANG) */
 #main-title-container {{
     position: fixed; 
     top: 0;
@@ -251,13 +255,14 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     width: 100%;
     height: 10vh;
     overflow: hidden;
-    z-index: 5; 
-    pointer-events: none; /* Cho phép click xuyên qua */
+    z-index: 50; /* Tăng Z-index cho tiêu đề cố định */
+    pointer-events: none; 
     opacity: 1;
     transition: opacity 2s;
-    background-color: transparent; 
+    background-color: rgba(0, 0, 0, 0.5); /* Thêm background mờ cho dễ nhìn */
     display: flex;
     align-items: center;
+    justify-content: center; /* Căn giữa nội dung tiêu đề */
 }}
 
 #main-title-container h1 {{
@@ -268,18 +273,19 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     margin: 0;
     padding: 0;
     font-weight: 900;
-    font-feature-settings: "lnum" 1;
     letter-spacing: 5px;
     white-space: nowrap;
-    display: inline-block;
+    display: block; /* Tiêu đề đứng yên, không cần inline-block */
+    /* Hiệu ứng màu chữ chuyển động */
     background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
     background-size: 400% 400%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
-    /* ✅ FIX ANIMATION: Đảm bảo animation được gọi */
-    animation: colorShift 10s ease infinite, scrollText 15s linear infinite;
+    /* ✅ XÓA SCROLLTEXT, CHỈ GIỮ LẠI COLORSHIFT */
+    animation: colorShift 10s ease infinite; 
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    transform: none !important; /* Đảm bảo không có transform cũ nào */
 }}
 
 @media (max-width: 768px) {{
@@ -330,27 +336,25 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     }}
 }}
 
-/* ======================= STYLING NỘI DUNG CHÍNH (FIX MÀU CHỮ) ======================= */
+/* ======================= STYLING NỘI DUNG CHÍNH (MÀU CHỮ SẮC NÉT) ======================= */
 
 /* Câu hỏi & Nội dung (Màu chữ dễ nhìn) */
 div[data-testid="stMarkdownContainer"] p {{
-    /* ✅ FIX MÀU CHỮ: Trắng ngả vàng */
+    /* ✅ MÀU TRẮNG NGẢ VÀNG VÀ BÓNG CHỮ ĐỂ NỔI BẬT */
     color: #f7f7e7 !important; 
     font-weight: 600;
     font-size: 1.1em;
     font-family: 'Crimson Text', serif;
-    /* Thêm bóng chữ để nổi bật */
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
 }}
 
 /* Câu trả lời (Radio button label) */
 .stRadio label {{
-    /* ✅ FIX MÀU CHỮ: Trắng ngả vàng */
+    /* ✅ MÀU TRẮNG NGẢ VÀNG VÀ BÓNG CHỮ ĐỂ NỔI BẬT */
     color: #f7f7e7 !important;
     font-size: 1.05em !important;
     font-weight: 500;
     font-family: 'Crimson Text', serif;
-    /* Thêm bóng chữ để nổi bật */
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
 }}
 
