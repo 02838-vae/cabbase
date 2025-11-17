@@ -162,13 +162,13 @@ img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
 
-# === CSS: FIX LỖI BLUR FONT & CHỈNH SỬA TIÊU ĐỀ CỐ ĐỊNH ======================================
+# === CSS: FIX LỖI BACKGROUND (LỚP PHỦ) & TIÊU ĐỀ (MÀU) ======================================
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Crimson+Text:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap');
 
-/* ✅ KEYFRAMES cho màu chữ, xóa keyframe chạy ngang (scrollText) */
+/* ✅ KEYFRAMES cho màu chữ */
 @keyframes colorShift {{
     0% {{ background-position: 0% 50%; }}
     50% {{ background-position: 100% 50%; }}
@@ -176,7 +176,7 @@ st.markdown(f"""
 }}
 
 
-/* ======================= FULL SCREEN FIX & BACKGROUND (DÙNG ::BEFORE CHO HIỆU ỨNG) ======================= */
+/* ======================= FULL SCREEN FIX & BACKGROUND ======================= */
 
 /* 1. Root elements: Đảm bảo full height */
 html, body, .stApp {{
@@ -185,38 +185,31 @@ html, body, .stApp {{
     margin: 0 !important;
     padding: 0 !important;
     overflow: auto; 
-    position: relative; /* Quan trọng để ::before hoạt động */
+    position: relative;
 }}
 
-/* 2. ✅ TẠO LỚP NỀN VÀ ÁP DỤNG HIỆU ỨNG LÊN LỚP NỀN (KHÔNG ẢNH HƯỞNG FONT CHỮ) */
-.stApp::before {{
-    content: "";
-    position: fixed; /* Giữ nền cố định */
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    /* Sử dụng ảnh PC làm nền mặc định */
+/* 2. ✅ ÁP DỤNG BACKGROUND VÀ FILTER LÊN .stApp */
+.stApp {{
     background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), 
-                url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed;
-    background-size: cover;
-    z-index: -1; /* Đặt nền dưới cùng */
-    /* ✅ ÁP DỤNG BLUR VÀ VINTAGE CHỈ TRÊN LỚP NỀN */
-    filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) blur(1px); 
+                url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed !important;
+    background-size: cover !important;
+    /* ✅ ÁP DỤNG BLUR VÀ VINTAGE */
+    filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) blur(1px) !important; 
 }}
 
 /* 3. Background Mobile */
 @media (max-width: 767px) {{
-    .stApp::before {{
+    .stApp {{
         background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), 
-                    url("data:image/jpeg;base64,{img_mobile_base64}") no-repeat center top scroll;
-        background-size: cover;
-        background-attachment: scroll;
-        z-index: -1;
+                    url("data:image/jpeg;base64,{img_mobile_base64}") no-repeat center top scroll !important;
+        background-size: cover !important;
+        background-attachment: scroll !important;
     }}
 }}
 
-/* 4. **FIX KHOẢNG TRỐNG VÀ TƯƠNG TÁC**: Transparent background, margin/padding 0, Z-index. */
+/* 4. **FIX KHOẢNG TRỐNG VÀ NỘI DUNG SẮC NÉT**: Đưa nội dung lên Z-index cao hơn nền */
+/* Streamlit có một container bao bọc nội dung. Để font chữ sắc nét, ta phải đưa nội dung lên Z-index cao,
+   khiến nó không bị ảnh hưởng bởi filter của .stApp. */
 [data-testid="stAppViewContainer"], /* Container chính bao bọc nội dung */
 [data-testid="stMainBlock"], /* Khối nội dung chính */
 .st-emotion-cache-1oe02fs, 
@@ -227,6 +220,9 @@ html, body, .stApp {{
     margin: 0 !important;
     padding: 0 !important; 
     z-index: 10; 
+    position: relative; /* Kích hoạt Z-index */
+    min-height: 100vh !important;
+    filter: none !important; /* Đảm bảo không có filter nào ảnh hưởng nội dung */
 }}
 
 /* 5. Ẩn Header, Toolbar, Footer và Status Widget */
@@ -247,7 +243,7 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
 
 /* ======================= TIÊU ĐỀ CHẠY (FIXED POSITION) ======================= */
 
-/* ✅ TIÊU ĐỀ CHẠY CONTAINER (FIXED & KHÔNG SCROLL NGANG) */
+/* ✅ TIÊU ĐỀ CỐ ĐỊNH & KHÔNG BACKGROUND XÁM */
 #main-title-container {{
     position: fixed; 
     top: 0;
@@ -255,14 +251,12 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     width: 100%;
     height: 10vh;
     overflow: hidden;
-    z-index: 50; /* Tăng Z-index cho tiêu đề cố định */
+    z-index: 50; 
     pointer-events: none; 
-    opacity: 1;
-    transition: opacity 2s;
-    background-color: rgba(0, 0, 0, 0.5); /* Thêm background mờ cho dễ nhìn */
+    background-color: transparent; /* Xóa lớp màn xám */
     display: flex;
     align-items: center;
-    justify-content: center; /* Căn giữa nội dung tiêu đề */
+    justify-content: center; 
 }}
 
 #main-title-container h1 {{
@@ -275,17 +269,16 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     font-weight: 900;
     letter-spacing: 5px;
     white-space: nowrap;
-    display: block; /* Tiêu đề đứng yên, không cần inline-block */
-    /* Hiệu ứng màu chữ chuyển động */
+    display: block; 
+    /* ✅ ĐẢM BẢO MÀU CHỮ CHUYỂN ĐỘNG */
     background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
     background-size: 400% 400%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
-    /* ✅ XÓA SCROLLTEXT, CHỈ GIỮ LẠI COLORSHIFT */
     animation: colorShift 10s ease infinite; 
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-    transform: none !important; /* Đảm bảo không có transform cũ nào */
+    transform: none !important; 
 }}
 
 @media (max-width: 768px) {{
@@ -305,10 +298,10 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     padding-top: 12vh !important; 
     padding-left: 1rem;
     padding-right: 1rem;
-    padding-bottom: 2rem !important; /* ✅ Thêm padding dưới cùng */
+    padding-bottom: 2rem !important; 
 }}
 
-/* ======================= TIÊU ĐỀ PHỤ TĨNH & KẾT QUẢ (ĐỒNG BỘ) ======================= */
+/* ======================= TIÊU ĐỀ PHỤ TĨNH & KẾT QUẢ ======================= */
 #sub-static-title, .result-title {{
     position: static;
     margin-top: 20px;
@@ -340,22 +333,22 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
 
 /* Câu hỏi & Nội dung (Màu chữ dễ nhìn) */
 div[data-testid="stMarkdownContainer"] p {{
-    /* ✅ MÀU TRẮNG NGẢ VÀNG VÀ BÓNG CHỮ ĐỂ NỔI BẬT */
     color: #f7f7e7 !important; 
     font-weight: 600;
     font-size: 1.1em;
     font-family: 'Crimson Text', serif;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+    filter: none; /* Đảm bảo không bị nhòe */
 }}
 
 /* Câu trả lời (Radio button label) */
 .stRadio label {{
-    /* ✅ MÀU TRẮNG NGẢ VÀNG VÀ BÓNG CHỮ ĐỂ NỔI BẬT */
     color: #f7f7e7 !important;
     font-size: 1.05em !important;
     font-weight: 500;
     font-family: 'Crimson Text', serif;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
+    filter: none; /* Đảm bảo không bị nhòe */
 }}
 
 /* Nút bấm (Style vintage) */
@@ -392,6 +385,8 @@ st.markdown('<div id="sub-static-title"><h2>NGÂN HÀNG TRẮC NGHIỆM</h2></di
 # ====================================================
 # 🧭 NỘI DUNG ỨNG DỤNG
 # ====================================================
+# [Giữ nguyên logic code Streamlit bên dưới]
+
 # Khởi tạo trạng thái
 if "current_group_idx" not in st.session_state:
     st.session_state.current_group_idx = 0
