@@ -162,7 +162,7 @@ img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
 
-# === CSS: FIX FULL SCREEN & STYLING (ĐÃ TỐI ƯU TRIỆT ĐỂ LỖI KHOẢNG TRỐNG VÀ THÊM BLUR/OVERLAY) ======================================
+# === CSS: FIX FULL SCREEN, TƯƠNG TÁC (Z-INDEX) VÀ LOẠI BỎ BLUR ======================================
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Crimson+Text:wght@400;700&display=swap');
@@ -178,13 +178,13 @@ html, body, .stApp {{
     overflow: auto; 
 }}
 
-/* 1. Áp dụng background PC, Overlay đen mờ (rgba(0,0,0,0.2)) và Filter (Vintage/Blur) cho .stApp */
+/* 1. Áp dụng background PC, Overlay đen mờ (rgba(0,0,0,0.2)) và Filter (Vintage) cho .stApp */
 .stApp {{
     background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), 
                 url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed !important;
     background-size: cover !important;
-    /* Hiệu ứng Vintage (Ngả vàng) + Blur nhẹ */
-    filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) blur(1px) !important; 
+    /* ✅ SỬA: Loại bỏ blur(1px) và giữ tông Vintage */
+    filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) !important; 
     min-height: 100vh !important;
 }}
 
@@ -202,7 +202,6 @@ html, body, .stApp {{
 [data-testid="stAppViewContainer"], /* Container chính bao bọc nội dung */
 [data-testid="stHeader"],
 [data-testid="stToolbar"],
-[data-testid="stMainBlock"],
 .st-emotion-cache-1oe02fs, /* Một lớp wrapper quan trọng của Streamlit */
 .st-emotion-cache-1gsv8h, 
 .st-emotion-cache-1aehpbu, 
@@ -213,7 +212,17 @@ html, body, .stApp {{
     min-height: 100vh !important;
 }}
 
-/* 4. Ẩn Footer mặc định */
+/* 4. **FIX LỖI CLICK**: Tăng z-index của khối nội dung chính để vượt lên trên các lớp phủ */
+[data-testid="stMainBlock"] {{
+    background-color: transparent !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    position: relative; /* Cần có position để z-index hoạt động */
+    z-index: 10; /* Z-index cao hơn tiêu đề cố định (20) một chút so với container chính, nhưng đủ cao so với background */
+}}
+
+
+/* 5. Ẩn Footer mặc định */
 footer {{
     visibility: hidden;
     height: 0;
@@ -247,11 +256,11 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     width: 100%;
     height: 10vh;
     overflow: hidden;
-    z-index: 20;
-    pointer-events: none;
+    /* Giảm Z-index xuống 10 (hoặc thấp hơn nội dung chính) để không chặn click, nhưng giữ trên background */
+    z-index: 5; 
+    pointer-events: none; /* Rất quan trọng: cho phép click xuyên qua lớp này */
     opacity: 1;
     transition: opacity 2s;
-    /* ✅ SỬA: Loại bỏ background đen để background ảnh xuyên qua */
     background-color: transparent; 
     display: flex;
     align-items: center;
