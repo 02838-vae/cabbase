@@ -42,7 +42,6 @@ def get_base64_encoded_file(file_path):
 # 🧩 PARSER NGÂN HÀNG KỸ THUẬT (CABBANK)
 # ====================================================
 def parse_cabbank(source):
-    # [Giữ nguyên logic parser cabbank]
     paras = read_docx_paragraphs(source)
     if not paras:
         return []
@@ -87,7 +86,6 @@ def parse_cabbank(source):
 # 🧩 PARSER NGÂN HÀNG LUẬT (LAWBANK)
 # ====================================================
 def parse_lawbank(source):
-    # [Giữ nguyên logic parser lawbank]
     paras = read_docx_paragraphs(source)
     if not paras:
         return []
@@ -162,17 +160,22 @@ img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
 
-# === CSS: FIX LỖI BACKGROUND (LỚP PHỦ) & TIÊU ĐỀ (MÀU) ======================================
+# === CSS: FIXED ALL ISSUES ======================================
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Crimson+Text:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap');
 
-/* ✅ KEYFRAMES cho màu chữ */
+/* ✅ KEYFRAMES cho màu chữ và chạy từ phải qua trái */
 @keyframes colorShift {{
     0% {{ background-position: 0% 50%; }}
     50% {{ background-position: 100% 50%; }}
     100% {{ background-position: 0% 50%; }}
+}}
+
+@keyframes scrollRight {{
+    0% {{ transform: translateX(100%); }}
+    100% {{ transform: translateX(-100%); }}
 }}
 
 
@@ -188,30 +191,49 @@ html, body, .stApp {{
     position: relative;
 }}
 
-/* 2. ✅ ÁP DỤNG BACKGROUND VÀ FILTER LÊN .stApp */
+/* 2. ✅ BACKGROUND MỜ HƠN VÀ NGẢ VÀNG XƯA CŨ */
+.stApp::before {{
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed;
+    background-size: cover;
+    /* ✅ TĂNG ĐỘ MỜ VÀ THÊM MÀU VÀNG XƯA */
+    filter: sepia(0.35) brightness(0.7) contrast(0.95) saturate(1.2) blur(2px);
+    z-index: -1;
+}}
+
+/* Overlay tối hơn để text nổi bật */
+.stApp::after {{
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(rgba(40, 30, 20, 0.4), rgba(30, 20, 10, 0.5));
+    z-index: -1;
+}}
+
 .stApp {{
-    background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), 
-                url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed !important;
-    background-size: cover !important;
-    /* ✅ ÁP DỤNG BLUR VÀ VINTAGE */
-    filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) blur(1px) !important; 
+    background-color: transparent !important;
 }}
 
 /* 3. Background Mobile */
 @media (max-width: 767px) {{
-    .stApp {{
-        background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), 
-                    url("data:image/jpeg;base64,{img_mobile_base64}") no-repeat center top scroll !important;
-        background-size: cover !important;
-        background-attachment: scroll !important;
+    .stApp::before {{
+        background: url("data:image/jpeg;base64,{img_mobile_base64}") no-repeat center top scroll;
+        background-size: cover;
+        background-attachment: scroll;
     }}
 }}
 
-/* 4. **FIX KHOẢNG TRỐNG VÀ NỘI DUNG SẮC NÉT**: Đưa nội dung lên Z-index cao hơn nền */
-/* Streamlit có một container bao bọc nội dung. Để font chữ sắc nét, ta phải đưa nội dung lên Z-index cao,
-   khiến nó không bị ảnh hưởng bởi filter của .stApp. */
-[data-testid="stAppViewContainer"], /* Container chính bao bọc nội dung */
-[data-testid="stMainBlock"], /* Khối nội dung chính */
+/* 4. **NỘI DUNG SẮC NÉT**: Đưa nội dung lên Z-index cao hơn nền */
+[data-testid="stAppViewContainer"],
+[data-testid="stMainBlock"],
 .st-emotion-cache-1oe02fs, 
 .st-emotion-cache-1gsv8h, 
 .st-emotion-cache-1aehpbu, 
@@ -220,9 +242,9 @@ html, body, .stApp {{
     margin: 0 !important;
     padding: 0 !important; 
     z-index: 10; 
-    position: relative; /* Kích hoạt Z-index */
+    position: relative;
     min-height: 100vh !important;
-    filter: none !important; /* Đảm bảo không có filter nào ảnh hưởng nội dung */
+    filter: none !important;
 }}
 
 /* 5. Ẩn Header, Toolbar, Footer và Status Widget */
@@ -243,7 +265,7 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
 
 /* ======================= TIÊU ĐỀ CHẠY (FIXED POSITION) ======================= */
 
-/* ✅ TIÊU ĐỀ CỐ ĐỊNH & KHÔNG BACKGROUND XÁM */
+/* ✅ TIÊU ĐỀ CHẠY TỪ PHẢI QUA TRÁI VÀ ĐỔI MÀU */
 #main-title-container {{
     position: fixed; 
     top: 0;
@@ -253,10 +275,9 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     overflow: hidden;
     z-index: 50; 
     pointer-events: none; 
-    background-color: transparent; /* Xóa lớp màn xám */
+    background-color: transparent;
     display: flex;
     align-items: center;
-    justify-content: center; 
 }}
 
 #main-title-container h1 {{
@@ -269,16 +290,17 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     font-weight: 900;
     letter-spacing: 5px;
     white-space: nowrap;
-    display: block; 
-    /* ✅ ĐẢM BẢO MÀU CHỮ CHUYỂN ĐỘNG */
+    display: inline-block;
+    /* ✅ CHẠY TỪ PHẢI QUA TRÁI */
+    animation: scrollRight 15s linear infinite;
+    /* ✅ ĐỔI MÀU LIÊN TỤC */
     background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
     background-size: 400% 400%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
-    animation: colorShift 10s ease infinite; 
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-    transform: none !important; 
+    animation: scrollRight 15s linear infinite, colorShift 10s ease infinite;
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
 }}
 
 @media (max-width: 768px) {{
@@ -288,12 +310,11 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     
     #main-title-container h1 {{
         font-size: 6.5vw;
-        animation-duration: 8s;
+        animation: scrollRight 12s linear infinite, colorShift 8s ease infinite;
     }}
 }}
 
 /* ======================= TẠO KHOẢNG TRỐNG CHO NỘI DUNG CHÍNH ======================= */
-/* Thêm padding top để tránh bị tiêu đề FIXED che mất và padding bottom để tránh khoảng trắng cuối */
 [data-testid="stMainBlock"] > div:nth-child(1) {{
     padding-top: 12vh !important; 
     padding-left: 1rem;
@@ -320,6 +341,7 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     text-align: center;
     text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8); 
     margin-bottom: 20px;
+    filter: none !important;
 }}
 
 @media (max-width: 768px) {{
@@ -329,41 +351,80 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     }}
 }}
 
-/* ======================= STYLING NỘI DUNG CHÍNH (MÀU CHỮ SẮC NÉT) ======================= */
+/* ======================= ✅ CHỮ RÕ NÉT VÀ NỔI BẬT ======================= */
 
-/* Câu hỏi & Nội dung (Màu chữ dễ nhìn) */
+/* Câu hỏi & Nội dung - TĂNG ĐỘ NỔI BẬT */
 div[data-testid="stMarkdownContainer"] p {{
-    color: #f7f7e7 !important; 
-    font-weight: 600;
-    font-size: 1.1em;
+    color: #ffffff !important; 
+    font-weight: 700 !important;
+    font-size: 1.2em !important;
     font-family: 'Crimson Text', serif;
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
-    filter: none; /* Đảm bảo không bị nhòe */
+    text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.8) !important;
+    filter: none !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 10px 15px;
+    border-radius: 8px;
+    margin-bottom: 10px;
 }}
 
-/* Câu trả lời (Radio button label) */
+/* Câu trả lời (Radio button label) - RÕ NÉT HƠN */
 .stRadio label {{
-    color: #f7f7e7 !important;
-    font-size: 1.05em !important;
-    font-weight: 500;
+    color: #f9f9f9 !important;
+    font-size: 1.1em !important;
+    font-weight: 600 !important;
     font-family: 'Crimson Text', serif;
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);
-    filter: none; /* Đảm bảo không bị nhòe */
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.9), 0 0 8px rgba(0, 0, 0, 0.7) !important;
+    filter: none !important;
+    -webkit-font-smoothing: antialiased !important;
+    -moz-osx-font-smoothing: grayscale !important;
+    background-color: rgba(0, 0, 0, 0.25);
+    padding: 8px 12px;
+    border-radius: 6px;
+    display: inline-block;
+    margin: 5px 0;
 }}
 
 /* Nút bấm (Style vintage) */
 .stButton>button {{
     background-color: #a89073 !important; 
-    color: #f7f7f7 !important;
+    color: #ffffff !important;
     border-radius: 8px;
-    font-size: 1.05em;
+    font-size: 1.1em !important;
+    font-weight: 600 !important;
     font-family: 'Crimson Text', serif;
-    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2);
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
     transition: all 0.2s ease;
     border: none !important;
+    padding: 10px 20px !important;
 }}
 .stButton>button:hover {{
     background-color: #8c765f !important;
+    box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.6);
+}}
+
+/* SelectBox và Text Input - RÕ NÉT */
+.stSelectbox label, .stTextInput label {{
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.9) !important;
+    filter: none !important;
+}}
+
+/* Tab labels */
+.stTabs [data-baseweb="tab"] {{
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    text-shadow: 1px 1px 4px rgba(0, 0, 0, 0.9) !important;
+}}
+
+/* Info/Success/Error boxes */
+.stAlert {{
+    background-color: rgba(0, 0, 0, 0.3) !important;
+    color: #ffffff !important;
+    font-weight: 600 !important;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8) !important;
 }}
 
 </style>
@@ -374,18 +435,17 @@ div[data-testid="stMarkdownContainer"] p {{
 # 🏷️ GIAO DIỆN HEADER CỐ ĐỊNH VÀ TIÊU ĐỀ
 # ====================================================
 
-# --- ✅ HIỂN THỊ TIÊU ĐỀ CHẠY LỚN (VỊ TRÍ FIXED) ---
+# --- ✅ HIỂN THỊ TIÊU ĐỀ CHẠY LỚN (CHẠY TỪ PHẢI QUA TRÁI VÀ ĐỔI MÀU) ---
 main_title_text = "Tổ Bảo Dưỡng Số 1"
 st.markdown(f'<div id="main-title-container"><h1>{main_title_text}</h1></div>', unsafe_allow_html=True)
 
-# --- TIÊU ĐỀ PHỤ "NGÂN HÀNG TRẮC NGHIỆM" (STYLE ĐÃ ĐỒNG BỘ) ---
+# --- TIÊU ĐỀ PHỤ "NGÂN HÀNG TRẮC NGHIỆM" ---
 st.markdown('<div id="sub-static-title"><h2>NGÂN HÀNG TRẮC NGHIỆM</h2></div>', unsafe_allow_html=True)
 
 
 # ====================================================
 # 🧭 NỘI DUNG ỨNG DỤNG
 # ====================================================
-# [Giữ nguyên logic code Streamlit bên dưới]
 
 # Khởi tạo trạng thái
 if "current_group_idx" not in st.session_state:
@@ -407,7 +467,6 @@ if not questions:
 if st.session_state.get('last_bank_choice') != bank_choice:
     st.session_state.current_group_idx = 0
     st.session_state.submitted = False
-    # Lưu lại lựa chọn ngân hàng hiện tại
     st.session_state.last_bank_choice = bank_choice
     st.rerun()
 
@@ -422,18 +481,15 @@ with tab1:
     if total > 0:
         groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
         
-        # Đảm bảo index nằm trong giới hạn và cập nhật selectbox
         if st.session_state.current_group_idx >= len(groups):
             st.session_state.current_group_idx = 0
         
-        # Selectbox sẽ hiển thị tên nhóm dựa trên index hiện tại
         selected = st.selectbox("Chọn nhóm câu:", groups, index=st.session_state.current_group_idx, key="group_selector")
         
-        # Cập nhật lại current_group_idx nếu người dùng chọn bằng tay qua selectbox
         new_idx = groups.index(selected)
         if st.session_state.current_group_idx != new_idx:
             st.session_state.current_group_idx = new_idx
-            st.session_state.submitted = False # Khi chọn nhóm mới, reset trạng thái nộp bài
+            st.session_state.submitted = False
 
         idx = st.session_state.current_group_idx
         start, end = idx * group_size, min((idx+1) * group_size, total)
@@ -441,9 +497,7 @@ with tab1:
 
         if batch:
             if not st.session_state.submitted:
-                # HIỂN THỊ CÂU HỎI
                 for i, q in enumerate(batch, start=start+1):
-                    # Sử dụng màu chữ mới
                     st.markdown(f"<p>{i}. {q['question']}</p>", unsafe_allow_html=True)
                     st.radio("", q["options"], key=f"q_{i}")
                     st.markdown("---")
@@ -451,7 +505,6 @@ with tab1:
                     st.session_state.submitted = True
                     st.rerun()
             else:
-                # HIỂN THỊ KẾT QUẢ
                 score = 0
                 for i, q in enumerate(batch, start=start+1):
                     selected_opt = st.session_state.get(f"q_{i}")
@@ -464,11 +517,11 @@ with tab1:
                         opt_clean = clean_text(opt)
                         
                         if opt_clean == correct:
-                            style = "color:#006400; font-weight:700; text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);" # Đáp án đúng (Xanh lá)
+                            style = "color:#00ff00; font-weight:700; text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 255, 0, 0.6);"
                         elif opt_clean == clean_text(selected_opt):
-                            style = "color:#cc0000; font-weight:700; text-decoration: underline; text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);" # Đáp án sai người dùng chọn (Đỏ)
+                            style = "color:#ff3333; font-weight:700; text-decoration: underline; text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.95), 0 0 10px rgba(255, 0, 0, 0.6);"
                         else:
-                            style = "color:#f7f7e7; text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.8);" # Các đáp án còn lại (Trắng ngả vàng)
+                            style = "color:#f9f9f9; text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.9);"
                         st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
 
                     if is_correct:
@@ -478,15 +531,12 @@ with tab1:
                         st.error(f"❌ Sai — Đáp án đúng: {q['answer']}")
                     st.markdown("---")
 
-                # ✅ SỬ DỤNG STYLE TIÊU ĐỀ KẾT QUẢ MỚI
                 st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{len(batch)}</h3></div>', unsafe_allow_html=True)
                 
-                # --- NÚT HÀNH ĐỘNG ---
                 col_reset, col_next = st.columns(2)
 
                 with col_reset:
                     if st.button("🔁 Làm lại nhóm này"):
-                        # Xóa kết quả chọn và reset trạng thái nộp bài
                         for i in range(start+1, end+1):
                             st.session_state.pop(f"q_{i}", None)
                         st.session_state.submitted = False
@@ -495,7 +545,6 @@ with tab1:
                 with col_next:
                     if st.session_state.current_group_idx < len(groups) - 1:
                         if st.button("➡️ Tiếp tục nhóm sau"):
-                            # Logic fix: Tăng index và reset trạng thái nộp bài
                             st.session_state.current_group_idx += 1
                             st.session_state.submitted = False 
                             st.rerun()
