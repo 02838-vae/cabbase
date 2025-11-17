@@ -121,12 +121,15 @@ iframe:first-of-type {{
     left: 0;
     /* Tăng Z-index để đảm bảo video ở trên cùng */
     z-index: 1000;
+    /* 🌟 FIX: Cho phép tương tác click/touch trên iframe để bắt sự kiện */
+    pointer-events: all;
 }}
 
 .video-finished iframe:first-of-type {{
     opacity: 0;
     visibility: hidden;
-    pointer-events: none;
+    /* Đảm bảo iframe không chặn tương tác sau khi kết thúc */
+    pointer-events: none; 
     height: 1px !important;
     width: 1px !important;
 }}
@@ -861,8 +864,10 @@ js_callback_video = f"""
             const video = document.getElementById('intro-video');
             const audio = document.getElementById('background-audio');
             const introTextContainer = document.getElementById('intro-text-container');
+            // 🌟 FIX: Lấy lớp phủ
+            const overlay = document.getElementById('click-to-play-overlay');
            
-            if (video && audio && introTextContainer) {{
+            if (video && audio && introTextContainer && overlay) {{
                 clearInterval(waitForElements);
                 console.log("All elements found, initializing...");
                 
@@ -873,12 +878,17 @@ js_callback_video = f"""
                 audio.src = 'data:audio/mp3;base64,{audio_base64}';
 
                 console.log("Video/Audio source set. Loading metadata...");
-                const tryToPlay = () => {{
-                    console.log("Attempting to play video (User interaction or Canplay event)");
+                
+                // 🌟 FIX: Hàm phát video và ẩn lớp phủ
+                const tryToPlayAndHideOverlay = () => {{
+                    console.log("Attempting to play video (User interaction)");
+                    
                     video.play().then(() => {{
-                        console.log("✅ Video is playing!");
+                        console.log("✅ Video is playing, hiding overlay!");
+                        overlay.classList.add('hidden'); // Ẩn lớp phủ sau khi play thành công
                     }}).catch(err => {{
                         console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
+                        overlay.textContent = "LỖI PHÁT. ĐANG CHUYỂN TRANG...";
                         setTimeout(() => sendBackToStreamlit(false), 2000); // Pass false: video failed
                     }});
                     audio.play().catch(e => {{
@@ -886,7 +896,11 @@ js_callback_video = f"""
                     }});
                 }};
 
-                video.addEventListener('canplaythrough', tryToPlay, {{ once: true }});
+
+                video.addEventListener('canplaythrough', () => {{
+                    // Tự động phát nếu không cần tương tác (PC/Môi trường không chặn)
+                    tryToPlayAndHideOverlay();
+                }}, {{ once: true }});
                 
                 video.addEventListener('ended', () => {{
                     console.log("Video ended, transitioning...");
@@ -901,15 +915,10 @@ js_callback_video = f"""
                     console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
                     sendBackToStreamlit(false); // Pass false: video failed
                 }});
-                const clickHandler = () => {{
-                    console.log("User interaction detected, forcing play attempt.");
-                    tryToPlay();
-                    document.removeEventListener('click', clickHandler);
-                    document.removeEventListener('touchstart', clickHandler);
-                }};
                 
-                document.addEventListener('click', clickHandler, {{ once: true }});
-                document.addEventListener('touchstart', clickHandler, {{ once: true }});
+                // 🌟 FIX: Dùng lớp phủ để bắt tương tác
+                overlay.addEventListener('click', tryToPlayAndHideOverlay, {{ once: true }});
+                overlay.addEventListener('touchstart', tryToPlayAndHideOverlay, {{ once: true }});
                 
                 video.load();
                 const chars = introTextContainer.querySelectorAll('.intro-char');
@@ -997,10 +1006,39 @@ html_content_modified = f"""
         .intro-char.char-shown {{
             animation-name: charDropIn;
         }}
+        
+        /* 🌟 FIX: CSS cho lớp phủ chặn click */
+        #click-to-play-overlay {{
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 200; 
+            cursor: pointer;
+            background: rgba(0, 0, 0, 0.5); 
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Playfair Display', serif;
+            color: #fff;
+            font-size: 2vw;
+            text-shadow: 1px 1px 3px #000;
+            transition: opacity 0.5s;
+        }}
+
+        #click-to-play-overlay.hidden {{
+            opacity: 0;
+            pointer-events: none; /* Rất quan trọng: không còn chặn tương tác sau khi phát */
+        }}
 
         @media (max-width: 768px) {{
             #intro-text-container {{
                 font-size: 6vw;
+            }}
+            /* 🌟 FIX: Cỡ chữ overlay trên mobile */
+             #click-to-play-overlay {{
+                font-size: 4vw;
             }}
         }}
     </style>
@@ -1009,6 +1047,7 @@ html_content_modified = f"""
     <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
     <video id="intro-video" muted playsinline></video>
     <audio id="background-audio"></audio>
+    <div id="click-to-play-overlay">CLICK/TOUCH VÀO ĐÂY ĐỂ BẮT ĐẦU</div>
     {js_callback_video}
 </body>
 </html>
@@ -1106,4 +1145,3 @@ nav_buttons_html_cleaned = nav_buttons_html_cleaned.replace('\n', '')
 
 # Hiển thị chuỗi HTML đã được làm sạch
 st.markdown(nav_buttons_html_cleaned, unsafe_allow_html=True)
-
