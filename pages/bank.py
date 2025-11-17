@@ -159,7 +159,7 @@ def parse_lawbank(source):
 # ====================================================
 st.set_page_config(page_title="Ngân hàng trắc nghiệm", layout="wide")
 
-# === KHAI BÁO VÀ CHUYỂN ĐỔI ẢNH NỀN SANG BASE64 (SỬ DỤNG TÊN FILE CỦA TRANG TRẮC NGHIỆM) ===
+# === KHAI BÁO VÀ CHUYỂN ĐỔI ẢNH NỀN SANG BASE64 ===
 PC_IMAGE_FILE = "bank_PC.jpg"
 MOBILE_IMAGE_FILE = "bank_mobile.jpg"
 
@@ -167,7 +167,7 @@ img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
 
-# === CSS ĐÃ ĐỒNG BỘ VỚI PARTNUMBER.TXT ===
+# === CSS ĐÃ ĐỒNG BỘ VÀ FIX LÀM SÁNG CHỮ ===
 css_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Crimson+Text:wght@400;700&display=swap');
@@ -195,7 +195,7 @@ html, body, .stApp {{
     position: relative;
 }}
 
-/* BACKGROUND CHÍNH - Sử dụng filter gần giống Partnumber */
+/* BACKGROUND CHÍNH - Giữ filter vintage nhưng không quá mạnh */
 .stApp::before {{
     content: '';
     position: fixed;
@@ -203,10 +203,9 @@ html, body, .stApp {{
     left: 0;
     width: 100%;
     height: 100%;
-    /* Sử dụng ảnh nền của trang trắc nghiệm */
     background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed;
     background-size: cover;
-    /* ✅ Filter Vintage, giống Partnumber */
+    /* ✅ Filter vintage nhẹ, KHÔNG LÀM MỜ NỘI DUNG */
     filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) blur(1px);
     z-index: -1;
 }}
@@ -236,7 +235,7 @@ html, body, .stApp {{
     }}
 }}
 
-/* NỘI DUNG SẮC NÉT */
+/* NỘI DUNG SẮC NÉT (Quan trọng: Đã loại bỏ filter trên nội dung) */
 [data-testid="stAppViewContainer"],
 [data-testid="stMainBlock"],
 .st-emotion-cache-1oe02fs, 
@@ -249,7 +248,7 @@ html, body, .stApp {{
     z-index: 10; 
     position: relative;
     min-height: 100vh !important;
-    filter: none !important;
+    filter: none !important; /* ✅ ĐẢM BẢO NỘI DUNG KHÔNG BỊ FILTER */
 }}
 
 /* Ẩn Streamlit UI components */
@@ -266,10 +265,40 @@ footer {{
 }}
 h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
 
-/* ======================= TIÊU ĐỀ CHẠY (Fixed) ======================= */
+/* ======================= NÚT VỀ TRANG CHỦ (Fixed) ======================= */
+#back-to-home-btn-container {{
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 1001;
+}}
+
+a#manual-home-btn {{
+    background-color: rgba(0, 0, 0, 0.85);
+    color: #FFEA00;
+    border: 2px solid #FFEA00;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 16px;
+    transition: all 0.3s;
+    cursor: pointer;
+    font-family: 'Oswald', sans-serif;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}}
+
+a#manual-home-btn:hover {{
+    background-color: #FFEA00;
+    color: black;
+    transform: scale(1.05);
+}}
+
+/* ======================= TIÊU ĐỀ CHẠY (Fixed, Dưới nút Về trang chủ) ======================= */
 #main-title-container {{
     position: fixed;
-    top: 5vh; /* Đặt thấp hơn nút "Về Trang Chủ" */
+    top: 75px; /* ✅ ĐẶT DƯỚI NÚT 'VỀ TRANG CHỦ' (top: 15px + height: ~50px + margin) */
     left: 0;
     width: 100%;
     height: 10vh;
@@ -302,46 +331,16 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
 }}
 
 @media (max-width: 768px) {{
-    #main-title-container {{ height: 8vh; top: 3vh; }}
+    #main-title-container {{ height: 8vh; top: 70px; }}
     #main-title-container h1 {{
         font-size: 6.5vw;
         animation: scrollRight 12s linear infinite, colorShift 8s ease infinite;
     }}
 }}
 
-/* ======================= ✅ NÚT VỀ TRANG CHỦ (YÊU CẦU 1) ======================= */
-#back-to-home-btn-container {{
-    position: fixed;
-    top: 15px;
-    left: 15px;
-    z-index: 1001;
-}}
-
-a#manual-home-btn {{
-    background-color: rgba(0, 0, 0, 0.85);
-    color: #FFEA00;
-    border: 2px solid #FFEA00;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-weight: bold;
-    font-size: 16px;
-    transition: all 0.3s;
-    cursor: pointer;
-    font-family: 'Oswald', sans-serif;
-    text-decoration: none;
-    display: inline-block;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-}}
-
-a#manual-home-btn:hover {{
-    background-color: #FFEA00;
-    color: black;
-    transform: scale(1.05);
-}}
-
 /* ======================= TẠO KHOẢNG TRỐNG CHO NỘI DUNG CHÍNH ======================= */
 [data-testid="stMainBlock"] > div:nth-child(1) {{
-    padding-top: 18vh !important; /* Tăng khoảng cách để chứa nút và tiêu đề */
+    padding-top: 20vh !important; /* Tăng khoảng cách để chứa nút và tiêu đề */
     padding-left: 1rem;
     padding-right: 1rem;
     padding-bottom: 2rem !important; 
@@ -369,15 +368,7 @@ a#manual-home-btn:hover {{
     filter: none !important;
 }}
 
-@media (max-width: 768px) {{
-    #sub-static-title h2, .result-title h3 {{
-        font-size: 1.5rem;
-        white-space: wrap;
-    }}
-}}
-
-/* ======================= ✅ STYLE DROPDOWN (YÊU CẦU 2) ======================= */
-
+/* ======================= STYLE DROPDOWN (Giữ style Partnumber) ======================= */
 /* Label (Tiêu đề dropdown): Màu xanh #00FF00 */
 div.stSelectbox label p, div[data-testid*="column"] label p {{
     color: #00FF00 !important; 
@@ -399,38 +390,40 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
     color: #FFFFFF !important;
 }}
 
-/* ======================= STYLE CÂU HỎI & ĐÁP ÁN (Dùng lại style cũ) ======================= */
+/* ======================= STYLE CÂU HỎI & ĐÁP ÁN (FIX LÀM SÁNG CHỮ) ======================= */
 
-/* Câu hỏi & Nội dung */
+/* Câu hỏi & Nội dung: Đã bỏ text-shadow quá đậm */
 div[data-testid="stMarkdownContainer"] p {{
     color: #ffffff !important;
     font-weight: 700 !important;
     font-size: 1.2em !important;
     font-family: 'Crimson Text', serif; 
-    text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 0, 0, 0.8) !important;
-    background-color: transparent; /* Xóa nền khung */
+    /* ✅ Đã làm nhẹ text-shadow để chữ không bị nhòe */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.9); 
+    background-color: transparent; 
     padding: 10px 15px;
     border-radius: 8px;
     margin-bottom: 10px;
 }}
 
-/* Câu trả lời (Radio button label) */
+/* Câu trả lời (Radio button label): Đã bỏ text-shadow quá đậm */
 .stRadio label {{
     color: #f9f9f9 !important;
     font-size: 1.1em !important;
     font-weight: 600 !important;
     font-family: 'Crimson Text', serif; 
-    text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.9), 0 0 8px rgba(0, 0, 0, 0.7) !important;
-    background-color: transparent; /* Xóa nền khung */
+    /* ✅ Đã làm nhẹ text-shadow để chữ không bị nhòe */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8); 
+    background-color: transparent; 
     padding: 8px 12px;
     border-radius: 6px;
     display: inline-block;
     margin: 5px 0;
 }}
 
-/* Nút bấm (Style vintage) */
+/* Nút bấm */
 .stButton>button {{
-    background-color: #a89073 !important; /* Màu nâu vintage */
+    background-color: #a89073 !important;
     color: #ffffff !important;
     border-radius: 8px;
     font-size: 1.1em !important;
@@ -446,7 +439,7 @@ div[data-testid="stMarkdownContainer"] p {{
     box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.6);
 }}
 
-/* Thêm rule để hỗ trợ dàn ngang dropdown */
+/* Dàn ngang dropdown */
 [data-testid="stHorizontalBlock"] [data-testid="stSelectbox"] {{
     flex: 1;
     min-width: 0;
@@ -471,7 +464,7 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-# --- HIỂN THỊ TIÊU ĐỀ CHẠY LỚN ---
+# --- HIỂN THỊ TIÊU ĐỀ CHẠY LỚN (ĐÃ DI CHUYỂN VỊ TRÍ) ---
 main_title_text = "Tổ Bảo Dưỡng Số 1"
 st.markdown(f'<div id="main-title-container"><h1>{main_title_text}</h1></div>', unsafe_allow_html=True)
 
@@ -480,7 +473,7 @@ st.markdown('<div id="sub-static-title"><h2>NGÂN HÀNG TRẮC NGHIỆM</h2></di
 
 
 # ====================================================
-# 🧭 NỘI DUNG ỨNG DỤNG
+# 🧭 NỘI DUNG ỨNG DỤNG (BỎ TAB)
 # ====================================================
 
 # Khởi tạo trạng thái
@@ -510,125 +503,91 @@ if st.session_state.get('last_bank_choice') != bank_choice:
     st.session_state.last_bank_choice = bank_choice
     st.rerun()
 
-# --- Xử lý Nhóm câu hỏi ---
-tab1, tab2 = st.tabs(["🧠 Làm bài", "🔍 Tra cứu toàn bộ câu hỏi"])
+# --- Xử lý Nhóm câu hỏi (Nội dung chính) ---
+group_size = 10
+total = len(questions)
 
-# ========== TAB 1 (Làm bài) ==========
-with tab1:
-    group_size = 10
-    total = len(questions)
+if total > 0:
+    groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
+    
+    if st.session_state.current_group_idx >= len(groups):
+        st.session_state.current_group_idx = 0
+    
+    # Selectbox Nhóm câu hỏi - Đặt trong cột thứ hai để dàn ngang
+    with col_group:
+        selected = st.selectbox("Chọn nhóm câu:", groups, index=st.session_state.current_group_idx, key="group_selector")
+    
+    new_idx = groups.index(selected)
+    if st.session_state.current_group_idx != new_idx:
+        st.session_state.current_group_idx = new_idx
+        st.session_state.submitted = False
+        # Không cần rerun ở đây
 
-    if total > 0:
-        groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
-        
-        if st.session_state.current_group_idx >= len(groups):
-            st.session_state.current_group_idx = 0
-        
-        # Selectbox Nhóm câu hỏi - Đặt trong cột thứ hai để dàn ngang
-        with col_group:
-            selected = st.selectbox("Chọn nhóm câu:", groups, index=st.session_state.current_group_idx, key="group_selector")
-        
-        new_idx = groups.index(selected)
-        if st.session_state.current_group_idx != new_idx:
-            st.session_state.current_group_idx = new_idx
-            st.session_state.submitted = False
-            # Không cần rerun ở đây
+    idx = st.session_state.current_group_idx
+    start, end = idx * group_size, min((idx+1) * group_size, total)
+    batch = questions[start:end]
 
-        idx = st.session_state.current_group_idx
-        start, end = idx * group_size, min((idx+1) * group_size, total)
-        batch = questions[start:end]
+    if batch:
+        if not st.session_state.submitted:
+            # Giao diện làm bài
+            for i, q in enumerate(batch, start=start+1):
+                st.markdown(f"<p>{i}. {q['question']}</p>", unsafe_allow_html=True)
+                st.radio("", q["options"], key=f"q_{i}")
+                st.markdown("---")
+            if st.button("✅ Nộp bài"):
+                st.session_state.submitted = True
+            
+            st.rerun()
+        else:
+            # Giao diện kết quả
+            score = 0
+            for i, q in enumerate(batch, start=start+1):
+                selected_opt = st.session_state.get(f"q_{i}")
+                correct = clean_text(q["answer"])
 
-        if batch:
-            if not st.session_state.submitted:
-                for i, q in enumerate(batch, start=start+1):
-                    # Hiển thị câu hỏi
-                    st.markdown(f"<p>{i}. {q['question']}</p>", unsafe_allow_html=True)
-                    # Radio button cho lựa chọn
-                    st.radio("", q["options"], key=f"q_{i}")
-                    st.markdown("---")
-                if st.button("✅ Nộp bài"):
-                    st.session_state.submitted = True
-                
-                st.rerun()
-            else:
-                score = 0
-                for i, q in enumerate(batch, start=start+1):
-                    selected_opt = st.session_state.get(f"q_{i}")
-                    correct = clean_text(q["answer"])
- 
-                    is_correct = clean_text(selected_opt) == correct
+                is_correct = clean_text(selected_opt) == correct
 
-                    st.markdown(f"<p>{i}. {q['question']}</p>", unsafe_allow_html=True)
+                st.markdown(f"<p>{i}. {q['question']}</p>", unsafe_allow_html=True)
 
-                    for opt in q["options"]:
-                        opt_clean = clean_text(opt)
-      
-                        if opt_clean == correct:
-                            style = "color:#00ff00; font-weight:700; text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.95), 0 0 10px rgba(0, 255, 0, 0.6);"
-                        elif opt_clean == clean_text(selected_opt):
-                            style = "color:#ff3333; font-weight:700; text-decoration: underline; text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.95), 0 0 10px rgba(255, 0, 0, 0.6);"
-                        else:
-                            style = "color:#f9f9f9; text-shadow: 2px 2px 5px rgba(0, 0, 0, 0.9);"
-                        st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
-
-                    if is_correct:
-                        st.success(f"✅ Đúng — {q['answer']}")
-                   
-                        score += 1
-                    else:
-                        st.error(f"❌ Sai — Đáp án đúng: {q['answer']}")
-                    st.markdown("---")
-
-                st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{len(batch)}</h3></div>', unsafe_allow_html=True)
+                for opt in q["options"]:
+                    opt_clean = clean_text(opt)
   
-               
-                col_reset, col_next = st.columns(2)
+                    # Fix làm sáng chữ: giảm text-shadow trên đáp án
+                    style = "color:#f9f9f9; text-shadow: 1px 1px 1px rgba(0, 0, 0, 0.7);"
+                    if opt_clean == correct:
+                        style = "color:#00ff00; font-weight:700; text-shadow: 0 0 5px rgba(0, 255, 0, 0.8);"
+                    elif opt_clean == clean_text(selected_opt):
+                        style = "color:#ff3333; font-weight:700; text-decoration: underline; text-shadow: 0 0 5px rgba(255, 0, 0, 0.8);"
+                    
+                    st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
 
-                with col_reset:
-                    if st.button("🔁 Làm lại nhóm này"):
-                        for i in range(start+1, end+1):
-                            st.session_state.pop(f"q_{i}", None)
+                if is_correct:
+                    st.success(f"✅ Đúng — {q['answer']}")
+                    score += 1
+                else:
+                    st.error(f"❌ Sai — Đáp án đúng: {q['answer']}")
+                st.markdown("---")
+
+            st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{len(batch)}</h3></div>', unsafe_allow_html=True)
+
+           
+            col_reset, col_next = st.columns(2)
+
+            with col_reset:
+                if st.button("🔁 Làm lại nhóm này"):
+                    for i in range(start+1, end+1):
+                        st.session_state.pop(f"q_{i}", None)
+                    st.session_state.submitted = False
+                    st.rerun()
+            
+            with col_next:
+                if st.session_state.current_group_idx < len(groups) - 1:
+                    if st.button("➡️ Tiếp tục nhóm sau"):
+                        st.session_state.current_group_idx += 1
                         st.session_state.submitted = False
                         st.rerun()
-                
-  
-                with col_next:
-                    if st.session_state.current_group_idx < len(groups) - 1:
-                        if st.button("➡️ Tiếp tục nhóm sau"):
-                            st.session_state.current_group_idx += 1
-                            st.session_state.submitted = False
-                            st.rerun()
-                    else:
-                      
-                        st.info("🎉 Đã hoàn thành tất cả các nhóm câu hỏi!")
-        else:
-             st.warning("Không có câu hỏi trong nhóm này.")
-
-
-# ========== TAB 2 (Tra cứu) ==========
-with tab2:
-    st.markdown("### 🔎 Tra cứu toàn bộ câu hỏi trong ngân hàng")
-    if len(questions) > 0:
-        df = pd.DataFrame([
-            {
-                "STT": i+1,
-                "Câu hỏi": q["question"],
-                "Đáp án A": q["options"][0] if len(q["options"])>0 else "",
-                "Đáp án B": q["options"][1] if len(q["options"])>1 else "",
-                "Đáp án C": q["options"][2] if len(q["options"])>2 else "",
-                "Đáp án D": q["options"][3] if len(q["options"])>3 else "",
-                "Đáp án đúng": q["answer"]
-            } for i, q in enumerate(questions)
-        ])
-
-        keyword = st.text_input("🔍 Tìm theo từ khóa:").strip().lower()
-        df_filtered = df[df.apply(lambda r: keyword in " ".join(r.values.astype(str)).lower(), axis=1)] if keyword else df
-
-       
-        st.write(f"Hiển thị {len(df_filtered)}/{len(df)} câu hỏi")
-        st.dataframe(df_filtered, use_container_width=True)
-
-        csv = df_filtered.to_csv(index=False).encode("utf-8-sig")
-        st.download_button("⬇️ Tải danh sách (CSV)", csv, "ngan_hang_cau_hoi.csv", "text/csv")
+                else:
+                    st.info("🎉 Đã hoàn thành tất cả các nhóm câu hỏi!")
     else:
-        st.info("Không có dữ liệu câu hỏi để tra cứu.")
+         st.warning("Không có câu hỏi trong nhóm này.")
+
