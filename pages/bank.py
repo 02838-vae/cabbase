@@ -162,7 +162,7 @@ img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
 
-# === CSS: FIX FULL SCREEN, TƯƠNG TÁC (Z-INDEX) VÀ LOẠI BỎ BLUR ======================================
+# === CSS: FIX FULL SCREEN, TƯƠNG TÁC (Z-INDEX), LỖI TRẮNG CUỐI VÀ STATUS BAR ======================================
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Crimson+Text:wght@400;700&display=swap');
@@ -170,25 +170,25 @@ st.markdown(f"""
 
 /* ======================= FULL SCREEN FIX & BACKGROUND (TỐI ƯU TRIỆT ĐỂ) ======================= */
 
-/* Đảm bảo html và body không có margin/padding, kéo dài 100% chiều cao */
+/* 1. Root elements: Ensure full height và remove default margins/padding */
 html, body, .stApp {{
     height: 100% !important;
+    min-height: 100vh !important; /* Đảm bảo chiều cao tối thiểu là viewport */
     margin: 0 !important;
     padding: 0 !important;
     overflow: auto; 
 }}
 
-/* 1. Áp dụng background PC, Overlay đen mờ (rgba(0,0,0,0.2)) và Filter (Vintage) cho .stApp */
+/* 2. Áp dụng background PC, Overlay đen mờ (rgba(0,0,0,0.2)) và Filter (Vintage) cho .stApp */
 .stApp {{
     background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), 
                 url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed !important;
     background-size: cover !important;
-    /* ✅ SỬA: Loại bỏ blur(1px) và giữ tông Vintage */
+    /* Giữ tông Vintage (Ngả vàng) */
     filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) !important; 
-    min-height: 100vh !important;
 }}
 
-/* 2. Background Mobile */
+/* 3. Background Mobile */
 @media (max-width: 767px) {{
     .stApp {{
         background: linear-gradient(rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.2)), 
@@ -198,31 +198,37 @@ html, body, .stApp {{
     }}
 }}
 
-/* 3. **FIX TRIỆT ĐỂ KHOẢNG TRỐNG**: Buộc padding/margin bằng 0 cho các container ngoài cùng */
+/* 4. **FIX KHOẢNG TRỐNG VÀ BẢO ĐẢM TƯƠNG TÁC**: Buộc padding/margin bằng 0 và transparent background cho các container ngoài cùng */
 [data-testid="stAppViewContainer"], /* Container chính bao bọc nội dung */
-[data-testid="stHeader"],
-[data-testid="stToolbar"],
-.st-emotion-cache-1oe02fs, /* Một lớp wrapper quan trọng của Streamlit */
+[data-testid="stMainBlock"], /* Khối nội dung chính */
+.st-emotion-cache-1oe02fs, 
 .st-emotion-cache-1gsv8h, 
 .st-emotion-cache-1aehpbu, 
 .st-emotion-cache-1avcm0n {{
     background-color: transparent !important;
     margin: 0 !important;
     padding: 0 !important; 
-    min-height: 100vh !important;
+    /* TĂNG Z-INDEX CHO NỘI DUNG CHÍNH */
+    z-index: 10; 
 }}
 
-/* 4. **FIX LỖI CLICK**: Tăng z-index của khối nội dung chính để vượt lên trên các lớp phủ */
-[data-testid="stMainBlock"] {{
+/* 5. ✅ FIX LỖI STATUS BAR BỊ ĐẨY LÊN GIỮA: Ẩn status widget (thanh trạng thái Streamlit) */
+[data-testid="stStatusWidget"] {{
+    display: none !important;
+    visibility: hidden !important;
+    height: 0 !important;
+}}
+
+/* 6. Ẩn Header và Toolbar để tránh màu trắng/đen mặc định và lỗi vị trí */
+[data-testid="stHeader"], 
+[data-testid="stToolbar"] {{
     background-color: transparent !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    position: relative; /* Cần có position để z-index hoạt động */
-    z-index: 10; /* Z-index cao hơn tiêu đề cố định (20) một chút so với container chính, nhưng đủ cao so với background */
+    height: 0 !important;
+    display: none !important;
+    visibility: hidden !important;
 }}
 
-
-/* 5. Ẩn Footer mặc định */
+/* 7. Ẩn Footer mặc định (khắc phục khoảng trắng dưới cùng) */
 footer {{
     visibility: hidden;
     height: 0;
@@ -236,18 +242,6 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
 
 /* ======================= TIÊU ĐỀ CHẠY (FIXED POSITION) ======================= */
 
-/* ✅ KEYFRAMES CHO TIÊU ĐỀ CHẠY */
-@keyframes scrollText {{
-    0% {{ transform: translate(100vw, 0); }}
-    100% {{ transform: translate(-100%, 0); }}
-}}
-
-@keyframes colorShift {{
-    0% {{ background-position: 0% 50%; }}
-    50% {{ background-position: 100% 50%; }}
-    100% {{ background-position: 0% 50%; }}
-}}
-
 /* ✅ TIÊU ĐỀ CHẠY CONTAINER (FIXED) */
 #main-title-container {{
     position: fixed; 
@@ -256,9 +250,9 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     width: 100%;
     height: 10vh;
     overflow: hidden;
-    /* Giảm Z-index xuống 10 (hoặc thấp hơn nội dung chính) để không chặn click, nhưng giữ trên background */
+    /* Z-index thấp hơn nội dung chính (10) */
     z-index: 5; 
-    pointer-events: none; /* Rất quan trọng: cho phép click xuyên qua lớp này */
+    pointer-events: none; /* Cho phép click xuyên qua */
     opacity: 1;
     transition: opacity 2s;
     background-color: transparent; 
@@ -299,11 +293,12 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
 }}
 
 /* ======================= TẠO KHOẢNG TRỐNG CHO NỘI DUNG CHÍNH ======================= */
-/* Thêm padding top vào nội dung chính để tránh bị tiêu đề FIXED che mất */
+/* Thêm padding top để tránh bị tiêu đề FIXED che mất và padding bottom để tránh khoảng trắng cuối */
 [data-testid="stMainBlock"] > div:nth-child(1) {{
     padding-top: 12vh !important; 
     padding-left: 1rem;
     padding-right: 1rem;
+    padding-bottom: 2rem !important; /* ✅ Thêm padding dưới cùng */
 }}
 
 /* ======================= TIÊU ĐỀ PHỤ TĨNH & KẾT QUẢ (ĐỒNG BỘ) ======================= */
