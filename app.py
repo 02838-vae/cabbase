@@ -109,6 +109,15 @@ div.block-container {{
     max-width: 100% !important;
 }}
 
+/* BỔ SUNG: Chặn hành vi dblclick và chọn văn bản trên toàn bộ ứng dụng khi video đang chạy */
+.stApp.video-running * {{
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    cursor: default !important; /* Đảm bảo con trỏ không thay đổi */
+}}
+
 /* Iframe Video Intro */
 iframe:first-of-type {{
     transition: opacity 1s ease-out, visibility 1s ease-out;
@@ -707,6 +716,8 @@ js_callback_video = f"""
         const stApp = window.parent.document.querySelector('.stApp');
         if (stApp) {{
             stApp.classList.add('video-finished', 'main-content-revealed');
+            // 🌟 FIX: Xóa class chặn tương tác khi video kết thúc
+            stApp.classList.remove('video-running'); 
         }}
         
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
@@ -838,6 +849,12 @@ js_callback_video = f"""
 
     document.addEventListener("DOMContentLoaded", function() {{
         console.log("DOM loaded, waiting for elements...");
+        
+        const stApp = window.parent.document.querySelector('.stApp');
+        if (stApp) {{
+            // 🌟 FIX: Thêm class chặn tương tác ngay khi tải trang (cửa sổ cha)
+            stApp.classList.add('video-running'); 
+        }}
 
         // LOGIC MỚI: KIỂM TRA THAM SỐ SKIP_INTRO
         const urlParams = new URLSearchParams(window.parent.location.search);
@@ -882,7 +899,7 @@ js_callback_video = f"""
                 
                 // 🌟 FIX: Hàm phát video và ẩn lớp phủ
                 const tryToPlayAndHideOverlay = (e) => {{
-                    // 🌟 FIX: Ngăn chặn hành động mặc định của trình duyệt (ví dụ: double-click)
+                    // 🌟 QUAN TRỌNG: Ngăn chặn hành động mặc định của trình duyệt (ví dụ: double-click)
                     e.preventDefault(); 
                     
                     if (interactionHandled) {{
@@ -914,7 +931,7 @@ js_callback_video = f"""
 
                 video.addEventListener('canplaythrough', () => {{
                     // Tự động phát nếu không cần tương tác (PC/Môi trường không chặn)
-                    // Vẫn gọi hàm tryToPlayAndHideOverlay, nó sẽ kiểm tra interactionHandled
+                    // Vẫn gọi hàm tryToPlayAndHideOverlay, nhưng truyền vào một đối tượng event rỗng để e.preventDefault() không gây lỗi
                     tryToPlayAndHideOverlay({{ preventDefault: () => {{}} }}); 
                 }}, {{ once: true }});
                 
