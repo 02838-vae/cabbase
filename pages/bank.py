@@ -162,20 +162,20 @@ img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
 
-# === CSS: FIX FULL SCREEN & STYLING (ĐÃ SỬA LỖI KHOẢNG TRỐNG) ======================================
+# === CSS: FIX FULL SCREEN & STYLING (ĐÃ TỐI ƯU TRIỆT ĐỂ LỖI KHOẢNG TRỐNG) ======================================
 st.markdown(f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Crimson+Text:wght@400;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap');
 
-/* ======================= FULL SCREEN FIX & BACKGROUND (TỐI ƯU/SỬA LỖI) ======================= */
+/* ======================= FULL SCREEN FIX & BACKGROUND (TỐI ƯU TRIỆT ĐỂ) ======================= */
 
 /* Đảm bảo html và body không có margin/padding, kéo dài 100% chiều cao */
 html, body, .stApp {{
-    height: 100%;
-    margin: 0;
-    padding: 0;
-    overflow: auto; /* Cho phép cuộn */
+    height: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: auto; 
 }}
 
 /* 1. Áp dụng background PC & filter (Vintage/Ngả vàng) cho container gốc .stApp */
@@ -196,21 +196,22 @@ html, body, .stApp {{
     }}
 }}
 
-/* 3. Đảm bảo các container nội dung trong suốt và KHÔNG CÓ PADDING/MARGIN thừa */
-[data-testid="stAppViewContainer"],
+/* 3. **FIX TRIỆT ĐỂ KHOẢNG TRỐNG**: Buộc padding/margin bằng 0 cho các container ngoài cùng */
+[data-testid="stAppViewContainer"], /* Container chính bao bọc nội dung */
 [data-testid="stHeader"],
 [data-testid="stToolbar"],
 [data-testid="stMainBlock"],
+.st-emotion-cache-1oe02fs, /* Một lớp wrapper quan trọng của Streamlit */
 .st-emotion-cache-1gsv8h, 
-.st-emotion-cache-1oe02fs, 
 .st-emotion-cache-1aehpbu, 
 .st-emotion-cache-1avcm0n {{
     background-color: transparent !important;
     margin: 0 !important;
     padding: 0 !important; 
+    min-height: 100vh !important;
 }}
 
-/* 4. Ẩn Footer mặc định (thường có màu trắng) */
+/* 4. Ẩn Footer mặc định */
 footer {{
     visibility: hidden;
     height: 0;
@@ -218,7 +219,6 @@ footer {{
     padding: 0;
     background-color: transparent !important;
 }}
-
 
 /* Ẩn các tiêu đề mặc định */
 h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }} 
