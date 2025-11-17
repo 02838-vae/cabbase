@@ -42,7 +42,7 @@ def get_base64_encoded_file(file_path):
         return fallback_base64
 
 # ====================================================
-# 🧩 PARSER NGÂN HÀNG KỸ THUẬT (CABBANK) - (GIỮ NGUYÊN)
+# 🧩 PARSER NGÂN HÀNG KỸ THUẬT (CABBANK)
 # ====================================================
 def parse_cabbank(source):
     # [Giữ nguyên logic parser cabbank]
@@ -87,7 +87,7 @@ def parse_cabbank(source):
 
 
 # ====================================================
-# 🧩 PARSER NGÂN HÀNG LUẬT (LAWBANK) - (GIỮ NGUYÊN)
+# 🧩 PARSER NGÂN HÀNG LUẬT (LAWBANK)
 # ====================================================
 def parse_lawbank(source):
     # [Giữ nguyên logic parser lawbank]
@@ -220,7 +220,7 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
 
 /* ✅ TIÊU ĐỀ CHẠY CONTAINER (FIXED) */
 #main-title-container {{
-    position: fixed; /* ĐÃ SỬA: Cố định vị trí như partnumber.py */
+    position: fixed; /* Cố định vị trí như partnumber.py */
     top: 0;
     left: 0;
     width: 100%;
@@ -378,7 +378,8 @@ if st.session_state.get('last_bank_choice') != bank_choice:
     st.session_state.submitted = False
     # Lưu lại lựa chọn ngân hàng hiện tại
     st.session_state.last_bank_choice = bank_choice
-    st.experimental_rerun()
+    # ĐÃ SỬA: Thay thế st.experimental_rerun() bằng st.rerun()
+    st.rerun()
 
 # --- Xử lý Nhóm câu hỏi ---
 tab1, tab2 = st.tabs(["🧠 Làm bài", "🔍 Tra cứu toàn bộ câu hỏi"])
