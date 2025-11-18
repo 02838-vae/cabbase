@@ -367,7 +367,7 @@ html, body, .stApp {{
     position: relative;
 }}
 
-/* BACKGROUND - ÁP DỤNG FILTER VINTAGE/BLUR */
+/* BACKGROUND - ÁP DỤNG FILTER VINTAGE/BLUR (Làm mờ nền) */
 .stApp {{
     background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed !important;
     background-size: cover !important;
@@ -385,10 +385,17 @@ html, body, .stApp {{
     }}
 }}
 
-/* NỘI DUNG KHÔNG BỊ LÀM MỜ VÀ NỔI LÊN TRÊN */
+/* NỘI DUNG KHÔNG BỊ LÀM MỜ VÀ NỔI LÊN TRÊN (Bằng cách đặt nền đen trong suốt) */
+/* Vùng chứa nội dung chính (từ tiêu đề phụ trở xuống) cần có nền để che hiệu ứng blur/filter */
+[data-testid="stAppViewContainer"] > .main {{
+    background-color: rgba(0, 0, 0, 0.6) !important; /* Nền mờ, tối cho nội dung */
+    min-height: 100vh !important;
+    z-index: 10;
+}}
+
+/* Các thành phần chứa khác cần trong suốt để không bị filter nhưng không che mất nền */
 [data-testid="stAppViewContainer"],
 [data-testid="stMainBlock"],
-.main,
 .st-emotion-cache-1oe02fs, 
 .st-emotion-cache-1gsv8h, 
 .st-emotion-cache-1aehpbu, 
@@ -396,10 +403,8 @@ html, body, .stApp {{
     background-color: transparent !important;
     margin: 0 !important;
     padding: 0 !important; 
-    z-index: 10; 
     position: relative;
-    min-height: 100vh !important;
-    filter: none !important; /* Loại bỏ filter cho nội dung */
+    filter: none !important; 
 }}
 
 /* Ẩn Streamlit UI components */
@@ -426,21 +431,21 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     left: 0;
     width: 100%;
     z-index: 100;
-    background-color: rgba(0, 0, 0, 0.85); /* Nền tối để tiêu đề nổi bật */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    background-color: transparent; /* ĐÃ SỬA: Loại bỏ nền đen */
+    box-shadow: none; /* Đã loại bỏ bóng mờ */
     padding: 10px 0;
 }}
 
 /* ======================= NÚT VỀ TRANG CHỦ (Tĩnh) ======================= */
 #back-to-home-btn-container {{
     position: static;
-    margin: 0 15px 10px 15px; /* Giảm margin dưới cho tiêu đề chạy lên */
+    margin: 0 15px 10px 15px; 
     z-index: 110;
     pointer-events: auto;
 }}
 
 a#manual-home-btn {{
-    background-color: #a89073; /* Màu nâu vintage */
+    background-color: #a89073; 
     color: #FFEA00;
     border: 2px solid #FFEA00;
     padding: 8px 18px;
