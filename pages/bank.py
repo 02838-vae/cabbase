@@ -17,27 +17,35 @@ def clean_text(s: str) -> str:
     return re.sub(r'\s+', ' ', s).strip()
 
 def read_docx_paragraphs(source):
+    # Lấy thư mục hiện tại của script
+    base_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in locals() else os.getcwd()
+    
     try:
-        # Giả định file nằm cùng thư mục với script
-        doc = Document(os.path.join(os.path.dirname(__file__), source))
+        # 1. Thử đọc file nằm cùng thư mục với script
+        path_to_file = os.path.join(base_dir, source)
+        doc = Document(path_to_file)
     except Exception as e:
-        # Nếu không tìm thấy file, thử đọc trực tiếp (trường hợp chạy local)
+        # 2. Nếu không tìm thấy, thử đọc trực tiếp (trường hợp chạy local hoặc đường dẫn tuyệt đối)
         try:
              doc = Document(source)
         except Exception:
             return []
+            
     return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
 
 def get_base64_encoded_file(file_path):
     """Mã hóa file ảnh sang base64 để sử dụng trong CSS."""
     fallback_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+    # Lấy thư mục hiện tại của script
+    base_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in locals() else os.getcwd()
+    
     try:
-        # Tìm file trong cùng thư mục với script
-        path_to_check = os.path.join(os.path.dirname(__file__), file_path)
+        # 1. Thử tìm file trong cùng thư mục với script
+        path_to_check = os.path.join(base_dir, file_path)
         
-        # Nếu không tìm thấy, thử đường dẫn tuyệt đối (trường hợp chạy local)
+        # 2. Nếu không tồn tại, thử đường dẫn gốc (trường hợp chạy local)
         if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
-            path_to_check = file_path # Thử đường dẫn gốc
+            path_to_check = file_path 
         
         if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
             return fallback_base64
@@ -340,7 +348,7 @@ MOBILE_IMAGE_FILE = "bank_mobile.jpg"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
-# === CSS ĐÃ TỐI ƯU CHO FONT VÀ KHOẢNG CÁCH (Sử dụng str.replace() để tránh lỗi cú pháp) ===
+# === CSS ĐÃ TỐI ƯU VÀ ĐẢM BẢO KHÔNG BỊ ẨN ===
 css_template = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Oswald:wght@400;500;600;700&display=swap');
@@ -405,20 +413,26 @@ html, body, .stApp {
     min-height: 100vh !important;
     z-index: 10;
     filter: none !important; 
+    pointer-events: all !important; /* Đảm bảo nội dung chính tương tác được */
 }
 
-/* Loại bỏ các thuộc tính margin/padding quá mức hung hãn cho các container bên trong (ĐÃ SỬA) */
-[data-testid="stMainBlock"],
-.st-emotion-cache-1oe02fs, 
-.st-emotion-cache-1gsv8h, 
-.st-emotion-cache-1aehpbu, 
-.st-emotion-cache-1avcm0n { 
+/* ✅ ĐIỀU CHỈNH: Đảm bảo các khối chính Streamlit không bị ẩn/xóa */
+[data-testid="stMainBlock"] { 
+    background-color: transparent !important;
+    filter: none !important;
+    z-index: 10;
+    pointer-events: all !important;
+} 
+
+/* Loại bỏ các thuộc tính margin/padding không cần thiết cho các container cấp cao */
+[data-testid="stMainBlock"] > div:first-child {
     background-color: transparent !important;
     filter: none !important;
     z-index: 10;
 } 
+/* KẾT THÚC ĐIỀU CHỈNH */
 
-/* Ẩn Streamlit UI components */
+/* Ẩn Streamlit UI components không cần thiết */
 [data-testid="stHeader"], 
 [data-testid="stToolbar"],
 [data-testid="stStatusWidget"],
@@ -725,8 +739,11 @@ if bank_choice != "----":
 
     # Load questions
     questions = parse_cabbank(source) if "Kỹ thuật" in bank_choice else parse_lawbank(source)
+    
     if not questions:
+        # THÔNG BÁO RÕ RÀNG LỖI TÌM/ĐỌC FILE
         st.error(f"❌ Không đọc được câu hỏi nào từ file **{source}**.")
+        st.warning("Vui lòng đảm bảo các file `cabbank.docx` và `lawbank.docx` đã được tải lên hoặc nằm trong cùng thư mục với script.")
         st.stop() 
     
     total = len(questions)
