@@ -13,6 +13,7 @@ import os
 def clean_text(s: str) -> str:
     if s is None:
         return ""
+    # Thay thế nhiều khoảng trắng bằng một khoảng trắng
     return re.sub(r'\s+', ' ', s).strip()
 
 def read_docx_paragraphs(source):
@@ -47,7 +48,7 @@ def get_base64_encoded_file(file_path):
         return fallback_base64
 
 # ====================================================
-# 🧩 PARSER CHUNG CHO CẢ HAI NGÂN HÀNG (ĐÃ SỬA LỖI PHÂN TÍCH)
+# 🧩 PARSER CHUNG CHO CẢ HAI NGÂN HÀNG (ĐÃ SỬA LỖI PHÂN TÍCH TRIỆT ĐỂ)
 # ====================================================
 def parse_quiz(source, bank_type):
     paras = read_docx_paragraphs(source)
@@ -56,8 +57,8 @@ def parse_quiz(source, bank_type):
 
     questions = []
     current = {"question": "", "options": [], "answer": ""}
-    # Universal option pattern: Tìm kiếm dấu * tùy chọn, theo sau là chữ cái A-D, dấu . hoặc )
-    opt_pat = re.compile(r'(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s*') 
+    # Regex robust: Bắt dấu * tùy chọn, theo sau là chữ cái A-D, và có thể có . hoặc )
+    opt_pat = re.compile(r'(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s*', re.IGNORECASE) 
 
     for p in paras:
         p = clean_text(p)
@@ -68,67 +69,87 @@ def parse_quiz(source, bank_type):
             continue
 
         matches = list(opt_pat.finditer(p))
-
+        
         if matches:
-            # Case 1: Đoạn văn chứa một hoặc nhiều đánh dấu đáp án.
-            
-            # 1. Trích xuất văn bản trước đáp án đầu tiên (potential question text or continuation of the last option)
+            # --- PHASE 1: Xử lý văn bản trước đáp án đầu tiên ---
             pre_text = p[:matches[0].start()].strip()
             
             if current["options"]:
-                # Nếu đã có đáp án trước đó, văn bản này là phần nối tiếp của ĐÁP ÁN CUỐI CÙNG
-                current["options"][-1] = clean_text(current["options"][-1] + " " + pre_text)
+                # Nếu đã có options, pre_text là phần nối tiếp của option cuối cùng
+                if pre_text:
+                    # Tách prefix (a., b.) ra khỏi body, sau đó gộp body và nối lại
+                    try:
+                        last_opt_text = current["options"].pop()
+                        letter_prefix, current_body = last_opt_text.split('.', 1)
+                        current["options"].append(f"{letter_prefix.strip()}. {clean_text(current_body + ' ' + pre_text)}")
+                    except ValueError:
+                        # Fallback nếu option cuối cùng không theo format 'a. text' (hiếm xảy ra)
+                        current["options"].append(f" (ERROR: Cannot parse multiline option) {pre_text}")
             elif pre_text:
-                # Nếu chưa có đáp án, văn bản này là phần nối tiếp của CÂU HỎI
+                # Nếu chưa có options, pre_text là phần nối tiếp của câu hỏi
                 current["question"] = clean_text(current["question"] + " " + pre_text)
 
-            # 2. Trích xuất các đáp án từ matches
+            # --- PHASE 2: Trích xuất các đáp án từ matches ---
+            
+            # Nếu đã bắt đầu câu hỏi và có options trong paragraph hiện tại, câu hỏi cũ đã hoàn thành.
+            if current["question"] and current["options"]:
+                questions.append(current)
+                # Bắt đầu câu hỏi mới (vì text trước đó đã được gán vào option continuation)
+                current = {"question": "", "options": [], "answer": ""} 
+
+            # Lặp qua tất cả các match để tách đáp án
             for i, m in enumerate(matches):
                 s = m.end()
                 e = matches[i + 1].start() if i + 1 < len(matches) else len(p)
                 opt_body = clean_text(p[s:e])
                 
-                # Chỉ thêm đáp án nếu nội dung không rỗng
-                if opt_body:
-                    opt = f"{m.group('letter').lower()}. {opt_body}"
+                letter = m.group('letter').lower()
+                opt = f"{letter}. {opt_body}"
+
+                # Chỉ thêm đáp án nếu có nội dung
+                if opt_body or m.group("star"): 
                     current["options"].append(opt)
                     if m.group("star"):
                         current["answer"] = opt
 
-            # 3. Xử lý phần văn bản còn lại sau đáp án cuối cùng (potential start of the next question)
+            # --- PHASE 3: Xử lý văn bản sau đáp án cuối cùng ---
             last_match = matches[-1]
-            # Lấy toàn bộ văn bản còn lại sau khi kết thúc ký hiệu đáp án cuối cùng
             post_text = clean_text(p[last_match.end():]) 
-
-            # Nếu có văn bản còn lại, câu hỏi hiện tại đã kết thúc
+            
             if post_text:
+                # Nếu có văn bản sau đáp án cuối cùng, nó là câu hỏi mới.
                 if current["question"] or current["options"]:
                     questions.append(current)
                 
-                # Bắt đầu câu hỏi mới với post_text là nội dung đầu tiên
-                current = {"question": post_text, "options": [], "answer": ""} 
-            
-            # Nếu không có post_text, giữ nguyên current để chờ nội dung options/question tiếp theo
+                # Bắt đầu câu hỏi mới với post_text
+                current = {"question": post_text, "options": [], "answer": ""}
             
         else:
-            # Case 2: Đoạn văn là văn bản thuần túy (không có đánh dấu đáp án).
+            # --- Case 2: Đoạn văn không có ký hiệu đáp án (Continuation) ---
             if current["options"]:
-                # Nếu options đã được bắt đầu, đây là phần nối tiếp của ĐÁP ÁN CUỐI CÙNG (hỗ trợ options nhiều đoạn)
-                current["options"][-1] = clean_text(current["options"][-1] + " " + p)
+                # Continuation của đáp án cuối cùng
+                if current["options"]:
+                    try:
+                        last_opt_text = current["options"].pop()
+                        letter_prefix, current_body = last_opt_text.split('.', 1)
+                        current["options"].append(f"{letter_prefix.strip()}. {clean_text(current_body + ' ' + p)}")
+                    except ValueError:
+                        # Fallback
+                        current["options"].append(f" (ERROR: Cannot parse multiline option) {p}")
             elif current["question"]:
-                # Nếu chỉ có câu hỏi, đây là phần nối tiếp của NỘI DUNG CÂU HỎI (hỗ trợ câu hỏi nhiều đoạn)
+                # Continuation của câu hỏi
                 current["question"] = clean_text(current["question"] + " " + p)
             else:
-                # Nếu current trống, đây là dòng đầu tiên của một CÂU HỎI MỚI
+                # Dòng đầu tiên của câu hỏi mới
                 current["question"] = p
                 
-    # Final cleanup: Thêm câu hỏi cuối cùng nếu còn dữ liệu
+    # Final cleanup: Thêm câu hỏi cuối cùng
     if current["question"] and current["options"]:
         questions.append(current)
 
     # Final check for missing answers
     for q in questions:
-        # Nếu đáp án bị thiếu hoặc nội dung đáp án là thông báo lỗi từ parser cũ (phòng ngừa)
+        # Nếu đáp án bị thiếu
         if not q.get('answer') or "Không tìm thấy đáp án đúng" in q['answer']:
             q['answer'] = " (Không tìm thấy đáp án đúng được đánh dấu * trong file nguồn)"
             
@@ -509,15 +530,20 @@ if total > 0:
             # Giao diện làm bài
             for i, q in enumerate(batch, start=start+1):
                 st.markdown(f"<p>{i}. {q['question']}</p>", unsafe_allow_html=True)
-                # Dùng key là f"q_{i}" để lưu giá trị chọn của từng câu
                 
-                # Hiển thị lỗi nếu thiếu đáp án
                 if not q['options']:
                     st.error("Câu hỏi này không có đáp án nào được tìm thấy trong file nguồn.")
                     st.markdown("---")
                     continue
                 
-                st.radio("", q["options"], key=f"q_{i}")
+                # Sửa lỗi: Chỉ hiển thị các lựa chọn được parse thành công
+                valid_options = [opt for opt in q["options"] if "(ERROR:" not in opt]
+                
+                if not valid_options:
+                    st.error("Câu hỏi này có lỗi định dạng, không thể hiển thị đáp án.")
+                else:
+                    st.radio("", valid_options, key=f"q_{i}")
+                
                 st.markdown("---") # Phân cách câu hỏi
             
             if st.button("✅ Nộp bài"):
@@ -541,6 +567,9 @@ if total > 0:
 
                 # Hiển thị các lựa chọn với style theo kết quả
                 for opt in q["options"]:
+                    # Bỏ qua các option bị lỗi parse
+                    if "(ERROR:" in opt: continue
+                        
                     opt_clean = clean_text(opt)
                     style = "color:#f9f9f9; font-family: 'Oswald', sans-serif; font-weight:400; text-shadow: none; padding: 2px 12px; margin: 1px 0; font-size: 1.0em;" 
                     
@@ -569,18 +598,16 @@ if total > 0:
             with col_reset:
                 if st.button("🔄 Làm lại nhóm này"):
                     for i in range(start+1, end+1):
-                        # Xóa giá trị đã chọn
                         st.session_state.pop(f"q_{i}", None) 
                     st.session_state.submitted = False
                     st.rerun()
             
             with col_next:
                 if st.session_state.current_group_idx < len(groups) - 1:
-                    # Logic chuyển trang đã được xác nhận là đúng: cập nhật index và reran.
                     if st.button("➡️ Tiếp tục nhóm sau"):
                         st.session_state.current_group_idx += 1
                         st.session_state.submitted = False
-                        st.rerun() # Buộc Streamlit cập nhật
+                        st.rerun()
                 else:
                     st.info("🎉 Đã hoàn thành tất cả các nhóm câu hỏi!")
     else:
