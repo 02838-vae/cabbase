@@ -375,7 +375,7 @@ html, body, .stApp {
     position: relative;
     font-family: 'Oswald', sans-serif !important;
     filter: none !important; 
-    /* ✅ FIX 1: Đảm bảo nền Streamlit mặc định không phải màu trắng */
+    /* ✅ FIX: Đảm bảo nền Streamlit mặc định không phải màu trắng */
     background-color: transparent !important; 
 }
 
@@ -415,13 +415,19 @@ html, body, .stApp {
     min-height: 100vh !important;
     z-index: 10;
     filter: none !important; 
-    /* ✅ FIX 2: Tăng cường tương tác cho main content */
     pointer-events: auto !important; 
+}
+
+/* ✅ FIX MỚI: Đảm bảo container bọc ngoài (chứa padding/margin) phải trong suốt tuyệt đối */
+/* Selector này là lớp ngoài cùng của nội dung widget */
+[data-testid="stAppViewContainer"] > .main > div:first-child > div:first-child {
+    background-color: transparent !important;
+    filter: none !important;
 }
 
 /* Đảm bảo các khối chính Streamlit không bị ẩn/xóa */
 [data-testid="stMainBlock"] { 
-    background-color: transparent !important; /* Không phải màu trắng */
+    background-color: transparent !important; 
     filter: none !important;
     z-index: 10;
     pointer-events: all !important;
@@ -579,7 +585,13 @@ a#manual-home-btn:hover {
 }
 
 /* ======================= STYLE DROPDOWN (Giá trị bên trong đã là Oswald) ======================= */
-/* ✅ FIX 3: Thêm z-index cao cho dropdown list (popover) để đảm bảo click được */
+/* ✅ FIX MỚI: Đảm bảo chính container Selectbox không bị chặn */
+.stSelectbox {
+    z-index: 100 !important; /* Cần cao hơn nội dung thường nhưng thấp hơn header */
+    pointer-events: all !important;
+}
+
+/* FIX: Thêm z-index cao cho dropdown list (popover) để đảm bảo click được */
 div[data-baseweb="popover"] {
     z-index: 9999 !important; 
     pointer-events: auto !important;
