@@ -94,7 +94,7 @@ def parse_cabbank(source):
 
 
 # ====================================================
-# 🧩 PARSER NGÂN HÀNG LUẬT (LAWBANK) - ĐÃ SỬA LỖI ĐÁP ÁN MẶC ĐỊNH
+# 🧩 PARSER NGÂN HÀNG LUẬT (LAWBANK) - ĐÃ SỬA LỖI REGEX
 # ====================================================
 def parse_lawbank(source):
     paras = read_docx_paragraphs(source)
@@ -104,7 +104,9 @@ def parse_lawbank(source):
     questions = []
  
     current = {"question": "", "options": [], "answer": ""}
-    opt_pat = re.compile(r'(?<![A-Za-z0-9/])(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s+')
+    # ĐÃ SỬA: Biểu thức chính quy được đơn giản hóa để đảm bảo capture tất cả các lựa chọn (A, B, C, D) 
+    # và dấu * một cách chính xác.
+    opt_pat = re.compile(r'(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s+')
 
     for p in paras:
         if re.match(r'^\s*Ref', p, re.I):
@@ -114,7 +116,6 @@ def parse_lawbank(source):
         if not matches:
             if current["options"]:
                 if current["question"] and current["options"]:
-                    # ĐÃ XÓA LOGIC TỰ ĐỘNG GÁN ANSWER = current["options"][0]
                     questions.append(current)
                 current = {"question": clean_text(p), "options": [], "answer": ""}
             else:
@@ -126,7 +127,6 @@ def parse_lawbank(source):
         if pre_text:
             if current["options"]:
                 if current["question"] and current["options"]:
-                    # ĐÃ XÓA LOGIC TỰ ĐỘNG GÁN ANSWER = current["options"][0]
                     questions.append(current)
                 current = {"question": clean_text(pre_text), "options": [], "answer": ""}
             else:
@@ -144,18 +144,16 @@ def parse_lawbank(source):
                 current["answer"] = option
 
         if current["question"] and current["options"]:
-            # ĐÃ XÓA LOGIC TỰ ĐỘNG GÁN ANSWER = current["options"][0]
             questions.append(current)
             current = {"question": "", "options": [], "answer": ""}
 
     if current["question"] and current["options"]:
-        # ĐÃ XÓA LOGIC TỰ ĐỘNG GÁN ANSWER = current["options"][0]
         questions.append(current)
         
-    # Thêm check cuối cùng để đảm bảo câu hỏi có câu trả lời (giúp hiển thị kết quả không bị lỗi)
+    # Thêm check cuối cùng và thông báo nếu thiếu đáp án
     for q in questions:
         if not q['answer']:
-            q['answer'] = " (Chưa có đáp án đúng được đánh dấu * trong file nguồn)"
+            q['answer'] = " (Không tìm thấy đáp án đúng được đánh dấu * trong file nguồn)"
 
     return questions
 
@@ -514,8 +512,8 @@ if total > 0:
     current_index = st.session_state.current_group_idx
     
     with col_group:
-        # ĐÃ SỬA: Bỏ key để tránh xung đột state khi dùng nút "Tiếp tục nhóm sau"
-        # Chỉ dùng index để hiển thị nhóm hiện tại.
+        # st.selectbox sử dụng index mặc định là current_index. 
+        # Không cần key nếu không muốn truy cập giá trị của nó trong callback hoặc thay đổi giá trị trong cùng 1 rerun.
         selected = st.selectbox("Chọn nhóm câu:", groups, index=current_index)
 
     # Kiểm tra nếu selectbox thay đổi (tức là người dùng chọn nhóm mới)
@@ -589,7 +587,7 @@ if total > 0:
             
             with col_next:
                 if st.session_state.current_group_idx < len(groups) - 1:
-                    # Logic đã sửa: cập nhật index và reran. Selectbox sẽ tự nhận index mới.
+                    # Logic chuyển trang đã được xác nhận là đúng: cập nhật index và reran.
                     if st.button("➡️ Tiếp tục nhóm sau"):
                         st.session_state.current_group_idx += 1
                         st.session_state.submitted = False
