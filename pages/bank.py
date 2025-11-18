@@ -340,25 +340,25 @@ MOBILE_IMAGE_FILE = "bank_mobile.jpg"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
-# === CSS ĐÃ TỐI ƯU CHO FONT VÀ KHOẢNG CÁCH ===
-css_style = f"""
+# === CSS ĐÃ TỐI ƯU CHO FONT VÀ KHOẢNG CÁCH (Sử dụng .format() để tránh lỗi f-string) ===
+css_template = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Oswald:wght@400;500;600;700&display=swap');
 
 /* ✅ KEYFRAMES */
-@keyframes colorShift {{
-    0% {{ background-position: 0% 50%; }}
-    50% {{ background-position: 100% 50%; }}
-    100% {{ background-position: 0% 50%; }}
-}}
+@keyframes colorShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
 
-@keyframes scrollRight {{
-    0% {{ transform: translateX(100%); }}
-    100% {{ transform: translateX(-100%); }}
-}}
+@keyframes scrollRight {
+    0% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+}
 
 /* ======================= FULL SCREEN & BACKGROUND ======================= */
-html, body, .stApp {{
+html, body, .stApp {
     height: 100% !important;
     min-height: 100vh !important;
     margin: 0 !important;
@@ -367,76 +367,76 @@ html, body, .stApp {{
     position: relative;
     font-family: 'Oswald', sans-serif !important;
     filter: none !important; 
-}}
+}
 
 /* CONTAINER CHỨA NỀN (Áp dụng filter vào đây để không ảnh hưởng đến nội dung) */
-.body-background {{
+.body-background {
     position: fixed;
     top: 0;
     left: 0;
     width: 100vw;
     height: 100vh;
-    background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed !important;
+    background: url("data:image/jpeg;base64,{img_pc_base64_placeholder}") no-repeat center top fixed !important;
     background-size: cover !important;
     z-index: 1; /* Nằm dưới nội dung chính */
     /* Hiệu ứng Vintage: Mờ nhẹ (blur 1px), ngả màu sepia (0.5), độ tương phản thấp hơn (0.9), độ bão hòa cao hơn (1.2) */
     filter: blur(1px) sepia(0.5) brightness(0.9) contrast(0.95) saturate(1.2) !important;
-}}
+}
 
 /* Mobile Background */
-@media (max-width: 767px) {{
-    .body-background {{
-        background: url("data:image/jpeg;base64,{img_mobile_base64}") no-repeat center top scroll !important;
+@media (max-width: 767px) {
+    .body-background {
+        background: url("data:image/jpeg;base64,{img_mobile_base64_placeholder}") no-repeat center top scroll !important;
         background-size: cover !important;
-    }}
-}}
+    }
+}
 
 /* NỘI DUNG CHÍNH - PHẢI NẰM TRÊN CÙNG (z-index cao hơn 1) và không bị filter */
 [data-testid="stAppViewContainer"],
-.stApp {{
+.stApp {
     background-color: transparent !important;
     filter: none !important; 
     z-index: 10;
-}}
+}
 
 /* Vùng chứa nội dung chính (từ tiêu đề phụ trở xuống) cần có nền đen trong suốt để che nền mờ */
-[data-testid="stAppViewContainer"] > .main {{
+[data-testid="stAppViewContainer"] > .main {
     background-color: rgba(0, 0, 0, 0.6) !important; /* Nền mờ, tối cho nội dung */
     min-height: 100vh !important;
     z-index: 10;
     filter: none !important; 
-}}
+}
 
 /* Loại bỏ các thuộc tính margin/padding quá mức hung hãn cho các container bên trong (ĐÃ SỬA) */
 [data-testid="stMainBlock"],
 .st-emotion-cache-1oe02fs, 
 .st-emotion-cache-1gsv8h, 
 .st-emotion-cache-1aehpbu, 
-.st-emotion-cache-1avcm0n {{ /* ĐÃ SỬA: Thay { thành {{ */
+.st-emotion-cache-1avcm0n { 
     background-color: transparent !important;
     filter: none !important;
     z-index: 10;
-}} /* ĐÃ SỬA: Thay } thành }} */
+} 
 
 /* Ẩn Streamlit UI components */
 [data-testid="stHeader"], 
 [data-testid="stToolbar"],
 [data-testid="stStatusWidget"],
 footer,
-#MainMenu {{
+#MainMenu {
     background-color: transparent !important;
     height: 0 !important;
     display: none !important;
     visibility: hidden !important;
     margin: 0 !important;
     padding: 0 !important;
-}}
+}
 
-h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
+h1, h2 { visibility: hidden; height: 0; margin: 0; padding: 0; }
 
 /* ======================= HEADER CONTAINER (Mới) ======================= */
 /* Container cố định cho nút và tiêu đề */
-#fixed-header-container {{
+#fixed-header-container {
     position: fixed;
     top: 0;
     left: 0;
@@ -445,17 +445,17 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     background-color: transparent; 
     box-shadow: none; 
     padding: 10px 0;
-}}
+}
 
 /* ======================= NÚT VỀ TRANG CHỦ (Tĩnh) ======================= */
-#back-to-home-btn-container {{
+#back-to-home-btn-container {
     position: static;
     margin: 0 15px 10px 15px; 
     z-index: 110;
     pointer-events: auto;
-}}
+}
 
-a#manual-home-btn {{
+a#manual-home-btn {
     background-color: #a89073; 
     color: #FFEA00;
     border: 2px solid #FFEA00;
@@ -469,16 +469,16 @@ a#manual-home-btn {{
     text-decoration: none;
     display: inline-block;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-}}
+}
 
-a#manual-home-btn:hover {{
+a#manual-home-btn:hover {
     background-color: #FFEA00;
     color: black;
     transform: scale(1.05);
-}}
+}
 
 /* ======================= TIÊU ĐỀ CHẠY LỚN (Nằm dưới nút) ======================= */
-#main-title-container {{
+#main-title-container {
     position: static;
     width: 100%;
     height: auto;
@@ -488,9 +488,9 @@ a#manual-home-btn:hover {{
     display: flex;
     align-items: center;
     padding: 0 15px;
-}}
+}
 
-#main-title-container h1 {{
+#main-title-container h1 {
     visibility: visible !important;
     height: auto !important;
     font-family: 'Playfair Display', serif;
@@ -510,41 +510,41 @@ a#manual-home-btn:hover {{
     text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
     width: 100%; /* Đảm bảo chạy hết chiều rộng */
     text-align: center;
-}}
+}
 
-@media (max-width: 768px) {{
-    #main-title-container h1 {{
+@media (max-width: 768px) {
+    #main-title-container h1 {
         font-size: 6.5vw;
         animation: scrollRight 12s linear infinite, colorShift 8s ease infinite;
-    }}
-}}
+    }
+}
 
 /* ======================= TẠO KHOẢNG TRỐNG CHO NỘI DUNG CHÍNH ======================= */
 /* Điều chỉnh padding top để nội dung chính nằm dưới fixed header */
-.main > div:first-child {{
+.main > div:first-child {
     padding-top: 150px !important; 
     padding-left: 1rem;
     padding-right: 1rem;
     padding-bottom: 2rem !important; 
-}}
+}
 
-@media (max-width: 768px) {{
-    .main > div:first-child {{
+@media (max-width: 768px) {
+    .main > div:first-child {
         padding-top: 130px !important; 
-    }}
-}}
+    }
+}
 
 /* ======================= TIÊU ĐỀ PHỤ TĨNH & KẾT QUẢ ======================= */
-#sub-static-title, .result-title {{
+#sub-static-title, .result-title {
     position: static;
     margin-top: 20px;
     margin-bottom: 30px;
     z-index: 90;
     background: transparent !important;
     text-align: center;
-}}
+}
 
-#sub-static-title h2, .result-title h3 {{
+#sub-static-title h2, .result-title h3 {
     visibility: visible !important;
     height: auto !important;
     font-family: 'Playfair Display', serif;
@@ -554,36 +554,36 @@ a#manual-home-btn:hover {{
     text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8); 
     margin-bottom: 20px;
     filter: none !important;
-}}
+}
 
-@media (max-width: 768px) {{
-    #sub-static-title h2, .result-title h3 {{
+@media (max-width: 768px) {
+    #sub-static-title h2, .result-title h3 {
         font-size: 1.5rem;
-    }}
-}}
+    }
+}
 
 /* ======================= STYLE DROPDOWN (Giá trị bên trong đã là Oswald) ======================= */
-div.stSelectbox label p, div[data-testid*="column"] label p {{
+div.stSelectbox label p, div[data-testid*="column"] label p {
     color: #00FF00 !important; 
     font-size: 1.25rem !important;
     font-weight: bold;
     text-shadow: 0 0 5px rgba(0,255,0,0.5);
     font-family: 'Oswald', sans-serif !important; 
-}}
+}
 
-.stSelectbox div[data-baseweb="select"] {{
+.stSelectbox div[data-baseweb="select"] {
     background-color: rgba(0, 0, 0, 0.7);
     border: 1px solid #00FF00;
     border-radius: 8px;
     filter: none !important;
-}}
+}
 
-.stSelectbox div[data-baseweb="select"] div[data-testid="stTextInput"] {{
+.stSelectbox div[data-baseweb="select"] div[data-testid="stTextInput"] {
     color: #FFFFFF !important;
-}}
+}
 
 /* ======================= STYLE CÂU HỎI & ĐÁP ÁN ======================= */
-div[data-testid="stMarkdownContainer"] p {{
+div[data-testid="stMarkdownContainer"] p {
     color: #ffffff !important;
     font-weight: 400 !important; 
     font-size: 1.2em !important;
@@ -594,9 +594,9 @@ div[data-testid="stMarkdownContainer"] p {{
     border-radius: 8px;
     margin-bottom: 5px; 
     filter: none !important;
-}}
+}
 
-.stRadio label {{
+.stRadio label {
     color: #f9f9f9 !important;
     font-size: 1.1em !important;
     font-weight: 400 !important; 
@@ -608,10 +608,10 @@ div[data-testid="stMarkdownContainer"] p {{
     display: inline-block;
     margin: 1px 0 !important; 
     filter: none !important;
-}}
+}
 
 /* NÚT BẤM */
-.stButton>button {{
+.stButton>button {
     background-color: #a89073 !important;
     color: #ffffff !important;
     border-radius: 8px;
@@ -624,21 +624,26 @@ div[data-testid="stMarkdownContainer"] p {{
     padding: 10px 20px !important;
     width: 100%; 
     filter: none !important;
-}}
+}
 
-.stButton>button:hover {{
+.stButton>button:hover {
     background-color: #8c765f !important;
     box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.6);
-}}
+}
 
 /* Giảm khoảng cách giữa các câu hỏi/phân cách */
-.stMarkdown > div > hr {{
+.stMarkdown > div > hr {
     margin-top: 10px;
     margin-bottom: 10px;
-}}
+}
 
 </style>
 """
+
+css_style = css_template.format(
+    img_pc_base64_placeholder=img_pc_base64,
+    img_mobile_base64_placeholder=img_mobile_base64
+)
 
 st.markdown(css_style, unsafe_allow_html=True)
 
