@@ -211,7 +211,7 @@ def display_all_questions(questions):
         return
 
     for i, q in enumerate(questions, start=1):
-        # ĐÃ SỬA: Dùng màu vàng sáng (#FFFFC2) cho câu hỏi
+        # Đã đặt màu vàng sáng (#FFFFC2) cho câu hỏi
         st.markdown(f"<p style='color: #FFFFC2; font-weight: 700;'>{i}. {q['question']}</p>", unsafe_allow_html=True)
         
         # Hiển thị các lựa chọn, tô màu đáp án đúng
@@ -273,7 +273,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         
         for i, q in enumerate(test_batch, start=1):
             # Lưu key trong session state theo index của câu hỏi (i)
-            # ĐÃ SỬA: Đặt màu vàng sáng (#FFFFC2) cho câu hỏi
+            # Đã đặt màu vàng sáng (#FFFFC2) cho câu hỏi
             st.markdown(f"<p style='color: #FFFFC2; font-weight: 700;'>{i}. {q['question']}</p>", unsafe_allow_html=True)
             st.radio("", q["options"], key=f"{test_key_prefix}_q_{i}")
             st.markdown("---") 
@@ -293,7 +293,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             correct = clean_text(q["answer"])
             is_correct = clean_text(selected_opt) == correct
 
-            # ĐÃ SỬA: Đặt màu vàng sáng (#FFFFC2) cho câu hỏi trong kết quả
+            # Đã đặt màu vàng sáng (#FFFFC2) cho câu hỏi trong kết quả
             st.markdown(f"<p style='color: #FFFFC2; font-weight: 700;'>{i}. {q['question']}</p>", unsafe_allow_html=True)
             
             # Hiển thị các lựa chọn với style theo kết quả
@@ -381,13 +381,13 @@ html, body, .stApp {{
     position: relative;
 }}
 
-/* BACKGROUND - ÁP DỤNG FILTER ĐÃ CHỈNH SỬA (Vàng Vintage) */
+/* BACKGROUND - ÁP DỤNG FILTER ĐÃ CHỈNH SỬA (Vàng Vintage, blur nhẹ) */
 .stApp {{
     background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed !important;
     background-size: cover !important;
     font-family: 'Oswald', sans-serif !important;
-    /* ĐÃ SỬA: Tăng sepia, giảm brightness, tăng contrast, thêm blur nhẹ cho tone Vintage */
-    filter: sepia(0.6) brightness(0.6) contrast(1.1) saturate(1.2) blur(3px) !important;
+    /* ĐÃ SỬA: Tăng sepia, giảm brightness, tăng contrast, BLUR NHẸ (1px) cho tone Vintage */
+    filter: sepia(0.6) brightness(0.6) contrast(1.1) saturate(1.2) blur(1px) !important;
     transition: filter 0.5s ease;
 }}
 
@@ -586,7 +586,7 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
 }}
 
 /* ======================= STYLE CÂU HỎI & ĐÁP ÁN ======================= */
-/* ĐÃ SỬA: Điều chỉnh cho các đoạn văn bản câu hỏi */
+/* Đã điều chỉnh cho các đoạn văn bản câu hỏi */
 div[data-testid="stMarkdownContainer"] p {{
     /* Màu trắng cho các đoạn văn bản chung (chủ yếu là đáp án nếu không có radio) */
     color: #ffffff !important; 
@@ -780,7 +780,7 @@ if bank_choice != "----":
                 if not st.session_state.submitted:
                     # Giao diện làm bài
                     for i, q in enumerate(batch, start=start+1):
-                        # ĐÃ SỬA: Đặt màu vàng sáng (#FFFFC2) cho câu hỏi
+                        # Đã đặt màu vàng sáng (#FFFFC2) cho câu hỏi
                         st.markdown(f"<p style='color: #FFFFC2; font-weight: 700;'>{i}. {q['question']}</p>", unsafe_allow_html=True)
                         st.radio("", q["options"], key=f"q_{i}")
                         st.markdown("---")
@@ -795,7 +795,7 @@ if bank_choice != "----":
                         correct = clean_text(q["answer"])
                         is_correct = clean_text(selected_opt) == correct
 
-                        # ĐÃ SỬA: Đặt màu vàng sáng (#FFFFC2) cho câu hỏi trong kết quả
+                        # Đã đặt màu vàng sáng (#FFFFC2) cho câu hỏi trong kết quả
                         st.markdown(f"<p style='color: #FFFFC2; font-weight: 700;'>{i}. {q['question']}</p>", unsafe_allow_html=True)
 
                         for opt in q["options"]:
