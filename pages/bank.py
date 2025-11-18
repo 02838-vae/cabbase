@@ -13,7 +13,6 @@ import os
 def clean_text(s: str) -> str:
     if s is None:
         return ""
-    # Thay thế nhiều khoảng trắng bằng một khoảng trắng
     return re.sub(r'\s+', ' ', s).strip()
 
 def read_docx_paragraphs(source):
@@ -48,111 +47,150 @@ def get_base64_encoded_file(file_path):
         return fallback_base64
 
 # ====================================================
-# 🧩 PARSER CHUNG CHO CẢ HAI NGÂN HÀNG (ĐÃ SỬA LỖI PHÂN TÍCH TRIỆT ĐỂ)
+# 🧩 PARSER NGÂN HÀNG KỸ THUẬT (CABBANK)
 # ====================================================
-def parse_quiz(source, bank_type):
+def parse_cabbank(source):
     paras = read_docx_paragraphs(source)
     if not paras:
         return []
 
     questions = []
     current = {"question": "", "options": [], "answer": ""}
-    # Regex robust: Bắt dấu * tùy chọn, theo sau là chữ cái A-D, và có thể có . hoặc )
-    opt_pat = re.compile(r'(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s*', re.IGNORECASE) 
+  
+    opt_pat = re.compile(r'(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s+')
 
     for p in paras:
-        p = clean_text(p)
-        if not p: continue
+        matches = list(opt_pat.finditer(p))
         
-        # Bỏ qua dòng "Ref" trong Ngân hàng Luật
-        if bank_type == "Law" and re.match(r'^Ref', p, re.I):
+        if not matches:
+            # Nếu đã có options, nghĩa là đã hết các đáp án -> lưu câu hỏi và bắt đầu câu mới
+            if current["options"]:
+                if current["question"] and current["options"]:
+                    # Đảm bảo có đáp án, nếu không có thì lấy đáp án đầu tiên
+                    if not current["answer"] and current["options"]:
+                        current["answer"] = current["options"][0]
+                    questions.append(current)
+                current = {"question": clean_text(p), "options": [], "answer": ""}
+            else:
+                # Vẫn đang ở phần câu hỏi (chưa có options)
+                if current["question"]:
+                    current["question"] += " " + clean_text(p)
+                else:
+                    current["question"] = clean_text(p)
+            continue
+
+        # Có matches - nghĩa là có các đáp án a, b, c, d
+        pre_text = p[:matches[0].start()].strip()
+        
+        if pre_text:
+            # Có text trước đáp án đầu tiên
+            if current["options"]:
+                # Đã có options từ trước -> lưu câu cũ và bắt đầu câu mới
+                if current["question"] and current["options"]:
+                    if not current["answer"] and current["options"]:
+                        current["answer"] = current["options"][0]
+                    questions.append(current)
+                current = {"question": clean_text(pre_text), "options": [], "answer": ""}
+            else:
+                # Chưa có options -> đây là phần cuối của câu hỏi
+                if current["question"]:
+                    current["question"] += " " + clean_text(pre_text)
+                else:
+                    current["question"] = clean_text(pre_text)
+
+        # Xử lý tất cả các đáp án trong dòng này
+        for i, m in enumerate(matches):
+            s = m.end()
+            e = matches[i + 1].start() if i + 1 < len(matches) else len(p)
+            opt_body = clean_text(p[s:e])
+            letter = m.group('letter').lower()
+            opt = f"{letter}. {opt_body}"
+            current["options"].append(opt)
+            if m.group("star"):
+                current["answer"] = opt
+
+    # Lưu câu hỏi cuối cùng
+    if current["question"] and current["options"]:
+        if not current["answer"] and current["options"]:
+            current["answer"] = current["options"][0]
+        questions.append(current)
+
+    return questions
+
+
+# ====================================================
+# 🧩 PARSER NGÂN HÀNG LUẬT (LAWBANK)
+# ====================================================
+def parse_lawbank(source):
+    paras = read_docx_paragraphs(source)
+    if not paras:
+        return []
+
+    questions = []
+    current = {"question": "", "options": [], "answer": ""}
+    opt_pat = re.compile(r'(?<![A-Za-z0-9/])(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s+')
+
+    for p in paras:
+        # Bỏ qua dòng Ref (tài liệu tham khảo)
+        if re.match(r'^\s*Ref', p, re.I):
             continue
 
         matches = list(opt_pat.finditer(p))
         
-        if matches:
-            # --- PHASE 1: Xử lý văn bản trước đáp án đầu tiên ---
-            pre_text = p[:matches[0].start()].strip()
-            
+        if not matches:
+            # Không có đáp án trong dòng này
             if current["options"]:
-                # Nếu đã có options, pre_text là phần nối tiếp của option cuối cùng
-                if pre_text:
-                    # Tách prefix (a., b.) ra khỏi body, sau đó gộp body và nối lại
-                    try:
-                        last_opt_text = current["options"].pop()
-                        letter_prefix, current_body = last_opt_text.split('.', 1)
-                        current["options"].append(f"{letter_prefix.strip()}. {clean_text(current_body + ' ' + pre_text)}")
-                    except ValueError:
-                        # Fallback nếu option cuối cùng không theo format 'a. text' (hiếm xảy ra)
-                        current["options"].append(f" (ERROR: Cannot parse multiline option) {pre_text}")
-            elif pre_text:
-                # Nếu chưa có options, pre_text là phần nối tiếp của câu hỏi
-                current["question"] = clean_text(current["question"] + " " + pre_text)
-
-            # --- PHASE 2: Trích xuất các đáp án từ matches ---
-            
-            # Nếu đã bắt đầu câu hỏi và có options trong paragraph hiện tại, câu hỏi cũ đã hoàn thành.
-            if current["question"] and current["options"]:
-                questions.append(current)
-                # Bắt đầu câu hỏi mới (vì text trước đó đã được gán vào option continuation)
-                current = {"question": "", "options": [], "answer": ""} 
-
-            # Lặp qua tất cả các match để tách đáp án
-            for i, m in enumerate(matches):
-                s = m.end()
-                e = matches[i + 1].start() if i + 1 < len(matches) else len(p)
-                opt_body = clean_text(p[s:e])
-                
-                letter = m.group('letter').lower()
-                opt = f"{letter}. {opt_body}"
-
-                # Chỉ thêm đáp án nếu có nội dung
-                if opt_body or m.group("star"): 
-                    current["options"].append(opt)
-                    if m.group("star"):
-                        current["answer"] = opt
-
-            # --- PHASE 3: Xử lý văn bản sau đáp án cuối cùng ---
-            last_match = matches[-1]
-            post_text = clean_text(p[last_match.end():]) 
-            
-            if post_text:
-                # Nếu có văn bản sau đáp án cuối cùng, nó là câu hỏi mới.
-                if current["question"] or current["options"]:
+                # Đã có options rồi -> lưu câu hỏi cũ và bắt đầu câu mới
+                if current["question"] and current["options"]:
+                    if not current["answer"] and current["options"]:
+                        current["answer"] = current["options"][0]
                     questions.append(current)
-                
-                # Bắt đầu câu hỏi mới với post_text
-                current = {"question": post_text, "options": [], "answer": ""}
-            
-        else:
-            # --- Case 2: Đoạn văn không có ký hiệu đáp án (Continuation) ---
-            if current["options"]:
-                # Continuation của đáp án cuối cùng
-                if current["options"]:
-                    try:
-                        last_opt_text = current["options"].pop()
-                        letter_prefix, current_body = last_opt_text.split('.', 1)
-                        current["options"].append(f"{letter_prefix.strip()}. {clean_text(current_body + ' ' + p)}")
-                    except ValueError:
-                        # Fallback
-                        current["options"].append(f" (ERROR: Cannot parse multiline option) {p}")
-            elif current["question"]:
-                # Continuation của câu hỏi
-                current["question"] = clean_text(current["question"] + " " + p)
+                current = {"question": clean_text(p), "options": [], "answer": ""}
             else:
-                # Dòng đầu tiên của câu hỏi mới
-                current["question"] = p
-                
-    # Final cleanup: Thêm câu hỏi cuối cùng
+                # Vẫn đang ở phần câu hỏi
+                if current["question"]:
+                    current["question"] += " " + clean_text(p)
+                else:
+                    current["question"] = clean_text(p)
+            continue
+
+        # Có matches - có các đáp án
+        first_match = matches[0]
+        pre_text = p[:first_match.start()].strip()
+        
+        if pre_text:
+            # Có text trước đáp án đầu tiên
+            if current["options"]:
+                # Đã có options -> lưu câu cũ và bắt đầu câu mới
+                if current["question"] and current["options"]:
+                    if not current["answer"] and current["options"]:
+                        current["answer"] = current["options"][0]
+                    questions.append(current)
+                current = {"question": clean_text(pre_text), "options": [], "answer": ""}
+            else:
+                # Chưa có options -> đây là phần cuối câu hỏi
+                if current["question"]:
+                    current["question"] += " " + clean_text(pre_text)
+                else:
+                    current["question"] = clean_text(pre_text)
+
+        # Xử lý tất cả các đáp án trong dòng
+        for i, m in enumerate(matches):
+            s = m.end()
+            e = matches[i+1].start() if i+1 < len(matches) else len(p)
+            opt_body = clean_text(p[s:e])
+            letter = m.group("letter").lower()
+            option = f"{letter}. {opt_body}"
+            current["options"].append(option)
+            if m.group("star"):
+                current["answer"] = option
+
+    # Lưu câu hỏi cuối cùng
     if current["question"] and current["options"]:
+        if not current["answer"] and current["options"]:
+            current["answer"] = current["options"][0]
         questions.append(current)
 
-    # Final check for missing answers
-    for q in questions:
-        # Nếu đáp án bị thiếu
-        if not q.get('answer') or "Không tìm thấy đáp án đúng" in q['answer']:
-            q['answer'] = " (Không tìm thấy đáp án đúng được đánh dấu * trong file nguồn)"
-            
     return questions
 
 
@@ -168,7 +206,7 @@ MOBILE_IMAGE_FILE = "bank_mobile.jpg"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
-# === CSS ĐÃ TỐI ƯU CHO FONT, KHOẢNG CÁCH VÀ KÍCH CỠ CHỮ ===
+# === CSS ĐÃ TỐI ƯU CHO FONT VÀ KHOẢNG CÁCH ===
 css_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Oswald:wght@400;500;600;700&display=swap');
@@ -361,7 +399,7 @@ a#manual-home-btn:hover {{
     }}
 }}
 
-/* ======================= STYLE DROPDOWN ======================= */
+/* ======================= STYLE DROPDOWN (Giá trị bên trong đã là Oswald) ======================= */
 div.stSelectbox label p, div[data-testid*="column"] label p {{
     color: #00FF00 !important; 
     font-size: 1.25rem !important;
@@ -380,30 +418,31 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
     color: #FFFFFF !important;
 }}
 
-/* ======================= STYLE CÂU HỎI & ĐÁP ÁN (ĐÃ GIẢM KÍCH CỠ) ======================= */
+/* ======================= STYLE CÂU HỎI & ĐÁP ÁN (ĐÃ CHỈNH SỬA) ======================= */
+/* CHỈNH SỬA: Font Oswald, Bỏ làm đậm (400), Giảm padding/margin (khoảng cách) */
 div[data-testid="stMarkdownContainer"] p {{
     color: #ffffff !important;
-    font-weight: 400 !important;
-    font-size: 1.1em !important; 
-    font-family: 'Oswald', sans-serif !important;
+    font-weight: 400 !important; /* Bỏ làm đậm */
+    font-size: 1.2em !important;
+    font-family: 'Oswald', sans-serif !important; /* Thay font */
     text-shadow: none !important; 
     background-color: transparent; 
-    padding: 5px 15px;
+    padding: 5px 15px; /* Giảm padding trên/dưới */
     border-radius: 8px;
-    margin-bottom: 5px;
+    margin-bottom: 5px; /* Giảm khoảng cách giữa các câu */
 }}
 
 .stRadio label {{
     color: #f9f9f9 !important;
-    font-size: 1.0em !important; 
-    font-weight: 400 !important;
-    font-family: 'Oswald', sans-serif !important;
+    font-size: 1.1em !important;
+    font-weight: 400 !important; /* Bỏ làm đậm */
+    font-family: 'Oswald', sans-serif !important; /* Thay font */
     text-shadow: none !important;
     background-color: transparent; 
-    padding: 2px 12px;
+    padding: 2px 12px; /* Giảm padding trên/dưới */
     border-radius: 6px;
     display: inline-block;
-    margin: 1px 0 !important;
+    margin: 1px 0 !important; /* Giảm khoảng cách giữa các lựa chọn */
 }}
 
 /* NÚT BẤM */
@@ -413,7 +452,7 @@ div[data-testid="stMarkdownContainer"] p {{
     border-radius: 8px;
     font-size: 1.1em !important;
     font-weight: 600 !important;
-    font-family: 'Oswald', sans-serif !important;
+    font-family: 'Oswald', sans-serif !important; /* Đổi font nút bấm */
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
     transition: all 0.2s ease;
     border: none !important;
@@ -425,7 +464,7 @@ div[data-testid="stMarkdownContainer"] p {{
     box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.6);
 }}
 
-/* DÃN NGANG DROPDOWN */
+/* DÀN NGANG DROPDOWN */
 [data-testid="stHorizontalBlock"] [data-testid="stSelectbox"] {{
     flex: 1;
     min-width: 0;
@@ -471,9 +510,6 @@ if "current_group_idx" not in st.session_state:
     st.session_state.current_group_idx = 0
 if "submitted" not in st.session_state:
     st.session_state.submitted = False
-if "last_bank_choice" not in st.session_state:
-    st.session_state.last_bank_choice = None
-
 
 # --- Lựa chọn Ngân hàng & Nhóm câu hỏi (Dàn ngang) ---
 col_bank, col_group = st.columns(2)
@@ -481,12 +517,10 @@ col_bank, col_group = st.columns(2)
 with col_bank:
     bank_choice = st.selectbox("Chọn ngân hàng:", ["Ngân hàng Kỹ thuật", "Ngân hàng Luật"], 
 key="bank_selector")
+source = "cabbank.docx" if "Kỹ thuật" in bank_choice else "lawbank.docx"
 
-bank_type = "Tech" if "Kỹ thuật" in bank_choice else "Law"
-source = "cabbank.docx" if bank_type == "Tech" else "lawbank.docx"
-
-# Load questions bằng hàm parse_quiz mới
-questions = parse_quiz(source, bank_type)
+# Load questions
+questions = parse_cabbank(source) if "Kỹ thuật" in bank_choice else parse_lawbank(source)
 if not questions:
     st.error(f"❌ Không đọc được câu hỏi nào từ file **{source}**. Vui lòng đảm bảo file có sẵn.")
     st.stop() 
@@ -505,21 +539,16 @@ total = len(questions)
 if total > 0:
     groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
     
-    # Đảm bảo index nằm trong giới hạn
-    if st.session_state.current_group_idx >= len(groups) or st.session_state.current_group_idx < 0:
+    if st.session_state.current_group_idx >= len(groups):
         st.session_state.current_group_idx = 0
     
-    current_index = st.session_state.current_group_idx
-    
     with col_group:
-        selected = st.selectbox("Chọn nhóm câu:", groups, index=current_index)
-
-    # Kiểm tra nếu selectbox thay đổi (tức là người dùng chọn nhóm mới)
+        selected = st.selectbox("Chọn nhóm câu:", groups, index=st.session_state.current_group_idx, key="group_selector")
+    
     new_idx = groups.index(selected)
     if st.session_state.current_group_idx != new_idx:
         st.session_state.current_group_idx = new_idx
         st.session_state.submitted = False
-        # Streamlit sẽ tự rerender khi st.selectbox thay đổi
 
     idx = st.session_state.current_group_idx
     start, end = idx * group_size, min((idx+1) * group_size, total)
@@ -530,22 +559,9 @@ if total > 0:
             # Giao diện làm bài
             for i, q in enumerate(batch, start=start+1):
                 st.markdown(f"<p>{i}. {q['question']}</p>", unsafe_allow_html=True)
-                
-                if not q['options']:
-                    st.error("Câu hỏi này không có đáp án nào được tìm thấy trong file nguồn.")
-                    st.markdown("---")
-                    continue
-                
-                # Sửa lỗi: Chỉ hiển thị các lựa chọn được parse thành công
-                valid_options = [opt for opt in q["options"] if "(ERROR:" not in opt]
-                
-                if not valid_options:
-                    st.error("Câu hỏi này có lỗi định dạng, không thể hiển thị đáp án.")
-                else:
-                    st.radio("", valid_options, key=f"q_{i}")
-                
+                # Dùng key là f"q_{i}" để lưu giá trị chọn của từng câu
+                st.radio("", q["options"], key=f"q_{i}")
                 st.markdown("---") # Phân cách câu hỏi
-            
             if st.button("✅ Nộp bài"):
                 st.session_state.submitted = True
                 st.rerun()
@@ -553,32 +569,24 @@ if total > 0:
             # Giao diện kết quả
             score = 0
             for i, q in enumerate(batch, start=start+1):
-                if not q['options']:
-                    st.markdown(f"<p>{i}. {q['question']}</p>", unsafe_allow_html=True)
-                    st.error("Câu hỏi này không có đáp án nào được tìm thấy.")
-                    st.markdown('<div style="margin: 5px 0;">---</div>', unsafe_allow_html=True)
-                    continue
-                    
                 selected_opt = st.session_state.get(f"q_{i}")
                 correct = clean_text(q["answer"])
-                is_correct = clean_text(selected_opt) == correct and "Không tìm thấy" not in correct
+                is_correct = clean_text(selected_opt) == correct
 
                 st.markdown(f"<p>{i}. {q['question']}</p>", unsafe_allow_html=True)
 
                 # Hiển thị các lựa chọn với style theo kết quả
                 for opt in q["options"]:
-                    # Bỏ qua các option bị lỗi parse
-                    if "(ERROR:" in opt: continue
-                        
                     opt_clean = clean_text(opt)
-                    style = "color:#f9f9f9; font-family: 'Oswald', sans-serif; font-weight:400; text-shadow: none; padding: 2px 12px; margin: 1px 0; font-size: 1.0em;" 
+                    # Thêm font-family: 'Oswald', sans-serif và font-weight: 400
+                    style = "color:#f9f9f9; font-family: 'Oswald', sans-serif; font-weight:400; text-shadow: none; padding: 2px 12px; margin: 1px 0;" 
                     
                     if opt_clean == correct:
-                        # Đáp án đúng
-                        style = "color:#00ff00; font-family: 'Oswald', sans-serif; font-weight:600; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); padding: 2px 12px; margin: 1px 0; font-size: 1.0em;"
+                        # Đáp án đúng (Màu xanh lá, đậm hơn)
+                        style = "color:#00ff00; font-family: 'Oswald', sans-serif; font-weight:600; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); padding: 2px 12px; margin: 1px 0;"
                     elif opt_clean == clean_text(selected_opt):
-                        # Đáp án đã chọn
-                        style = "color:#ff3333; font-family: 'Oswald', sans-serif; font-weight:600; text-decoration: underline; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8); padding: 2px 12px; margin: 1px 0; font-size: 1.0em;"
+                        # Đáp án đã chọn (Màu đỏ, đậm hơn)
+                        style = "color:#ff3333; font-family: 'Oswald', sans-serif; font-weight:600; text-decoration: underline; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8); padding: 2px 12px; margin: 1px 0;"
                     
                     st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
 
@@ -598,6 +606,7 @@ if total > 0:
             with col_reset:
                 if st.button("🔄 Làm lại nhóm này"):
                     for i in range(start+1, end+1):
+                        # Xóa giá trị đã chọn
                         st.session_state.pop(f"q_{i}", None) 
                     st.session_state.submitted = False
                     st.rerun()
