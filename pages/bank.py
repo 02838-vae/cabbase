@@ -94,7 +94,7 @@ def parse_cabbank(source):
 
 
 # ====================================================
-# 🧩 PARSER NGÂN HÀNG LUẬT (LAWBANK)
+# 🧩 PARSER NGÂN HÀNG LUẬT (LAWBANK) - ĐÃ SỬA LỖI ĐÁP ÁN MẶC ĐỊNH
 # ====================================================
 def parse_lawbank(source):
     paras = read_docx_paragraphs(source)
@@ -114,8 +114,7 @@ def parse_lawbank(source):
         if not matches:
             if current["options"]:
                 if current["question"] and current["options"]:
-                    if not current["answer"]:
-                        current["answer"] = current["options"][0]
+                    # ĐÃ XÓA LOGIC TỰ ĐỘNG GÁN ANSWER = current["options"][0]
                     questions.append(current)
                 current = {"question": clean_text(p), "options": [], "answer": ""}
             else:
@@ -127,8 +126,7 @@ def parse_lawbank(source):
         if pre_text:
             if current["options"]:
                 if current["question"] and current["options"]:
-                    if not current["answer"]:
-                        current["answer"] = current["options"][0]
+                    # ĐÃ XÓA LOGIC TỰ ĐỘNG GÁN ANSWER = current["options"][0]
                     questions.append(current)
                 current = {"question": clean_text(pre_text), "options": [], "answer": ""}
             else:
@@ -146,15 +144,18 @@ def parse_lawbank(source):
                 current["answer"] = option
 
         if current["question"] and current["options"]:
-            if not current["answer"]:
-                current["answer"] = current["options"][0]
+            # ĐÃ XÓA LOGIC TỰ ĐỘNG GÁN ANSWER = current["options"][0]
             questions.append(current)
             current = {"question": "", "options": [], "answer": ""}
 
     if current["question"] and current["options"]:
-        if not current["answer"]:
-            current["answer"] = current["options"][0]
+        # ĐÃ XÓA LOGIC TỰ ĐỘNG GÁN ANSWER = current["options"][0]
         questions.append(current)
+        
+    # Thêm check cuối cùng để đảm bảo câu hỏi có câu trả lời (giúp hiển thị kết quả không bị lỗi)
+    for q in questions:
+        if not q['answer']:
+            q['answer'] = " (Chưa có đáp án đúng được đánh dấu * trong file nguồn)"
 
     return questions
 
@@ -387,7 +388,7 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
 div[data-testid="stMarkdownContainer"] p {{
     color: #ffffff !important;
     font-weight: 400 !important;
-    font-size: 1.1em !important; /* KÍCH CỠ MỚI */
+    font-size: 1.1em !important; 
     font-family: 'Oswald', sans-serif !important;
     text-shadow: none !important; 
     background-color: transparent; 
@@ -398,7 +399,7 @@ div[data-testid="stMarkdownContainer"] p {{
 
 .stRadio label {{
     color: #f9f9f9 !important;
-    font-size: 1.0em !important; /* KÍCH CỠ MỚI */
+    font-size: 1.0em !important; 
     font-weight: 400 !important;
     font-family: 'Oswald', sans-serif !important;
     text-shadow: none !important;
@@ -513,17 +514,18 @@ if total > 0:
     current_index = st.session_state.current_group_idx
     
     with col_group:
-        # st.selectbox sử dụng index mặc định là current_index. 
-        # Khi người dùng thay đổi, nó sẽ cập nhật giá trị của "group_selector".
-        selected = st.selectbox("Chọn nhóm câu:", groups, index=current_index, key="group_selector")
+        # ĐÃ SỬA: Bỏ key để tránh xung đột state khi dùng nút "Tiếp tục nhóm sau"
+        # Chỉ dùng index để hiển thị nhóm hiện tại.
+        selected = st.selectbox("Chọn nhóm câu:", groups, index=current_index)
 
     # Kiểm tra nếu selectbox thay đổi (tức là người dùng chọn nhóm mới)
+    # Lấy index từ giá trị được chọn (selected)
     new_idx = groups.index(selected)
     if st.session_state.current_group_idx != new_idx:
         st.session_state.current_group_idx = new_idx
         st.session_state.submitted = False
-        # Không cần rerun ở đây vì Streamlit sẽ tự rerender khi group_selector thay đổi
-    
+        # Streamlit sẽ tự rerender khi st.selectbox thay đổi
+
     idx = st.session_state.current_group_idx
     start, end = idx * group_size, min((idx+1) * group_size, total)
     batch = questions[start:end]
@@ -587,7 +589,7 @@ if total > 0:
             
             with col_next:
                 if st.session_state.current_group_idx < len(groups) - 1:
-                    # Logic đã được sửa: chỉ cập nhật index. Streamlit sẽ tự động cập nhật selectbox trong rerun tiếp theo.
+                    # Logic đã sửa: cập nhật index và reran. Selectbox sẽ tự nhận index mới.
                     if st.button("➡️ Tiếp tục nhóm sau"):
                         st.session_state.current_group_idx += 1
                         st.session_state.submitted = False
