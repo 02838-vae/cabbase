@@ -17,16 +17,27 @@ def clean_text(s: str) -> str:
 
 def read_docx_paragraphs(source):
     try:
+        # Giả định file nằm cùng thư mục với script
         doc = Document(os.path.join(os.path.dirname(__file__), source))
     except Exception as e:
-        return []
+        # Nếu không tìm thấy file, thử đọc trực tiếp (trường hợp chạy local)
+        try:
+             doc = Document(source)
+        except Exception:
+            return []
     return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
 
 def get_base64_encoded_file(file_path):
     """Mã hóa file ảnh sang base64 để sử dụng trong CSS."""
     fallback_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
     try:
+        # Tìm file trong cùng thư mục với script
         path_to_check = os.path.join(os.path.dirname(__file__), file_path)
+        
+        # Nếu không tìm thấy, thử đường dẫn tuyệt đối (trường hợp chạy local)
+        if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
+            path_to_check = file_path # Thử đường dẫn gốc
+        
         if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
             return fallback_base64
             
@@ -160,11 +171,10 @@ MOBILE_IMAGE_FILE = "bank_mobile.jpg"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
-# === CSS ĐÃ TỐI ƯU (Copy style từ partnumber.py) ===
+# === CSS ĐÃ TỐI ƯU CHO FONT VÀ KHOẢNG CÁCH ===
 css_style = f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Crimson+Text:wght@400;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Oswald:wght@400;500;600;700&display=swap');
 
 /* ✅ KEYFRAMES */
 @keyframes colorShift {{
@@ -178,7 +188,7 @@ css_style = f"""
     100% {{ transform: translateX(-100%); }}
 }}
 
-/* ======================= FULL SCREEN & BACKGROUND (Copy từ partnumber) ======================= */
+/* ======================= FULL SCREEN & BACKGROUND ======================= */
 html, body, .stApp {{
     height: 100% !important;
     min-height: 100vh !important;
@@ -237,7 +247,7 @@ footer,
 
 h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
 
-/* ======================= NÚT VỀ TRANG CHỦ (STATIC - KHÔNG CHẠY THEO) ======================= */
+/* ======================= NÚT VỀ TRANG CHỦ ======================= */
 #back-to-home-btn-container {{
     position: static;
     margin: 15px 0 0 15px;
@@ -266,7 +276,7 @@ a#manual-home-btn:hover {{
     transform: scale(1.05);
 }}
 
-/* ======================= TIÊU ĐỀ CHẠY (STATIC - KHÔNG CHẠY THEO) ======================= */
+/* ======================= TIÊU ĐỀ CHẠY LỚN ======================= */
 #main-title-container {{
     position: static;
     margin-top: 20px;
@@ -354,7 +364,7 @@ a#manual-home-btn:hover {{
     }}
 }}
 
-/* ======================= STYLE DROPDOWN ======================= */
+/* ======================= STYLE DROPDOWN (Giá trị bên trong đã là Oswald) ======================= */
 div.stSelectbox label p, div[data-testid*="column"] label p {{
     color: #00FF00 !important; 
     font-size: 1.25rem !important;
@@ -373,30 +383,31 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
     color: #FFFFFF !important;
 }}
 
-/* ======================= STYLE CÂU HỎI & ĐÁP ÁN (SẮC NÉT) ======================= */
+/* ======================= STYLE CÂU HỎI & ĐÁP ÁN (ĐÃ CHỈNH SỬA) ======================= */
+/* CHỈNH SỬA: Font Oswald, Bỏ làm đậm (400), Giảm padding/margin (khoảng cách) */
 div[data-testid="stMarkdownContainer"] p {{
     color: #ffffff !important;
-    font-weight: 700 !important;
+    font-weight: 400 !important; /* Bỏ làm đậm */
     font-size: 1.2em !important;
-    font-family: 'Crimson Text', serif; 
+    font-family: 'Oswald', sans-serif !important; /* Thay font */
     text-shadow: none !important; 
     background-color: transparent; 
-    padding: 10px 15px;
+    padding: 5px 15px; /* Giảm padding trên/dưới */
     border-radius: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 5px; /* Giảm khoảng cách giữa các câu */
 }}
 
 .stRadio label {{
     color: #f9f9f9 !important;
     font-size: 1.1em !important;
-    font-weight: 600 !important;
-    font-family: 'Crimson Text', serif; 
+    font-weight: 400 !important; /* Bỏ làm đậm */
+    font-family: 'Oswald', sans-serif !important; /* Thay font */
     text-shadow: none !important;
     background-color: transparent; 
-    padding: 4px 12px; 
+    padding: 2px 12px; /* Giảm padding trên/dưới */
     border-radius: 6px;
     display: inline-block;
-    margin: 2px 0 !important;
+    margin: 1px 0 !important; /* Giảm khoảng cách giữa các lựa chọn */
 }}
 
 /* NÚT BẤM */
@@ -406,7 +417,7 @@ div[data-testid="stMarkdownContainer"] p {{
     border-radius: 8px;
     font-size: 1.1em !important;
     font-weight: 600 !important;
-    font-family: 'Crimson Text', serif; 
+    font-family: 'Oswald', sans-serif !important; /* Đổi font nút bấm */
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
     transition: all 0.2s ease;
     border: none !important;
@@ -422,6 +433,12 @@ div[data-testid="stMarkdownContainer"] p {{
 [data-testid="stHorizontalBlock"] [data-testid="stSelectbox"] {{
     flex: 1;
     min-width: 0;
+}}
+
+/* Giảm khoảng cách giữa các câu hỏi/phân cách */
+.stMarkdown > div > hr {{
+    margin-top: 10px;
+    margin-bottom: 10px;
 }}
 
 </style>
@@ -470,7 +487,7 @@ source = "cabbank.docx" if "Kỹ thuật" in bank_choice else "lawbank.docx"
 # Load questions
 questions = parse_cabbank(source) if "Kỹ thuật" in bank_choice else parse_lawbank(source)
 if not questions:
-    st.error("❌ Không đọc được câu hỏi nào. Vui lòng đảm bảo file .docx (cabbank.docx hoặc lawbank.docx) có sẵn.")
+    st.error(f"❌ Không đọc được câu hỏi nào từ file **{source}**. Vui lòng đảm bảo file có sẵn.")
     st.stop() 
 
 # --- Xử lý Reset khi đổi Ngân hàng ---
@@ -507,8 +524,9 @@ if total > 0:
             # Giao diện làm bài
             for i, q in enumerate(batch, start=start+1):
                 st.markdown(f"<p>{i}. {q['question']}</p>", unsafe_allow_html=True)
+                # Dùng key là f"q_{i}" để lưu giá trị chọn của từng câu
                 st.radio("", q["options"], key=f"q_{i}")
-                st.markdown("---")
+                st.markdown("---") # Phân cách câu hỏi
             if st.button("✅ Nộp bài"):
                 st.session_state.submitted = True
                 st.rerun()
@@ -522,22 +540,29 @@ if total > 0:
 
                 st.markdown(f"<p>{i}. {q['question']}</p>", unsafe_allow_html=True)
 
+                # Hiển thị các lựa chọn với style theo kết quả
                 for opt in q["options"]:
                     opt_clean = clean_text(opt)
-                    style = "color:#f9f9f9; text-shadow: none;" 
+                    # Thêm font-family: 'Oswald', sans-serif và font-weight: 400
+                    style = "color:#f9f9f9; font-family: 'Oswald', sans-serif; font-weight:400; text-shadow: none; padding: 2px 12px; margin: 1px 0;" 
+                    
                     if opt_clean == correct:
-                        style = "color:#00ff00; font-weight:700; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
+                        # Đáp án đúng (Màu xanh lá, đậm hơn)
+                        style = "color:#00ff00; font-family: 'Oswald', sans-serif; font-weight:600; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); padding: 2px 12px; margin: 1px 0;"
                     elif opt_clean == clean_text(selected_opt):
-                        style = "color:#ff3333; font-weight:700; text-decoration: underline; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8);"
+                        # Đáp án đã chọn (Màu đỏ, đậm hơn)
+                        style = "color:#ff3333; font-family: 'Oswald', sans-serif; font-weight:600; text-decoration: underline; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8); padding: 2px 12px; margin: 1px 0;"
                     
                     st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
 
                 if is_correct:
-                    st.success(f"✅ Đúng — {q['answer']}")
+                    st.success(f"✅ Đúng — Đáp án: {q['answer']}")
                     score += 1
                 else:
                     st.error(f"❌ Sai — Đáp án đúng: {q['answer']}")
-                st.markdown("---")
+                
+                # Giảm khoảng cách giữa các câu trong kết quả
+                st.markdown('<div style="margin: 5px 0;">---</div>', unsafe_allow_html=True) 
 
             st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{len(batch)}</h3></div>', unsafe_allow_html=True)
 
@@ -546,7 +571,8 @@ if total > 0:
             with col_reset:
                 if st.button("🔄 Làm lại nhóm này"):
                     for i in range(start+1, end+1):
-                        st.session_state.pop(f"q_{i}", None)
+                        # Xóa giá trị đã chọn
+                        st.session_state.pop(f"q_{i}", None) 
                     st.session_state.submitted = False
                     st.rerun()
             
