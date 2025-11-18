@@ -412,11 +412,11 @@ html, body, .stApp {{
 .st-emotion-cache-1oe02fs, 
 .st-emotion-cache-1gsv8h, 
 .st-emotion-cache-1aehpbu, 
-.st-emotion-cache-1avcm0n {
+.st-emotion-cache-1avcm0n {{ /* ĐÃ SỬA: Thay { thành {{ */
     background-color: transparent !important;
     filter: none !important;
     z-index: 10;
-}
+}} /* ĐÃ SỬA: Thay } thành }} */
 
 /* Ẩn Streamlit UI components */
 [data-testid="stHeader"], 
