@@ -39,7 +39,6 @@ def get_base64_encoded_file(file_path):
         if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
             path_to_check = file_path # Thử đường dẫn gốc
         
-        # FIX LỖI SYNTAX: Đảm bảo khối code này nằm trong try
         if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
             return fallback_base64
             
@@ -58,16 +57,15 @@ def parse_cabbank(source):
 
     questions = []
     current = {"question": "", "options": [], "answer": ""}
-    # Điều chỉnh regex để hỗ trợ dấu chấm/đóng ngoặc sau chữ cái
+  
     opt_pat = re.compile(r'(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s+')
 
     for p in paras:
         matches = list(opt_pat.finditer(p))
         
         if not matches:
-            # Nếu không có matches
+            # Nếu đã có options, nghĩa là đã hết các đáp án -> lưu câu hỏi và bắt đầu câu mới
             if current["options"]:
-                # Đã có options, nghĩa là đã hết các đáp án -> lưu câu hỏi và bắt đầu câu mới
                 if current["question"] and current["options"]:
                     # Đảm bảo có đáp án, nếu không có thì lấy đáp án đầu tiên
                     if not current["answer"] and current["options"]:
@@ -82,14 +80,13 @@ def parse_cabbank(source):
                     current["question"] = clean_text(p)
             continue
 
-        # Có matches - có các đáp án a, b, c, d
+        # Có matches - nghĩa là có các đáp án a, b, c, d
         pre_text = p[:matches[0].start()].strip()
         
         if pre_text:
             # Có text trước đáp án đầu tiên
             if current["options"]:
                 # Đã có options từ trước -> lưu câu cũ và bắt đầu câu mới
-                # FIX LỖI SYNTAX: Đảm bảo thụt lề đúng
                 if current["question"] and current["options"]:
                     if not current["answer"] and current["options"]:
                         current["answer"] = current["options"][0]
@@ -132,7 +129,6 @@ def parse_lawbank(source):
 
     questions = []
     current = {"question": "", "options": [], "answer": ""}
-    # Điều chỉnh regex để hỗ trợ dấu chấm/đóng ngoặc sau chữ cái và không bắt các từ/số liền trước
     opt_pat = re.compile(r'(?<![A-Za-z0-9/])(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s+')
 
     for p in paras:
@@ -146,7 +142,6 @@ def parse_lawbank(source):
             # Không có đáp án trong dòng này
             if current["options"]:
                 # Đã có options rồi -> lưu câu hỏi cũ và bắt đầu câu mới
-                # FIX LỖI SYNTAX: Đảm bảo thụt lề đúng
                 if current["question"] and current["options"]:
                     if not current["answer"] and current["options"]:
                         current["answer"] = current["options"][0]
@@ -166,7 +161,6 @@ def parse_lawbank(source):
         
         if pre_text:
             # Có text trước đáp án đầu tiên
-            # FIX LỖI SYNTAX: Đảm bảo thụt lề đúng
             if current["options"]:
                 # Đã có options -> lưu câu cũ và bắt đầu câu mới
                 if current["question"] and current["options"]:
@@ -183,7 +177,6 @@ def parse_lawbank(source):
 
         # Xử lý tất cả các đáp án trong dòng
         for i, m in enumerate(matches):
-            # FIX LỖI SYNTAX: Đảm bảo thụt lề đúng
             s = m.end()
             e = matches[i+1].start() if i+1 < len(matches) else len(p)
             opt_body = clean_text(p[s:e])
@@ -316,7 +309,6 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         
         # Đánh giá kết quả
         total_q = len(test_batch)
-        PASS_RATE = 0.75
         pass_threshold = total_q * PASS_RATE
         
         st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{total_q}</h3></div>', unsafe_allow_html=True)
@@ -348,27 +340,26 @@ MOBILE_IMAGE_FILE = "bank_mobile.jpg"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
-# === CSS ĐÃ TỐI ƯU CHO FONT VÀ KHOẢNG CÁCH (THEO PN) ===
+# === CSS ĐÃ TỐI ƯU CHO FONT VÀ KHOẢNG CÁCH ===
+# LƯU Ý: chúng ta tách background ra 1 lớp (#bg-layer) để áp filter chỉ lên ảnh nền,
+# tránh làm mờ nội dung (như tiêu đề) do filter cha gây ra.
 css_style = f"""
 <style>
-@import url('https://fonts.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Oswald:wght@400;500;600;700&display=swap');
+
 /* ✅ KEYFRAMES */
 @keyframes colorShift {{
-    0% {{ background-position: 0% 50%;
-}}
+    0% {{ background-position: 0% 50%; }}
     50% {{ background-position: 100% 50%; }}
-    100% {{ background-position: 0% 50%;
-}}
+    100% {{ background-position: 0% 50%; }}
 }}
 
 @keyframes scrollRight {{
     0% {{ transform: translateX(100%); }}
-    100% {{ transform: translateX(-100%);
-}}
+    100% {{ transform: translateX(-100%); }}
 }}
 
-/* ======================= FULL SCREEN & BACKGROUND ======================= */
+/* ======================= FULL SCREEN & LAYOUT ======================= */
 html, body, .stApp {{
     height: 100% !important;
     min-height: 100vh !important;
@@ -378,21 +369,34 @@ html, body, .stApp {{
     position: relative;
 }}
 
-/* BACKGROUND - ÁP DỤNG FILTER ĐÃ CHỈNH SỬA (MỜ HƠN, TỐI HƠN) */
+/* CHÚ Ý: không đặt background hay filter trực tiếp lên .stApp để tránh làm mờ nội dung */
 .stApp {{
-    background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed !important;
-    background-size: cover !important;
+    background: none !important;
     font-family: 'Oswald', sans-serif !important;
-    /* ĐÃ SỬA: Thêm blur (4px) và giảm brightness (0.4) để nền mờ và tối hơn */
-    filter: sepia(0.1) brightness(0.4) contrast(1.0) saturate(1.0) blur(4px) !important;
-    transition: filter 0.5s ease;
+    position: relative;
+    z-index: 0;
 }}
 
-/* Mobile Background */
+/* Lớp background riêng - sẽ nằm phía sau tất cả nội dung */
+#bg-layer {{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed;
+    background-size: cover;
+    /* Hiệu ứng Vintage chỉ cho background */
+    filter: blur(1px) sepia(0.5) brightness(0.9) contrast(0.95) saturate(1.2);
+    transition: filter 0.5s ease;
+    z-index: -1;
+}}
+
+/* Mobile background fallback */
 @media (max-width: 767px) {{
-    .stApp {{
-        background: url("data:image/jpeg;base64,{img_mobile_base64}") no-repeat center top scroll !important;
-        background-size: cover !important;
+    #bg-layer {{
+        background: url("data:image/jpeg;base64,{img_mobile_base64}") no-repeat center top fixed;
+        background-size: cover;
     }}
 }}
 
@@ -410,12 +414,10 @@ html, body, .stApp {{
     z-index: 10; 
     position: relative;
     min-height: 100vh !important;
-    filter: none !important;
-    /* Loại bỏ filter cho nội dung */
+    filter: none !important; /* Loại bỏ filter cho nội dung */
 }}
 
 /* Ẩn Streamlit UI components */
-#MainMenu, footer, header {{visibility: hidden;}} /* Thêm từ PN */
 [data-testid="stHeader"], 
 [data-testid="stToolbar"],
 [data-testid="stStatusWidget"],
@@ -429,8 +431,7 @@ footer,
     padding: 0 !important;
 }}
 
-h1, h2 {{ visibility: hidden;
-    height: 0; margin: 0; padding: 0; }}
+h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
 
 /* ======================= HEADER CONTAINER (Mới) ======================= */
 /* Container cố định cho nút và tiêu đề */
@@ -440,13 +441,12 @@ h1, h2 {{ visibility: hidden;
     left: 0;
     width: 100%;
     z-index: 100;
-    /* ĐÃ SỬA: Xóa nền đen chồng lên tiêu đề */
-    background-color: transparent; 
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    background-color: transparent !important; /* Đã chuyển sang trong để tránh vùng đen */
+    box-shadow: none !important; /* Bỏ shadow nếu bạn muốn sạch hơn */
     padding: 10px 0;
 }}
 
-/* ======================= NÚT VỀ TRANG CHỦ (Áp dụng style PN) ======================= */
+/* ======================= NÚT VỀ TRANG CHỦ (Tĩnh) ======================= */
 #back-to-home-btn-container {{
     position: static;
     margin: 0 15px 10px 15px; /* Giảm margin dưới cho tiêu đề chạy lên */
@@ -455,19 +455,19 @@ h1, h2 {{ visibility: hidden;
 }}
 
 a#manual-home-btn {{
-    background-color: rgba(0, 0, 0, 0.85); /* Giữ nền đen mờ cho nút */
+    background-color: #a89073; /* Màu nâu vintage */
     color: #FFEA00;
     border: 2px solid #FFEA00;
-    padding: 10px 20px; /* Padding lớn hơn từ PN */
-    border-radius: 8px; /* Border lớn hơn từ PN */
+    padding: 8px 18px;
+    border-radius: 6px;
     font-weight: bold;
-    font-size: 16px; /* Font lớn hơn từ PN */
+    font-size: 15px;
     transition: all 0.3s;
     cursor: pointer;
     font-family: 'Oswald', sans-serif;
     text-decoration: none;
     display: inline-block;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); /* Shadow từ PN */
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }}
 
 a#manual-home-btn:hover {{
@@ -506,9 +506,8 @@ a#manual-home-btn:hover {{
     -webkit-text-fill-color: transparent;
     color: transparent;
     animation: scrollRight 15s linear infinite, colorShift 10s ease infinite;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Áp dụng shadow của PN */
-    width: 100%;
-    /* Đảm bảo chạy hết chiều rộng */
+    text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+    width: 100%; /* Đảm bảo chạy hết chiều rộng */
     text-align: center;
 }}
 
@@ -522,7 +521,7 @@ a#manual-home-btn:hover {{
 /* ======================= TẠO KHOẢNG TRỐNG CHO NỘI DUNG CHÍNH ======================= */
 /* Điều chỉnh padding top để nội dung chính nằm dưới fixed header */
 .main > div:first-child {{
-    padding-top: 150px !important;
+    padding-top: 150px !important; 
     padding-left: 1rem;
     padding-right: 1rem;
     padding-bottom: 2rem !important; 
@@ -530,7 +529,7 @@ a#manual-home-btn:hover {{
 
 @media (max-width: 768px) {{
     .main > div:first-child {{
-        padding-top: 130px !important;
+        padding-top: 130px !important; 
     }}
 }}
 
@@ -551,7 +550,6 @@ a#manual-home-btn:hover {{
     font-size: 2rem;
     color: #FFEA00;
     text-align: center;
-    /* Đã áp dụng shadow từ PN */
     text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8); 
     margin-bottom: 20px;
     filter: none !important;
@@ -565,11 +563,11 @@ a#manual-home-btn:hover {{
 
 /* ======================= STYLE DROPDOWN (Giá trị bên trong đã là Oswald) ======================= */
 div.stSelectbox label p, div[data-testid*="column"] label p {{
-    color: #00FF00 !important;
+    color: #00FF00 !important; 
     font-size: 1.25rem !important;
     font-weight: bold;
     text-shadow: 0 0 5px rgba(0,255,0,0.5);
-    font-family: 'Oswald', sans-serif !important;
+    font-family: 'Oswald', sans-serif !important; 
 }}
 
 .stSelectbox div[data-baseweb="select"] {{
@@ -598,14 +596,14 @@ div[data-testid="stMarkdownContainer"] p {{
 .stRadio label {{
     color: #f9f9f9 !important;
     font-size: 1.1em !important;
-    font-weight: 400 !important;
+    font-weight: 400 !important; 
     font-family: 'Oswald', sans-serif !important; 
     text-shadow: none !important;
     background-color: transparent; 
     padding: 2px 12px; 
     border-radius: 6px;
     display: inline-block;
-    margin: 1px 0 !important;
+    margin: 1px 0 !important; 
 }}
 
 /* NÚT BẤM */
@@ -643,6 +641,9 @@ st.markdown(css_style, unsafe_allow_html=True)
 # 🏷️ GIAO DIỆN HEADER CỐ ĐỊNH VÀ TIÊU ĐỀ
 # ====================================================
 
+# Chèn lớp background (nằm sau CSS đã load) - đảm bảo ảnh nền không làm mờ nội dung
+st.markdown('<div id="bg-layer"></div>', unsafe_allow_html=True)
+
 st.markdown("""
 <div id="fixed-header-container">
     <div id="back-to-home-btn-container">
@@ -671,7 +672,7 @@ if "submitted" not in st.session_state:
 if "current_mode" not in st.session_state:
     st.session_state.current_mode = "group"
 if "last_bank_choice" not in st.session_state:
-    st.session_state.last_bank_choice = "----" 
+    st.session_state.last_bank_choice = "----" # KHỞI TẠO AN TOÀN BẰNG CHUỖI
 
 # --- 1. Lựa chọn Ngân hàng ---
 # Thêm giá trị mặc định "----"
@@ -685,7 +686,7 @@ bank_choice = st.selectbox(
 # Lưu giá trị đã chọn để duy trì trạng thái dropdown
 st.session_state.bank_choice_val = bank_choice
 
-# --- Xử lý Reset khi đổi Ngân hàng ---
+# --- Xử lý Reset khi đổi Ngân hàng (Yêu cầu 3) ---
 if st.session_state.get('last_bank_choice') != bank_choice and bank_choice != "----":
     # Reset toàn bộ trạng thái liên quan đến hiển thị nội dung
     st.session_state.current_group_idx = 0
@@ -818,7 +819,7 @@ if bank_choice != "----":
                                 st.session_state.pop(f"q_{i}", None) 
                             st.session_state.submitted = False
                             st.rerun()
-                  
+                    
                     with col_next:
                         if st.session_state.current_group_idx < len(groups) - 1:
                             if st.button("➡️ Tiếp tục nhóm sau", key="next_group"):
