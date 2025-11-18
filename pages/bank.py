@@ -237,12 +237,11 @@ footer,
 
 h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
 
-/* ======================= NÚT VỀ TRANG CHỦ (FIXED - LUÔN Ở TRÊN CÙNG) ======================= */
+/* ======================= NÚT VỀ TRANG CHỦ (STATIC - KHÔNG CHẠY THEO) ======================= */
 #back-to-home-btn-container {{
-    position: fixed;
-    top: 15px;
-    left: 15px;
-    z-index: 1001;
+    position: static;
+    margin: 15px 0 0 15px;
+    z-index: 100;
 }}
 
 a#manual-home-btn {{
@@ -267,15 +266,15 @@ a#manual-home-btn:hover {{
     transform: scale(1.05);
 }}
 
-/* ======================= TIÊU ĐỀ CHẠY (FIXED - LUÔN Ở TRÊN CÙNG) ======================= */
+/* ======================= TIÊU ĐỀ CHẠY (STATIC - KHÔNG CHẠY THEO) ======================= */
 #main-title-container {{
-    position: fixed;
-    top: 75px;
+    position: static;
+    margin-top: 20px;
     left: 0;
     width: 100%;
     height: 10vh;
     overflow: hidden;
-    z-index: 1000;
+    z-index: 100;
     pointer-events: none;
     background-color: transparent;
     display: flex;
