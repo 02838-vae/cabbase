@@ -378,13 +378,13 @@ html, body, .stApp {{
     position: relative;
 }}
 
-/* BACKGROUND - ÁP DỤNG FILTER THEO PN */
+/* BACKGROUND - ÁP DỤNG FILTER ĐÃ CHỈNH SỬA (MỜ HƠN, TỐI HƠN) */
 .stApp {{
     background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed !important;
     background-size: cover !important;
     font-family: 'Oswald', sans-serif !important;
-    /* Áp dụng filter của trang Part Number để tăng độ rõ nét */
-    filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) !important;
+    /* ĐÃ SỬA: Thêm blur (4px) và giảm brightness (0.4) để nền mờ và tối hơn */
+    filter: sepia(0.1) brightness(0.4) contrast(1.0) saturate(1.0) blur(4px) !important;
     transition: filter 0.5s ease;
 }}
 
@@ -440,8 +440,8 @@ h1, h2 {{ visibility: hidden;
     left: 0;
     width: 100%;
     z-index: 100;
-    background-color: rgba(0, 0, 0, 0.85);
-    /* Nền tối để tiêu đề nổi bật */
+    /* ĐÃ SỬA: Xóa nền đen chồng lên tiêu đề */
+    background-color: transparent; 
     box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
     padding: 10px 0;
 }}
@@ -455,7 +455,7 @@ h1, h2 {{ visibility: hidden;
 }}
 
 a#manual-home-btn {{
-    background-color: rgba(0, 0, 0, 0.85); /* Màu nền đậm hơn từ PN */
+    background-color: rgba(0, 0, 0, 0.85); /* Giữ nền đen mờ cho nút */
     color: #FFEA00;
     border: 2px solid #FFEA00;
     padding: 10px 20px; /* Padding lớn hơn từ PN */
