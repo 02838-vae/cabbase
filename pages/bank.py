@@ -47,114 +47,91 @@ def get_base64_encoded_file(file_path):
         return fallback_base64
 
 # ====================================================
-# 🧩 PARSER NGÂN HÀNG KỸ THUẬT (CABBANK)
+# 🧩 PARSER CHUNG CHO CẢ HAI NGÂN HÀNG (ĐÃ SỬA LỖI PHÂN TÍCH)
 # ====================================================
-def parse_cabbank(source):
+def parse_quiz(source, bank_type):
     paras = read_docx_paragraphs(source)
     if not paras:
         return []
 
     questions = []
     current = {"question": "", "options": [], "answer": ""}
-  
-    opt_pat = re.compile(r'(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s+')
+    # Universal option pattern: Tìm kiếm dấu * tùy chọn, theo sau là chữ cái A-D, dấu . hoặc )
+    opt_pat = re.compile(r'(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s*') 
 
     for p in paras:
-        matches = list(opt_pat.finditer(p))
-        if not matches:
-            if current["options"]:
-                if current["question"] and current["options"]:
-                    questions.append(current)
-                current = {"question": clean_text(p), "options": [], "answer": ""}
-            else:
-                current["question"] += " " + clean_text(p)
-            continue
-
-        pre_text = p[:matches[0].start()].strip()
-        if pre_text:
-            if current["options"]:
-                if current["question"] and current["options"]:
-                    questions.append(current)
-                current = {"question": clean_text(pre_text), "options": [], "answer": ""}
-            else:
-                current["question"] = clean_text(pre_text)
-
-        for i, m in enumerate(matches):
-            s, e = m.end(), matches[i + 1].start() if i + 1 < len(matches) else len(p)
-            opt_body = clean_text(p[s:e])
-            opt = f"{m.group('letter').lower()}. {opt_body}"
-            current["options"].append(opt)
-            if m.group("star"):
-                current["answer"] = opt
-
-    if current["question"] and current["options"]:
-        questions.append(current)
-
-    return questions
-
-
-# ====================================================
-# 🧩 PARSER NGÂN HÀNG LUẬT (LAWBANK) - ĐÃ SỬA LỖI REGEX
-# ====================================================
-def parse_lawbank(source):
-    paras = read_docx_paragraphs(source)
-    if not paras:
-        return []
-
-    questions = []
- 
-    current = {"question": "", "options": [], "answer": ""}
-    # ĐÃ SỬA: Biểu thức chính quy được đơn giản hóa để đảm bảo capture tất cả các lựa chọn (A, B, C, D) 
-    # và dấu * một cách chính xác.
-    opt_pat = re.compile(r'(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s+')
-
-    for p in paras:
-        if re.match(r'^\s*Ref', p, re.I):
-            continue
-
-        matches = list(opt_pat.finditer(p))
-        if not matches:
-            if current["options"]:
-                if current["question"] and current["options"]:
-                    questions.append(current)
-                current = {"question": clean_text(p), "options": [], "answer": ""}
-            else:
-                current["question"] += " " + clean_text(p)
-            continue
-
-        first_match = matches[0]
-        pre_text = p[:first_match.start()].strip()
-        if pre_text:
-            if current["options"]:
-                if current["question"] and current["options"]:
-                    questions.append(current)
-                current = {"question": clean_text(pre_text), "options": [], "answer": ""}
-            else:
-                current["question"] += " " + clean_text(pre_text)
-
-        for i, m in enumerate(matches):
-            s = m.end()
-            e = matches[i+1].start() if i+1 < len(matches) else len(p)
-            opt_body = clean_text(p[s:e])
-            letter = m.group("letter").lower()
-       
-            option = f"{letter}. {opt_body}"
-            current["options"].append(option)
-            if m.group("star"):
-                current["answer"] = option
-
-        if current["question"] and current["options"]:
-            questions.append(current)
-            current = {"question": "", "options": [], "answer": ""}
-
-    if current["question"] and current["options"]:
-        questions.append(current)
+        p = clean_text(p)
+        if not p: continue
         
-    # Thêm check cuối cùng và thông báo nếu thiếu đáp án
-    for q in questions:
-        if not q['answer']:
-            q['answer'] = " (Không tìm thấy đáp án đúng được đánh dấu * trong file nguồn)"
+        # Bỏ qua dòng "Ref" trong Ngân hàng Luật
+        if bank_type == "Law" and re.match(r'^Ref', p, re.I):
+            continue
 
+        matches = list(opt_pat.finditer(p))
+
+        if matches:
+            # Case 1: Đoạn văn chứa một hoặc nhiều đánh dấu đáp án.
+            
+            # 1. Trích xuất văn bản trước đáp án đầu tiên (potential question text or continuation of the last option)
+            pre_text = p[:matches[0].start()].strip()
+            
+            if current["options"]:
+                # Nếu đã có đáp án trước đó, văn bản này là phần nối tiếp của ĐÁP ÁN CUỐI CÙNG
+                current["options"][-1] = clean_text(current["options"][-1] + " " + pre_text)
+            elif pre_text:
+                # Nếu chưa có đáp án, văn bản này là phần nối tiếp của CÂU HỎI
+                current["question"] = clean_text(current["question"] + " " + pre_text)
+
+            # 2. Trích xuất các đáp án từ matches
+            for i, m in enumerate(matches):
+                s = m.end()
+                e = matches[i + 1].start() if i + 1 < len(matches) else len(p)
+                opt_body = clean_text(p[s:e])
+                
+                # Chỉ thêm đáp án nếu nội dung không rỗng
+                if opt_body:
+                    opt = f"{m.group('letter').lower()}. {opt_body}"
+                    current["options"].append(opt)
+                    if m.group("star"):
+                        current["answer"] = opt
+
+            # 3. Xử lý phần văn bản còn lại sau đáp án cuối cùng (potential start of the next question)
+            last_match = matches[-1]
+            # Lấy toàn bộ văn bản còn lại sau khi kết thúc ký hiệu đáp án cuối cùng
+            post_text = clean_text(p[last_match.end():]) 
+
+            # Nếu có văn bản còn lại, câu hỏi hiện tại đã kết thúc
+            if post_text:
+                if current["question"] or current["options"]:
+                    questions.append(current)
+                
+                # Bắt đầu câu hỏi mới với post_text là nội dung đầu tiên
+                current = {"question": post_text, "options": [], "answer": ""} 
+            
+            # Nếu không có post_text, giữ nguyên current để chờ nội dung options/question tiếp theo
+            
+        else:
+            # Case 2: Đoạn văn là văn bản thuần túy (không có đánh dấu đáp án).
+            if current["options"]:
+                # Nếu options đã được bắt đầu, đây là phần nối tiếp của ĐÁP ÁN CUỐI CÙNG (hỗ trợ options nhiều đoạn)
+                current["options"][-1] = clean_text(current["options"][-1] + " " + p)
+            elif current["question"]:
+                # Nếu chỉ có câu hỏi, đây là phần nối tiếp của NỘI DUNG CÂU HỎI (hỗ trợ câu hỏi nhiều đoạn)
+                current["question"] = clean_text(current["question"] + " " + p)
+            else:
+                # Nếu current trống, đây là dòng đầu tiên của một CÂU HỎI MỚI
+                current["question"] = p
+                
+    # Final cleanup: Thêm câu hỏi cuối cùng nếu còn dữ liệu
+    if current["question"] and current["options"]:
+        questions.append(current)
+
+    # Final check for missing answers
+    for q in questions:
+        # Nếu đáp án bị thiếu hoặc nội dung đáp án là thông báo lỗi từ parser cũ (phòng ngừa)
+        if not q.get('answer') or "Không tìm thấy đáp án đúng" in q['answer']:
+            q['answer'] = " (Không tìm thấy đáp án đúng được đánh dấu * trong file nguồn)"
+            
     return questions
 
 
@@ -483,10 +460,12 @@ col_bank, col_group = st.columns(2)
 with col_bank:
     bank_choice = st.selectbox("Chọn ngân hàng:", ["Ngân hàng Kỹ thuật", "Ngân hàng Luật"], 
 key="bank_selector")
-source = "cabbank.docx" if "Kỹ thuật" in bank_choice else "lawbank.docx"
 
-# Load questions
-questions = parse_cabbank(source) if "Kỹ thuật" in bank_choice else parse_lawbank(source)
+bank_type = "Tech" if "Kỹ thuật" in bank_choice else "Law"
+source = "cabbank.docx" if bank_type == "Tech" else "lawbank.docx"
+
+# Load questions bằng hàm parse_quiz mới
+questions = parse_quiz(source, bank_type)
 if not questions:
     st.error(f"❌ Không đọc được câu hỏi nào từ file **{source}**. Vui lòng đảm bảo file có sẵn.")
     st.stop() 
@@ -512,12 +491,9 @@ if total > 0:
     current_index = st.session_state.current_group_idx
     
     with col_group:
-        # st.selectbox sử dụng index mặc định là current_index. 
-        # Không cần key nếu không muốn truy cập giá trị của nó trong callback hoặc thay đổi giá trị trong cùng 1 rerun.
         selected = st.selectbox("Chọn nhóm câu:", groups, index=current_index)
 
     # Kiểm tra nếu selectbox thay đổi (tức là người dùng chọn nhóm mới)
-    # Lấy index từ giá trị được chọn (selected)
     new_idx = groups.index(selected)
     if st.session_state.current_group_idx != new_idx:
         st.session_state.current_group_idx = new_idx
@@ -534,8 +510,16 @@ if total > 0:
             for i, q in enumerate(batch, start=start+1):
                 st.markdown(f"<p>{i}. {q['question']}</p>", unsafe_allow_html=True)
                 # Dùng key là f"q_{i}" để lưu giá trị chọn của từng câu
+                
+                # Hiển thị lỗi nếu thiếu đáp án
+                if not q['options']:
+                    st.error("Câu hỏi này không có đáp án nào được tìm thấy trong file nguồn.")
+                    st.markdown("---")
+                    continue
+                
                 st.radio("", q["options"], key=f"q_{i}")
                 st.markdown("---") # Phân cách câu hỏi
+            
             if st.button("✅ Nộp bài"):
                 st.session_state.submitted = True
                 st.rerun()
@@ -543,23 +527,28 @@ if total > 0:
             # Giao diện kết quả
             score = 0
             for i, q in enumerate(batch, start=start+1):
+                if not q['options']:
+                    st.markdown(f"<p>{i}. {q['question']}</p>", unsafe_allow_html=True)
+                    st.error("Câu hỏi này không có đáp án nào được tìm thấy.")
+                    st.markdown('<div style="margin: 5px 0;">---</div>', unsafe_allow_html=True)
+                    continue
+                    
                 selected_opt = st.session_state.get(f"q_{i}")
                 correct = clean_text(q["answer"])
-                is_correct = clean_text(selected_opt) == correct
+                is_correct = clean_text(selected_opt) == correct and "Không tìm thấy" not in correct
 
                 st.markdown(f"<p>{i}. {q['question']}</p>", unsafe_allow_html=True)
 
                 # Hiển thị các lựa chọn với style theo kết quả
                 for opt in q["options"]:
                     opt_clean = clean_text(opt)
-                    # Font-weight: 400 (bình thường), font-size 1.0em
                     style = "color:#f9f9f9; font-family: 'Oswald', sans-serif; font-weight:400; text-shadow: none; padding: 2px 12px; margin: 1px 0; font-size: 1.0em;" 
                     
                     if opt_clean == correct:
-                        # Đáp án đúng (Màu xanh lá, đậm hơn: 600)
+                        # Đáp án đúng
                         style = "color:#00ff00; font-family: 'Oswald', sans-serif; font-weight:600; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); padding: 2px 12px; margin: 1px 0; font-size: 1.0em;"
                     elif opt_clean == clean_text(selected_opt):
-                        # Đáp án đã chọn (Màu đỏ, đậm hơn: 600)
+                        # Đáp án đã chọn
                         style = "color:#ff3333; font-family: 'Oswald', sans-serif; font-weight:600; text-decoration: underline; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8); padding: 2px 12px; margin: 1px 0; font-size: 1.0em;"
                     
                     st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
