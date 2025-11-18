@@ -365,27 +365,34 @@ html, body, .stApp {{
     padding: 0 !important;
     overflow: auto;
     position: relative;
+    font-family: 'Oswald', sans-serif !important;
+    /* KHÔNG DÙNG FILTER Ở ĐÂY NỮA */
+    filter: none !important; 
 }}
 
-/* BACKGROUND - ÁP DỤNG FILTER VINTAGE/BLUR (Làm mờ nền) */
-.stApp {{
+/* CONTAINER CHỨA NỀN (Áp dụng filter vào đây để không ảnh hưởng đến nội dung) */
+.body-background {{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
     background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed !important;
     background-size: cover !important;
-    font-family: 'Oswald', sans-serif !important;
+    z-index: 1; /* Nằm dưới nội dung chính */
     /* Hiệu ứng Vintage: Mờ nhẹ (blur 1px), ngả màu sepia (0.5), độ tương phản thấp hơn (0.9), độ bão hòa cao hơn (1.2) */
     filter: blur(1px) sepia(0.5) brightness(0.9) contrast(0.95) saturate(1.2) !important;
-    transition: filter 0.5s ease;
 }}
 
 /* Mobile Background */
 @media (max-width: 767px) {{
-    .stApp {{
+    .body-background {{
         background: url("data:image/jpeg;base64,{img_mobile_base64}") no-repeat center top scroll !important;
         background-size: cover !important;
     }}
 }}
 
-/* NỘI DUNG KHÔNG BỊ LÀM MỜ VÀ NỔI LÊN TRÊN (Bằng cách đặt nền đen trong suốt) */
+/* NỘI DUNG KHÔNG BỊ LÀM MỜ VÀ NỔI LÊN TRÊN */
 /* Vùng chứa nội dung chính (từ tiêu đề phụ trở xuống) cần có nền để che hiệu ứng blur/filter */
 [data-testid="stAppViewContainer"] > .main {{
     background-color: rgba(0, 0, 0, 0.6) !important; /* Nền mờ, tối cho nội dung */
@@ -399,12 +406,15 @@ html, body, .stApp {{
 .st-emotion-cache-1oe02fs, 
 .st-emotion-cache-1gsv8h, 
 .st-emotion-cache-1aehpbu, 
-.st-emotion-cache-1avcm0n {{
+.st-emotion-cache-1avcm0n,
+.stApp {{
     background-color: transparent !important;
     margin: 0 !important;
     padding: 0 !important; 
     position: relative;
+    /* QUAN TRỌNG: Đảm bảo filter là NONE cho nội dung chính */
     filter: none !important; 
+    z-index: 10;
 }}
 
 /* Ẩn Streamlit UI components */
@@ -564,6 +574,7 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
     background-color: rgba(0, 0, 0, 0.7);
     border: 1px solid #00FF00;
     border-radius: 8px;
+    filter: none !important;
 }}
 
 .stSelectbox div[data-baseweb="select"] div[data-testid="stTextInput"] {{
@@ -581,6 +592,7 @@ div[data-testid="stMarkdownContainer"] p {{
     padding: 5px 15px; 
     border-radius: 8px;
     margin-bottom: 5px; 
+    filter: none !important;
 }}
 
 .stRadio label {{
@@ -594,6 +606,7 @@ div[data-testid="stMarkdownContainer"] p {{
     border-radius: 6px;
     display: inline-block;
     margin: 1px 0 !important; 
+    filter: none !important;
 }}
 
 /* NÚT BẤM */
@@ -609,6 +622,7 @@ div[data-testid="stMarkdownContainer"] p {{
     border: none !important;
     padding: 10px 20px !important;
     width: 100%; 
+    filter: none !important;
 }}
 
 .stButton>button:hover {{
@@ -630,6 +644,9 @@ st.markdown(css_style, unsafe_allow_html=True)
 # ====================================================
 # 🏷️ GIAO DIỆN HEADER CỐ ĐỊNH VÀ TIÊU ĐỀ
 # ====================================================
+
+# Thêm container nền vào đầu trang
+st.markdown('<div class="body-background"></div>', unsafe_allow_html=True)
 
 st.markdown("""
 <div id="fixed-header-container">
