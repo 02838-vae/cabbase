@@ -375,6 +375,8 @@ html, body, .stApp {
     position: relative;
     font-family: 'Oswald', sans-serif !important;
     filter: none !important; 
+    /* ✅ FIX 1: Đảm bảo nền Streamlit mặc định không phải màu trắng */
+    background-color: transparent !important; 
 }
 
 /* CONTAINER CHỨA NỀN (Áp dụng filter vào đây để không ảnh hưởng đến nội dung) */
@@ -413,12 +415,13 @@ html, body, .stApp {
     min-height: 100vh !important;
     z-index: 10;
     filter: none !important; 
-    pointer-events: all !important; /* Đảm bảo nội dung chính tương tác được */
+    /* ✅ FIX 2: Tăng cường tương tác cho main content */
+    pointer-events: auto !important; 
 }
 
-/* ✅ ĐIỀU CHỈNH: Đảm bảo các khối chính Streamlit không bị ẩn/xóa */
+/* Đảm bảo các khối chính Streamlit không bị ẩn/xóa */
 [data-testid="stMainBlock"] { 
-    background-color: transparent !important;
+    background-color: transparent !important; /* Không phải màu trắng */
     filter: none !important;
     z-index: 10;
     pointer-events: all !important;
@@ -430,7 +433,6 @@ html, body, .stApp {
     filter: none !important;
     z-index: 10;
 } 
-/* KẾT THÚC ĐIỀU CHỈNH */
 
 /* Ẩn Streamlit UI components không cần thiết */
 [data-testid="stHeader"], 
@@ -577,6 +579,12 @@ a#manual-home-btn:hover {
 }
 
 /* ======================= STYLE DROPDOWN (Giá trị bên trong đã là Oswald) ======================= */
+/* ✅ FIX 3: Thêm z-index cao cho dropdown list (popover) để đảm bảo click được */
+div[data-baseweb="popover"] {
+    z-index: 9999 !important; 
+    pointer-events: auto !important;
+}
+
 div.stSelectbox label p, div[data-testid*="column"] label p {
     color: #00FF00 !important; 
     font-size: 1.25rem !important;
