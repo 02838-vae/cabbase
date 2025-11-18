@@ -366,7 +366,6 @@ html, body, .stApp {{
     overflow: auto;
     position: relative;
     font-family: 'Oswald', sans-serif !important;
-    /* KHÔNG DÙNG FILTER Ở ĐÂY NỮA */
     filter: none !important; 
 }}
 
@@ -392,30 +391,32 @@ html, body, .stApp {{
     }}
 }}
 
-/* NỘI DUNG KHÔNG BỊ LÀM MỜ VÀ NỔI LÊN TRÊN */
-/* Vùng chứa nội dung chính (từ tiêu đề phụ trở xuống) cần có nền để che hiệu ứng blur/filter */
+/* NỘI DUNG CHÍNH - PHẢI NẰM TRÊN CÙNG (z-index cao hơn 1) và không bị filter */
+[data-testid="stAppViewContainer"],
+.stApp {{
+    background-color: transparent !important;
+    filter: none !important; 
+    z-index: 10;
+}}
+
+/* Vùng chứa nội dung chính (từ tiêu đề phụ trở xuống) cần có nền đen trong suốt để che nền mờ */
 [data-testid="stAppViewContainer"] > .main {{
     background-color: rgba(0, 0, 0, 0.6) !important; /* Nền mờ, tối cho nội dung */
     min-height: 100vh !important;
     z-index: 10;
+    filter: none !important; 
 }}
 
-/* Các thành phần chứa khác cần trong suốt để không bị filter nhưng không che mất nền */
-[data-testid="stAppViewContainer"],
+/* Loại bỏ các thuộc tính margin/padding quá mức hung hãn cho các container bên trong (ĐÃ SỬA) */
 [data-testid="stMainBlock"],
 .st-emotion-cache-1oe02fs, 
 .st-emotion-cache-1gsv8h, 
 .st-emotion-cache-1aehpbu, 
-.st-emotion-cache-1avcm0n,
-.stApp {{
+.st-emotion-cache-1avcm0n {
     background-color: transparent !important;
-    margin: 0 !important;
-    padding: 0 !important; 
-    position: relative;
-    /* QUAN TRỌNG: Đảm bảo filter là NONE cho nội dung chính */
-    filter: none !important; 
+    filter: none !important;
     z-index: 10;
-}}
+}
 
 /* Ẩn Streamlit UI components */
 [data-testid="stHeader"], 
@@ -441,8 +442,8 @@ h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
     left: 0;
     width: 100%;
     z-index: 100;
-    background-color: transparent; /* ĐÃ SỬA: Loại bỏ nền đen */
-    box-shadow: none; /* Đã loại bỏ bóng mờ */
+    background-color: transparent; 
+    box-shadow: none; 
     padding: 10px 0;
 }}
 
@@ -645,9 +646,10 @@ st.markdown(css_style, unsafe_allow_html=True)
 # 🏷️ GIAO DIỆN HEADER CỐ ĐỊNH VÀ TIÊU ĐỀ
 # ====================================================
 
-# Thêm container nền vào đầu trang
+# Thêm container nền vào đầu trang (z-index: 1)
 st.markdown('<div class="body-background"></div>', unsafe_allow_html=True)
 
+# Container Header (z-index: 100)
 st.markdown("""
 <div id="fixed-header-container">
     <div id="back-to-home-btn-container">
