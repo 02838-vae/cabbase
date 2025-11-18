@@ -231,7 +231,8 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
     
     # Khởi tạo trạng thái cho Test Mode
     # Dùng key_prefix dựa trên bank_name để đảm bảo trạng thái độc lập
-    test_key_prefix = f"{key_prefix}_{bank_name.split()[1].lower()}"
+    bank_slug = bank_name.split()[-1].lower()
+    test_key_prefix = f"{key_prefix}_{bank_slug}"
     
     if f"{test_key_prefix}_started" not in st.session_state:
         st.session_state[f"{test_key_prefix}_started"] = False
@@ -670,13 +671,9 @@ if "current_group_idx" not in st.session_state:
 if "submitted" not in st.session_state:
     st.session_state.submitted = False
 if "current_mode" not in st.session_state:
-    # 'group': Luyện tập theo nhóm (mặc định)
-    # 'all': Xem toàn bộ ngân hàng
-    # 'test': Làm bài test
     st.session_state.current_mode = "group"
 if "last_bank_choice" not in st.session_state:
-    st.session_state.last_bank_choice = None
-
+    st.session_state.last_bank_choice = "----" # KHỞI TẠO AN TOÀN BẰNG CHUỖI
 
 # --- 1. Lựa chọn Ngân hàng ---
 # Thêm giá trị mặc định "----"
@@ -697,8 +694,16 @@ if st.session_state.get('last_bank_choice') != bank_choice and bank_choice != "-
     st.session_state.submitted = False
     st.session_state.current_mode = "group" # Quay về chế độ nhóm
     
-    # Reset trạng thái Test Mode khi đổi ngân hàng
-    bank_slug_old = st.session_state.get('last_bank_choice', 'null').split()[-1].lower()
+    # Lấy tên ngân hàng cũ một cách an toàn để xóa trạng thái test (FIX LỖI HERE)
+    last_bank_name = st.session_state.get('last_bank_choice')
+    
+    # Đảm bảo last_bank_name là một chuỗi có thể split được
+    if not isinstance(last_bank_name, str) or last_bank_name == "----":
+        last_bank_name = "null bank" # Gán một giá trị chuỗi an toàn để split
+        
+    bank_slug_old = last_bank_name.split()[-1].lower()
+    
+    # Reset trạng thái Test Mode cũ
     st.session_state.pop(f"test_{bank_slug_old}_started", None)
     st.session_state.pop(f"test_{bank_slug_old}_submitted", None)
     st.session_state.pop(f"test_{bank_slug_old}_questions", None)
@@ -756,7 +761,8 @@ if bank_choice != "----":
                     # Chỉ chuyển mode, logic test sẽ chạy ở cuối
                     st.session_state.current_mode = "test"
                     # Reset trạng thái test cũ (nếu có)
-                    test_key_prefix = f"test_{bank_choice.split()[1].lower()}"
+                    bank_slug_new = bank_choice.split()[-1].lower()
+                    test_key_prefix = f"test_{bank_slug_new}"
                     st.session_state.pop(f"{test_key_prefix}_started", None)
                     st.session_state.pop(f"{test_key_prefix}_submitted", None)
                     st.session_state.pop(f"{test_key_prefix}_questions", None)
