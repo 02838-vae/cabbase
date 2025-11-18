@@ -364,7 +364,7 @@ a#manual-home-btn:hover {{
     }}
 }}
 
-/* ======================= STYLE DROPDOWN (Giá trị bên trong đã là Oswald) ======================= */
+/* ======================= STYLE DROPDOWN ======================= */
 div.stSelectbox label p, div[data-testid*="column"] label p {{
     color: #00FF00 !important; 
     font-size: 1.25rem !important;
@@ -383,11 +383,11 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
     color: #FFFFFF !important;
 }}
 
-/* ======================= STYLE CÂU HỎI & ĐÁP ÁN (ĐÃ CHỈNH SỬA KÍCH CỠ) ======================= */
+/* ======================= STYLE CÂU HỎI & ĐÁP ÁN (ĐÃ GIẢM KÍCH CỠ) ======================= */
 div[data-testid="stMarkdownContainer"] p {{
     color: #ffffff !important;
     font-weight: 400 !important;
-    font-size: 1.1em !important; /* ĐÃ GIẢM KÍCH CỠ */
+    font-size: 1.1em !important; /* KÍCH CỠ MỚI */
     font-family: 'Oswald', sans-serif !important;
     text-shadow: none !important; 
     background-color: transparent; 
@@ -398,7 +398,7 @@ div[data-testid="stMarkdownContainer"] p {{
 
 .stRadio label {{
     color: #f9f9f9 !important;
-    font-size: 1.0em !important; /* ĐÃ GIẢM KÍCH CỠ */
+    font-size: 1.0em !important; /* KÍCH CỠ MỚI */
     font-weight: 400 !important;
     font-family: 'Oswald', sans-serif !important;
     text-shadow: none !important;
@@ -474,9 +474,6 @@ if "current_group_idx" not in st.session_state:
     st.session_state.current_group_idx = 0
 if "submitted" not in st.session_state:
     st.session_state.submitted = False
-# Thêm trạng thái cho selectbox
-if "group_selector" not in st.session_state:
-    st.session_state.group_selector = None
 if "last_bank_choice" not in st.session_state:
     st.session_state.last_bank_choice = None
 
@@ -500,7 +497,6 @@ if st.session_state.get('last_bank_choice') != bank_choice:
     st.session_state.current_group_idx = 0
     st.session_state.submitted = False
     st.session_state.last_bank_choice = bank_choice
-    st.session_state.group_selector = None # Reset selectbox value
     st.rerun()
 
 # --- Xử lý Nhóm câu hỏi ---
@@ -510,27 +506,23 @@ total = len(questions)
 if total > 0:
     groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
     
-    if st.session_state.current_group_idx >= len(groups):
+    # Đảm bảo index nằm trong giới hạn
+    if st.session_state.current_group_idx >= len(groups) or st.session_state.current_group_idx < 0:
         st.session_state.current_group_idx = 0
-        st.session_state.group_selector = groups[0]
     
-    # Thiết lập giá trị mặc định cho selectbox khi mới load
-    if st.session_state.group_selector is None:
-        st.session_state.group_selector = groups[st.session_state.current_group_idx]
-    
-    # Lấy index từ current_group_idx để đặt index cho selectbox
     current_index = st.session_state.current_group_idx
     
     with col_group:
-        # Lấy giá trị từ selectbox, gán vào session_state.group_selector
+        # st.selectbox sử dụng index mặc định là current_index. 
+        # Khi người dùng thay đổi, nó sẽ cập nhật giá trị của "group_selector".
         selected = st.selectbox("Chọn nhóm câu:", groups, index=current_index, key="group_selector")
 
-    # Kiểm tra nếu selectbox thay đổi
+    # Kiểm tra nếu selectbox thay đổi (tức là người dùng chọn nhóm mới)
     new_idx = groups.index(selected)
     if st.session_state.current_group_idx != new_idx:
         st.session_state.current_group_idx = new_idx
         st.session_state.submitted = False
-        # Không cần rerun ở đây vì Streamlit sẽ rerender khi session_state thay đổi
+        # Không cần rerun ở đây vì Streamlit sẽ tự rerender khi group_selector thay đổi
     
     idx = st.session_state.current_group_idx
     start, end = idx * group_size, min((idx+1) * group_size, total)
@@ -595,10 +587,9 @@ if total > 0:
             
             with col_next:
                 if st.session_state.current_group_idx < len(groups) - 1:
+                    # Logic đã được sửa: chỉ cập nhật index. Streamlit sẽ tự động cập nhật selectbox trong rerun tiếp theo.
                     if st.button("➡️ Tiếp tục nhóm sau"):
-                        # Cập nhật index và giá trị của selectbox
                         st.session_state.current_group_idx += 1
-                        st.session_state.group_selector = groups[st.session_state.current_group_idx]
                         st.session_state.submitted = False
                         st.rerun() # Buộc Streamlit cập nhật
                 else:
