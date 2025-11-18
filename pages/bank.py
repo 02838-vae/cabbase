@@ -418,8 +418,14 @@ html, body, .stApp {
     pointer-events: auto !important; 
 }
 
-/* ✅ FIX MỚI: Đảm bảo container bọc ngoài (chứa padding/margin) phải trong suốt tuyệt đối */
-/* Selector này là lớp ngoài cùng của nội dung widget */
+/* ✅ FIX MỚI MẠNH MẼ: Bắt buộc tất cả các lớp bọc Streamlit phải trong suốt để loại bỏ nền trắng */
+/* Lớp chứa padding */
+[data-testid="stAppViewContainer"] > .main > div:first-child {
+    background-color: transparent !important;
+    filter: none !important;
+}
+
+/* Lớp ngay sau lớp padding (thường là lớp bị phủ trắng) */
 [data-testid="stAppViewContainer"] > .main > div:first-child > div:first-child {
     background-color: transparent !important;
     filter: none !important;
@@ -585,9 +591,9 @@ a#manual-home-btn:hover {
 }
 
 /* ======================= STYLE DROPDOWN (Giá trị bên trong đã là Oswald) ======================= */
-/* ✅ FIX MỚI: Đảm bảo chính container Selectbox không bị chặn */
+/* ✅ FIX TƯƠNG TÁC: Đảm bảo Selectbox container không bị chặn */
 .stSelectbox {
-    z-index: 100 !important; /* Cần cao hơn nội dung thường nhưng thấp hơn header */
+    z-index: 100 !important; 
     pointer-events: all !important;
 }
 
@@ -779,6 +785,8 @@ if bank_choice != "----":
             if st.session_state.current_group_idx >= len(groups):
                 st.session_state.current_group_idx = 0
             
+            # Gỡ bỏ key cho group_selector nếu đã submit/đổi nhóm
+            # Điều này giúp Streamlit reset lại radio button
             selected = st.selectbox("Chọn nhóm câu:", groups, index=st.session_state.current_group_idx, key="group_selector")
             
             new_idx = groups.index(selected)
