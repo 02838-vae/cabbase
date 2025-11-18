@@ -340,7 +340,7 @@ MOBILE_IMAGE_FILE = "bank_mobile.jpg"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
-# === CSS ĐÃ TỐI ƯU CHO FONT VÀ KHOẢNG CÁCH (Sử dụng .format() để tránh lỗi f-string) ===
+# === CSS ĐÃ TỐI ƯU CHO FONT VÀ KHOẢNG CÁCH (Sử dụng str.replace() để tránh lỗi cú pháp) ===
 css_template = """
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Oswald:wght@400;500;600;700&display=swap');
@@ -640,10 +640,8 @@ div[data-testid="stMarkdownContainer"] p {
 </style>
 """
 
-css_style = css_template.format(
-    img_pc_base64_placeholder=img_pc_base64,
-    img_mobile_base64_placeholder=img_mobile_base64
-)
+# SỬA CHỮA: Thay thế .format() bằng .replace() để tránh lỗi AST parser
+css_style = css_template.replace("{img_pc_base64_placeholder}", img_pc_base64).replace("{img_mobile_base64_placeholder}", img_mobile_base64)
 
 st.markdown(css_style, unsafe_allow_html=True)
 
