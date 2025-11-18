@@ -17,35 +17,27 @@ def clean_text(s: str) -> str:
     return re.sub(r'\s+', ' ', s).strip()
 
 def read_docx_paragraphs(source):
-    # Lấy thư mục hiện tại của script
-    base_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in locals() else os.getcwd()
-    
     try:
-        # 1. Thử đọc file nằm cùng thư mục với script
-        path_to_file = os.path.join(base_dir, source)
-        doc = Document(path_to_file)
+        # Giả định file nằm cùng thư mục với script
+        doc = Document(os.path.join(os.path.dirname(__file__), source))
     except Exception as e:
-        # 2. Nếu không tìm thấy, thử đọc trực tiếp (trường hợp chạy local hoặc đường dẫn tuyệt đối)
+        # Nếu không tìm thấy file, thử đọc trực tiếp (trường hợp chạy local)
         try:
              doc = Document(source)
         except Exception:
             return []
-            
     return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
 
 def get_base64_encoded_file(file_path):
     """Mã hóa file ảnh sang base64 để sử dụng trong CSS."""
     fallback_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
-    # Lấy thư mục hiện tại của script
-    base_dir = os.path.dirname(os.path.abspath(__file__)) if '__file__' in locals() else os.getcwd()
-    
     try:
-        # 1. Thử tìm file trong cùng thư mục với script
-        path_to_check = os.path.join(base_dir, file_path)
+        # Tìm file trong cùng thư mục với script
+        path_to_check = os.path.join(os.path.dirname(__file__), file_path)
         
-        # 2. Nếu không tồn tại, thử đường dẫn gốc (trường hợp chạy local)
+        # Nếu không tìm thấy, thử đường dẫn tuyệt đối (trường hợp chạy local)
         if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
-            path_to_check = file_path 
+            path_to_check = file_path # Thử đường dẫn gốc
         
         if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
             return fallback_base64
@@ -348,143 +340,107 @@ MOBILE_IMAGE_FILE = "bank_mobile.jpg"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
-# === CSS ĐÃ TỐI ƯU VÀ ĐẢM BẢO KHÔNG BỊ ẨN ===
-css_template = """
+# === CSS ĐÃ TỐI ƯU CHO FONT VÀ KHOẢNG CÁCH ===
+css_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Oswald:wght@400;500;600;700&display=swap');
 
 /* ✅ KEYFRAMES */
-@keyframes colorShift {
-    0% { background-position: 0% 50%; }
-    50% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
-}
+@keyframes colorShift {{
+    0% {{ background-position: 0% 50%; }}
+    50% {{ background-position: 100% 50%; }}
+    100% {{ background-position: 0% 50%; }}
+}}
 
-@keyframes scrollRight {
-    0% { transform: translateX(100%); }
-    100% { transform: translateX(-100%); }
-}
+@keyframes scrollRight {{
+    0% {{ transform: translateX(100%); }}
+    100% {{ transform: translateX(-100%); }}
+}}
 
 /* ======================= FULL SCREEN & BACKGROUND ======================= */
-html, body, .stApp {
+html, body, .stApp {{
     height: 100% !important;
     min-height: 100vh !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow: auto;
     position: relative;
-    font-family: 'Oswald', sans-serif !important;
-    filter: none !important; 
-    /* ✅ FIX: Đảm bảo nền Streamlit mặc định không phải màu trắng */
-    background-color: transparent !important; 
-}
+}}
 
-/* CONTAINER CHỨA NỀN (Áp dụng filter vào đây để không ảnh hưởng đến nội dung) */
-.body-background {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background: url("data:image/jpeg;base64,{img_pc_base64_placeholder}") no-repeat center top fixed !important;
+/* BACKGROUND - ÁP DỤNG FILTER VINTAGE/BLUR */
+.stApp {{
+    background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed !important;
     background-size: cover !important;
-    z-index: 1; /* Nằm dưới nội dung chính */
+    font-family: 'Oswald', sans-serif !important;
     /* Hiệu ứng Vintage: Mờ nhẹ (blur 1px), ngả màu sepia (0.5), độ tương phản thấp hơn (0.9), độ bão hòa cao hơn (1.2) */
     filter: blur(1px) sepia(0.5) brightness(0.9) contrast(0.95) saturate(1.2) !important;
-}
+    transition: filter 0.5s ease;
+}}
 
 /* Mobile Background */
-@media (max-width: 767px) {
-    .body-background {
-        background: url("data:image/jpeg;base64,{img_mobile_base64_placeholder}") no-repeat center top scroll !important;
+@media (max-width: 767px) {{
+    .stApp {{
+        background: url("data:image/jpeg;base64,{img_mobile_base64}") no-repeat center top scroll !important;
         background-size: cover !important;
-    }
-}
+    }}
+}}
 
-/* NỘI DUNG CHÍNH - PHẢI NẰM TRÊN CÙNG (z-index cao hơn 1) và không bị filter */
+/* NỘI DUNG KHÔNG BỊ LÀM MỜ VÀ NỔI LÊN TRÊN */
 [data-testid="stAppViewContainer"],
-.stApp {
+[data-testid="stMainBlock"],
+.main,
+.st-emotion-cache-1oe02fs, 
+.st-emotion-cache-1gsv8h, 
+.st-emotion-cache-1aehpbu, 
+.st-emotion-cache-1avcm0n {{
     background-color: transparent !important;
-    filter: none !important; 
-    z-index: 10;
-}
-
-/* Vùng chứa nội dung chính (từ tiêu đề phụ trở xuống) cần có nền đen trong suốt để che nền mờ */
-[data-testid="stAppViewContainer"] > .main {
-    background-color: rgba(0, 0, 0, 0.6) !important; /* Nền mờ, tối cho nội dung */
+    margin: 0 !important;
+    padding: 0 !important; 
+    z-index: 10; 
+    position: relative;
     min-height: 100vh !important;
-    z-index: 10;
-    filter: none !important; 
-    pointer-events: auto !important; 
-}
+    filter: none !important; /* Loại bỏ filter cho nội dung */
+}}
 
-/* ✅ FIX MỚI MẠNH MẼ: Bắt buộc tất cả các lớp bọc Streamlit phải trong suốt để loại bỏ nền trắng */
-/* Lớp chứa padding */
-[data-testid="stAppViewContainer"] > .main > div:first-child {
-    background-color: transparent !important;
-    filter: none !important;
-}
-
-/* Lớp ngay sau lớp padding (thường là lớp bị phủ trắng) */
-[data-testid="stAppViewContainer"] > .main > div:first-child > div:first-child {
-    background-color: transparent !important;
-    filter: none !important;
-}
-
-/* Đảm bảo các khối chính Streamlit không bị ẩn/xóa */
-[data-testid="stMainBlock"] { 
-    background-color: transparent !important; 
-    filter: none !important;
-    z-index: 10;
-    pointer-events: all !important;
-} 
-
-/* Loại bỏ các thuộc tính margin/padding không cần thiết cho các container cấp cao */
-[data-testid="stMainBlock"] > div:first-child {
-    background-color: transparent !important;
-    filter: none !important;
-    z-index: 10;
-} 
-
-/* Ẩn Streamlit UI components không cần thiết */
+/* Ẩn Streamlit UI components */
 [data-testid="stHeader"], 
 [data-testid="stToolbar"],
 [data-testid="stStatusWidget"],
 footer,
-#MainMenu {
+#MainMenu {{
     background-color: transparent !important;
     height: 0 !important;
     display: none !important;
     visibility: hidden !important;
     margin: 0 !important;
     padding: 0 !important;
-}
+}}
 
-h1, h2 { visibility: hidden; height: 0; margin: 0; padding: 0; }
+h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
 
 /* ======================= HEADER CONTAINER (Mới) ======================= */
 /* Container cố định cho nút và tiêu đề */
-#fixed-header-container {
+#fixed-header-container {{
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     z-index: 100;
-    background-color: transparent; 
-    box-shadow: none; 
+    background-color: rgba(0, 0, 0, 0.85); /* Nền tối để tiêu đề nổi bật */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
     padding: 10px 0;
-}
+}}
 
 /* ======================= NÚT VỀ TRANG CHỦ (Tĩnh) ======================= */
-#back-to-home-btn-container {
+#back-to-home-btn-container {{
     position: static;
-    margin: 0 15px 10px 15px; 
+    margin: 0 15px 10px 15px; /* Giảm margin dưới cho tiêu đề chạy lên */
     z-index: 110;
     pointer-events: auto;
-}
+}}
 
-a#manual-home-btn {
-    background-color: #a89073; 
+a#manual-home-btn {{
+    background-color: #a89073; /* Màu nâu vintage */
     color: #FFEA00;
     border: 2px solid #FFEA00;
     padding: 8px 18px;
@@ -497,16 +453,16 @@ a#manual-home-btn {
     text-decoration: none;
     display: inline-block;
     box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-}
+}}
 
-a#manual-home-btn:hover {
+a#manual-home-btn:hover {{
     background-color: #FFEA00;
     color: black;
     transform: scale(1.05);
-}
+}}
 
 /* ======================= TIÊU ĐỀ CHẠY LỚN (Nằm dưới nút) ======================= */
-#main-title-container {
+#main-title-container {{
     position: static;
     width: 100%;
     height: auto;
@@ -516,9 +472,9 @@ a#manual-home-btn:hover {
     display: flex;
     align-items: center;
     padding: 0 15px;
-}
+}}
 
-#main-title-container h1 {
+#main-title-container h1 {{
     visibility: visible !important;
     height: auto !important;
     font-family: 'Playfair Display', serif;
@@ -538,41 +494,41 @@ a#manual-home-btn:hover {
     text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
     width: 100%; /* Đảm bảo chạy hết chiều rộng */
     text-align: center;
-}
+}}
 
-@media (max-width: 768px) {
-    #main-title-container h1 {
+@media (max-width: 768px) {{
+    #main-title-container h1 {{
         font-size: 6.5vw;
         animation: scrollRight 12s linear infinite, colorShift 8s ease infinite;
-    }
-}
+    }}
+}}
 
 /* ======================= TẠO KHOẢNG TRỐNG CHO NỘI DUNG CHÍNH ======================= */
 /* Điều chỉnh padding top để nội dung chính nằm dưới fixed header */
-.main > div:first-child {
+.main > div:first-child {{
     padding-top: 150px !important; 
     padding-left: 1rem;
     padding-right: 1rem;
     padding-bottom: 2rem !important; 
-}
+}}
 
-@media (max-width: 768px) {
-    .main > div:first-child {
+@media (max-width: 768px) {{
+    .main > div:first-child {{
         padding-top: 130px !important; 
-    }
-}
+    }}
+}}
 
 /* ======================= TIÊU ĐỀ PHỤ TĨNH & KẾT QUẢ ======================= */
-#sub-static-title, .result-title {
+#sub-static-title, .result-title {{
     position: static;
     margin-top: 20px;
     margin-bottom: 30px;
     z-index: 90;
     background: transparent !important;
     text-align: center;
-}
+}}
 
-#sub-static-title h2, .result-title h3 {
+#sub-static-title h2, .result-title h3 {{
     visibility: visible !important;
     height: auto !important;
     font-family: 'Playfair Display', serif;
@@ -582,48 +538,35 @@ a#manual-home-btn:hover {
     text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8); 
     margin-bottom: 20px;
     filter: none !important;
-}
+}}
 
-@media (max-width: 768px) {
-    #sub-static-title h2, .result-title h3 {
+@media (max-width: 768px) {{
+    #sub-static-title h2, .result-title h3 {{
         font-size: 1.5rem;
-    }
-}
+    }}
+}}
 
 /* ======================= STYLE DROPDOWN (Giá trị bên trong đã là Oswald) ======================= */
-/* ✅ FIX TƯƠNG TÁC: Đảm bảo Selectbox container không bị chặn */
-.stSelectbox {
-    z-index: 100 !important; 
-    pointer-events: all !important;
-}
-
-/* FIX: Thêm z-index cao cho dropdown list (popover) để đảm bảo click được */
-div[data-baseweb="popover"] {
-    z-index: 9999 !important; 
-    pointer-events: auto !important;
-}
-
-div.stSelectbox label p, div[data-testid*="column"] label p {
+div.stSelectbox label p, div[data-testid*="column"] label p {{
     color: #00FF00 !important; 
     font-size: 1.25rem !important;
     font-weight: bold;
     text-shadow: 0 0 5px rgba(0,255,0,0.5);
     font-family: 'Oswald', sans-serif !important; 
-}
+}}
 
-.stSelectbox div[data-baseweb="select"] {
+.stSelectbox div[data-baseweb="select"] {{
     background-color: rgba(0, 0, 0, 0.7);
     border: 1px solid #00FF00;
     border-radius: 8px;
-    filter: none !important;
-}
+}}
 
-.stSelectbox div[data-baseweb="select"] div[data-testid="stTextInput"] {
+.stSelectbox div[data-baseweb="select"] div[data-testid="stTextInput"] {{
     color: #FFFFFF !important;
-}
+}}
 
 /* ======================= STYLE CÂU HỎI & ĐÁP ÁN ======================= */
-div[data-testid="stMarkdownContainer"] p {
+div[data-testid="stMarkdownContainer"] p {{
     color: #ffffff !important;
     font-weight: 400 !important; 
     font-size: 1.2em !important;
@@ -633,10 +576,9 @@ div[data-testid="stMarkdownContainer"] p {
     padding: 5px 15px; 
     border-radius: 8px;
     margin-bottom: 5px; 
-    filter: none !important;
-}
+}}
 
-.stRadio label {
+.stRadio label {{
     color: #f9f9f9 !important;
     font-size: 1.1em !important;
     font-weight: 400 !important; 
@@ -647,11 +589,10 @@ div[data-testid="stMarkdownContainer"] p {
     border-radius: 6px;
     display: inline-block;
     margin: 1px 0 !important; 
-    filter: none !important;
-}
+}}
 
 /* NÚT BẤM */
-.stButton>button {
+.stButton>button {{
     background-color: #a89073 !important;
     color: #ffffff !important;
     border-radius: 8px;
@@ -663,25 +604,21 @@ div[data-testid="stMarkdownContainer"] p {
     border: none !important;
     padding: 10px 20px !important;
     width: 100%; 
-    filter: none !important;
-}
+}}
 
-.stButton>button:hover {
+.stButton>button:hover {{
     background-color: #8c765f !important;
     box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.6);
-}
+}}
 
 /* Giảm khoảng cách giữa các câu hỏi/phân cách */
-.stMarkdown > div > hr {
+.stMarkdown > div > hr {{
     margin-top: 10px;
     margin-bottom: 10px;
-}
+}}
 
 </style>
 """
-
-# SỬA CHỮA: Thay thế .format() bằng .replace() để tránh lỗi AST parser
-css_style = css_template.replace("{img_pc_base64_placeholder}", img_pc_base64).replace("{img_mobile_base64_placeholder}", img_mobile_base64)
 
 st.markdown(css_style, unsafe_allow_html=True)
 
@@ -689,10 +626,6 @@ st.markdown(css_style, unsafe_allow_html=True)
 # 🏷️ GIAO DIỆN HEADER CỐ ĐỊNH VÀ TIÊU ĐỀ
 # ====================================================
 
-# Thêm container nền vào đầu trang (z-index: 1)
-st.markdown('<div class="body-background"></div>', unsafe_allow_html=True)
-
-# Container Header (z-index: 100)
 st.markdown("""
 <div id="fixed-header-container">
     <div id="back-to-home-btn-container">
@@ -765,11 +698,8 @@ if bank_choice != "----":
 
     # Load questions
     questions = parse_cabbank(source) if "Kỹ thuật" in bank_choice else parse_lawbank(source)
-    
     if not questions:
-        # THÔNG BÁO RÕ RÀNG LỖI TÌM/ĐỌC FILE
         st.error(f"❌ Không đọc được câu hỏi nào từ file **{source}**.")
-        st.warning("Vui lòng đảm bảo các file `cabbank.docx` và `lawbank.docx` đã được tải lên hoặc nằm trong cùng thư mục với script.")
         st.stop() 
     
     total = len(questions)
@@ -785,8 +715,6 @@ if bank_choice != "----":
             if st.session_state.current_group_idx >= len(groups):
                 st.session_state.current_group_idx = 0
             
-            # Gỡ bỏ key cho group_selector nếu đã submit/đổi nhóm
-            # Điều này giúp Streamlit reset lại radio button
             selected = st.selectbox("Chọn nhóm câu:", groups, index=st.session_state.current_group_idx, key="group_selector")
             
             new_idx = groups.index(selected)
