@@ -21,8 +21,7 @@ def read_docx_paragraphs(source):
         # Giả định file nằm cùng thư mục với script
         doc = Document(os.path.join(os.path.dirname(__file__), source))
     except Exception as e:
-    
-#     # Nếu không tìm thấy file, thử đọc trực tiếp (trường hợp chạy local)
+        # Nếu không tìm thấy file, thử đọc trực tiếp (trường hợp chạy local)
         try:
              doc = Document(source)
         except Exception:
@@ -33,16 +32,14 @@ def get_base64_encoded_file(file_path):
     """Mã hóa file ảnh sang base64 để sử dụng trong CSS."""
     fallback_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
     try:
-  
-#       # Tìm file trong cùng thư mục với script
+        # Tìm file trong cùng thư mục với script
         path_to_check = os.path.join(os.path.dirname(__file__), file_path)
         
         # Nếu không tìm thấy, thử đường dẫn tuyệt đối (trường hợp chạy local)
         if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
             path_to_check = file_path # Thử đường dẫn gốc
         
-     
-#    if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
+        if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
             return fallback_base64
             
         with open(path_to_check, "rb") as f:
@@ -56,69 +53,60 @@ def get_base64_encoded_file(file_path):
 def parse_cabbank(source):
     paras = read_docx_paragraphs(source)
     if not paras:
-   
-#      return []
+        return []
 
     questions = []
     current = {"question": "", "options": [], "answer": ""}
-  
+    # Điều chỉnh regex để hỗ trợ dấu chấm/đóng ngoặc sau chữ cái
     opt_pat = re.compile(r'(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s+')
 
     for p in paras:
         matches = list(opt_pat.finditer(p))
         
         if not matches:
-            # Nếu đã có options, nghĩa là đã hết các đáp án -> lưu câu hỏi và bắt đầu câu mới
-  
-#           if current["options"]:
+            # Nếu không có matches
+            if current["options"]:
+                # Đã có options, nghĩa là đã hết các đáp án -> lưu câu hỏi và bắt đầu câu mới
                 if current["question"] and current["options"]:
                     # Đảm bảo có đáp án, nếu không có thì lấy đáp án đầu tiên
                     if not current["answer"] and current["options"]:
-            
-#             current["answer"] = current["options"][0]
+                        current["answer"] = current["options"][0]
                     questions.append(current)
                 current = {"question": clean_text(p), "options": [], "answer": ""}
             else:
                 # Vẫn đang ở phần câu hỏi (chưa có options)
-      
-#           if current["question"]:
+                if current["question"]:
                     current["question"] += " " + clean_text(p)
                 else:
                     current["question"] = clean_text(p)
             continue
 
-        # Có matches - nghĩa là 
-# có các đáp án a, b, c, d
+        # Có matches - có các đáp án a, b, c, d
         pre_text = p[:matches[0].start()].strip()
         
         if pre_text:
             # Có text trước đáp án đầu tiên
             if current["options"]:
                 # Đã có options từ trước -> lưu câu cũ và bắt đầu câu mới
-    
-#             if current["question"] and current["options"]:
+                if current["question"] and current["options"]:
                     if not current["answer"] and current["options"]:
                         current["answer"] = current["options"][0]
                     questions.append(current)
-               
-#  current = {"question": clean_text(pre_text), "options": [], "answer": ""}
+                current = {"question": clean_text(pre_text), "options": [], "answer": ""}
             else:
                 # Chưa có options -> đây là phần cuối của câu hỏi
                 if current["question"]:
                     current["question"] += " " + clean_text(pre_text)
-           
-#      else:
+                else:
                     current["question"] = clean_text(pre_text)
 
         # Xử lý tất cả các đáp án trong dòng này
         for i, m in enumerate(matches):
             s = m.end()
             e = matches[i + 1].start() if i + 1 < len(matches) else len(p)
-     
-#        opt_body = clean_text(p[s:e])
+            opt_body = clean_text(p[s:e])
             letter = m.group('letter').lower()
-            opt = f"{letter}.
-# {opt_body}"
+            opt = f"{letter}. {opt_body}"
             current["options"].append(opt)
             if m.group("star"):
                 current["answer"] = opt
@@ -133,7 +121,6 @@ def parse_cabbank(source):
 
 
 # ====================================================
-# 
 # 🧩 PARSER NGÂN HÀNG LUẬT (LAWBANK)
 # ====================================================
 def parse_lawbank(source):
@@ -143,6 +130,7 @@ def parse_lawbank(source):
 
     questions = []
     current = {"question": "", "options": [], "answer": ""}
+    # Điều chỉnh regex để hỗ trợ dấu chấm/đóng ngoặc sau chữ cái và không bắt các từ/số liền trước
     opt_pat = re.compile(r'(?<![A-Za-z0-9/])(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s+')
 
     for p in paras:
@@ -150,27 +138,23 @@ def parse_lawbank(source):
         if re.match(r'^\s*Ref', p, re.I):
             continue
 
-   
-#      matches = list(opt_pat.finditer(p))
+        matches = list(opt_pat.finditer(p))
         
         if not matches:
             # Không có đáp án trong dòng này
             if current["options"]:
                 # Đã có options rồi -> lưu câu hỏi cũ và bắt đầu câu mới
-             
-#    if current["question"] and current["options"]:
+                if current["question"] and current["options"]:
                     if not current["answer"] and current["options"]:
                         current["answer"] = current["options"][0]
                     questions.append(current)
                 current = {"question": clean_text(p), "options": [], "answer": ""}
- 
-#            else:
+            else:
                 # Vẫn đang ở phần câu hỏi
                 if current["question"]:
                     current["question"] += " " + clean_text(p)
                 else:
-         
-#            current["question"] = clean_text(p)
+                    current["question"] = clean_text(p)
             continue
 
         # Có matches - có các đáp án
@@ -179,32 +163,27 @@ def parse_lawbank(source):
         
         if pre_text:
             # Có text trước đáp án đầu tiên
-    
-#         if current["options"]:
+            if current["options"]:
                 # Đã có options -> lưu câu cũ và bắt đầu câu mới
                 if current["question"] and current["options"]:
                     if not current["answer"] and current["options"]:
-                    
-#     current["answer"] = current["options"][0]
+                        current["answer"] = current["options"][0]
                     questions.append(current)
                 current = {"question": clean_text(pre_text), "options": [], "answer": ""}
             else:
                 # Chưa có options -> đây là phần cuối câu hỏi
-             
-#    if current["question"]:
+                if current["question"]:
                     current["question"] += " " + clean_text(pre_text)
                 else:
                     current["question"] = clean_text(pre_text)
 
         # Xử lý tất cả các đáp án trong dòng
         for i, m in enumerate(matches):
-    
-#         s = m.end()
+            s = m.end()
             e = matches[i+1].start() if i+1 < len(matches) else len(p)
             opt_body = clean_text(p[s:e])
             letter = m.group("letter").lower()
-            option = f"{letter}.
-# {opt_body}"
+            option = f"{letter}. {opt_body}"
             current["options"].append(option)
             if m.group("star"):
                 current["answer"] = option
@@ -218,7 +197,6 @@ def parse_lawbank(source):
     return questions
 
 # ====================================================
-# 
 # 🌟 HÀM MỚI - XEM TOÀN BỘ NGÂN HÀNG CÂU HỎI
 # ====================================================
 def display_all_questions(questions):
@@ -230,15 +208,11 @@ def display_all_questions(questions):
     for i, q in enumerate(questions, start=1):
         st.markdown(f"<p style='color: #FFEA00; font-weight: 700;'>{i}. {q['question']}</p>", unsafe_allow_html=True)
         
-        # Hiển thị các lựa chọn, tô màu 
-# đáp án đúng
+        # Hiển thị các lựa chọn, tô màu đáp án đúng
         for opt in q["options"]:
-            style = "color:#f9f9f9;
-# font-family: 'Oswald', sans-serif; font-weight:400; text-shadow: none; padding: 2px 12px; margin: 1px 0;"
+            style = "color:#f9f9f9; font-family: 'Oswald', sans-serif; font-weight:400; text-shadow: none; padding: 2px 12px; margin: 1px 0;"
             if clean_text(opt) == clean_text(q["answer"]):
-                style = "color:#00ff00;
-# font-family: 'Oswald', sans-serif; font-weight:600; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); padding: 2px 12px;
-# margin: 1px 0;"
+                style = "color:#00ff00; font-family: 'Oswald', sans-serif; font-weight:600; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); padding: 2px 12px; margin: 1px 0;"
             
             st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
         
@@ -254,8 +228,7 @@ def get_random_questions(questions, count=50):
     return random.sample(questions, count)
 
 def display_test_mode(questions, bank_name, key_prefix="test"):
- 
-#    TOTAL_QUESTIONS = 50
+    TOTAL_QUESTIONS = 50
     PASS_RATE = 0.75
     
     # Khởi tạo trạng thái cho Test Mode
@@ -267,23 +240,20 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         st.session_state[f"{test_key_prefix}_started"] = False
     if f"{test_key_prefix}_submitted" not in st.session_state:
         st.session_state[f"{test_key_prefix}_submitted"] = False
-    if f"{test_key_prefix}_questions" 
-# not in st.session_state:
+    if f"{test_key_prefix}_questions" not in st.session_state:
         st.session_state[f"{test_key_prefix}_questions"] = []
 
     # Bắt đầu bài test
     if not st.session_state[f"{test_key_prefix}_started"]:
         st.markdown('<div class="result-title"><h3>📝 LÀM BÀI TEST 50 CÂU</h3></div>', unsafe_allow_html=True)
-        st.info(f"Bài test sẽ gồm **{min(TOTAL_QUESTIONS, len(questions))}** câu hỏi được chọn ngẫu nhiên từ **{bank_name}**.
-# Tỷ lệ Đạt (PASS) là **{int(PASS_RATE*100)}%** ({int(TOTAL_QUESTIONS * PASS_RATE)} câu đúng).")
+        st.info(f"Bài test sẽ gồm **{min(TOTAL_QUESTIONS, len(questions))}** câu hỏi được chọn ngẫu nhiên từ **{bank_name}**. Tỷ lệ Đạt (PASS) là **{int(PASS_RATE*100)}%** ({int(TOTAL_QUESTIONS * PASS_RATE)} câu đúng).")
         
         if len(questions) < TOTAL_QUESTIONS:
              st.warning(f"Chỉ có {len(questions)} câu hỏi trong ngân hàng này. Bài test sẽ dùng toàn bộ các câu hỏi có sẵn.")
         
         if st.button("🚀 Bắt đầu Bài Test", key=f"{test_key_prefix}_start_btn"):
             st.session_state[f"{test_key_prefix}_questions"] = get_random_questions(questions, TOTAL_QUESTIONS)
-  
-#           st.session_state[f"{test_key_prefix}_started"] = True
+            st.session_state[f"{test_key_prefix}_started"] = True
             st.session_state[f"{test_key_prefix}_submitted"] = False
             # Clear các trạng thái khác
             st.session_state.current_mode = "test" 
@@ -292,14 +262,12 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
 
     # Hiển thị bài test
     if not st.session_state[f"{test_key_prefix}_submitted"]:
-        
-# st.markdown('<div class="result-title"><h3>⏳ ĐANG LÀM BÀI TEST</h3></div>', unsafe_allow_html=True)
+        st.markdown('<div class="result-title"><h3>⏳ ĐANG LÀM BÀI TEST</h3></div>', unsafe_allow_html=True)
         test_batch = st.session_state[f"{test_key_prefix}_questions"]
         
         for i, q in enumerate(test_batch, start=1):
             # Lưu key trong session state theo index của câu hỏi (i)
-            st.markdown(f"<p>{i}.
-# {q['question']}</p>", unsafe_allow_html=True)
+            st.markdown(f"<p>{i}. {q['question']}</p>", unsafe_allow_html=True)
             st.radio("", q["options"], key=f"{test_key_prefix}_q_{i}")
             st.markdown("---") 
             
@@ -307,8 +275,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             st.session_state[f"{test_key_prefix}_submitted"] = True
             st.rerun()
             
-    # Hiển thị kết quả 
-# bài test
+    # Hiển thị kết quả bài test
     else:
         st.markdown('<div class="result-title"><h3>🎉 KẾT QUẢ BÀI TEST</h3></div>', unsafe_allow_html=True)
         test_batch = st.session_state[f"{test_key_prefix}_questions"]
@@ -317,28 +284,21 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         for i, q in enumerate(test_batch, start=1):
             selected_opt = st.session_state.get(f"{test_key_prefix}_q_{i}")
             correct = clean_text(q["answer"])
-            
-# is_correct = clean_text(selected_opt) == correct
+            is_correct = clean_text(selected_opt) == correct
 
             st.markdown(f"<p>{i}. {q['question']}</p>", unsafe_allow_html=True)
             
             # Hiển thị các lựa chọn với style theo kết quả
             for opt in q["options"]:
                 opt_clean = clean_text(opt)
-               
-#  style = "color:#f9f9f9; font-family: 'Oswald', sans-serif; font-weight:400; text-shadow: none; padding: 2px 12px;
-# margin: 1px 0;" 
+                style = "color:#f9f9f9; font-family: 'Oswald', sans-serif; font-weight:400; text-shadow: none; padding: 2px 12px; margin: 1px 0;" 
                 
                 if opt_clean == correct:
                     # Đáp án đúng (Màu xanh lá, đậm hơn)
-                    style = "color:#00ff00;
-# font-family: 'Oswald', sans-serif; font-weight:600; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); padding: 2px 12px;
-# margin: 1px 0;"
+                    style = "color:#00ff00; font-family: 'Oswald', sans-serif; font-weight:600; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); padding: 2px 12px; margin: 1px 0;"
                 elif opt_clean == clean_text(selected_opt):
                     # Đáp án đã chọn (Màu đỏ, đậm hơn)
-                    style = "color:#ff3333;
-# font-family: 'Oswald', sans-serif; font-weight:600; text-decoration: underline; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8); padding: 2px 12px;
-# margin: 1px 0;"
+                    style = "color:#ff3333; font-family: 'Oswald', sans-serif; font-weight:600; text-decoration: underline; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8); padding: 2px 12px; margin: 1px 0;"
                 
                 st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
 
@@ -346,8 +306,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
                 score += 1
             
             st.info(f"Đáp án đúng: **{q['answer']}**", icon="💡")
-     
-#        # Giảm khoảng cách giữa các câu trong kết quả
+            # Giảm khoảng cách giữa các câu trong kết quả
             st.markdown('<div style="margin: 5px 0;">---</div>', unsafe_allow_html=True) 
         
         # Đánh giá kết quả
@@ -356,23 +315,20 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         
         st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{total_q}</h3></div>', unsafe_allow_html=True)
 
-    
-#     if score >= pass_threshold:
+        if score >= pass_threshold:
             st.balloons()
             st.success(f"🎊 **CHÚC MỪNG!** Bạn đã ĐẠT (PASS) bài test với **{score}** câu đúng (>= {int(pass_threshold)} câu).")
         else:
             st.error(f"😔 **KHÔNG ĐẠT (FAIL)**. Bạn cần thêm {int(pass_threshold) - score} câu đúng nữa để đạt.")
 
         if st.button("🔄 Làm lại Bài Test", key=f"{test_key_prefix}_restart_btn"):
-      
-#       for i in range(1, total_q + 1):
+            for i in range(1, total_q + 1):
                 # Xóa giá trị đã chọn
                 st.session_state.pop(f"{test_key_prefix}_q_{i}", None) 
             st.session_state[f"{test_key_prefix}_started"] = False
             st.session_state[f"{test_key_prefix}_submitted"] = False
             st.session_state[f"{test_key_prefix}_questions"] = []
-       
-#      st.rerun()
+            st.rerun()
 
 # ====================================================
 # 🖥️ GIAO DIỆN STREAMLIT
@@ -697,8 +653,7 @@ st.markdown('<div id="sub-static-title"><h2>NGÂN HÀNG TRẮC NGHIỆM</h2></di
 # 🧭 NỘI DUNG ỨNG DỤNG
 # ====================================================
 
-# Khởi tạo 
-# trạng thái
+# Khởi tạo trạng thái
 if "current_group_idx" not in st.session_state:
     st.session_state.current_group_idx = 0
 if "submitted" not in st.session_state:
@@ -717,11 +672,10 @@ bank_choice = st.selectbox(
     index=BANK_OPTIONS.index(st.session_state.get('bank_choice_val', '----')),
     key="bank_selector_master"
 )
-# Lưu giá trị đã chọn để duy 
-# trì trạng thái dropdown
+# Lưu giá trị đã chọn để duy trì trạng thái dropdown
 st.session_state.bank_choice_val = bank_choice
 
-# --- Xử lý Reset khi đổi Ngân hàng (Yêu cầu 3) ---
+# --- Xử lý Reset khi đổi Ngân hàng ---
 if st.session_state.get('last_bank_choice') != bank_choice and bank_choice != "----":
     # Reset toàn bộ trạng thái liên quan đến hiển thị nội dung
     st.session_state.current_group_idx = 0
@@ -731,8 +685,7 @@ if st.session_state.get('last_bank_choice') != bank_choice and bank_choice != "-
     # Lấy tên ngân hàng cũ một cách an toàn để xóa trạng thái test
     last_bank_name = st.session_state.get('last_bank_choice')
     
-    
-# # Đảm bảo last_bank_name là một chuỗi có thể split được
+    # Đảm bảo last_bank_name là một chuỗi có thể split được
     if not isinstance(last_bank_name, str) or last_bank_name == "----":
         last_bank_name = "null bank" 
         
@@ -746,8 +699,7 @@ if st.session_state.get('last_bank_choice') != bank_choice and bank_choice != "-
     st.session_state.last_bank_choice = bank_choice
     st.rerun()
 
-# --- 2. Xử lý logic hiển thị các thành 
-# phần còn lại ---
+# --- 2. Xử lý logic hiển thị các thành phần còn lại ---
 if bank_choice != "----":
     source = "cabbank.docx" if "Kỹ thuật" in bank_choice else "lawbank.docx"
 
@@ -759,8 +711,7 @@ if bank_choice != "----":
     
     total = len(questions)
     
-    # --- 2.1.
-# Dropdown Chọn nhóm câu (chế độ Luyện tập theo nhóm) ---
+    # --- 2.1. Dropdown Chọn nhóm câu (chế độ Luyện tập theo nhóm) ---
     if st.session_state.current_mode == "group":
         st.markdown('<div class="result-title" style="margin-top: 0px;"><h3>Luyện tập theo nhóm (10 câu/nhóm)</h3></div>', unsafe_allow_html=True)
         
@@ -768,135 +719,108 @@ if bank_choice != "----":
         if total > 0:
             groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
             
-     
-#        if st.session_state.current_group_idx >= len(groups):
+            if st.session_state.current_group_idx >= len(groups):
                 st.session_state.current_group_idx = 0
             
             selected = st.selectbox("Chọn nhóm câu:", groups, index=st.session_state.current_group_idx, key="group_selector")
             
             new_idx = groups.index(selected)
-            if st.session_state.current_group_idx != 
-# new_idx:
+            if st.session_state.current_group_idx != new_idx:
                 st.session_state.current_group_idx = new_idx
                 st.session_state.submitted = False
                 st.session_state.current_mode = "group" # Đảm bảo chế độ là group
                 st.rerun()
 
             idx = st.session_state.current_group_idx
-         
-#    start, end = idx * group_size, min((idx+1) * group_size, total)
+            start, end = idx * group_size, min((idx+1) * group_size, total)
             batch = questions[start:end]
             
-            # --- 2.2.
-# Hiển thị 2 nút chức năng mới (Dàn cột dọc) ---
+            # --- 2.2. Hiển thị 2 nút chức năng mới (Dàn cột dọc) ---
             st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
             col_all_bank, col_test = st.columns(2)
             
             with col_all_bank:
                 if st.button("📖 Hiển thị toàn bộ ngân hàng", key="btn_show_all"):
-           
-#          st.session_state.current_mode = "all"
+                    st.session_state.current_mode = "all"
                     st.rerun()
 
             with col_test:
                 if st.button("🏆 Làm bài Test 50 câu", key="btn_start_test"):
                     # Chỉ chuyển mode, logic test sẽ chạy ở cuối
-    
-#                 st.session_state.current_mode = "test"
+                    st.session_state.current_mode = "test"
                     # Reset trạng thái test cũ (nếu có)
                     bank_slug_new = bank_choice.split()[-1].lower()
                     test_key_prefix = f"test_{bank_slug_new}"
-           
-#          st.session_state.pop(f"{test_key_prefix}_started", None)
+                    st.session_state.pop(f"{test_key_prefix}_started", None)
                     st.session_state.pop(f"{test_key_prefix}_submitted", None)
                     st.session_state.pop(f"{test_key_prefix}_questions", None)
                     st.rerun()
 
             st.markdown("---")
             
-    
-#         # --- 2.3.
-# Logic hiển thị bài làm theo nhóm (như cũ) ---
+            # --- 2.3. Logic hiển thị bài làm theo nhóm (như cũ) ---
             if batch:
                 if not st.session_state.submitted:
                     # Giao diện làm bài
                     for i, q in enumerate(batch, start=start+1):
-           
-#              st.markdown(f"<p>{i}. {q['question']}</p>", unsafe_allow_html=True)
+                        st.markdown(f"<p>{i}. {q['question']}</p>", unsafe_allow_html=True)
                         st.radio("", q["options"], key=f"q_{i}")
                         st.markdown("---")
                     if st.button("✅ Nộp bài", key="submit_group"):
-           
-#              st.session_state.submitted = True
+                        st.session_state.submitted = True
                         st.rerun()
                 else:
                     # Giao diện kết quả
-                    score 
-# = 0
+                    score = 0
                     for i, q in enumerate(batch, start=start+1):
                         selected_opt = st.session_state.get(f"q_{i}")
                         correct = clean_text(q["answer"])
-                      
-#   is_correct = clean_text(selected_opt) == correct
+                        is_correct = clean_text(selected_opt) == correct
 
-                        st.markdown(f"<p>{i}.
-# {q['question']}</p>", unsafe_allow_html=True)
+                        st.markdown(f"<p>{i}. {q['question']}</p>", unsafe_allow_html=True)
 
                         for opt in q["options"]:
                             opt_clean = clean_text(opt)
-                            style = "color:#f9f9f9;
-# font-family: 'Oswald', sans-serif; font-weight:400; text-shadow: none; padding: 2px 12px; margin: 1px 0;" 
+                            style = "color:#f9f9f9; font-family: 'Oswald', sans-serif; font-weight:400; text-shadow: none; padding: 2px 12px; margin: 1px 0;" 
                             
                             if opt_clean == correct:
-                             
-#    style = "color:#00ff00; font-family: 'Oswald', sans-serif; font-weight:600; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);
-# padding: 2px 12px; margin: 1px 0;"
+                                style = "color:#00ff00; font-family: 'Oswald', sans-serif; font-weight:600; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); padding: 2px 12px; margin: 1px 0;"
                             elif opt_clean == clean_text(selected_opt):
-                                style = "color:#ff3333;
-# font-family: 'Oswald', sans-serif; font-weight:600; text-decoration: underline; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8); padding: 2px 12px;
-# margin: 1px 0;"
+                                style = "color:#ff3333; font-family: 'Oswald', sans-serif; font-weight:600; text-decoration: underline; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8); padding: 2px 12px; margin: 1px 0;"
                             
                             st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
 
                         if is_correct:
-               
-#              st.success(f"✅ Đúng — Đáp án: {q['answer']}")
+                            st.success(f"✅ Đúng — Đáp án: {q['answer']}")
                             score += 1
                         else:
-                            
-# st.error(f"❌ Sai — Đáp án đúng: {q['answer']}")
+                            st.error(f"❌ Sai — Đáp án đúng: {q['answer']}")
                         
                         st.markdown('<div style="margin: 5px 0;">---</div>', unsafe_allow_html=True) 
 
                     st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{len(batch)}</h3></div>', unsafe_allow_html=True)
 
-                
-#     col_reset, col_next = st.columns(2)
+                    col_reset, col_next = st.columns(2)
 
                     with col_reset:
                         if st.button("🔄 Làm lại nhóm này", key="reset_group"):
                             for i in range(start+1, end+1):
-          
-#                       st.session_state.pop(f"q_{i}", None) 
+                                st.session_state.pop(f"q_{i}", None) 
                             st.session_state.submitted = False
                             st.rerun()
                   
-#   
                     with col_next:
                         if st.session_state.current_group_idx < len(groups) - 1:
                             if st.button("➡️ Tiếp tục nhóm sau", key="next_group"):
-              
-#                   st.session_state.current_group_idx += 1
+                                st.session_state.current_group_idx += 1
                                 st.session_state.submitted = False
                                 st.rerun()
-              
-#           else:
+                        else:
                             st.info("🎉 Đã hoàn thành tất cả các nhóm câu hỏi!")
             else:
                 st.warning("Không có câu hỏi trong nhóm này.")
         else:
-           
-#  st.warning("Không có câu hỏi nào trong ngân hàng này.")
+            st.warning("Không có câu hỏi nào trong ngân hàng này.")
 
     # --- 3. Xử lý logic hiển thị các chế độ khác ---
     elif st.session_state.current_mode == "all":
@@ -904,8 +828,7 @@ if bank_choice != "----":
         if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
             st.session_state.current_mode = "group"
             st.rerun()
-        
-# st.markdown("---")
+        st.markdown("---")
         display_all_questions(questions)
         
     elif st.session_state.current_mode == "test":
@@ -914,5 +837,4 @@ if bank_choice != "----":
             st.session_state.current_mode = "group"
             st.rerun()
         st.markdown("---")
-        display_test_mode(questions, 
-# bank_choice)
+        display_test_mode(questions, bank_choice)
