@@ -6,6 +6,7 @@ import math
 import pandas as pd
 import base64
 import os
+import random
 
 # ====================================================
 # ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
