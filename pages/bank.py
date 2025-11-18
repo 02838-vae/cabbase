@@ -403,7 +403,7 @@ html, body, .stApp {{
     z-index: 10; 
     position: relative;
     min-height: 100vh !important;
-    filter: none !important; /* ĐÃ SỬA: Đảm bảo loại bỏ filter cho nội dung chính */
+    filter: none !important; /* KHẮC PHỤC: Loại bỏ filter mờ cho nội dung */
 }}
 
 /* Ẩn Streamlit UI components */
@@ -431,8 +431,8 @@ h1, h2 {{ visibility: hidden;
     left: 0;
     width: 100%;
     z-index: 100;
-    background-color: transparent; /* ĐÃ SỬA: Loại bỏ vùng nền đen */
-    box-shadow: none; /* ĐÃ SỬA: Loại bỏ đổ bóng của vùng đen */
+    background-color: transparent; /* KHẮC PHỤC: Loại bỏ vùng nền đen */
+    box-shadow: none; /* KHẮC PHỤC: Loại bỏ đổ bóng của vùng đen */
     padding: 10px 0;
 }}
 
