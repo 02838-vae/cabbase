@@ -171,7 +171,7 @@ MOBILE_IMAGE_FILE = "bank_mobile.jpg"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
-# === CSS ĐÃ TỐI ƯU CHO FONT VÀ KHOẢNG CÁCH ===
+# === CSS ĐÃ TỐI ƯU CHO FONT, KHOẢNG CÁCH VÀ KÍCH CỠ CHỮ ===
 css_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Oswald:wght@400;500;600;700&display=swap');
@@ -383,31 +383,30 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
     color: #FFFFFF !important;
 }}
 
-/* ======================= STYLE CÂU HỎI & ĐÁP ÁN (ĐÃ CHỈNH SỬA) ======================= */
-/* CHỈNH SỬA: Font Oswald, Bỏ làm đậm (400), Giảm padding/margin (khoảng cách) */
+/* ======================= STYLE CÂU HỎI & ĐÁP ÁN (ĐÃ CHỈNH SỬA KÍCH CỠ) ======================= */
 div[data-testid="stMarkdownContainer"] p {{
     color: #ffffff !important;
-    font-weight: 400 !important; /* Bỏ làm đậm */
-    font-size: 1.2em !important;
-    font-family: 'Oswald', sans-serif !important; /* Thay font */
+    font-weight: 400 !important;
+    font-size: 1.1em !important; /* ĐÃ GIẢM KÍCH CỠ */
+    font-family: 'Oswald', sans-serif !important;
     text-shadow: none !important; 
     background-color: transparent; 
-    padding: 5px 15px; /* Giảm padding trên/dưới */
+    padding: 5px 15px;
     border-radius: 8px;
-    margin-bottom: 5px; /* Giảm khoảng cách giữa các câu */
+    margin-bottom: 5px;
 }}
 
 .stRadio label {{
     color: #f9f9f9 !important;
-    font-size: 1.1em !important;
-    font-weight: 400 !important; /* Bỏ làm đậm */
-    font-family: 'Oswald', sans-serif !important; /* Thay font */
+    font-size: 1.0em !important; /* ĐÃ GIẢM KÍCH CỠ */
+    font-weight: 400 !important;
+    font-family: 'Oswald', sans-serif !important;
     text-shadow: none !important;
     background-color: transparent; 
-    padding: 2px 12px; /* Giảm padding trên/dưới */
+    padding: 2px 12px;
     border-radius: 6px;
     display: inline-block;
-    margin: 1px 0 !important; /* Giảm khoảng cách giữa các lựa chọn */
+    margin: 1px 0 !important;
 }}
 
 /* NÚT BẤM */
@@ -417,7 +416,7 @@ div[data-testid="stMarkdownContainer"] p {{
     border-radius: 8px;
     font-size: 1.1em !important;
     font-weight: 600 !important;
-    font-family: 'Oswald', sans-serif !important; /* Đổi font nút bấm */
+    font-family: 'Oswald', sans-serif !important;
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
     transition: all 0.2s ease;
     border: none !important;
@@ -475,6 +474,12 @@ if "current_group_idx" not in st.session_state:
     st.session_state.current_group_idx = 0
 if "submitted" not in st.session_state:
     st.session_state.submitted = False
+# Thêm trạng thái cho selectbox
+if "group_selector" not in st.session_state:
+    st.session_state.group_selector = None
+if "last_bank_choice" not in st.session_state:
+    st.session_state.last_bank_choice = None
+
 
 # --- Lựa chọn Ngân hàng & Nhóm câu hỏi (Dàn ngang) ---
 col_bank, col_group = st.columns(2)
@@ -495,6 +500,7 @@ if st.session_state.get('last_bank_choice') != bank_choice:
     st.session_state.current_group_idx = 0
     st.session_state.submitted = False
     st.session_state.last_bank_choice = bank_choice
+    st.session_state.group_selector = None # Reset selectbox value
     st.rerun()
 
 # --- Xử lý Nhóm câu hỏi ---
@@ -506,15 +512,26 @@ if total > 0:
     
     if st.session_state.current_group_idx >= len(groups):
         st.session_state.current_group_idx = 0
+        st.session_state.group_selector = groups[0]
+    
+    # Thiết lập giá trị mặc định cho selectbox khi mới load
+    if st.session_state.group_selector is None:
+        st.session_state.group_selector = groups[st.session_state.current_group_idx]
+    
+    # Lấy index từ current_group_idx để đặt index cho selectbox
+    current_index = st.session_state.current_group_idx
     
     with col_group:
-        selected = st.selectbox("Chọn nhóm câu:", groups, index=st.session_state.current_group_idx, key="group_selector")
-    
+        # Lấy giá trị từ selectbox, gán vào session_state.group_selector
+        selected = st.selectbox("Chọn nhóm câu:", groups, index=current_index, key="group_selector")
+
+    # Kiểm tra nếu selectbox thay đổi
     new_idx = groups.index(selected)
     if st.session_state.current_group_idx != new_idx:
         st.session_state.current_group_idx = new_idx
         st.session_state.submitted = False
-
+        # Không cần rerun ở đây vì Streamlit sẽ rerender khi session_state thay đổi
+    
     idx = st.session_state.current_group_idx
     start, end = idx * group_size, min((idx+1) * group_size, total)
     batch = questions[start:end]
@@ -543,15 +560,15 @@ if total > 0:
                 # Hiển thị các lựa chọn với style theo kết quả
                 for opt in q["options"]:
                     opt_clean = clean_text(opt)
-                    # Thêm font-family: 'Oswald', sans-serif và font-weight: 400
-                    style = "color:#f9f9f9; font-family: 'Oswald', sans-serif; font-weight:400; text-shadow: none; padding: 2px 12px; margin: 1px 0;" 
+                    # Font-weight: 400 (bình thường), font-size 1.0em
+                    style = "color:#f9f9f9; font-family: 'Oswald', sans-serif; font-weight:400; text-shadow: none; padding: 2px 12px; margin: 1px 0; font-size: 1.0em;" 
                     
                     if opt_clean == correct:
-                        # Đáp án đúng (Màu xanh lá, đậm hơn)
-                        style = "color:#00ff00; font-family: 'Oswald', sans-serif; font-weight:600; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); padding: 2px 12px; margin: 1px 0;"
+                        # Đáp án đúng (Màu xanh lá, đậm hơn: 600)
+                        style = "color:#00ff00; font-family: 'Oswald', sans-serif; font-weight:600; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); padding: 2px 12px; margin: 1px 0; font-size: 1.0em;"
                     elif opt_clean == clean_text(selected_opt):
-                        # Đáp án đã chọn (Màu đỏ, đậm hơn)
-                        style = "color:#ff3333; font-family: 'Oswald', sans-serif; font-weight:600; text-decoration: underline; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8); padding: 2px 12px; margin: 1px 0;"
+                        # Đáp án đã chọn (Màu đỏ, đậm hơn: 600)
+                        style = "color:#ff3333; font-family: 'Oswald', sans-serif; font-weight:600; text-decoration: underline; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8); padding: 2px 12px; margin: 1px 0; font-size: 1.0em;"
                     
                     st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
 
@@ -579,9 +596,11 @@ if total > 0:
             with col_next:
                 if st.session_state.current_group_idx < len(groups) - 1:
                     if st.button("➡️ Tiếp tục nhóm sau"):
+                        # Cập nhật index và giá trị của selectbox
                         st.session_state.current_group_idx += 1
+                        st.session_state.group_selector = groups[st.session_state.current_group_idx]
                         st.session_state.submitted = False
-                        st.rerun()
+                        st.rerun() # Buộc Streamlit cập nhật
                 else:
                     st.info("🎉 Đã hoàn thành tất cả các nhóm câu hỏi!")
     else:
