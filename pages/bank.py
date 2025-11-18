@@ -6,7 +6,7 @@ import math
 import pandas as pd
 import base64
 import os
-import random # 🌟 Thêm thư viện random
+import random 
 
 # ====================================================
 # ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
@@ -367,12 +367,14 @@ html, body, .stApp {{
     position: relative;
 }}
 
-/* BACKGROUND - ÁP DỤNG FILTER ĐÚNG CÁCH */
+/* BACKGROUND - ÁP DỤNG FILTER VINTAGE/BLUR */
 .stApp {{
     background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed !important;
     background-size: cover !important;
     font-family: 'Oswald', sans-serif !important;
-    filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) !important;
+    /* Hiệu ứng Vintage: Mờ nhẹ (blur 1px), ngả màu sepia (0.5), độ tương phản thấp hơn (0.9), độ bão hòa cao hơn (1.2) */
+    filter: blur(1px) sepia(0.5) brightness(0.9) contrast(0.95) saturate(1.2) !important;
+    transition: filter 0.5s ease;
 }}
 
 /* Mobile Background */
@@ -383,7 +385,7 @@ html, body, .stApp {{
     }}
 }}
 
-/* NỘI DUNG KHÔNG BỊ LÀM MỜ */
+/* NỘI DUNG KHÔNG BỊ LÀM MỜ VÀ NỔI LÊN TRÊN */
 [data-testid="stAppViewContainer"],
 [data-testid="stMainBlock"],
 .main,
@@ -397,7 +399,7 @@ html, body, .stApp {{
     z-index: 10; 
     position: relative;
     min-height: 100vh !important;
-    filter: none !important;
+    filter: none !important; /* Loại bỏ filter cho nội dung */
 }}
 
 /* Ẩn Streamlit UI components */
@@ -416,27 +418,41 @@ footer,
 
 h1, h2 {{ visibility: hidden; height: 0; margin: 0; padding: 0; }}
 
-/* ======================= NÚT VỀ TRANG CHỦ ======================= */
+/* ======================= HEADER CONTAINER (Mới) ======================= */
+/* Container cố định cho nút và tiêu đề */
+#fixed-header-container {{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 100;
+    background-color: rgba(0, 0, 0, 0.85); /* Nền tối để tiêu đề nổi bật */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    padding: 10px 0;
+}}
+
+/* ======================= NÚT VỀ TRANG CHỦ (Tĩnh) ======================= */
 #back-to-home-btn-container {{
     position: static;
-    margin: 15px 0 0 15px;
-    z-index: 100;
+    margin: 0 15px 10px 15px; /* Giảm margin dưới cho tiêu đề chạy lên */
+    z-index: 110;
+    pointer-events: auto;
 }}
 
 a#manual-home-btn {{
-    background-color: rgba(0, 0, 0, 0.85);
+    background-color: #a89073; /* Màu nâu vintage */
     color: #FFEA00;
     border: 2px solid #FFEA00;
-    padding: 10px 20px;
-    border-radius: 8px;
+    padding: 8px 18px;
+    border-radius: 6px;
     font-weight: bold;
-    font-size: 16px;
+    font-size: 15px;
     transition: all 0.3s;
     cursor: pointer;
     font-family: 'Oswald', sans-serif;
     text-decoration: none;
     display: inline-block;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
 }}
 
 a#manual-home-btn:hover {{
@@ -445,26 +461,24 @@ a#manual-home-btn:hover {{
     transform: scale(1.05);
 }}
 
-/* ======================= TIÊU ĐỀ CHẠY LỚN ======================= */
+/* ======================= TIÊU ĐỀ CHẠY LỚN (Nằm dưới nút) ======================= */
 #main-title-container {{
     position: static;
-    margin-top: 20px;
-    left: 0;
     width: 100%;
-    height: 10vh;
+    height: auto;
     overflow: hidden;
-    z-index: 100;
     pointer-events: none;
     background-color: transparent;
     display: flex;
     align-items: center;
+    padding: 0 15px;
 }}
 
 #main-title-container h1 {{
     visibility: visible !important;
     height: auto !important;
     font-family: 'Playfair Display', serif;
-    font-size: 3.5vw;
+    font-size: 3vw;
     margin: 0;
     padding: 0;
     font-weight: 900;
@@ -478,13 +492,11 @@ a#manual-home-btn:hover {{
     color: transparent;
     animation: scrollRight 15s linear infinite, colorShift 10s ease infinite;
     text-shadow: 2px 2px 8px rgba(0, 0, 0, 0.8);
+    width: 100%; /* Đảm bảo chạy hết chiều rộng */
+    text-align: center;
 }}
 
 @media (max-width: 768px) {{
-    #main-title-container {{ 
-        height: 8vh; 
-        top: 70px; 
-    }}
     #main-title-container h1 {{
         font-size: 6.5vw;
         animation: scrollRight 12s linear infinite, colorShift 8s ease infinite;
@@ -492,8 +504,9 @@ a#manual-home-btn:hover {{
 }}
 
 /* ======================= TẠO KHOẢNG TRỐNG CHO NỘI DUNG CHÍNH ======================= */
+/* Điều chỉnh padding top để nội dung chính nằm dưới fixed header */
 .main > div:first-child {{
-    padding-top: 200px !important;
+    padding-top: 150px !important; 
     padding-left: 1rem;
     padding-right: 1rem;
     padding-bottom: 2rem !important; 
@@ -501,7 +514,7 @@ a#manual-home-btn:hover {{
 
 @media (max-width: 768px) {{
     .main > div:first-child {{
-        padding-top: 180px !important;
+        padding-top: 130px !important; 
     }}
 }}
 
@@ -552,31 +565,30 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
     color: #FFFFFF !important;
 }}
 
-/* ======================= STYLE CÂU HỎI & ĐÁP ÁN (ĐÃ CHỈNH SỬA) ======================= */
-/* CHỈNH SỬA: Font Oswald, Bỏ làm đậm (400), Giảm padding/margin (khoảng cách) */
+/* ======================= STYLE CÂU HỎI & ĐÁP ÁN ======================= */
 div[data-testid="stMarkdownContainer"] p {{
     color: #ffffff !important;
-    font-weight: 400 !important; /* Bỏ làm đậm */
+    font-weight: 400 !important; 
     font-size: 1.2em !important;
-    font-family: 'Oswald', sans-serif !important; /* Thay font */
+    font-family: 'Oswald', sans-serif !important; 
     text-shadow: none !important; 
     background-color: transparent; 
-    padding: 5px 15px; /* Giảm padding trên/dưới */
+    padding: 5px 15px; 
     border-radius: 8px;
-    margin-bottom: 5px; /* Giảm khoảng cách giữa các câu */
+    margin-bottom: 5px; 
 }}
 
 .stRadio label {{
     color: #f9f9f9 !important;
     font-size: 1.1em !important;
-    font-weight: 400 !important; /* Bỏ làm đậm */
-    font-family: 'Oswald', sans-serif !important; /* Thay font */
+    font-weight: 400 !important; 
+    font-family: 'Oswald', sans-serif !important; 
     text-shadow: none !important;
     background-color: transparent; 
-    padding: 2px 12px; /* Giảm padding trên/dưới */
+    padding: 2px 12px; 
     border-radius: 6px;
     display: inline-block;
-    margin: 1px 0 !important; /* Giảm khoảng cách giữa các lựa chọn */
+    margin: 1px 0 !important; 
 }}
 
 /* NÚT BẤM */
@@ -586,12 +598,12 @@ div[data-testid="stMarkdownContainer"] p {{
     border-radius: 8px;
     font-size: 1.1em !important;
     font-weight: 600 !important;
-    font-family: 'Oswald', sans-serif !important; /* Đổi font nút bấm */
+    font-family: 'Oswald', sans-serif !important; 
     box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.4);
     transition: all 0.2s ease;
     border: none !important;
     padding: 10px 20px !important;
-    width: 100%; /* Đảm bảo nút chiếm đủ chiều rộng trong cột */
+    width: 100%; 
 }}
 
 .stButton>button:hover {{
@@ -599,41 +611,10 @@ div[data-testid="stMarkdownContainer"] p {{
     box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.6);
 }}
 
-/* DÀN NGANG DROPDOWN */
-[data-testid="stHorizontalBlock"] [data-testid="stSelectbox"] {{
-    flex: 1;
-    min-width: 0;
-}}
-
 /* Giảm khoảng cách giữa các câu hỏi/phân cách */
 .stMarkdown > div > hr {{
     margin-top: 10px;
     margin-bottom: 10px;
-}}
-
-/* Style cho Tab */
-.stTabs [data-baseweb="tab-list"] {{
-    gap: 20px;
-}}
-.stTabs [data-baseweb="tab"] {{
-    height: 50px;
-    white-space: nowrap;
-    border-radius: 8px 8px 0 0;
-    background-color: rgba(0, 0, 0, 0.7);
-    color: #00FF00 !important;
-    font-size: 1.2rem;
-    font-weight: 600;
-    transition: all 0.3s;
-}}
-.stTabs [data-baseweb="tab"]:hover {{
-    background-color: rgba(0, 0, 0, 0.9);
-}}
-.stTabs [aria-selected="true"] {{
-    background-color: #a89073 !important;
-    color: #ffffff !important;
-    border-top: 3px solid #FFEA00;
-    border-left: 1px solid #FFEA00;
-    border-right: 1px solid #FFEA00;
 }}
 
 </style>
@@ -645,18 +626,18 @@ st.markdown(css_style, unsafe_allow_html=True)
 # 🏷️ GIAO DIỆN HEADER CỐ ĐỊNH VÀ TIÊU ĐỀ
 # ====================================================
 
-# --- NÚT VỀ TRANG CHỦ (FIXED) ---
 st.markdown("""
-<div id="back-to-home-btn-container">
-    <a id="manual-home-btn" href="/?skip_intro=1" target="_self">
-        🏠 Về Trang Chủ
-    </a>
+<div id="fixed-header-container">
+    <div id="back-to-home-btn-container">
+        <a id="manual-home-btn" href="/?skip_intro=1" target="_self">
+            🏠 Về Trang Chủ
+        </a>
+    </div>
+    <div id="main-title-container">
+        <h1>Tổ Bảo Dưỡng Số 1</h1>
+    </div>
 </div>
 """, unsafe_allow_html=True)
-
-# --- TIÊU ĐỀ CHẠY LỚN (FIXED) ---
-main_title_text = "Tổ Bảo Dưỡng Số 1"
-st.markdown(f'<div id="main-title-container"><h1>{main_title_text}</h1></div>', unsafe_allow_html=True)
 
 # --- TIÊU ĐỀ PHỤ ---
 st.markdown('<div id="sub-static-title"><h2>NGÂN HÀNG TRẮC NGHIỆM</h2></div>', unsafe_allow_html=True)
@@ -694,12 +675,12 @@ if st.session_state.get('last_bank_choice') != bank_choice and bank_choice != "-
     st.session_state.submitted = False
     st.session_state.current_mode = "group" # Quay về chế độ nhóm
     
-    # Lấy tên ngân hàng cũ một cách an toàn để xóa trạng thái test (FIX LỖI HERE)
+    # Lấy tên ngân hàng cũ một cách an toàn để xóa trạng thái test
     last_bank_name = st.session_state.get('last_bank_choice')
     
     # Đảm bảo last_bank_name là một chuỗi có thể split được
     if not isinstance(last_bank_name, str) or last_bank_name == "----":
-        last_bank_name = "null bank" # Gán một giá trị chuỗi an toàn để split
+        last_bank_name = "null bank" 
         
     bank_slug_old = last_bank_name.split()[-1].lower()
     
