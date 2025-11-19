@@ -492,15 +492,14 @@ a#manual-home-btn:hover {{
     /* Dịch tiêu đề xuống dưới nút Về Trang Chủ và tránh lớp phủ */
     top: 65px; 
     width: 100%;
-    /* Tăng chiều cao lên 70px để chữ có đủ không gian */
-    height: 70px; 
+    /* Tăng chiều cao lên 75px để chữ có đủ không gian */
+    height: 75px; 
     overflow: hidden; 
     pointer-events: none;
     background-color: transparent;
-    /* Thay đổi display để dùng padding-top dễ hơn */
     display: block;
-    /* Thêm padding top để chữ có khoảng trống trên, tránh cắt nét trên */
-    padding-top: 5px; 
+    /* Tăng padding top để chữ có khoảng trống trên, tránh cắt nét trên */
+    padding-top: 10px; 
     z-index: 1200; 
 }}
 
@@ -557,7 +556,7 @@ a#manual-home-btn:hover {{
         position: relative;
         width: 100%;
         /* Tăng chiều cao trên mobile */
-        height: 55px; 
+        height: 60px; 
         top: 0; 
         z-index: 1200;
         padding-top: 5px;
@@ -574,7 +573,7 @@ a#manual-home-btn:hover {{
     }}
     /* Tăng padding top cho nội dung chính trên mobile */
     .main > div:first-child {{
-        padding-top: 150px !important; 
+        padding-top: 170px !important; 
     }}
 }}
 
@@ -582,7 +581,7 @@ a#manual-home-btn:hover {{
 /* Điều chỉnh padding top vì header đã được FIXED */
 .main > div:first-child {{
     /* Tăng padding top để tránh tiêu đề cố định che khuất nội dung */
-    padding-top: 180px !important; 
+    padding-top: 190px !important; 
     padding-left: 1rem;
     padding-right: 1rem;
     padding-bottom: 2rem !important; 
@@ -593,7 +592,7 @@ a#manual-home-btn:hover {{
 #sub-static-title, .result-title {{
     position: static;
     /* Tăng margin-top để dịch tiêu đề xuống dưới */
-    margin-top: 50px; 
+    margin-top: 100px; 
     margin-bottom: 30px;
     z-index: 90;
     background: transparent !important;
