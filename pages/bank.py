@@ -211,12 +211,12 @@ def display_all_questions(questions):
         return
 
     for i, q in enumerate(questions, start=1):
-        # ĐÃ SỬA: Màu câu hỏi vàng nổi bật (#FFDD00) + text-shadow
+        # Màu câu hỏi vàng nổi bật (#FFDD00) + text-shadow
         st.markdown(f"<p style='color: #FFDD00; font-weight: 700; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5);'>{i}. {q['question']}</p>", unsafe_allow_html=True)
         
         # Hiển thị các lựa chọn, tô màu đáp án đúng
         for opt in q["options"]:
-            # ĐÃ SỬA: Màu đáp án thường là trắng tinh (#FFFFFF)
+            # Màu đáp án thường là trắng tinh (#FFFFFF)
             style = "color:#FFFFFF; font-family: 'Oswald', sans-serif; font-weight:400; text-shadow: none; padding: 2px 12px; margin: 1px 0;"
             if clean_text(opt) == clean_text(q["answer"]):
                 style = "color:#00ff00; font-family: 'Oswald', sans-serif; font-weight:600; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); padding: 2px 12px; margin: 1px 0;"
@@ -274,7 +274,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         
         for i, q in enumerate(test_batch, start=1):
             # Lưu key trong session state theo index của câu hỏi (i)
-            # ĐÃ SỬA: Màu câu hỏi vàng nổi bật (#FFDD00) + text-shadow
+            # Màu câu hỏi vàng nổi bật (#FFDD00) + text-shadow
             st.markdown(f"<p style='color: #FFDD00; font-weight: 700; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5);'>{i}. {q['question']}</p>", unsafe_allow_html=True)
             st.radio("", q["options"], key=f"{test_key_prefix}_q_{i}")
             st.markdown("---") 
@@ -294,13 +294,13 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             correct = clean_text(q["answer"])
             is_correct = clean_text(selected_opt) == correct
 
-            # ĐÃ SỬA: Màu câu hỏi vàng nổi bật (#FFDD00) + text-shadow
+            # Màu câu hỏi vàng nổi bật (#FFDD00) + text-shadow
             st.markdown(f"<p style='color: #FFDD00; font-weight: 700; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5);'>{i}. {q['question']}</p>", unsafe_allow_html=True)
             
             # Hiển thị các lựa chọn với style theo kết quả
             for opt in q["options"]:
                 opt_clean = clean_text(opt)
-                # ĐÃ SỬA: Màu đáp án thường là trắng tinh (#FFFFFF)
+                # Màu đáp án thường là trắng tinh (#FFFFFF)
                 style = "color:#FFFFFF; font-family: 'Oswald', sans-serif; font-weight:400; text-shadow: none; padding: 2px 12px; margin: 1px 0;" 
                 
                 if opt_clean == correct:
@@ -388,8 +388,8 @@ html, body, .stApp {{
     background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed !important;
     background-size: cover !important;
     font-family: 'Oswald', sans-serif !important;
-    /* Giữ tone Vintage, KHÔNG BLUR để nội dung rõ ràng */
-    filter: sepia(0.6) brightness(0.6) contrast(1.1) saturate(1.2) !important;
+    /* ĐÃ SỬA (Yêu cầu 3): Tăng brightness (0.8) và giảm sepia (0.5) để trang sáng rõ hơn, dễ đọc */
+    filter: sepia(0.5) brightness(0.8) contrast(1.1) saturate(1.2) !important;
     transition: filter 0.5s ease;
 }}
 
@@ -438,23 +438,20 @@ h1, h2 {{ visibility: hidden;
     height: 0; margin: 0; padding: 0; }}
 
 /* ======================= HEADER CONTAINER (Mới) ======================= */
-/* Container cố định cho nút và tiêu đề */
+/* ĐÃ SỬA (Yêu cầu 1 & 2): Thay đổi thành static và loại bỏ box-shadow */
 #fixed-header-container {{
-    position: fixed;
-    top: 0;
-    left: 0;
+    position: static; 
     width: 100%;
     z-index: 100;
-    /* ĐÃ SỬA: Xóa nền đen chồng lên tiêu đề */
     background-color: transparent; 
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    /* ĐÃ BỎ box-shadow (nét ngang) theo yêu cầu */
     padding: 10px 0;
 }}
 
 /* ======================= NÚT VỀ TRANG CHỦ (Áp dụng style PN) ======================= */
 #back-to-home-btn-container {{
     position: static;
-    margin: 0 15px 10px 15px; /* Giảm margin dưới cho tiêu đề chạy lên */
+    margin: 0 15px 10px 15px; 
     z-index: 110;
     pointer-events: auto;
 }}
@@ -463,16 +460,16 @@ a#manual-home-btn {{
     background-color: rgba(0, 0, 0, 0.85); /* Giữ nền đen mờ cho nút */
     color: #FFEA00;
     border: 2px solid #FFEA00;
-    padding: 10px 20px; /* Padding lớn hơn từ PN */
-    border-radius: 8px; /* Border lớn hơn từ PN */
+    padding: 10px 20px; 
+    border-radius: 8px; 
     font-weight: bold;
-    font-size: 16px; /* Font lớn hơn từ PN */
+    font-size: 16px; 
     transition: all 0.3s;
     cursor: pointer;
     font-family: 'Oswald', sans-serif;
     text-decoration: none;
     display: inline-block;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); /* Shadow từ PN */
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); 
 }}
 
 a#manual-home-btn:hover {{
@@ -511,9 +508,8 @@ a#manual-home-btn:hover {{
     -webkit-text-fill-color: transparent;
     color: transparent;
     animation: scrollRight 15s linear infinite, colorShift 10s ease infinite;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); /* Áp dụng shadow của PN */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
     width: 100%;
-    /* Đảm bảo chạy hết chiều rộng */
     text-align: center;
 }}
 
@@ -525,9 +521,9 @@ a#manual-home-btn:hover {{
 }}
 
 /* ======================= TẠO KHOẢNG TRỐNG CHO NỘI DUNG CHÍNH ======================= */
-/* Điều chỉnh padding top để nội dung chính nằm dưới fixed header */
+/* ĐÃ SỬA (Yêu cầu 1): Giảm padding top vì header không còn fixed */
 .main > div:first-child {{
-    padding-top: 150px !important;
+    padding-top: 30px !important; 
     padding-left: 1rem;
     padding-right: 1rem;
     padding-bottom: 2rem !important; 
@@ -535,7 +531,7 @@ a#manual-home-btn:hover {{
 
 @media (max-width: 768px) {{
     .main > div:first-child {{
-        padding-top: 130px !important;
+        padding-top: 20px !important; 
     }}
 }}
 
@@ -556,7 +552,6 @@ a#manual-home-btn:hover {{
     font-size: 2rem;
     color: #FFEA00;
     text-align: center;
-    /* Đã áp dụng shadow từ PN */
     text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8); 
     margin-bottom: 20px;
     filter: none !important;
@@ -570,7 +565,7 @@ a#manual-home-btn:hover {{
 
 /* ======================= STYLE DROPDOWN (Giá trị bên trong đã là Oswald) ======================= */
 div.stSelectbox label p, div[data-testid*="column"] label p {{
-    /* ĐÃ SỬA: Màu xanh lá cây sáng */
+    /* Màu xanh lá cây sáng */
     color: #33FF33 !important; 
     font-size: 1.25rem !important;
     font-weight: bold;
@@ -585,14 +580,13 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
 }}
 
 .stSelectbox div[data-baseweb="select"] div[data-testid="stTextInput"] {{
-    /* ĐÃ SỬA: Màu trắng tinh */
+    /* Màu trắng tinh */
     color: #FFFFFF !important;
 }}
 
 /* ======================= STYLE CÂU HỎI & ĐÁP ÁN ======================= */
-/* Đã điều chỉnh cho các đoạn văn bản câu hỏi - Đã chuyển style câu hỏi vào Python code */
+/* ĐÃ SỬA (Yêu cầu 4): Màu trắng tinh cho đáp án thường */
 div[data-testid="stMarkdownContainer"] p {{
-    /* ĐÃ SỬA: Màu trắng tinh cho các đoạn văn bản chung (chủ yếu là đáp án nếu không có radio) */
     color: #FFFFFF !important; 
     font-weight: 400 !important; 
     font-size: 1.2em !important;
@@ -604,10 +598,10 @@ div[data-testid="stMarkdownContainer"] p {{
     margin-bottom: 5px; 
 }}
 
-/* Dùng style trực tiếp trên Markdown cho câu hỏi */
+/* Dùng style trực tiếp trên Markdown cho câu hỏi (màu #FFDD00 nổi bật) */
 
 .stRadio label {{
-    /* ĐÃ SỬA: Màu trắng tinh */
+    /* Màu trắng tinh */
     color: #FFFFFF !important; 
     font-size: 1.1em !important;
     font-weight: 400 !important;
@@ -786,7 +780,7 @@ if bank_choice != "----":
                 if not st.session_state.submitted:
                     # Giao diện làm bài
                     for i, q in enumerate(batch, start=start+1):
-                        # ĐÃ SỬA: Màu câu hỏi vàng nổi bật (#FFDD00) + text-shadow
+                        # Màu câu hỏi vàng nổi bật (#FFDD00) + text-shadow
                         st.markdown(f"<p style='color: #FFDD00; font-weight: 700; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5);'>{i}. {q['question']}</p>", unsafe_allow_html=True)
                         st.radio("", q["options"], key=f"q_{i}")
                         st.markdown("---")
@@ -801,12 +795,12 @@ if bank_choice != "----":
                         correct = clean_text(q["answer"])
                         is_correct = clean_text(selected_opt) == correct
 
-                        # ĐÃ SỬA: Màu câu hỏi vàng nổi bật (#FFDD00) + text-shadow
+                        # Màu câu hỏi vàng nổi bật (#FFDD00) + text-shadow
                         st.markdown(f"<p style='color: #FFDD00; font-weight: 700; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5);'>{i}. {q['question']}</p>", unsafe_allow_html=True)
 
                         for opt in q["options"]:
                             opt_clean = clean_text(opt)
-                            # ĐÃ SỬA: Màu đáp án thường là trắng tinh (#FFFFFF)
+                            # Màu đáp án thường là trắng tinh (#FFFFFF)
                             style = "color:#FFFFFF; font-family: 'Oswald', sans-serif; font-weight:400; text-shadow: none; padding: 2px 12px; margin: 1px 0;" 
                             
                             if opt_clean == correct:
