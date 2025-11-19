@@ -440,19 +440,19 @@ h1, h2 {{ visibility: hidden;
     left: 0;
     width: 100%;
     /* Tăng padding bottom để tạo khoảng trống cho tiêu đề chạy */
-    padding: 10px 15px 65px 15px; 
+    padding: 10px 15px 75px 15px; 
     display: flex; 
-    align-items: flex-start; /* Điều chỉnh lại căn chỉnh */
+    align-items: flex-start; 
     justify-content: flex-start; 
     flex-wrap: nowrap; 
     gap: 0;
     background-color: transparent;
     z-index: 1000;
     box-shadow: none;
-    overflow: visible; /* Cho phép nội dung tràn ra (để h1 chạy) */
+    overflow: visible; 
 }}
 
-/* ======================= NÚT VỀ TRANG CHỦ (Góc Trái) ======================= */
+/* ======================= NÚT VỀ TRANG CHỦ (Góc Trái, Khung ôm chữ) ======================= */
 #back-to-home-btn-container {{
     position: absolute;
     left: 15px;
@@ -473,9 +473,10 @@ a#manual-home-btn {{
     cursor: pointer;
     font-family: 'Oswald', sans-serif;
     text-decoration: none;
-    display: inline-block;
+    /* Đảm bảo khung ôm vừa chữ */
+    display: inline-block; 
+    white-space: nowrap; 
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-    white-space: nowrap;
 }}
 
 a#manual-home-btn:hover {{
@@ -484,29 +485,31 @@ a#manual-home-btn:hover {{
     transform: scale(1.05);
 }}
 
-/* ======================= TIÊU ĐỀ CHẠY LỚN (Chạy toàn bộ màn hình) ======================= */
+/* ======================= TIÊU ĐỀ CHẠY LỚN (Đã chỉnh kích thước và vị trí) ======================= */
 #main-title-container {{
     position: absolute;
     left: 0;
-    /* Dịch tiêu đề xuống dưới nút Về Trang Chủ */
-    top: 60px; 
+    /* Dịch tiêu đề xuống dưới nút Về Trang Chủ và tránh lớp phủ */
+    top: 65px; 
     width: 100%;
-    height: 50px;
-    overflow: hidden; /* Giữ overflow hidden để tiêu đề chạy ngang */
+    /* Tăng chiều cao để chữ không bị cắt */
+    height: 60px; 
+    overflow: hidden; 
     pointer-events: none;
     background-color: transparent;
     display: flex;
     align-items: center;
     padding: 0;
-    z-index: 1050;
+    /* Tăng z-index để nó nằm trên mọi lớp phủ khác */
+    z-index: 1200; 
 }}
 
 #main-title-container h1 {{
     visibility: visible !important;
     height: auto !important;
     font-family: 'Playfair Display', serif;
-    /* Tăng kích cỡ cho chữ to hơn, không bị thiếu nét */
-    font-size: 3vw; 
+    /* Điều chỉnh kích thước font lớn, dùng vh thay vì vw để kiểm soát chiều cao tốt hơn */
+    font-size: 4.5vh; 
     margin: 0;
     padding: 0;
     font-weight: 900;
@@ -521,15 +524,16 @@ a#manual-home-btn:hover {{
     animation: scrollRight 15s linear infinite, colorShift 8s ease infinite;
     text-shadow: 2px 2px 8px rgba(255, 255, 255, 0.3);
     position: absolute;
-    /* Đảm bảo chữ chạy hết từ trái sang phải */
     left: 0; 
+    /* Dịch chuyển chữ xuống giữa container 60px height */
+    transform: translateY(10%); 
 }}
 
 @media (max-width: 768px) {{
     #fixed-header-container {{
-        padding: 10px 10px 10px 10px; /* Điều chỉnh lại padding */
+        padding: 10px 10px 10px 10px; 
         height: auto;
-        flex-direction: column; /* Đặt nút và tiêu đề chồng lên nhau */
+        flex-direction: column; 
         align-items: center;
     }}
     #back-to-home-btn-container {{
@@ -548,17 +552,20 @@ a#manual-home-btn:hover {{
     #main-title-container {{
         position: relative;
         width: 100%;
-        height: 40px;
-        top: 0; /* Đưa về top: 0 (vì đã dùng flex-direction: column) */
+        /* Tăng chiều cao trên mobile */
+        height: 50px; 
+        top: 0; 
+        z-index: 1200;
     }}
     #main-title-container h1 {{
-        font-size: 6vw;
+        /* Điều chỉnh font size trên mobile */
+        font-size: 7vw; 
         animation: scrollRight 12s linear infinite, colorShift 8s ease infinite;
         left: 0;
     }}
     /* Tăng padding top cho nội dung chính trên mobile */
     .main > div:first-child {{
-        padding-top: 130px !important; 
+        padding-top: 150px !important; 
     }}
 }}
 
@@ -566,7 +573,7 @@ a#manual-home-btn:hover {{
 /* Điều chỉnh padding top vì header đã được FIXED */
 .main > div:first-child {{
     /* Tăng padding top để tránh tiêu đề cố định che khuất nội dung */
-    padding-top: 130px !important; 
+    padding-top: 150px !important; 
     padding-left: 1rem;
     padding-right: 1rem;
     padding-bottom: 2rem !important; 
