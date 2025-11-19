@@ -437,36 +437,36 @@ h1, h2 {{ visibility: hidden;
     height: 0; margin: 0; padding: 0; }}
 
 /* ======================= HEADER CONTAINER ======================= */
-/* FIX: Cố định và không nền */
+/* FIX: Cố định header và dùng relative để chứa các thành phần absolute */
 #fixed-header-container {{
     position: fixed; /* Cố định */
     top: 0;
     left: 0;
     width: 100%;
-    padding: 10px 15px;
-    display: flex; 
-    align-items: center;
-    justify-content: space-between; 
-    flex-wrap: nowrap; /* Quan trọng để giữ nút và tiêu đề trên một hàng trên PC */
-    gap: 10px;
-    background-color: transparent; /* BỎ NỀN ĐEN */
-    z-index: 1000; /* Luôn nổi trên cùng */
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Giữ bóng mờ */
+    padding: 0; /* Bỏ padding ngoài để kiểm soát vị trí chính xác hơn */
+    height: 60px; /* Định chiều cao cố định */
+    background-color: rgba(0, 0, 0, 0.2); /* Thêm nền mờ nhẹ để nổi lên */
+    z-index: 1000; 
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); 
+    /* Dùng position: relative để chứa các thành phần absolute bên trong */
+    position: relative; 
 }}
 
 /* ======================= NÚT VỀ TRANG CHỦ (Góc Trái) ======================= */
 #back-to-home-btn-container {{
-    /* FIX: Sử dụng Table để ép container ôm vừa nút */
-    display: table;
-    margin: 0; 
-    z-index: 110;
+    /* FIX: Dùng absolute để ép về góc trái và ôm vừa chữ */
+    position: absolute;
+    top: 10px; /* Đặt vị trí chính xác */
+    left: 15px;
+    z-index: 1010;
     pointer-events: auto;
-    flex-shrink: 0; /* Không cho phép container bị thu nhỏ */
+    width: auto;
+    height: auto;
 }}
 
 /* FIX: Nút ôm vừa chữ */
 a#manual-home-btn {{
-    background-color: rgba(0, 0, 0, 0.85); /* Nền đen mờ cho nút */
+    background-color: rgba(0, 0, 0, 0.85); 
     color: #FFEA00;
     border: 2px solid #FFEA00;
     padding: 10px 20px; 
@@ -490,16 +490,18 @@ a#manual-home-btn:hover {{
 
 /* ======================= TIÊU ĐỀ CHẠY LỚN (Góc Phải) ======================= */
 #main-title-container {{
-    flex-grow: 1; /* Cho phép chiếm phần không gian còn lại */
-    height: auto;
-    overflow: hidden;
-    pointer-events: none;
-    background-color: transparent;
+    /* FIX: Dùng absolute để ép về góc phải */
+    position: absolute;
+    top: 0;
+    right: 15px; /* Căn lề phải */
+    height: 100%; 
     display: flex;
     align-items: center;
-    padding: 0;
     justify-content: flex-end; 
-    min-width: 100px; /* Đảm bảo có khoảng trống để tiêu đề chạy */
+    overflow: hidden; /* Quan trọng: ẩn chữ khi chạy ra ngoài */
+    width: 85%; /* Cho phép chiếm phần lớn chiều rộng để chạy */
+    pointer-events: none;
+    z-index: 1005;
 }}
 
 #main-title-container h1 {{
@@ -513,48 +515,62 @@ a#manual-home-btn:hover {{
     letter-spacing: 5px;
     white-space: nowrap;
     display: inline-block;
+    
     /* Hiệu ứng đổi màu liên tục */
     background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
     background-size: 400% 400%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
+    
     /* Kích hoạt animation chạy chữ từ PHẢI qua TRÁI */
     animation: scrollRight 20s linear infinite; 
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
-    width: 200%; 
-    text-align: right;
+    width: 200%; /* Đảm bảo chữ đủ dài để chạy ra ngoài màn hình */
+    text-align: right; /* Quan trọng để animation bắt đầu từ bên phải */
 }}
 
 @media (max-width: 768px) {{
-    /* Trên mobile, xếp chồng lên nhau */
+    /* Trên mobile, giữ nút ở góc trái và tiêu đề ở giữa, tắt chạy ngang */
     #fixed-header-container {{
+        height: 120px; /* Tăng chiều cao header */
         flex-direction: column;
         align-items: flex-start;
-        padding-bottom: 20px;
-        flex-wrap: wrap; 
+        position: fixed;
     }}
+
     #back-to-home-btn-container {{
-        width: 100%;
-        margin-bottom: 10px;
-        display: block; /* Hủy bỏ display:table trên mobile */
+        position: absolute;
+        top: 10px;
+        left: 15px;
+        width: calc(100% - 30px); /* Cho nút chiếm hết chiều rộng trên mobile */
     }}
+
     a#manual-home-btn {{
-        width: 100%; /* Chiếm hết chiều rộng trên mobile */
+        width: 100%; 
         text-align: center;
     }}
+    
     #main-title-container {{
+        position: absolute;
+        top: 60px; /* Đặt tiêu đề bên dưới nút */
+        left: 0;
+        right: 0;
         width: 100%;
+        height: 60px;
         justify-content: center;
+        text-align: center;
     }}
+    
     #main-title-container h1 {{
         font-size: 6.5vw;
-        text-align: center;
         width: auto; 
         animation: none; /* Tắt animation chạy ngang trên mobile */
+        text-align: center;
     }}
+    
     .main > div:first-child {{
-        padding-top: 130px !important;
+        padding-top: 130px !important; /* Đẩy nội dung xuống sâu hơn */
     }}
 }}
 
