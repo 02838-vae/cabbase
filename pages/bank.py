@@ -212,18 +212,21 @@ def display_all_questions(questions):
 
     for i, q in enumerate(questions, start=1):
         # Màu câu hỏi vàng nổi bật (#FFDD00) + text-shadow
-        st.markdown(f"<p style='color: #FFDD00; font-weight: 700; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5);'>{i}. {q['question']}</p>", unsafe_allow_html=True)
+        st.markdown(f"<p style='color: #FFDD00; font-weight: 700; font-size: 1.2em; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5);'>{i}. {q['question']}</p>", unsafe_allow_html=True)
         
         # Hiển thị các lựa chọn, tô màu đáp án đúng
         for opt in q["options"]:
             # Màu đáp án thường là trắng tinh (#FFFFFF)
-            style = "color:#FFFFFF; font-family: 'Oswald', sans-serif; font-weight:400; text-shadow: none; padding: 2px 12px; margin: 1px 0;"
+            # ĐÃ SỬA: Dùng style đồng nhất với câu hỏi cho các đáp án (Yêu cầu 3)
+            style = "color:#FFFFFF; font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.2em; text-shadow: none; padding: 5px 15px; margin: 1px 0;"
             if clean_text(opt) == clean_text(q["answer"]):
-                style = "color:#00ff00; font-family: 'Oswald', sans-serif; font-weight:600; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); padding: 2px 12px; margin: 1px 0;"
+                # Đáp án đúng
+                style = "color:#00ff00; font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.2em; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); padding: 5px 15px; margin: 1px 0;"
             
             st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
         
-        st.markdown("---") # Phân cách câu hỏi
+        # ĐÃ SỬA: Thay thế "---" bằng div phân cách sáng hơn (Yêu cầu 2)
+        st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
 
 # ====================================================
 # 🌟 HÀM MỚI - LÀM BÀI TEST 50 CÂU
@@ -277,7 +280,8 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             # Màu câu hỏi vàng nổi bật (#FFDD00) + text-shadow
             st.markdown(f"<p style='color: #FFDD00; font-weight: 700; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5);'>{i}. {q['question']}</p>", unsafe_allow_html=True)
             st.radio("", q["options"], key=f"{test_key_prefix}_q_{i}")
-            st.markdown("---") 
+            # ĐÃ SỬA: Thay thế "---" bằng div phân cách sáng hơn (Yêu cầu 2)
+            st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
             
         if st.button("✅ Nộp bài Test", key=f"{test_key_prefix}_submit_btn"):
             st.session_state[f"{test_key_prefix}_submitted"] = True
@@ -295,20 +299,20 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             is_correct = clean_text(selected_opt) == correct
 
             # Màu câu hỏi vàng nổi bật (#FFDD00) + text-shadow
-            st.markdown(f"<p style='color: #FFDD00; font-weight: 700; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5);'>{i}. {q['question']}</p>", unsafe_allow_html=True)
+            st.markdown(f"<p style='color: #FFDD00; font-weight: 700; font-size: 1.2em; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5);'>{i}. {q['question']}</p>", unsafe_allow_html=True)
             
             # Hiển thị các lựa chọn với style theo kết quả
             for opt in q["options"]:
                 opt_clean = clean_text(opt)
-                # Màu đáp án thường là trắng tinh (#FFFFFF)
-                style = "color:#FFFFFF; font-family: 'Oswald', sans-serif; font-weight:400; text-shadow: none; padding: 2px 12px; margin: 1px 0;" 
+                # ĐÃ SỬA: Dùng style đồng nhất với câu hỏi cho các đáp án (Yêu cầu 3)
+                style = "color:#FFFFFF; font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.2em; text-shadow: none; padding: 5px 15px; margin: 1px 0;" 
                 
                 if opt_clean == correct:
                     # Đáp án đúng (Màu xanh lá, đậm hơn)
-                    style = "color:#00ff00; font-family: 'Oswald', sans-serif; font-weight:600; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); padding: 2px 12px; margin: 1px 0;"
+                    style = "color:#00ff00; font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.2em; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); padding: 5px 15px; margin: 1px 0;"
                 elif opt_clean == clean_text(selected_opt):
                     # Đáp án đã chọn (Màu đỏ, đậm hơn)
-                    style = "color:#ff3333; font-family: 'Oswald', sans-serif; font-weight:600; text-decoration: underline; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8); padding: 2px 12px; margin: 1px 0;"
+                    style = "color:#ff3333; font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.2em; text-decoration: underline; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8); padding: 5px 15px; margin: 1px 0;"
                 
                 st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
 
@@ -316,8 +320,8 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
                 score += 1
             
             st.info(f"Đáp án đúng: **{q['answer']}**", icon="💡")
-            # Giảm khoảng cách giữa các câu trong kết quả
-            st.markdown('<div style="margin: 5px 0;">---</div>', unsafe_allow_html=True) 
+            # ĐÃ SỬA: Thay thế "---" bằng div phân cách sáng hơn (Yêu cầu 2)
+            st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
         
         # Đánh giá kết quả
         total_q = len(test_batch)
@@ -388,7 +392,7 @@ html, body, .stApp {{
     background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed !important;
     background-size: cover !important;
     font-family: 'Oswald', sans-serif !important;
-    /* ĐÃ SỬA (Yêu cầu 3): Tăng brightness (0.8) và giảm sepia (0.5) để trang sáng rõ hơn, dễ đọc */
+    /* Giữ độ sáng đã tăng */
     filter: sepia(0.5) brightness(0.8) contrast(1.1) saturate(1.2) !important;
     transition: filter 0.5s ease;
 }}
@@ -437,27 +441,31 @@ footer,
 h1, h2 {{ visibility: hidden;
     height: 0; margin: 0; padding: 0; }}
 
-/* ======================= HEADER CONTAINER (Mới) ======================= */
-/* ĐÃ SỬA (Yêu cầu 1 & 2): Thay đổi thành static và loại bỏ box-shadow */
+/* ======================= HEADER CONTAINER ======================= */
+/* ĐÃ SỬA (Yêu cầu 1): Sắp xếp lại bố cục header */
 #fixed-header-container {{
     position: static; 
     width: 100%;
-    z-index: 100;
-    background-color: transparent; 
-    /* ĐÃ BỎ box-shadow (nét ngang) theo yêu cầu */
-    padding: 10px 0;
+    padding: 10px 15px;
+    display: flex; /* Dùng Flexbox */
+    align-items: center;
+    justify-content: space-between; /* Đẩy nút và tiêu đề ra hai bên */
+    flex-wrap: wrap; /* Cho phép xuống dòng trên mobile */
+    gap: 10px;
 }}
 
-/* ======================= NÚT VỀ TRANG CHỦ (Áp dụng style PN) ======================= */
+/* ======================= NÚT VỀ TRANG CHỦ (Góc Trái) ======================= */
 #back-to-home-btn-container {{
     position: static;
-    margin: 0 15px 10px 15px; 
+    margin: 0; 
     z-index: 110;
     pointer-events: auto;
+    /* Đảm bảo nút nằm góc trái */
+    order: 1; 
 }}
 
 a#manual-home-btn {{
-    background-color: rgba(0, 0, 0, 0.85); /* Giữ nền đen mờ cho nút */
+    background-color: rgba(0, 0, 0, 0.85); 
     color: #FFEA00;
     border: 2px solid #FFEA00;
     padding: 10px 20px; 
@@ -478,24 +486,30 @@ a#manual-home-btn:hover {{
     transform: scale(1.05);
 }}
 
-/* ======================= TIÊU ĐỀ CHẠY LỚN (Nằm dưới nút) ======================= */
+/* ======================= TIÊU ĐỀ CHẠY LỚN (Góc Phải) ======================= */
 #main-title-container {{
     position: static;
-    width: 100%;
+    /* Chiếm phần còn lại */
+    flex-grow: 1; 
     height: auto;
     overflow: hidden;
     pointer-events: none;
     background-color: transparent;
     display: flex;
     align-items: center;
-    padding: 0 15px;
+    padding: 0;
+    /* Đảm bảo tiêu đề nằm góc phải */
+    order: 2; 
+    /* Giảm kích thước trên desktop để không chiếm quá nhiều chỗ */
+    max-width: 60%; 
+    justify-content: flex-end;
 }}
 
 #main-title-container h1 {{
     visibility: visible !important;
     height: auto !important;
     font-family: 'Playfair Display', serif;
-    font-size: 3vw;
+    font-size: 2.5vw; /* Giảm kích thước cho phù hợp với góc phải */
     margin: 0;
     padding: 0;
     font-weight: 900;
@@ -507,32 +521,44 @@ a#manual-home-btn:hover {{
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
-    animation: scrollRight 15s linear infinite, colorShift 10s ease infinite;
+    animation: none; /* Bỏ animation chạy chữ để giữ cố định tiêu đề */
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
-    width: 100%;
-    text-align: center;
+    width: auto;
+    text-align: right; /* Căn phải */
 }}
 
 @media (max-width: 768px) {{
+    /* Trên mobile, cho nút và tiêu đề xếp chồng lên nhau */
+    #fixed-header-container {{
+        flex-direction: column;
+        align-items: flex-start;
+    }}
+    #back-to-home-btn-container {{
+        width: 100%;
+        margin-bottom: 10px;
+    }}
+    a#manual-home-btn {{
+        width: 100%;
+        text-align: center;
+    }}
+    #main-title-container {{
+        width: 100%;
+        max-width: 100%;
+        justify-content: center;
+    }}
     #main-title-container h1 {{
         font-size: 6.5vw;
-        animation: scrollRight 12s linear infinite, colorShift 8s ease infinite;
+        text-align: center;
     }}
 }}
 
 /* ======================= TẠO KHOẢNG TRỐNG CHO NỘI DUNG CHÍNH ======================= */
-/* ĐÃ SỬA (Yêu cầu 1): Giảm padding top vì header không còn fixed */
+/* Giảm padding top vì header đã được căn chỉnh */
 .main > div:first-child {{
-    padding-top: 30px !important; 
+    padding-top: 20px !important; 
     padding-left: 1rem;
     padding-right: 1rem;
     padding-bottom: 2rem !important; 
-}}
-
-@media (max-width: 768px) {{
-    .main > div:first-child {{
-        padding-top: 20px !important; 
-    }}
 }}
 
 /* ======================= TIÊU ĐỀ PHỤ TĨNH & KẾT QUẢ ======================= */
@@ -585,7 +611,7 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
 }}
 
 /* ======================= STYLE CÂU HỎI & ĐÁP ÁN ======================= */
-/* ĐÃ SỬA (Yêu cầu 4): Màu trắng tinh cho đáp án thường */
+/* ĐÃ SỬA: Màu trắng tinh cho đáp án thường */
 div[data-testid="stMarkdownContainer"] p {{
     color: #FFFFFF !important; 
     font-weight: 400 !important; 
@@ -603,8 +629,9 @@ div[data-testid="stMarkdownContainer"] p {{
 .stRadio label {{
     /* Màu trắng tinh */
     color: #FFFFFF !important; 
-    font-size: 1.1em !important;
-    font-weight: 400 !important;
+    /* ĐÃ SỬA: Font weight và size cho radio (chế độ chưa nộp bài) */
+    font-size: 1.2em !important; 
+    font-weight: 700 !important; 
     font-family: 'Oswald', sans-serif !important; 
     text-shadow: none !important;
     background-color: transparent; 
@@ -635,10 +662,18 @@ div[data-testid="stMarkdownContainer"] p {{
     box-shadow: 3px 3px 8px rgba(0, 0, 0, 0.6);
 }}
 
-/* Giảm khoảng cách giữa các câu hỏi/phân cách */
+/* ĐÃ SỬA (Yêu cầu 2): Nét phân cách câu hỏi sáng hơn */
+.question-separator {{
+    margin-top: 15px;
+    margin-bottom: 15px;
+    height: 1px;
+    background: linear-gradient(to right, rgba(255, 255, 255, 0), #FFDD00, rgba(255, 255, 255, 0));
+    opacity: 0.5;
+}}
+
+/* Loại bỏ nét gạch ngang cũ */
 .stMarkdown > div > hr {{
-    margin-top: 10px;
-    margin-bottom: 10px;
+    display: none;
 }}
 
 </style>
@@ -647,7 +682,7 @@ div[data-testid="stMarkdownContainer"] p {{
 st.markdown(css_style, unsafe_allow_html=True)
 
 # ====================================================
-# 🏷️ GIAO DIỆN HEADER CỐ ĐỊNH VÀ TIÊU ĐỀ
+# 🏷️ GIAO DIỆN HEADER VÀ TIÊU ĐỀ
 # ====================================================
 
 st.markdown("""
@@ -710,8 +745,8 @@ if st.session_state.get('last_bank_choice') != bank_choice and bank_choice != "-
     
     # Reset trạng thái Test Mode cũ
     st.session_state.pop(f"test_{bank_slug_old}_started", None)
-    st.session_state.pop(f"test_{bank_slug_old}_submitted", None)
-    st.session_state.pop(f"test_{bank_slug_old}_questions", None)
+    st.session_state.pop(f"{test_key_prefix}_submitted", None)
+    st.session_state.pop(f"{test_key_prefix}_questions", None)
     
     st.session_state.last_bank_choice = bank_choice
     st.rerun()
@@ -773,7 +808,7 @@ if bank_choice != "----":
                     st.session_state.pop(f"{test_key_prefix}_questions", None)
                     st.rerun()
 
-            st.markdown("---")
+            st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
             
             # --- 2.3. Logic hiển thị bài làm theo nhóm (như cũ) ---
             if batch:
@@ -781,9 +816,9 @@ if bank_choice != "----":
                     # Giao diện làm bài
                     for i, q in enumerate(batch, start=start+1):
                         # Màu câu hỏi vàng nổi bật (#FFDD00) + text-shadow
-                        st.markdown(f"<p style='color: #FFDD00; font-weight: 700; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5);'>{i}. {q['question']}</p>", unsafe_allow_html=True)
+                        st.markdown(f"<p style='color: #FFDD00; font-weight: 700; font-size: 1.2em; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5);'>{i}. {q['question']}</p>", unsafe_allow_html=True)
                         st.radio("", q["options"], key=f"q_{i}")
-                        st.markdown("---")
+                        st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
                     if st.button("✅ Nộp bài", key="submit_group"):
                         st.session_state.submitted = True
                         st.rerun()
@@ -796,17 +831,17 @@ if bank_choice != "----":
                         is_correct = clean_text(selected_opt) == correct
 
                         # Màu câu hỏi vàng nổi bật (#FFDD00) + text-shadow
-                        st.markdown(f"<p style='color: #FFDD00; font-weight: 700; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5);'>{i}. {q['question']}</p>", unsafe_allow_html=True)
+                        st.markdown(f"<p style='color: #FFDD00; font-weight: 700; font-size: 1.2em; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5);'>{i}. {q['question']}</p>", unsafe_allow_html=True)
 
                         for opt in q["options"]:
                             opt_clean = clean_text(opt)
-                            # Màu đáp án thường là trắng tinh (#FFFFFF)
-                            style = "color:#FFFFFF; font-family: 'Oswald', sans-serif; font-weight:400; text-shadow: none; padding: 2px 12px; margin: 1px 0;" 
+                            # ĐÃ SỬA: Dùng style đồng nhất với câu hỏi cho các đáp án (Yêu cầu 3)
+                            style = "color:#FFFFFF; font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.2em; text-shadow: none; padding: 5px 15px; margin: 1px 0;" 
                             
                             if opt_clean == correct:
-                                style = "color:#00ff00; font-family: 'Oswald', sans-serif; font-weight:600; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); padding: 2px 12px; margin: 1px 0;"
+                                style = "color:#00ff00; font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.2em; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); padding: 5px 15px; margin: 1px 0;"
                             elif opt_clean == clean_text(selected_opt):
-                                style = "color:#ff3333; font-family: 'Oswald', sans-serif; font-weight:600; text-decoration: underline; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8); padding: 2px 12px; margin: 1px 0;"
+                                style = "color:#ff3333; font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.2em; text-decoration: underline; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8); padding: 5px 15px; margin: 1px 0;"
                             
                             st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
 
@@ -816,7 +851,7 @@ if bank_choice != "----":
                         else:
                             st.error(f"❌ Sai — Đáp án đúng: {q['answer']}")
                         
-                        st.markdown('<div style="margin: 5px 0;">---</div>', unsafe_allow_html=True) 
+                        st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
 
                     st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{len(batch)}</h3></div>', unsafe_allow_html=True)
 
@@ -848,7 +883,7 @@ if bank_choice != "----":
         if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
             st.session_state.current_mode = "group"
             st.rerun()
-        st.markdown("---")
+        st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
         display_all_questions(questions)
         
     elif st.session_state.current_mode == "test":
@@ -856,5 +891,5 @@ if bank_choice != "----":
         if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
             st.session_state.current_mode = "group"
             st.rerun()
-        st.markdown("---")
+        st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
         display_test_mode(questions, bank_choice)
