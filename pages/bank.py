@@ -381,13 +381,13 @@ html, body, .stApp {{
     position: relative;
 }}
 
-/* BACKGROUND - ÁP DỤNG FILTER ĐÃ CHỈNH SỬA (Vàng Vintage, blur nhẹ) */
+/* BACKGROUND - ÁP DỤNG FILTER ĐÃ CHỈNH SỬA (Vàng Vintage, không blur) */
 .stApp {{
     background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed !important;
     background-size: cover !important;
     font-family: 'Oswald', sans-serif !important;
-    /* ĐÃ SỬA: Tăng sepia, giảm brightness, tăng contrast, BLUR NHẸ (1px) cho tone Vintage */
-    filter: sepia(0.6) brightness(0.6) contrast(1.1) saturate(1.2) blur(1px) !important;
+    /* ĐÃ SỬA: Tăng sepia, giảm brightness, tăng contrast, KHÔNG BLUR để nội dung rõ ràng */
+    filter: sepia(0.6) brightness(0.6) contrast(1.1) saturate(1.2) !important;
     transition: filter 0.5s ease;
 }}
 
