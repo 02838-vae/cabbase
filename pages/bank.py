@@ -205,9 +205,9 @@ def display_all_questions(questions):
         st.warning("Không có câu hỏi nào để hiển thị.")
         return
     
-    # 🔴 FIX FONT SIZE: Tăng font size lên 2.5em cho câu hỏi và đáp án
-    q_style = "color: #FFDD00; font-weight: 700; font-size: 2.5em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
-    style_base = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 2.5em; text-shadow: none; padding: 5px 15px; margin: 1px 0;"
+    # 🔴 FIX FONT SIZE: Điều chỉnh font size xuống 1.5em cho câu hỏi và đáp án để đồng nhất và dễ nhìn hơn
+    q_style = "color: #FFDD00; font-weight: 700; font-size: 1.5em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
+    style_base = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.5em; text-shadow: none; padding: 5px 15px; margin: 1px 0;"
 
     for i, q in enumerate(questions, start=1):
         st.markdown(f"<div style='{q_style}'>{i}. {q['question']}</div>", unsafe_allow_html=True)
@@ -247,9 +247,9 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
     if f"{test_key_prefix}_questions" not in st.session_state:
         st.session_state[f"{test_key_prefix}_questions"] = []
     
-    # 🔴 FIX FONT SIZE: Tăng font size lên 2.5em cho câu hỏi và đáp án
-    q_style = "color: #FFDD00; font-weight: 700; font-size: 2.5em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
-    style_base = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 2.5em; text-shadow: none; padding: 5px 15px; margin: 1px 0;"
+    # 🔴 FIX FONT SIZE: Điều chỉnh font size xuống 1.5em cho câu hỏi và đáp án để đồng nhất và dễ nhìn hơn
+    q_style = "color: #FFDD00; font-weight: 700; font-size: 1.5em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
+    style_base = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.5em; text-shadow: none; padding: 5px 15px; margin: 1px 0;"
 
 
     # Bắt đầu bài test
@@ -482,14 +482,14 @@ a#manual-home-btn:hover {{
     left: 0;
     top: 0; 
     width: 100%;
-    /* 🔴 FIX TITLE: Tăng chiều cao lên 150px (để chữ full) */
-    height: 150px; 
+    /* 🔴 FIX TITLE: Tăng chiều cao lên 180px (để chữ full) */
+    height: 180px; 
     overflow: hidden; 
     pointer-events: none;
     background-color: transparent;
     display: block;
     /* 🔴 FIX TITLE: Tăng padding top để chữ có khoảng trống trên, tránh cắt nét trên */
-    padding-top: 50px; 
+    padding-top: 70px; 
     margin-top: 10px; /* Thêm khoảng trống sau nút home */
     z-index: 1200; 
 }}
@@ -544,11 +544,11 @@ a#manual-home-btn:hover {{
         position: relative;
         width: 100%;
         /* 🔴 FIX TITLE: Tăng chiều cao trên mobile */
-        height: 100px; 
+        height: 130px; 
         top: 0; 
         z-index: 1200;
         /* 🔴 FIX TITLE: Tăng padding top trên mobile */
-        padding-top: 40px; 
+        padding-top: 60px; 
         display: block;
     }}
     #main-title-container h1 {{
@@ -625,13 +625,13 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
     color: #FFFFFF !important;
 }}
 
-/* ======================= STYLE CÂU HỎI & ĐÁP ÁN (ĐÃ TĂNG LÊN 2.5EM) ======================= */
-/* Điều chỉnh cho P (Câu hỏi trong chế độ làm bài chưa nộp) */
+/* ======================= STYLE CÂU HỎI & ĐÁP ÁN (ĐÃ TĂNG VÀ ĐỒNG NHẤT 1.5EM) ======================= */
+/* Điều chỉnh cho P (Câu hỏi trong chế độ làm bài chưa nộp) - nhẹ hơn so với DIV kết quả */
 div[data-testid="stMarkdownContainer"] p {{
     color: #ffffff !important; 
     font-weight: 400; 
-    /* 🔴 FIX FONT SIZE: Tăng size chữ câu hỏi chưa nộp */
-    font-size: 2.4em; 
+    /* 🔴 FIX FONT SIZE: Đồng nhất size chữ câu hỏi trước khi nộp với size chữ kết quả */
+    font-size: 1.5em !important; 
     font-family: 'Oswald', sans-serif !important; 
     text-shadow: none; 
     background-color: transparent; 
@@ -640,11 +640,11 @@ div[data-testid="stMarkdownContainer"] p {{
     margin-bottom: 5px; 
 }}
 
-/* Tăng độ đậm và size cho Radio label */
+/* FIX YÊU CẦU 2: Tăng độ đậm và size cho Radio label (trước khi nộp bài) */
 .stRadio label {{
     color: #f9f9f9 !important;
-    /* 🔴 FIX FONT SIZE: Tăng size chữ đáp án */
-    font-size: 2.5em !important; 
+    /* 🔴 FIX FONT SIZE: Đồng nhất size chữ đáp án trước khi nộp với size chữ kết quả */
+    font-size: 1.5em !important; 
     font-weight: 700 !important; 
     font-family: 'Oswald', sans-serif !important; 
     text-shadow: none !important;
@@ -816,14 +816,14 @@ if bank_choice != "----":
             
             # --- 2.3. Logic hiển thị bài làm theo nhóm (như cũ) ---
             if batch:
-                # 🔴 FIX FONT SIZE: Tăng font size lên 2.5em cho câu hỏi khi đã nộp/xem lại
-                q_style = "color: #FFDD00; font-weight: 700; font-size: 2.5em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
-                style_base = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 2.5em; text-shadow: none; padding: 5px 15px; margin: 1px 0;"
+                # 🔴 FIX FONT SIZE: Điều chỉnh font size xuống 1.5em cho câu hỏi khi đã nộp/xem lại
+                q_style = "color: #FFDD00; font-weight: 700; font-size: 1.5em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
+                style_base = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.5em; text-shadow: none; padding: 5px 15px; margin: 1px 0;"
 
                 if not st.session_state.submitted:
                     # Giao diện làm bài
                     for i, q in enumerate(batch, start=start+1):
-                        # Dùng q_style (font-size: 2.5em) cho câu hỏi
+                        # Dùng q_style (font-size: 1.5em) cho câu hỏi
                         st.markdown(f"<div style='{q_style}'>{i}. {q['question']}</div>", unsafe_allow_html=True)
                         st.radio("", q["options"], key=f"q_{i}")
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
