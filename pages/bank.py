@@ -349,7 +349,7 @@ MOBILE_IMAGE_FILE = "bank_mobile.jpg"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
-# === CSS ĐÃ TỐI ƯU CHO FONT VÀ KHOẢNG CÁCH ===
+# === CSS ĐÃ TỐI ƯU CHO FONT VÀ KHOẢNG CÁCH (FIX CÚ PHÁP) ===
 css_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -430,14 +430,14 @@ h1, h2 {{ visibility: hidden;
     height: 0; margin: 0; padding: 0; }}
 
 /* ======================= HEADER CONTAINER - KHÔNG FIX ======================= */
-#header-content-wrapper {
+#header-content-wrapper {{
     /* Loại bỏ position: fixed, để nó cuộn theo nội dung */
     width: 100%;
     /* Tăng margin bottom để tạo khoảng trống giữa header block và nội dung chính */
     margin-bottom: 20px; 
     display: block; 
     z-index: 1000;
-}
+}} 
 
 /* ======================= NÚT VỀ TRANG CHỦ (Góc Trái, Khung ôm chữ) - KHÔNG FIX ======================= */
 #back-to-home-btn-container {{
