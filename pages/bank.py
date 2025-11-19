@@ -437,7 +437,7 @@ h1, h2 {{ visibility: hidden;
     height: 0; margin: 0; padding: 0; }}
 
 /* ======================= HEADER CONTAINER ======================= */
-/* FIX YÊU CẦU 1: CỐ ĐỊNH HEADER & BỎ NỀN ĐEN */
+/* FIX: Cố định và không nền */
 #fixed-header-container {{
     position: fixed; /* Cố định */
     top: 0;
@@ -447,7 +447,7 @@ h1, h2 {{ visibility: hidden;
     display: flex; 
     align-items: center;
     justify-content: space-between; 
-    flex-wrap: wrap; 
+    flex-wrap: nowrap; /* Quan trọng để giữ nút và tiêu đề trên một hàng trên PC */
     gap: 10px;
     background-color: transparent; /* BỎ NỀN ĐEN */
     z-index: 1000; /* Luôn nổi trên cùng */
@@ -456,14 +456,15 @@ h1, h2 {{ visibility: hidden;
 
 /* ======================= NÚT VỀ TRANG CHỦ (Góc Trái) ======================= */
 #back-to-home-btn-container {{
-    position: static;
+    /* FIX: Sử dụng Table để ép container ôm vừa nút */
+    display: table;
     margin: 0; 
     z-index: 110;
     pointer-events: auto;
-    order: 1; /* Nút nằm ở trái cùng */
+    flex-shrink: 0; /* Không cho phép container bị thu nhỏ */
 }}
 
-/* FIX YÊU CẦU 1: Khung bao ôm vừa chữ (width: auto, display: inline-block) */
+/* FIX: Nút ôm vừa chữ */
 a#manual-home-btn {{
     background-color: rgba(0, 0, 0, 0.85); /* Nền đen mờ cho nút */
     color: #FFEA00;
@@ -477,7 +478,7 @@ a#manual-home-btn {{
     font-family: 'Oswald', sans-serif;
     text-decoration: none;
     display: inline-block; /* Ôm vừa chữ */
-    width: auto; /* Ôm vừa chữ */
+    width: auto; 
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5); 
 }}
 
@@ -489,8 +490,7 @@ a#manual-home-btn:hover {{
 
 /* ======================= TIÊU ĐỀ CHẠY LỚN (Góc Phải) ======================= */
 #main-title-container {{
-    position: static;
-    flex-grow: 1; 
+    flex-grow: 1; /* Cho phép chiếm phần không gian còn lại */
     height: auto;
     overflow: hidden;
     pointer-events: none;
@@ -498,9 +498,8 @@ a#manual-home-btn:hover {{
     display: flex;
     align-items: center;
     padding: 0;
-    order: 2; /* Tiêu đề nằm ở phải */
-    max-width: 70%; 
     justify-content: flex-end; 
+    min-width: 100px; /* Đảm bảo có khoảng trống để tiêu đề chạy */
 }}
 
 #main-title-container h1 {{
@@ -514,29 +513,31 @@ a#manual-home-btn:hover {{
     letter-spacing: 5px;
     white-space: nowrap;
     display: inline-block;
-    /* FIX YÊU CẦU 2: Hiệu ứng đổi màu liên tục */
+    /* Hiệu ứng đổi màu liên tục */
     background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
     background-size: 400% 400%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
-    /* FIX YÊU CẦU 2: Kích hoạt animation chạy chữ từ PHẢI qua TRÁI */
+    /* Kích hoạt animation chạy chữ từ PHẢI qua TRÁI */
     animation: scrollRight 20s linear infinite; 
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5); 
-    width: 200%; /* Đảm bảo đủ rộng để chạy qua hết màn hình */
+    width: 200%; 
     text-align: right;
 }}
 
 @media (max-width: 768px) {{
-    /* Trên mobile, cho nút và tiêu đề xếp chồng lên nhau */
+    /* Trên mobile, xếp chồng lên nhau */
     #fixed-header-container {{
         flex-direction: column;
         align-items: flex-start;
         padding-bottom: 20px;
+        flex-wrap: wrap; 
     }}
     #back-to-home-btn-container {{
         width: 100%;
         margin-bottom: 10px;
+        display: block; /* Hủy bỏ display:table trên mobile */
     }}
     a#manual-home-btn {{
         width: 100%; /* Chiếm hết chiều rộng trên mobile */
@@ -544,7 +545,6 @@ a#manual-home-btn:hover {{
     }}
     #main-title-container {{
         width: 100%;
-        max-width: 100%;
         justify-content: center;
     }}
     #main-title-container h1 {{
