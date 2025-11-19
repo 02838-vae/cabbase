@@ -205,9 +205,9 @@ def display_all_questions(questions):
         st.warning("Không có câu hỏi nào để hiển thị.")
         return
     
-    # 🔴 FIX FONT SIZE: Điều chỉnh font size xuống 1.5em cho câu hỏi và đáp án để đồng nhất và dễ nhìn hơn
-    q_style = "color: #FFDD00; font-weight: 700; font-size: 1.5em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
-    style_base = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.5em; text-shadow: none; padding: 5px 15px; margin: 1px 0;"
+    # 🔴 FIX FONT SIZE (YÊU CẦU 2): Đã tăng size chữ lên 1.6em để đồng nhất và dễ nhìn hơn
+    q_style = "color: #FFDD00; font-weight: 700; font-size: 1.6em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
+    style_base = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.6em; text-shadow: none; padding: 5px 15px; margin: 1px 0;"
 
     for i, q in enumerate(questions, start=1):
         st.markdown(f"<div style='{q_style}'>{i}. {q['question']}</div>", unsafe_allow_html=True)
@@ -247,9 +247,9 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
     if f"{test_key_prefix}_questions" not in st.session_state:
         st.session_state[f"{test_key_prefix}_questions"] = []
     
-    # 🔴 FIX FONT SIZE: Điều chỉnh font size xuống 1.5em cho câu hỏi và đáp án để đồng nhất và dễ nhìn hơn
-    q_style = "color: #FFDD00; font-weight: 700; font-size: 1.5em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
-    style_base = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.5em; text-shadow: none; padding: 5px 15px; margin: 1px 0;"
+    # 🔴 FIX FONT SIZE (YÊU CẦU 2): Đã tăng size chữ lên 1.6em để đồng nhất và dễ nhìn hơn
+    q_style = "color: #FFDD00; font-weight: 700; font-size: 1.6em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
+    style_base = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.6em; text-shadow: none; padding: 5px 15px; margin: 1px 0;"
 
 
     # Bắt đầu bài test
@@ -482,14 +482,13 @@ a#manual-home-btn:hover {{
     left: 0;
     top: 0; 
     width: 100%;
-    /* 🔴 FIX TITLE: Đưa tiêu đề lên cao, ngay dưới nút Home. Giảm chiều cao để tiết kiệm không gian. */
-    height: 100px; 
+    /* 🔴 FIX TITLE (YÊU CẦU 1): Tăng chiều cao và padding để hiển thị full nét cho phần trên/dưới. */
+    height: 120px; /* Đã tăng chiều cao */
     overflow: hidden; 
     pointer-events: none;
     background-color: transparent;
     display: block;
-    /* 🔴 FIX TITLE: Giảm padding top để đưa nội dung lên cao, cách nút home 1 khoảng nhỏ */
-    padding-top: 20px; 
+    padding-top: 25px; /* Đã tăng padding top */
     margin-top: 0px; 
     z-index: 1200; 
 }}
@@ -516,8 +515,8 @@ a#manual-home-btn:hover {{
     text-shadow: 2px 2px 8px rgba(255, 255, 255, 0.3);
     position: absolute;
     left: 0; 
-    /* 🔴 FIX TITLE: Đưa chữ bám sát đỉnh container để hiển thị cao hơn */
-    top: 5px; 
+    /* 🔴 FIX TITLE (YÊU CẦU 1): Đưa chữ bám sát đỉnh container để hiển thị cao hơn */
+    top: 0px; /* Đã thay đổi từ top: 5px */
     bottom: auto;
     /* Giảm line-height để kiểm soát tốt hơn */
     line-height: 1; 
@@ -544,12 +543,11 @@ a#manual-home-btn:hover {{
     #main-title-container {{
         position: relative;
         width: 100%;
-        /* 🔴 FIX TITLE: Đưa tiêu đề lên cao, giảm chiều cao */
-        height: 80px; 
+        /* 🔴 FIX TITLE (YÊU CẦU 1): Tăng chiều cao và padding để hiển thị full nét cho phần trên/dưới trên mobile. */
+        height: 100px; /* Đã tăng chiều cao */
         top: 0; 
         z-index: 1200;
-        /* 🔴 FIX TITLE: Giảm padding top để đưa nội dung lên cao */
-        padding-top: 10px; 
+        padding-top: 15px; /* Đã tăng padding top */
         display: block;
     }}
     #main-title-container h1 {{
@@ -557,8 +555,8 @@ a#manual-home-btn:hover {{
         font-size: 8vw; 
         animation: scrollRight 12s linear infinite, colorShift 8s ease infinite;
         left: 0;
-        /* 🔴 FIX TITLE: Đưa chữ bám sát đỉnh container để hiển thị cao hơn */
-        top: 5px; 
+        /* 🔴 FIX TITLE (YÊU CẦU 1): Đưa chữ bám sát đỉnh container để hiển thị cao hơn */
+        top: 0px; /* Đã thay đổi từ top: 5px */
         bottom: auto;
         line-height: 1;
         transform: none;
@@ -628,13 +626,13 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
     color: #FFFFFF !important;
 }}
 
-/* ======================= STYLE CÂU HỎI & ĐÁP ÁN (ĐÃ TĂNG VÀ ĐỒNG NHẤT 1.5EM) ======================= */
+/* ======================= STYLE CÂU HỎI & ĐÁP ÁN (ĐÃ TĂNG VÀ ĐỒNG NHẤT 1.6EM) ======================= */
 /* Điều chỉnh cho P (Câu hỏi trong chế độ làm bài chưa nộp) - nhẹ hơn so với DIV kết quả */
 div[data-testid="stMarkdownContainer"] p {{
     color: #ffffff !important; 
     font-weight: 400; 
-    /* 🔴 FIX FONT SIZE: Đồng nhất size chữ câu hỏi trước khi nộp với size chữ kết quả */
-    font-size: 1.5em !important; 
+    /* 🔴 FIX FONT SIZE (YÊU CẦU 2): Đồng nhất size chữ câu hỏi trước khi nộp với size chữ kết quả (1.6em) */
+    font-size: 1.6em !important; 
     font-family: 'Oswald', sans-serif !important; 
     text-shadow: none; 
     background-color: transparent; 
@@ -646,8 +644,8 @@ div[data-testid="stMarkdownContainer"] p {{
 /* FIX YÊU CẦU 2: Tăng độ đậm và size cho Radio label (trước khi nộp bài) */
 .stRadio label {{
     color: #f9f9f9 !important;
-    /* 🔴 FIX FONT SIZE: Đồng nhất size chữ đáp án trước khi nộp với size chữ kết quả */
-    font-size: 1.5em !important; 
+    /* 🔴 FIX FONT SIZE (YÊU CẦU 2): Đồng nhất size chữ đáp án trước khi nộp với size chữ kết quả (1.6em) */
+    font-size: 1.6em !important; 
     font-weight: 700 !important; 
     font-family: 'Oswald', sans-serif !important; 
     text-shadow: none !important;
@@ -819,14 +817,14 @@ if bank_choice != "----":
             
             # --- 2.3. Logic hiển thị bài làm theo nhóm (như cũ) ---
             if batch:
-                # 🔴 FIX FONT SIZE: Điều chỉnh font size xuống 1.5em cho câu hỏi khi đã nộp/xem lại
-                q_style = "color: #FFDD00; font-weight: 700; font-size: 1.5em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
-                style_base = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.5em; text-shadow: none; padding: 5px 15px; margin: 1px 0;"
+                # 🔴 FIX FONT SIZE (YÊU CẦU 2): Đã tăng size chữ lên 1.6em để đồng nhất và dễ nhìn hơn
+                q_style = "color: #FFDD00; font-weight: 700; font-size: 1.6em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
+                style_base = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.6em; text-shadow: none; padding: 5px 15px; margin: 1px 0;"
 
                 if not st.session_state.submitted:
                     # Giao diện làm bài
                     for i, q in enumerate(batch, start=start+1):
-                        # Dùng q_style (font-size: 1.5em) cho câu hỏi
+                        # Dùng q_style (font-size: 1.6em) cho câu hỏi
                         st.markdown(f"<div style='{q_style}'>{i}. {q['question']}</div>", unsafe_allow_html=True)
                         st.radio("", q["options"], key=f"q_{i}")
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
