@@ -482,15 +482,15 @@ a#manual-home-btn:hover {{
     left: 0;
     top: 0; 
     width: 100%;
-    /* 🔴 FIX TITLE: Tăng chiều cao lên 180px (để chữ full) */
-    height: 180px; 
+    /* 🔴 FIX TITLE: Đưa tiêu đề lên cao, ngay dưới nút Home. Giảm chiều cao để tiết kiệm không gian. */
+    height: 100px; 
     overflow: hidden; 
     pointer-events: none;
     background-color: transparent;
     display: block;
-    /* 🔴 FIX TITLE: Tăng padding top để chữ có khoảng trống trên, tránh cắt nét trên */
-    padding-top: 70px; 
-    margin-top: 10px; /* Thêm khoảng trống sau nút home */
+    /* 🔴 FIX TITLE: Giảm padding top để đưa nội dung lên cao, cách nút home 1 khoảng nhỏ */
+    padding-top: 20px; 
+    margin-top: 0px; 
     z-index: 1200; 
 }}
 
@@ -516,8 +516,9 @@ a#manual-home-btn:hover {{
     text-shadow: 2px 2px 8px rgba(255, 255, 255, 0.3);
     position: absolute;
     left: 0; 
-    /* Đặt chữ bám sát đáy container */
-    bottom: 0; 
+    /* 🔴 FIX TITLE: Đưa chữ bám sát đỉnh container để hiển thị cao hơn */
+    top: 5px; 
+    bottom: auto;
     /* Giảm line-height để kiểm soát tốt hơn */
     line-height: 1; 
     transform: none; 
@@ -543,12 +544,12 @@ a#manual-home-btn:hover {{
     #main-title-container {{
         position: relative;
         width: 100%;
-        /* 🔴 FIX TITLE: Tăng chiều cao trên mobile */
-        height: 130px; 
+        /* 🔴 FIX TITLE: Đưa tiêu đề lên cao, giảm chiều cao */
+        height: 80px; 
         top: 0; 
         z-index: 1200;
-        /* 🔴 FIX TITLE: Tăng padding top trên mobile */
-        padding-top: 60px; 
+        /* 🔴 FIX TITLE: Giảm padding top để đưa nội dung lên cao */
+        padding-top: 10px; 
         display: block;
     }}
     #main-title-container h1 {{
@@ -556,7 +557,9 @@ a#manual-home-btn:hover {{
         font-size: 8vw; 
         animation: scrollRight 12s linear infinite, colorShift 8s ease infinite;
         left: 0;
-        bottom: 0;
+        /* 🔴 FIX TITLE: Đưa chữ bám sát đỉnh container để hiển thị cao hơn */
+        top: 5px; 
+        bottom: auto;
         line-height: 1;
         transform: none;
     }}
