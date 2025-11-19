@@ -745,8 +745,9 @@ if st.session_state.get('last_bank_choice') != bank_choice and bank_choice != "-
     
     # Reset trạng thái Test Mode cũ
     st.session_state.pop(f"test_{bank_slug_old}_started", None)
-    st.session_state.pop(f"{test_key_prefix}_submitted", None)
-    st.session_state.pop(f"{test_key_prefix}_questions", None)
+    # >>> FIX: Thay thế {test_key_prefix} bằng {f"test_{bank_slug_old}"}
+    st.session_state.pop(f"test_{bank_slug_old}_submitted", None)
+    st.session_state.pop(f"test_{bank_slug_old}_questions", None)
     
     st.session_state.last_bank_choice = bank_choice
     st.rerun()
