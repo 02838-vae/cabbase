@@ -492,15 +492,15 @@ a#manual-home-btn:hover {{
     /* Dịch tiêu đề xuống dưới nút Về Trang Chủ và tránh lớp phủ */
     top: 65px; 
     width: 100%;
-    /* Tăng chiều cao để chữ không bị cắt */
-    height: 60px; 
+    /* Tăng chiều cao lên 70px để chữ có đủ không gian */
+    height: 70px; 
     overflow: hidden; 
     pointer-events: none;
     background-color: transparent;
-    display: flex;
-    align-items: center;
-    padding: 0;
-    /* Tăng z-index để nó nằm trên mọi lớp phủ khác */
+    /* Thay đổi display để dùng padding-top dễ hơn */
+    display: block;
+    /* Thêm padding top để chữ có khoảng trống trên, tránh cắt nét trên */
+    padding-top: 5px; 
     z-index: 1200; 
 }}
 
@@ -508,8 +508,8 @@ a#manual-home-btn:hover {{
     visibility: visible !important;
     height: auto !important;
     font-family: 'Playfair Display', serif;
-    /* Điều chỉnh kích thước font lớn, dùng vh thay vì vw để kiểm soát chiều cao tốt hơn */
-    font-size: 4.5vh; 
+    /* Điều chỉnh kích thước font lớn */
+    font-size: 5vh; 
     margin: 0;
     padding: 0;
     font-weight: 900;
@@ -525,8 +525,12 @@ a#manual-home-btn:hover {{
     text-shadow: 2px 2px 8px rgba(255, 255, 255, 0.3);
     position: absolute;
     left: 0; 
-    /* Dịch chuyển chữ xuống giữa container 60px height */
-    transform: translateY(10%); 
+    /* Đặt chữ bám sát đáy container để phần thân dưới không bị cắt */
+    bottom: 0; 
+    /* Giảm line-height để kiểm soát tốt hơn */
+    line-height: 1; 
+    /* Loại bỏ transform cũ gây lệch */
+    transform: none; 
 }}
 
 @media (max-width: 768px) {{
@@ -553,15 +557,20 @@ a#manual-home-btn:hover {{
         position: relative;
         width: 100%;
         /* Tăng chiều cao trên mobile */
-        height: 50px; 
+        height: 55px; 
         top: 0; 
         z-index: 1200;
+        padding-top: 5px;
+        display: block;
     }}
     #main-title-container h1 {{
         /* Điều chỉnh font size trên mobile */
-        font-size: 7vw; 
+        font-size: 8vw; 
         animation: scrollRight 12s linear infinite, colorShift 8s ease infinite;
         left: 0;
+        bottom: 0;
+        line-height: 1;
+        transform: none;
     }}
     /* Tăng padding top cho nội dung chính trên mobile */
     .main > div:first-child {{
@@ -573,7 +582,7 @@ a#manual-home-btn:hover {{
 /* Điều chỉnh padding top vì header đã được FIXED */
 .main > div:first-child {{
     /* Tăng padding top để tránh tiêu đề cố định che khuất nội dung */
-    padding-top: 150px !important; 
+    padding-top: 180px !important; 
     padding-left: 1rem;
     padding-right: 1rem;
     padding-bottom: 2rem !important; 
@@ -583,7 +592,8 @@ a#manual-home-btn:hover {{
 /* ======================= TIÊU ĐỀ PHỤ TĨNH & KẾT QUẢ ======================= */
 #sub-static-title, .result-title {{
     position: static;
-    margin-top: 20px;
+    /* Tăng margin-top để dịch tiêu đề xuống dưới */
+    margin-top: 50px; 
     margin-bottom: 30px;
     z-index: 90;
     background: transparent !important;
