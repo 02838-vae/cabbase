@@ -18,16 +18,19 @@ def clean_text(s: str) -> str:
 
 def read_docx_paragraphs(source):
     try:
+        # 1. Thử đường dẫn tương đối (ví dụ: cabbank.docx)
         doc = Document(os.path.join(os.path.dirname(__file__), source))
     except Exception as e:
         try:
-             doc = Document(source)
+            # 2. Thử đường dẫn cơ bản (ví dụ: pages/PL1.docx)
+            doc = Document(source)
         except Exception:
             try:
+                # 3. Thử đường dẫn "pages/source" (chủ yếu cho fallback)
                 doc = Document(f"pages/{source}")
             except Exception:
                 return []
-    return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
+    return [p.text.strip() for p.paragraphs if p.text.strip()]
 
 def get_base64_encoded_file(file_path):
     fallback_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
@@ -75,7 +78,7 @@ def parse_cabbank(source):
                 if current["question"] and current["options"]:
                     if not current["answer"] and current["options"]:
                         current["answer"] = current["options"][0]
-                    questions.append(current)
+                questions.append(current)
                 current = {"question": clean_text(pre_text), "options": [], "answer": ""}
             else:
                 if current["question"]: current["question"] += " " + clean_text(pre_text)
@@ -186,19 +189,18 @@ def parse_pl1(source):
                     current["answer"] = current["options"][0]
                 questions.append(current)
             
-            # Loại bỏ số thứ tự ở đầu câu hỏi để hiển thị đẹp hơn (vì UI đã tự đánh số)
-            # Hoặc giữ nguyên nếu muốn. Ở đây ta xóa "1. " đi.
+            # Loại bỏ số thứ tự ở đầu câu hỏi để hiển thị đẹp hơn
             q_text = q_start_pat.sub('', clean_p)
             current = {"question": q_text, "options": [], "answer": ""}
         
         else:
-            # Nếu không phải câu hỏi, thì là đáp án (do lỗi dính dòng, ta coi mỗi dòng là 1 đáp án)
+            # Nếu không phải câu hỏi, thì là đáp án
             if current["question"]: # Chỉ xử lý nếu đã có câu hỏi
                 is_correct = False
                 # Kiểm tra dấu hiệu đáp án đúng (*)
                 if "(*)" in clean_p:
                     is_correct = True
-                    clean_p = clean_p.replace("(*)", "").strip() # Xóa dấu (*) đi
+                clean_p = clean_p.replace("(*)", "").strip() # Xóa dấu (*) đi
                 
                 # Tự động gán nhãn A, B, C, D
                 idx = len(current["options"])
@@ -237,7 +239,6 @@ def display_all_questions(questions):
             else:
                 # Đáp án thường: Trắng
                 color_style = "color:#FFFFFF;"
-            
             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
@@ -303,11 +304,11 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
                     color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8);"
                 else:
                     color_style = "color:#FFFFFF;"
-                
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
 
             if is_correct: score += 1
-            st.info(f"Đáp án đúng: **{q['answer']}**", icon="💡")
+            # 🚀 FIX YÊU CẦU 4: Đổi st.info sang st.markdown để kiểm soát in đậm, chỉ in đậm đáp án
+            st.markdown(f"💡 Đáp án đúng: **{q['answer']}**") 
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
         
         total_q = len(test_batch)
@@ -401,15 +402,16 @@ html, body, .stApp {{
 
 /* BUTTON HOME */
 #back-to-home-btn-container {{
-    position: fixed; top: 10px; left: 10px; 
+    position: fixed;
+    top: 10px; left: 10px; 
     width: auto !important; z-index: 1500; 
-    display: inline-block; 
+    display: inline-block;
 }}
 a#manual-home-btn {{
     background-color: rgba(0, 0, 0, 0.85);
     color: #FFEA00;
     border: 2px solid #FFEA00;
-    padding: 5px 10px; 
+    padding: 5px 10px;
     border-radius: 8px; 
     font-weight: bold;
     font-size: 14px; 
@@ -417,7 +419,7 @@ a#manual-home-btn {{
     font-family: 'Oswald', sans-serif;
     text-decoration: none;
     display: inline-block; 
-    white-space: nowrap; 
+    white-space: nowrap;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }}
 a#manual-home-btn:hover {{
@@ -429,7 +431,8 @@ a#manual-home-btn:hover {{
 /* TITLE CHÍNH */
 #main-title-container {{
     position: relative; left: 0; top: 0; width: 100%;
-    height: 120px; overflow: hidden; pointer-events: none;
+    height: 120px; overflow: hidden;
+    pointer-events: none;
     background-color: transparent; padding-top: 20px; z-index: 1200; 
 }}
 #main-title-container h1 {{
@@ -445,13 +448,14 @@ a#manual-home-btn:hover {{
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
     animation: scrollRight 15s linear infinite, colorShift 8s ease infinite;
     text-shadow: 2px 2px 8px rgba(255, 255, 255, 0.3);
-    position: absolute; left: 0; top: 5px; 
+    position: absolute;
+    left: 0; top: 5px; 
     line-height: 1.5 !important;
 }}
 
 /* SỐ 1 */
 .number-one {{
-    font-family: 'Oswald', sans-serif !important; 
+    font-family: 'Oswald', sans-serif !important;
     font-size: 1em !important; 
     font-weight: 700;
     display: inline-block;
@@ -465,23 +469,25 @@ a#manual-home-btn:hover {{
 }}
 
 .main > div:first-child {{
-    padding-top: 40px !important; padding-bottom: 2rem !important; 
+    padding-top: 40px !important; padding-bottom: 2rem !important;
 }}
 
 /* FIX YÊU CẦU 2: TITLE LỚN NHƯNG VẪN 1 HÀNG */
 #sub-static-title, .result-title {{
-    margin-top: 150px; margin-bottom: 30px; text-align: center;
+    margin-top: 150px;
+    margin-bottom: 30px; text-align: center;
 }}
 #sub-static-title h2, .result-title h3 {{
     font-family: 'Playfair Display', serif;
-    font-size: 2rem; /* Desktop */
+    font-size: 2rem;
+    /* Desktop */
     color: #FFEA00;
-    text-shadow: 0 0 15px #FFEA00; 
+    text-shadow: 0 0 15px #FFEA00;
 }}
 @media (max-width: 768px) {{
     #sub-static-title h2, .result-title h3 {{
         /* Tăng lên 4.8vw và giảm spacing để chữ to hơn mà vẫn 1 dòng */
-        font-size: 4.8vw !important; 
+        font-size: 4.8vw !important;
         letter-spacing: -0.5px;
         white-space: nowrap; 
     }}
@@ -499,18 +505,19 @@ a#manual-home-btn:hover {{
 
 .bank-answer-text {{
     font-family: 'Oswald', sans-serif !important;
-    font-weight: 400 !important; 
+    font-weight: 400 !important;
     font-size: 22px !important; 
     padding: 5px 15px; margin: 2px 0;
     line-height: 1.5 !important; 
-    display: block; 
+    display: block;
 }}
 
 .stRadio label {{
-    color: #f9f9f9 !important;
+    /* 🚀 FIX YÊU CẦU 2: Đảm bảo màu chữ là trắng */
+    color: #FFFFFF !important; 
     font-size: 22px !important; 
     font-weight: 400 !important; 
-    font-family: 'Oswald', sans-serif !important; 
+    font-family: 'Oswald', sans-serif !important;
     padding: 2px 12px; 
 }}
 div[data-testid="stMarkdownContainer"] p {{
@@ -530,11 +537,13 @@ div[data-testid="stMarkdownContainer"] p {{
 }}
 .stButton>button:hover {{ background-color: #a89073 !important; }}
 .question-separator {{
-    margin: 15px 0; height: 1px;
+    margin: 15px 0;
+    height: 1px;
     background: linear-gradient(to right, transparent, #FFDD00, transparent); opacity: 0.5;
 }}
 div.stSelectbox label p {{
-    color: #33FF33 !important; font-size: 1.25rem !important;
+    color: #33FF33 !important;
+    font-size: 1.25rem !important;
     font-family: 'Oswald', sans-serif !important;
 }}
 </style>
@@ -594,7 +603,8 @@ if bank_choice != "----":
         doc_selected = st.selectbox("Chọn Phụ lục:", doc_options)
         
         if doc_selected == "Phụ Lục 1":
-            source = "PL1.docx"
+            # 🚀 FIX YÊU CẦU 1: Đổi đường dẫn source để đọc đúng file trong thư mục pages
+            source = "pages/PL1.docx" 
 
     # LOAD CÂU HỎI
     if is_docwise:
@@ -673,10 +683,12 @@ if bank_choice != "----":
                             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
                         
                         if is_correct: 
-                            st.success(f"✅ Đúng – Đáp án: {q['answer']}")
+                            # 🚀 FIX YÊU CẦU 3: Đổi st.success sang st.markdown, chỉ in đậm đáp án
+                            st.markdown(f"✅ Đúng – Đáp án: **{q['answer']}**") 
                             score += 1
                         else: 
-                            st.error(f"❌ Sai – Đáp án đúng: {q['answer']}")
+                            # 🚀 FIX YÊU CẦU 3: Đổi st.error sang st.markdown, chỉ in đậm đáp án đúng
+                            st.markdown(f"❌ Sai – Đáp án đúng: **{q['answer']}**") 
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
 
                     st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{len(batch)}</h3></div>', unsafe_allow_html=True)
@@ -692,7 +704,8 @@ if bank_choice != "----":
                                 st.session_state.current_group_idx += 1
                                 st.session_state.submitted = False
                                 st.rerun()
-                        else: st.info("🎉 Đã hoàn thành tất cả các nhóm câu hỏi!")
+                        else: 
+                            st.info("🎉 Đã hoàn thành tất cả các nhóm câu hỏi!")
             else: st.warning("Không có câu hỏi trong nhóm này.")
         else: st.warning("Không có câu hỏi nào trong ngân hàng này.")
 
