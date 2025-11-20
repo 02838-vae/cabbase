@@ -9,7 +9,7 @@ import os
 import random 
 
 # ====================================================
-# \u2699\ufe0f HAM HO TRO VA FILE I/O
+# ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
 # ====================================================
 def clean_text(s: str) -> str:
     if s is None:
@@ -18,20 +18,16 @@ def clean_text(s: str) -> str:
 
 def read_docx_paragraphs(source):
     try:
-        # 1. Thu duong dan tuong doi (vi du: cabbank.docx)
         doc = Document(os.path.join(os.path.dirname(__file__), source))
     except Exception as e:
         try:
-            # 2. Thu duong dan co ban (vi du: pages/PL1.docx)
-            doc = Document(source)
+             doc = Document(source)
         except Exception:
             try:
-                # 3. Thu duong dan "pages/source" (chu yeu cho fallback)
                 doc = Document(f"pages/{source}")
             except Exception:
                 return []
-    # Thay the p.text.strip() de tranh loi encoding
-    return [p.text.strip() for p.paragraphs if p.text.strip()]
+    return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
 
 def get_base64_encoded_file(file_path):
     fallback_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
@@ -49,7 +45,7 @@ def get_base64_encoded_file(file_path):
         return fallback_base64
 
 # ====================================================
-# \uD83D\uDCD7 PARSER 1: NGAN HANG KY THUAT (CABBANK)
+# 🧩 PARSER 1: NGÂN HÀNG KỸ THUẬT (CABBANK)
 # ====================================================
 def parse_cabbank(source):
     paras = read_docx_paragraphs(source)
@@ -79,7 +75,7 @@ def parse_cabbank(source):
                 if current["question"] and current["options"]:
                     if not current["answer"] and current["options"]:
                         current["answer"] = current["options"][0]
-                questions.append(current)
+                    questions.append(current)
                 current = {"question": clean_text(pre_text), "options": [], "answer": ""}
             else:
                 if current["question"]: current["question"] += " " + clean_text(pre_text)
@@ -101,7 +97,7 @@ def parse_cabbank(source):
     return questions
 
 # ====================================================
-# \uD83D\uDCD7 PARSER 2: NGAN HANG LUAT (LAWBANK)
+# 🧩 PARSER 2: NGÂN HÀNG LUẬT (LAWBANK)
 # ====================================================
 def parse_lawbank(source):
     paras = read_docx_paragraphs(source)
@@ -156,14 +152,14 @@ def parse_lawbank(source):
     return questions
 
 # ====================================================
-# \uD83D\uDCD7 PARSER 3: PHU LUC 1 (DINH DANG DAC BIET)
+# 🧩 PARSER 3: PHỤ LỤC 1 (ĐỊNH DẠNG ĐẶC BIỆT)
 # ====================================================
 def parse_pl1(source):
     """
-    Parser cho dinh dang PL1:
-    - Cau hoi bat dau bang so (1. ...)
-    - Dap an la cac dong tiep theo (tu dong gan A, B, C, D)
-    - Dap an dung co dau (*) o cuoi
+    Parser cho định dạng PL1:
+    - Câu hỏi bắt đầu bằng số (1. ...)
+    - Đáp án là các dòng tiếp theo (tự động gán A, B, C, D)
+    - Đáp án đúng có dấu (*) ở cuối
     """
     paras = read_docx_paragraphs(source)
     if not paras: return []
@@ -171,39 +167,40 @@ def parse_pl1(source):
     questions = []
     current = {"question": "", "options": [], "answer": ""}
     
-    # Regex bat dau cau hoi: So + dau cham (VD: "1.", "10.")
+    # Regex bắt đầu câu hỏi: Số + dấu chấm (VD: "1.", "10.")
     q_start_pat = re.compile(r'^\d+[\.\)]\s+')
     
-    # Danh sach nhan tu dong vi file Word bi an A,B,C
+    # Danh sách nhãn tự động vì file Word bị ẩn A,B,C
     labels = ["A", "B", "C", "D", "E", "F"]
 
     for p in paras:
         clean_p = clean_text(p)
         if not clean_p: continue
         
-        # Kiem tra xem co phai bat dau cau hoi moi khong
+        # Kiểm tra xem có phải bắt đầu câu hỏi mới không
         if q_start_pat.match(clean_p):
-            # Luu cau hoi cu truoc khi sang cau moi
+            # Lưu câu hỏi cũ trước khi sang câu mới
             if current["question"]:
-                # Neu chua co dap an dung, mac dinh lay A (hoac xu ly loi)
+                # Nếu chưa có đáp án đúng, mặc định lấy A (hoặc xử lý lỗi)
                 if not current["answer"] and current["options"]:
                     current["answer"] = current["options"][0]
                 questions.append(current)
             
-            # Loai bo so thu tu o dau cau hoi de hien thi dep hon
+            # Loại bỏ số thứ tự ở đầu câu hỏi để hiển thị đẹp hơn (vì UI đã tự đánh số)
+            # Hoặc giữ nguyên nếu muốn. Ở đây ta xóa "1. " đi.
             q_text = q_start_pat.sub('', clean_p)
             current = {"question": q_text, "options": [], "answer": ""}
         
         else:
-            # Neu khong phai cau hoi, thi la dap an
-            if current["question"]: # Chi xu ly neu da co cau hoi
+            # Nếu không phải câu hỏi, thì là đáp án (do lỗi dính dòng, ta coi mỗi dòng là 1 đáp án)
+            if current["question"]: # Chỉ xử lý nếu đã có câu hỏi
                 is_correct = False
-                # Kiem tra dau hieu dap an dung (*)
+                # Kiểm tra dấu hiệu đáp án đúng (*)
                 if "(*)" in clean_p:
                     is_correct = True
-                clean_p = clean_p.replace("(*)", "").strip() # Xoa dau (*) di
+                    clean_p = clean_p.replace("(*)", "").strip() # Xóa dấu (*) đi
                 
-                # Tu dong gan nhan A, B, C, D
+                # Tự động gán nhãn A, B, C, D
                 idx = len(current["options"])
                 if idx < len(labels):
                     label = labels[idx]
@@ -213,7 +210,7 @@ def parse_pl1(source):
                     if is_correct:
                         current["answer"] = opt_text
 
-    # Luu cau cuoi cung
+    # Lưu câu cuối cùng
     if current["question"]:
         if not current["answer"] and current["options"]:
             current["answer"] = current["options"][0]
@@ -222,12 +219,12 @@ def parse_pl1(source):
     return questions
 
 # ====================================================
-# \u2B50\ufe0f HAM: XEM TOAN BO CAU HOI
+# 🌟 HÀM: XEM TOÀN BỘ CÂU HỎI
 # ====================================================
 def display_all_questions(questions):
-    st.markdown('<div class="result-title"><h3>&#x1F4DA; TOAN BO NGAN HANG CAU HOI</h3></div>', unsafe_allow_html=True)
+    st.markdown('<div class="result-title"><h3>📚 TOÀN BỘ NGÂN HÀNG CÂU HỎI</h3></div>', unsafe_allow_html=True)
     if not questions:
-        st.warning("Khong co cau hoi nao de hien thi.")
+        st.warning("Không có câu hỏi nào để hiển thị.")
         return
     
     for i, q in enumerate(questions, start=1):
@@ -235,17 +232,18 @@ def display_all_questions(questions):
         
         for opt in q["options"]:
             if clean_text(opt) == clean_text(q["answer"]):
-                # Dap an dung: Xanh la
+                # Đáp án đúng: Xanh lá
                 color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
             else:
-                # Dap an thuong: Trang
+                # Đáp án thường: Trắng
                 color_style = "color:#FFFFFF;"
+            
             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
 
 # ====================================================
-# \u2B50\ufe0f HAM: TEST MODE
+# 🌟 HÀM: TEST MODE
 # ====================================================
 def get_random_questions(questions, count=50):
     if len(questions) <= count: return questions
@@ -265,10 +263,10 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         st.session_state[f"{test_key_prefix}_questions"] = []
 
     if not st.session_state[f"{test_key_prefix}_started"]:
-        st.markdown('<div class="result-title"><h3>&#x1F4DD; LAM BAI TEST 50 CAU</h3></div>', unsafe_allow_html=True)
-        st.info(f"Bai test se gom **{min(TOTAL_QUESTIONS, len(questions))}** cau hoi duoc chon ngau nhien tu **{bank_name}**. Ty le dat (PASS) la **{int(PASS_RATE*100)}%** ({int(TOTAL_QUESTIONS * PASS_RATE)} cau dung).")
+        st.markdown('<div class="result-title"><h3>📝 LÀM BÀI TEST 50 CÂU</h3></div>', unsafe_allow_html=True)
+        st.info(f"Bài test sẽ gồm **{min(TOTAL_QUESTIONS, len(questions))}** câu hỏi được chọn ngẫu nhiên từ **{bank_name}**. Tỷ lệ đạt (PASS) là **{int(PASS_RATE*100)}%** ({int(TOTAL_QUESTIONS * PASS_RATE)} câu đúng).")
         
-        if st.button("\uD83D\uDE80 Bat dau Bai Test", key=f"{test_key_prefix}_start_btn"):
+        if st.button("🚀 Bắt đầu Bài Test", key=f"{test_key_prefix}_start_btn"):
             st.session_state[f"{test_key_prefix}_questions"] = get_random_questions(questions, TOTAL_QUESTIONS)
             st.session_state[f"{test_key_prefix}_started"] = True
             st.session_state[f"{test_key_prefix}_submitted"] = False
@@ -277,18 +275,18 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         return
 
     if not st.session_state[f"{test_key_prefix}_submitted"]:
-        st.markdown('<div class="result-title"><h3>\u23F3 DANG LAM BAI TEST</h3></div>', unsafe_allow_html=True)
+        st.markdown('<div class="result-title"><h3>⏳ ĐANG LÀM BÀI TEST</h3></div>', unsafe_allow_html=True)
         test_batch = st.session_state[f"{test_key_prefix}_questions"]
         for i, q in enumerate(test_batch, start=1):
             st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
             st.radio("", q["options"], key=f"{test_key_prefix}_q_{i}")
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
-        if st.button("\u2705 Nop bai Test", key=f"{test_key_prefix}_submit_btn"):
+        if st.button("✅ Nộp bài Test", key=f"{test_key_prefix}_submit_btn"):
             st.session_state[f"{test_key_prefix}_submitted"] = True
             st.rerun()
             
     else:
-        st.markdown('<div class="result-title"><h3>\uD83C\uDF89 KET QUA BAI TEST</h3></div>', unsafe_allow_html=True)
+        st.markdown('<div class="result-title"><h3>🎉 KẾT QUẢ BÀI TEST</h3></div>', unsafe_allow_html=True)
         test_batch = st.session_state[f"{test_key_prefix}_questions"]
         score = 0
         for i, q in enumerate(test_batch, start=1):
@@ -305,24 +303,24 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
                     color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8);"
                 else:
                     color_style = "color:#FFFFFF;"
+                
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
 
             if is_correct: score += 1
-            # FIX YEU CAU 4: Chuyen sang dung markdown de kiem soat dinh dang
-            st.markdown(f"\uD83D\uDCA1 Dap an dung: **{q['answer']}**") 
+            st.info(f"Đáp án đúng: **{q['answer']}**", icon="💡")
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
         
         total_q = len(test_batch)
         pass_threshold = total_q * PASS_RATE
-        st.markdown(f'<div class="result-title"><h3>\uD83C\uDFAF KET QUA: {score}/{total_q}</h3></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{total_q}</h3></div>', unsafe_allow_html=True)
 
         if score >= pass_threshold:
             st.balloons()
-            st.success(f"\uD83C\uDF8A **CHUC MUNG!** Ban da DAT (PASS).")
+            st.success(f"🎊 **CHÚC MỪNG!** Bạn đã ĐẠT (PASS).")
         else:
-            st.error(f"\uD83D\uDE22 **KHONG DAT (FAIL)**.")
+            st.error(f"😢 **KHÔNG ĐẠT (FAIL)**.")
 
-        if st.button("\u21BA\ufe0f Lam lai Bai Test", key=f"{test_key_prefix}_restart_btn"):
+        if st.button("🔄 Làm lại Bài Test", key=f"{test_key_prefix}_restart_btn"):
             for i in range(1, total_q + 1):
                 st.session_state.pop(f"{test_key_prefix}_q_{i}", None) 
             st.session_state[f"{test_key_prefix}_started"] = False
@@ -330,9 +328,9 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             st.rerun()
 
 # ====================================================
-# \uD83D\uDDA5\ufe0f GIAO DIEN STREAMLIT
+# 🖥️ GIAO DIỆN STREAMLIT
 # ====================================================
-st.set_page_config(page_title="Ngan hang trac nghiem", layout="wide")
+st.set_page_config(page_title="Ngân hàng trắc nghiệm", layout="wide")
 
 PC_IMAGE_FILE = "bank_PC.jpg"
 MOBILE_IMAGE_FILE = "bank_mobile.jpg"
@@ -390,29 +388,28 @@ html, body, .stApp {{
     }}
 }}
 
-/* Noi dung noi len tren nen */
+/* Nội dung nổi lên trên nền */
 [data-testid="stAppViewContainer"],
 [data-testid="stMainBlock"],
 .main {{
     background-color: transparent !important;
 }}
 
-/* An UI */
+/* Ẩn UI */
 #MainMenu, footer, header {{visibility: hidden; height: 0;}}
 [data-testid="stHeader"] {{display: none;}}
 
 /* BUTTON HOME */
 #back-to-home-btn-container {{
-    position: fixed;
-    top: 10px; left: 10px; 
+    position: fixed; top: 10px; left: 10px; 
     width: auto !important; z-index: 1500; 
-    display: inline-block;
+    display: inline-block; 
 }}
 a#manual-home-btn {{
     background-color: rgba(0, 0, 0, 0.85);
     color: #FFEA00;
     border: 2px solid #FFEA00;
-    padding: 5px 10px;
+    padding: 5px 10px; 
     border-radius: 8px; 
     font-weight: bold;
     font-size: 14px; 
@@ -420,7 +417,7 @@ a#manual-home-btn {{
     font-family: 'Oswald', sans-serif;
     text-decoration: none;
     display: inline-block; 
-    white-space: nowrap;
+    white-space: nowrap; 
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }}
 a#manual-home-btn:hover {{
@@ -429,11 +426,10 @@ a#manual-home-btn:hover {{
     transform: scale(1.05);
 }}
 
-/* TITLE CHINH */
+/* TITLE CHÍNH */
 #main-title-container {{
     position: relative; left: 0; top: 0; width: 100%;
-    height: 120px; overflow: hidden;
-    pointer-events: none;
+    height: 120px; overflow: hidden; pointer-events: none;
     background-color: transparent; padding-top: 20px; z-index: 1200; 
 }}
 #main-title-container h1 {{
@@ -449,14 +445,13 @@ a#manual-home-btn:hover {{
     -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
     animation: scrollRight 15s linear infinite, colorShift 8s ease infinite;
     text-shadow: 2px 2px 8px rgba(255, 255, 255, 0.3);
-    position: absolute;
-    left: 0; top: 5px; 
+    position: absolute; left: 0; top: 5px; 
     line-height: 1.5 !important;
 }}
 
-/* SO 1 */
+/* SỐ 1 */
 .number-one {{
-    font-family: 'Oswald', sans-serif !important;
+    font-family: 'Oswald', sans-serif !important; 
     font-size: 1em !important; 
     font-weight: 700;
     display: inline-block;
@@ -470,31 +465,29 @@ a#manual-home-btn:hover {{
 }}
 
 .main > div:first-child {{
-    padding-top: 40px !important; padding-bottom: 2rem !important;
+    padding-top: 40px !important; padding-bottom: 2rem !important; 
 }}
 
-/* FIX YEU CAU 2: TITLE LON NHUNG VAN 1 HANG */
+/* FIX YÊU CẦU 2: TITLE LỚN NHƯNG VẪN 1 HÀNG */
 #sub-static-title, .result-title {{
-    margin-top: 150px;
-    margin-bottom: 30px; text-align: center;
+    margin-top: 150px; margin-bottom: 30px; text-align: center;
 }}
 #sub-static-title h2, .result-title h3 {{
     font-family: 'Playfair Display', serif;
-    font-size: 2rem;
-    /* Desktop */
+    font-size: 2rem; /* Desktop */
     color: #FFEA00;
-    text-shadow: 0 0 15px #FFEA00;
+    text-shadow: 0 0 15px #FFEA00; 
 }}
 @media (max-width: 768px) {{
     #sub-static-title h2, .result-title h3 {{
-        /* Tang len 4.8vw va giam spacing de chu to hon ma van 1 dong */
-        font-size: 4.8vw !important;
+        /* Tăng lên 4.8vw và giảm spacing để chữ to hơn mà vẫn 1 dòng */
+        font-size: 4.8vw !important; 
         letter-spacing: -0.5px;
         white-space: nowrap; 
     }}
 }}
 
-/* STYLE CAU HOI & DAP AN */
+/* STYLE CÂU HỎI & ĐÁP ÁN */
 .bank-question-text {{
     color: #FFDD00 !important;
     font-weight: 700 !important;
@@ -506,19 +499,18 @@ a#manual-home-btn:hover {{
 
 .bank-answer-text {{
     font-family: 'Oswald', sans-serif !important;
-    font-weight: 400 !important;
+    font-weight: 400 !important; 
     font-size: 22px !important; 
     padding: 5px 15px; margin: 2px 0;
     line-height: 1.5 !important; 
-    display: block;
+    display: block; 
 }}
 
 .stRadio label {{
-    /* FIX YEU CAU 2: Dam bao mau chu la trang */
-    color: #FFFFFF !important; 
+    color: #f9f9f9 !important;
     font-size: 22px !important; 
     font-weight: 400 !important; 
-    font-family: 'Oswald', sans-serif !important;
+    font-family: 'Oswald', sans-serif !important; 
     padding: 2px 12px; 
 }}
 div[data-testid="stMarkdownContainer"] p {{
@@ -538,13 +530,11 @@ div[data-testid="stMarkdownContainer"] p {{
 }}
 .stButton>button:hover {{ background-color: #a89073 !important; }}
 .question-separator {{
-    margin: 15px 0;
-    height: 1px;
+    margin: 15px 0; height: 1px;
     background: linear-gradient(to right, transparent, #FFDD00, transparent); opacity: 0.5;
 }}
 div.stSelectbox label p {{
-    color: #33FF33 !important;
-    font-size: 1.25rem !important;
+    color: #33FF33 !important; font-size: 1.25rem !important;
     font-family: 'Oswald', sans-serif !important;
 }}
 </style>
@@ -552,27 +542,27 @@ div.stSelectbox label p {{
 st.markdown(css_style, unsafe_allow_html=True)
 
 # ====================================================
-# \uD83D\uDDFA\ufe0f HEADER & BODY
+# 🧭 HEADER & BODY
 # ====================================================
 st.markdown("""
 <div id="header-content-wrapper">
     <div id="back-to-home-btn-container">
-        <a id="manual-home-btn" href="/?skip_intro=1" target="_self">&#x1F3E0; Ve Trang Chu</a>
+        <a id="manual-home-btn" href="/?skip_intro=1" target="_self">🏠 Về Trang Chủ</a>
     </div>
-    <div id="main-title-container"><h1>TO BAO DUONG SO <span class="number-one">1</span></h1></div>
+    <div id="main-title-container"><h1>TỔ BẢO DƯỠNG SỐ <span class="number-one">1</span></h1></div>
 </div>
 """, unsafe_allow_html=True)
 
-st.markdown('<div id="sub-static-title"><h2>NGAN HANG TRAC NGHIEM</h2></div>', unsafe_allow_html=True)
+st.markdown('<div id="sub-static-title"><h2>NGÂN HÀNG TRẮC NGHIỆM</h2></div>', unsafe_allow_html=True)
 
 if "current_group_idx" not in st.session_state: st.session_state.current_group_idx = 0
 if "submitted" not in st.session_state: st.session_state.submitted = False
 if "current_mode" not in st.session_state: st.session_state.current_mode = "group"
 if "last_bank_choice" not in st.session_state: st.session_state.last_bank_choice = "----" 
 
-# CAP NHAT LIST NGAN HANG (Loai bo dau de tranh loi encoding)
-BANK_OPTIONS = ["----", "Ngan hang Ky thuat", "Ngan hang Luat VAECO", "Ngan hang Docwise"]
-bank_choice = st.selectbox("Chon ngan hang:", BANK_OPTIONS, index=BANK_OPTIONS.index(st.session_state.get('bank_choice_val', '----')), key="bank_selector_master")
+# FIX YÊU CẦU 1, 3: CẬP NHẬT LIST NGÂN HÀNG
+BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật VAECO", "Ngân hàng Docwise"]
+bank_choice = st.selectbox("Chọn ngân hàng:", BANK_OPTIONS, index=BANK_OPTIONS.index(st.session_state.get('bank_choice_val', '----')), key="bank_selector_master")
 st.session_state.bank_choice_val = bank_choice
 
 if st.session_state.get('last_bank_choice') != bank_choice and bank_choice != "----":
@@ -589,47 +579,46 @@ if st.session_state.get('last_bank_choice') != bank_choice and bank_choice != "-
     st.rerun()
 
 if bank_choice != "----":
-    # XU LY LOGIC NGUON DU LIEU
+    # XỬ LÝ LOGIC NGUỒN DỮ LIỆU
     source = ""
     is_docwise = False
     
-    if "Ky thuat" in bank_choice:
+    if "Kỹ thuật" in bank_choice:
         source = "cabbank.docx"
-    elif "Luat VAECO" in bank_choice:
+    elif "Luật VAECO" in bank_choice:
         source = "lawbank.docx"
     elif "Docwise" in bank_choice:
         is_docwise = True
-        # Dropdown phu cho Docwise
-        doc_options = ["Phu Luc 1"]
-        doc_selected = st.selectbox("Chon Phu luc:", doc_options)
+        # FIX YÊU CẦU 3: Dropdown phụ cho Docwise
+        doc_options = ["Phụ Lục 1"]
+        doc_selected = st.selectbox("Chọn Phụ lục:", doc_options)
         
-        if doc_selected == "Phu Luc 1":
-            # \uD83D\uDE80 FIX YEU CAU 1: Doi duong dan source de doc dung file trong thu muc pages
-            source = "pages/PL1.docx" 
+        if doc_selected == "Phụ Lục 1":
+            source = "PL1.docx"
 
-    # LOAD CAU HOI
+    # LOAD CÂU HỎI
     if is_docwise:
-        # Docwise dung parser dac biet PL1
+        # Docwise dùng parser đặc biệt PL1
         questions = parse_pl1(source)
-    elif "Ky thuat" in bank_choice:
+    elif "Kỹ thuật" in bank_choice:
         questions = parse_cabbank(source)
     else:
         questions = parse_lawbank(source)
 
     if not questions:
-        st.error(f"\u274C Khong doc duoc cau hoi nao tu file **{source}**.")
+        st.error(f"❌ Không đọc được câu hỏi nào từ file **{source}**.")
         st.stop() 
     
     total = len(questions)
     
     # --- MODE: GROUP ---
     if st.session_state.current_mode == "group":
-        st.markdown('<div class="result-title" style="margin-top: 0px;"><h3>Luyen tap theo nhom (10 cau/nhom)</h3></div>', unsafe_allow_html=True)
+        st.markdown('<div class="result-title" style="margin-top: 0px;"><h3>Luyện tập theo nhóm (10 câu/nhóm)</h3></div>', unsafe_allow_html=True)
         group_size = 10
         if total > 0:
-            groups = [f"Cau {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
+            groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
             if st.session_state.current_group_idx >= len(groups): st.session_state.current_group_idx = 0
-            selected = st.selectbox("Chon nhom cau:", groups, index=st.session_state.current_group_idx, key="group_selector")
+            selected = st.selectbox("Chọn nhóm câu:", groups, index=st.session_state.current_group_idx, key="group_selector")
             new_idx = groups.index(selected)
             if st.session_state.current_group_idx != new_idx:
                 st.session_state.current_group_idx = new_idx
@@ -643,11 +632,11 @@ if bank_choice != "----":
             st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
             col_all_bank, col_test = st.columns(2)
             with col_all_bank:
-                if st.button("\uD83D\uDCD6 Hien thi toan bo ngan hang", key="btn_show_all"):
+                if st.button("📖 Hiển thị toàn bộ ngân hàng", key="btn_show_all"):
                     st.session_state.current_mode = "all"
                     st.rerun()
             with col_test:
-                if st.button("Lam bai test", key="btn_start_test"):
+                if st.button("Làm bài test", key="btn_start_test"):
                     st.session_state.current_mode = "test"
                     bank_slug_new = bank_choice.split()[-1].lower()
                     test_key_prefix = f"test_{bank_slug_new}"
@@ -663,7 +652,7 @@ if bank_choice != "----":
                         st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
                         st.radio("", q["options"], key=f"q_{i}")
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
-                    if st.button("\u2705 Nop bai", key="submit_group"):
+                    if st.button("✅ Nộp bài", key="submit_group"):
                         st.session_state.submitted = True
                         st.rerun()
                 else:
@@ -684,41 +673,38 @@ if bank_choice != "----":
                             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
                         
                         if is_correct: 
-                            # FIX YEU CAU 3: Khong in dam, in dam dap an dung
-                            st.markdown(f"\u2705 Dung &ndash; Dap an: **{q['answer']}**") 
+                            st.success(f"✅ Đúng – Đáp án: {q['answer']}")
                             score += 1
                         else: 
-                            # FIX YEU CAU 3: Khong in dam, in dam dap an dung
-                            st.markdown(f"\u274C Sai &ndash; Dap an dung: **{q['answer']}**") 
+                            st.error(f"❌ Sai – Đáp án đúng: {q['answer']}")
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
 
-                    st.markdown(f'<div class="result-title"><h3>\uD83C\uDFAF KET QUA: {score}/{len(batch)}</h3></div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{len(batch)}</h3></div>', unsafe_allow_html=True)
                     col_reset, col_next = st.columns(2)
                     with col_reset:
-                        if st.button("\u21BA\ufe0f Lam lai nhom nay", key="reset_group"):
+                        if st.button("🔄 Làm lại nhóm này", key="reset_group"):
                             for i in range(start+1, end+1): st.session_state.pop(f"q_{i}", None) 
                             st.session_state.submitted = False
                             st.rerun()
                     with col_next:
                         if st.session_state.current_group_idx < len(groups) - 1:
-                            if st.button("\u27A1\ufe0f Tiep tuc nhom sau", key="next_group"):
+                            if st.button("➡️ Tiếp tục nhóm sau", key="next_group"):
                                 st.session_state.current_group_idx += 1
                                 st.session_state.submitted = False
                                 st.rerun()
-                        else: 
-                            st.info("\uD83C\uDF89 Da hoan thanh tat ca cac nhom cau hoi!")
-            else: st.warning("Khong co cau hoi trong nhom nay.")
-        else: st.warning("Khong co cau hoi nao trong ngan hang nay.")
+                        else: st.info("🎉 Đã hoàn thành tất cả các nhóm câu hỏi!")
+            else: st.warning("Không có câu hỏi trong nhóm này.")
+        else: st.warning("Không có câu hỏi nào trong ngân hàng này.")
 
     elif st.session_state.current_mode == "all":
-        if st.button("\u2B05\ufe0f Quay lai che do Luyen tap theo nhom"):
+        if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
             st.session_state.current_mode = "group"
             st.rerun()
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
         display_all_questions(questions)
         
     elif st.session_state.current_mode == "test":
-        if st.button("\u2B05\ufe0f Quay lai che do Luyen tap theo nhom"):
+        if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
             st.session_state.current_mode = "group"
             st.rerun()
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
