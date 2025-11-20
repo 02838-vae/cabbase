@@ -168,7 +168,6 @@ def display_all_questions(questions):
                 # Đáp án thường: Trắng
                 color_style = "color:#FFFFFF;"
             
-            # FIX YÊU CẦU 2: Sử dụng class .bank-answer-text (font-weight: 400)
             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
@@ -228,11 +227,9 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
             for opt in q["options"]:
                 opt_clean = clean_text(opt)
-                # FIX YÊU CẦU 2: Không gạch chân, chữ thường
                 if opt_clean == correct:
                     color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
                 elif opt_clean == clean_text(selected_opt):
-                    # Đáp án sai: Màu đỏ, KHÔNG GẠCH CHÂN (removed text-decoration)
                     color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8);"
                 else:
                     color_style = "color:#FFFFFF;"
@@ -295,13 +292,11 @@ html, body, .stApp {{
     position: relative;
 }}
 
-/* FIX YÊU CẦU 3: BACKGROUND MỜ & VÀNG NHƯNG KHÔNG MỜ CHỮ */
-/* 1. Loại bỏ background trực tiếp ở .stApp */
+/* FIX YÊU CẦU 3: BACKGROUND RÕ HƠN (BỎ BLUR, TĂNG BRIGHTNESS) */
 .stApp {{
     background: none !important;
 }}
 
-/* 2. Tạo lớp giả ::before để chứa background và filter */
 .stApp::before {{
     content: "";
     position: fixed;
@@ -312,10 +307,10 @@ html, body, .stApp {{
     background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed;
     background-size: cover;
     
-    /* Filter vintage + blur nhẹ */
-    filter: sepia(0.6) brightness(0.8) blur(3px);
+    /* FILTER ĐÃ CHỈNH: Sepia nhẹ hơn, không blur, sáng hơn */
+    filter: sepia(0.5) brightness(0.9) blur(0px); 
     
-    z-index: -1; /* Đẩy ra sau nội dung */
+    z-index: -1; 
     pointer-events: none;
 }}
 
@@ -387,6 +382,16 @@ a#manual-home-btn:hover {{
     line-height: 1.5 !important;
 }}
 
+/* FIX YÊU CẦU 1: SỐ 1 CÂN BẰNG VỚI CHỮ */
+.number-one {{
+    font-family: 'Oswald', sans-serif !important; /* Dùng font không chân blocky */
+    font-size: 1.1em !important; /* Tăng size nhẹ để cao bằng chữ */
+    font-weight: 700;
+    vertical-align: middle; /* Căn giữa theo chiều dọc */
+    display: inline-block;
+    margin-bottom: 5px; /* Tinh chỉnh vị trí */
+}}
+
 @media (max-width: 768px) {{
     #back-to-home-btn-container {{ top: 5px; left: 5px; }}
     #main-title-container {{ height: 100px; padding-top: 10px; }}
@@ -398,7 +403,7 @@ a#manual-home-btn:hover {{
     padding-top: 40px !important; padding-bottom: 2rem !important; 
 }}
 
-/* FIX YÊU CẦU 1: SUB-TITLE MOBILE */
+/* FIX YÊU CẦU 2: SUB-TITLE MOBILE LỚN HƠN (6.5vw) */
 #sub-static-title, .result-title {{
     margin-top: 150px; margin-bottom: 30px; text-align: center;
 }}
@@ -408,41 +413,37 @@ a#manual-home-btn:hover {{
     color: #FFEA00;
     text-shadow: 0 0 15px #FFEA00; 
 }}
-/* Mobile specific for Sub-title */
 @media (max-width: 768px) {{
     #sub-static-title h2, .result-title h3 {{
-        font-size: 5vw !important; /* Tự động co nhỏ để vừa 1 dòng */
-        white-space: nowrap; /* Ngăn xuống dòng */
+        /* Tăng từ 5vw lên 6.5vw để to hơn nhưng vẫn 1 hàng */
+        font-size: 6.5vw !important; 
+        white-space: nowrap; 
     }}
 }}
 
-/* FIX YÊU CẦU 2: STYLE CÂU HỎI & ĐÁP ÁN (THƯỜNG, KHÔNG ĐẬM) */
-
-/* 1. Câu hỏi */
+/* STYLE CÂU HỎI & ĐÁP ÁN */
 .bank-question-text {{
     color: #FFDD00 !important;
-    font-weight: 700 !important; /* Câu hỏi vẫn đậm để phân biệt */
+    font-weight: 700 !important;
     font-size: 22px !important; 
     font-family: 'Oswald', sans-serif !important;
     text-shadow: 0 0 5px rgba(255, 221, 0, 0.5);
     padding: 5px 15px; margin-bottom: 10px; line-height: 1.4 !important;
 }}
 
-/* 2. Đáp án (Kết quả) */
 .bank-answer-text {{
     font-family: 'Oswald', sans-serif !important;
-    font-weight: 400 !important; /* FIX: Chữ thường (400), không đậm (700) */
+    font-weight: 400 !important; 
     font-size: 22px !important; 
     padding: 5px 15px; margin: 2px 0;
     line-height: 1.5 !important; 
     display: block; 
 }}
 
-/* 3. Radio button (Lúc chọn) */
 .stRadio label {{
     color: #f9f9f9 !important;
     font-size: 22px !important; 
-    font-weight: 400 !important; /* FIX: Chữ thường ngay cả lúc chưa chọn */
+    font-weight: 400 !important; 
     font-family: 'Oswald', sans-serif !important; 
     padding: 2px 12px; 
 }}
@@ -450,7 +451,6 @@ div[data-testid="stMarkdownContainer"] p {{
     font-size: 22px !important; 
 }}
 
-/* NÚT */
 .stButton>button {{
     background-color: #b7a187 !important;
     color: #ffffff !important;
@@ -483,7 +483,7 @@ st.markdown("""
     <div id="back-to-home-btn-container">
         <a id="manual-home-btn" href="/?skip_intro=1" target="_self">🏠 Về Trang Chủ</a>
     </div>
-    <div id="main-title-container"><h1>TỔ BẢO DƯỠNG SỐ 1</h1></div>
+    <div id="main-title-container"><h1>TỔ BẢO DƯỠNG SỐ <span class="number-one">1</span></h1></div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -573,7 +573,6 @@ if bank_choice != "----":
                         st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
                         for opt in q["options"]:
                             opt_clean = clean_text(opt)
-                            # FIX YÊU CẦU 2: Không gạch chân, chữ thường
                             if opt_clean == correct:
                                 color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
                             elif opt_clean == clean_text(selected_opt):
