@@ -47,7 +47,7 @@ def get_base64_encoded_file(file_path):
             path_to_check = file_path 
         
         if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
-            # FIX: Thêm check trong thư mục pages/ cho ảnh
+            # Thêm check trong thư mục pages/ cho ảnh
             path_to_check = os.path.join(os.path.dirname(__file__), f"pages/{file_path}")
             if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
                 return fallback_base64
@@ -73,13 +73,13 @@ def parse_cabbank(source):
         matches = list(opt_pat.finditer(p))
         if not matches:
             if current["options"]:
-  
+                # FIX INDENT
               if current["question"] and current["options"]:
                     if not current["answer"] and current["options"]:
                         current["answer"] = current["options"][0]
                     questions.append(current)
              
-   current = {"question": clean_text(p), "options": [], "answer": ""}
+         current = {"question": clean_text(p), "options": [], "answer": ""}
             else:
                 if current["question"]: current["question"] += " " + clean_text(p)
                 else: current["question"] = clean_text(p)
@@ -88,13 +88,14 @@ def parse_cabbank(source):
         pre_text = p[:matches[0].start()].strip()
         if pre_text:
      
-       if current["options"]:
+           if current["options"]:
+                # FIX INDENT
                 if current["question"] and current["options"]:
                     if not current["answer"] and current["options"]:
                         current["answer"] = current["options"][0]
                     questions.append(current)
    
-             current = {"question": clean_text(pre_text), "options": [], "answer": ""}
+               current = {"question": clean_text(pre_text), "options": [], "answer": ""}
             else:
                 if current["question"]: current["question"] += " " + clean_text(pre_text)
                 else: current["question"] = clean_text(pre_text)
@@ -134,6 +135,7 @@ def parse_lawbank(source):
         
         if not matches:
             if current["options"]:
+                # FIX INDENT
                 if current["question"] and 
 current["options"]:
                     if not current["answer"] and current["options"]:
@@ -141,7 +143,7 @@ current["options"]:
                     questions.append(current)
                 current = {"question": clean_text(p), "options": [], "answer": ""}
        
-     else:
+           else:
                 if current["question"]: current["question"] += " " + clean_text(p)
                 else: current["question"] = clean_text(p)
             continue
@@ -150,13 +152,14 @@ current["options"]:
         pre_text = p[:first_match.start()].strip()
         if pre_text:
             
-if current["options"]:
+           if current["options"]:
+                # FIX INDENT
                 if current["question"] and current["options"]:
                     if not current["answer"] and current["options"]:
                         current["answer"] = current["options"][0]
                     questions.append(current)
           
-      current = {"question": clean_text(pre_text), "options": [], "answer": ""}
+               current = {"question": clean_text(pre_text), "options": [], "answer": ""}
             else:
                 if current["question"]: current["question"] += " " + clean_text(pre_text)
                 else: current["question"] = clean_text(pre_text)
@@ -164,7 +167,7 @@ if current["options"]:
         for i, m in enumerate(matches):
             s = m.end()
        
-     e = matches[i+1].start() if i+1 < len(matches) else len(p)
+         e = matches[i+1].start() if i+1 < len(matches) else len(p)
             opt_body = clean_text(p[s:e])
             letter = m.group("letter").lower()
             option = f"{letter}.
@@ -199,8 +202,7 @@ Sử dụng raw_content (từ PDF/Text) thay vì docx paragraphs.
     current_q_data = None
     
     # Hàm nội bộ 
-để xử lý và lưu câu hỏi đã thu thập
-    def _finalize_and_save(q_data):
+   def _finalize_and_save(q_data):
         raw_options = q_data["options"]
         
         # 1. Xử lý Options: gán nhãn A, B, C và tìm đáp án đúng
@@ -208,8 +210,8 @@ Sử dụng raw_content (từ PDF/Text) thay vì docx paragraphs.
         final_answer = ""
         labels = ["A", "B", "C", "D", "E", "F", "G"]
         
-  
-      for i, opt in enumerate(raw_options):
+        # FIX INDENT
+       for i, opt in enumerate(raw_options):
             if clean_text(opt) == "":
                 continue
                 
@@ -222,7 +224,7 @@ Sử dụng raw_content (từ PDF/Text) thay vì docx paragraphs.
                 # Gán nhãn dựa trên số lượng đáp án đã xử lý
                 lbl = labels[len(processed_opts)] if len(processed_opts) < len(labels) else "-"
                
- clean = f"{lbl}. {clean}"
+               clean = f"{lbl}. {clean}"
             
             processed_opts.append(clean)
             if is_correct:
@@ -246,13 +248,13 @@ re.sub(r'^[A-Z][\.\)]\s*', '', q_data["question"]).strip()
             # Giả định mục đầu tiên trong Options chính là Question Text bị thất lạc
             first_opt_text = processed_opts[0]
       
-      # Loại bỏ nhãn A., B.,... khỏi Question Text bị thất lạc
+           # Loại bỏ nhãn A., B.,... khỏi Question Text bị thất lạc
             q_text_from_opt = re.sub(r'^[A-Z][\.\)]\s*', '', first_opt_text).strip()
             
             if q_text_from_opt and len(processed_opts) > 1: # Đảm bảo không phải câu 1 đáp án
                 q_data["question"] = q_text_from_opt
            
-     processed_opts.pop(0) # Xóa mục đã dùng làm Question Text
+           processed_opts.pop(0) # Xóa mục đã dùng làm Question Text
 
         # 3. Chỉ lưu nếu hợp lệ
         if q_data["question"] and processed_opts:
@@ -417,10 +419,10 @@ st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', 
 
             if is_correct: 
                 score += 1
-                # FIX: Diễn giải in đậm (Sử dụng st.success cho câu đúng)
+                # FIX: Diễn giải in đậm
                 st.success(f"✅ Đúng – Đáp án: **{q['answer']}**", icon="💡")
             else:
-                # FIX: Diễn giải in đậm (Sử dụng st.error cho câu sai)
+                # FIX: Diễn giải in đậm
                 st.error(f"❌ Sai – Đáp án đúng: **{q['answer']}**", icon="💡")
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
         
@@ -687,7 +689,7 @@ if "submitted" not in st.session_state: st.session_state.submitted = False
 if "current_mode" not in st.session_state: st.session_state.current_mode = "group"
 if "last_bank_choice" not in st.session_state: st.session_state.last_bank_choice = "----" 
 
-# FIX: CẬP NHẬT LIST NGÂN HÀNG
+# CẬP NHẬT LIST NGÂN HÀNG
 BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật VAECO", 
 "Ngân hàng Docwise"]
 bank_choice = st.selectbox("Chọn ngân hàng:", BANK_OPTIONS, index=BANK_OPTIONS.index(st.session_state.get('bank_choice_val', '----')), key="bank_selector_master")
@@ -735,6 +737,7 @@ LOAD CÂU HỎI
     if is_docwise and source == "PL1.pdf":
         try:
             # Lấy content từ file PDF
+            # LƯU Ý: Đây là nơi gọi tool file_content_fetcher.fetch, nếu file PL1.pdf không được upload/cấu hình, logic này sẽ fail.
             raw_content = file_content_fetcher.fetch(query=f"Nội dung file {source_id}", source_references=[source_id])
             # Parse nội dung raw text
             questions = parse_pl1(raw_content)
