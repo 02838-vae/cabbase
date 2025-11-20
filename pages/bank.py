@@ -18,8 +18,10 @@ def clean_text(s: str) -> str:
 
 def read_docx_paragraphs(source):
     try:
+        # Tìm file tương đối so với file script hiện tại
         doc = Document(os.path.join(os.path.dirname(__file__), source))
     except Exception as e:
+        # Fallback: thử đường dẫn trực tiếp hoặc thư mục pages/
         try:
              doc = Document(source)
         except Exception:
@@ -156,66 +158,101 @@ def parse_lawbank(source):
 # ====================================================
 def parse_pl1(source):
     """
-    Parser cho định dạng PL1:
-    - Câu hỏi bắt đầu bằng số (1. ...)
-    - Đáp án là các dòng tiếp theo (tự động gán A, B, C, D)
-    - Đáp án đúng có dấu (*) ở cuối
+    Parser thông minh cho PL1:
+    - Không phụ thuộc vào số thứ tự (vì Word thường ẩn số này).
+    - Dựa vào 'Choose the correct...' hoặc sự thay đổi nhóm câu hỏi.
+    - Tự động gán A, B, C nếu thiếu.
     """
     paras = read_docx_paragraphs(source)
     if not paras: return []
 
     questions = []
-    current = {"question": "", "options": [], "answer": ""}
+    current_group = []
     
-    # Regex bắt đầu câu hỏi: Số + dấu chấm (VD: "1.", "10.")
-    q_start_pat = re.compile(r'^\d+[\.\)]\s+')
-    
-    # Danh sách nhãn tự động vì file Word bị ẩn A,B,C
-    labels = ["A", "B", "C", "D", "E", "F"]
-
-    for p in paras:
-        clean_p = clean_text(p)
-        if not clean_p: continue
+    def flush_group(group):
+        if not group: return
         
-        # Kiểm tra xem có phải bắt đầu câu hỏi mới không
-        if q_start_pat.match(clean_p):
-            # Lưu câu hỏi cũ trước khi sang câu mới
-            if current["question"]:
-                # Nếu chưa có đáp án đúng, mặc định lấy A (hoặc xử lý lỗi)
-                if not current["answer"] and current["options"]:
-                    current["answer"] = current["options"][0]
-                questions.append(current)
+        # 1. Tìm dòng chứa đáp án đúng (*)
+        ans_idx = -1
+        for i, line in enumerate(group):
+            if "(*)" in line:
+                ans_idx = i
+                break
+        
+        if ans_idx == -1: return # Bỏ qua nếu không tìm thấy dấu hiệu đáp án
+        
+        # 2. Phân tách Câu hỏi và Đáp án
+        # Logic: Dòng đầu tiên là câu hỏi. Các dòng sau là đáp án.
+        # Nếu có dòng bắt đầu bằng A. B. C. thì ưu tiên dùng nó làm mốc.
+        
+        opt_start_idx = 1 # Mặc định: Dòng 0 là Question, Dòng 1 trở đi là Options
+        
+        # Kiểm tra xem có dòng nào bắt đầu bằng A. B. C. không
+        for i, line in enumerate(group):
+            if re.match(r'^[A-F][\.\)]', line):
+                opt_start_idx = i
+                break
+        
+        # Lấy nội dung câu hỏi
+        q_text = " ".join(group[:opt_start_idx])
+        # Xóa số thứ tự (1. 10.) nếu có dính vào text
+        q_text = re.sub(r'^\d+[\.\)]\s*', '', q_text).strip()
+        
+        # Xử lý các dòng đáp án
+        raw_opts = group[opt_start_idx:]
+        final_opts = []
+        final_ans = ""
+        labels = ["A", "B", "C", "D", "E", "F"]
+        
+        for i, opt in enumerate(raw_opts):
+            is_corr = "(*)" in opt
+            clean = opt.replace("(*)", "").strip()
             
-            # Loại bỏ số thứ tự ở đầu câu hỏi để hiển thị đẹp hơn (vì UI đã tự đánh số)
-            # Hoặc giữ nguyên nếu muốn. Ở đây ta xóa "1. " đi.
-            q_text = q_start_pat.sub('', clean_p)
-            current = {"question": q_text, "options": [], "answer": ""}
+            # Tự động thêm A. B. C. nếu thiếu
+            if not re.match(r'^[A-F][\.\)]', clean):
+                lbl = labels[i] if i < len(labels) else "-"
+                clean = f"{lbl}. {clean}"
+            
+            final_opts.append(clean)
+            if is_corr: final_ans = clean
         
-        else:
-            # Nếu không phải câu hỏi, thì là đáp án (do lỗi dính dòng, ta coi mỗi dòng là 1 đáp án)
-            if current["question"]: # Chỉ xử lý nếu đã có câu hỏi
-                is_correct = False
-                # Kiểm tra dấu hiệu đáp án đúng (*)
-                if "(*)" in clean_p:
-                    is_correct = True
-                    clean_p = clean_p.replace("(*)", "").strip() # Xóa dấu (*) đi
-                
-                # Tự động gán nhãn A, B, C, D
-                idx = len(current["options"])
-                if idx < len(labels):
-                    label = labels[idx]
-                    opt_text = f"{label}. {clean_p}"
-                    current["options"].append(opt_text)
-                    
-                    if is_correct:
-                        current["answer"] = opt_text
+        # Fallback nếu không tìm thấy ans (hiếm)
+        if not final_ans and final_opts: final_ans = final_opts[0]
+        
+        questions.append({
+            "question": q_text,
+            "options": final_opts,
+            "answer": final_ans
+        })
 
-    # Lưu câu cuối cùng
-    if current["question"]:
-        if not current["answer"] and current["options"]:
-            current["answer"] = current["options"][0]
-        questions.append(current)
+    # VÒNG LẶP CHÍNH DUYỆT FILE
+    for p in paras:
+        text = clean_text(p)
+        if not text: continue
         
+        # NHẬN DIỆN BẮT ĐẦU CÂU HỎI MỚI
+        # 1. Bắt đầu bằng số (1. ...)
+        # 2. Bắt đầu bằng cụm từ lệnh "Choose the correct..."
+        is_start_marker = re.match(r'^\d+[\.\)]', text) or text.lower().startswith("choose the correct") or text.lower().startswith("match the")
+        
+        # 3. Logic ngầm: Nếu nhóm cũ đã có đáp án (*), mà dòng mới KHÔNG giống đáp án (k có A,B,C hay *)
+        # -> Khả năng cao là text của câu hỏi mới bị mất số
+        has_ans_already = any("(*)" in line for line in current_group)
+        is_opt_looking = re.match(r'^[A-F][\.\)]', text) or "(*)" in text
+        
+        if is_start_marker:
+            flush_group(current_group)
+            current_group = [text]
+        elif has_ans_already and not is_opt_looking:
+            # Đã xong câu cũ, đây là text câu mới
+            flush_group(current_group)
+            current_group = [text]
+        else:
+            # Vẫn thuộc nhóm cũ (dòng tiếp theo của câu hỏi hoặc là đáp án)
+            current_group.append(text)
+            
+    # Flush nhóm cuối cùng
+    flush_group(current_group)
     return questions
 
 # ====================================================
@@ -468,7 +505,7 @@ a#manual-home-btn:hover {{
     padding-top: 40px !important; padding-bottom: 2rem !important; 
 }}
 
-/* FIX YÊU CẦU 2: TITLE LỚN NHƯNG VẪN 1 HÀNG */
+/* FIX YÊU CẦU 1: TITLE LỚN HƠN (4.8vw) */
 #sub-static-title, .result-title {{
     margin-top: 150px; margin-bottom: 30px; text-align: center;
 }}
@@ -480,9 +517,9 @@ a#manual-home-btn:hover {{
 }}
 @media (max-width: 768px) {{
     #sub-static-title h2, .result-title h3 {{
-        /* Tăng lên 4.8vw và giảm spacing để chữ to hơn mà vẫn 1 dòng */
+        /* Tăng size lên 4.8vw và giảm spacing */
         font-size: 4.8vw !important; 
-        letter-spacing: -0.5px;
+        letter-spacing: -0.5px; 
         white-space: nowrap; 
     }}
 }}
@@ -560,7 +597,7 @@ if "submitted" not in st.session_state: st.session_state.submitted = False
 if "current_mode" not in st.session_state: st.session_state.current_mode = "group"
 if "last_bank_choice" not in st.session_state: st.session_state.last_bank_choice = "----" 
 
-# FIX YÊU CẦU 1, 3: CẬP NHẬT LIST NGÂN HÀNG
+# FIX: CẬP NHẬT LIST NGÂN HÀNG
 BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật VAECO", "Ngân hàng Docwise"]
 bank_choice = st.selectbox("Chọn ngân hàng:", BANK_OPTIONS, index=BANK_OPTIONS.index(st.session_state.get('bank_choice_val', '----')), key="bank_selector_master")
 st.session_state.bank_choice_val = bank_choice
@@ -589,7 +626,7 @@ if bank_choice != "----":
         source = "lawbank.docx"
     elif "Docwise" in bank_choice:
         is_docwise = True
-        # FIX YÊU CẦU 3: Dropdown phụ cho Docwise
+        # Dropdown phụ cho Docwise
         doc_options = ["Phụ Lục 1"]
         doc_selected = st.selectbox("Chọn Phụ lục:", doc_options)
         
@@ -598,7 +635,7 @@ if bank_choice != "----":
 
     # LOAD CÂU HỎI
     if is_docwise:
-        # Docwise dùng parser đặc biệt PL1
+        # Dùng parser mới cho PL1
         questions = parse_pl1(source)
     elif "Kỹ thuật" in bank_choice:
         questions = parse_cabbank(source)
