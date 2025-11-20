@@ -230,6 +230,7 @@ def display_all_questions(questions):
         return
     
     for i, q in enumerate(questions, start=1):
+        # Sửa: Đảm bảo chuỗi string là UTF-8 an toàn
         st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
         
         for opt in q["options"]:
@@ -307,7 +308,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
 
             if is_correct: score += 1
-            # 🚀 FIX YÊU CẦU 4: Đổi st.info sang st.markdown để kiểm soát in đậm, chỉ in đậm đáp án
+            # FIX YÊU CẦU 4: Đổi st.info sang st.markdown để kiểm soát in đậm, chỉ in đậm đáp án
             st.markdown(f"💡 Đáp án đúng: **{q['answer']}**") 
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
         
@@ -598,7 +599,7 @@ if bank_choice != "----":
         source = "lawbank.docx"
     elif "Docwise" in bank_choice:
         is_docwise = True
-        # FIX YÊU CẦU 3: Dropdown phụ cho Docwise
+        # Dropdown phụ cho Docwise
         doc_options = ["Phụ Lục 1"]
         doc_selected = st.selectbox("Chọn Phụ lục:", doc_options)
         
@@ -616,6 +617,7 @@ if bank_choice != "----":
         questions = parse_lawbank(source)
 
     if not questions:
+        # Sửa: Đảm bảo chuỗi string là UTF-8 an toàn
         st.error(f"❌ Không đọc được câu hỏi nào từ file **{source}**.")
         st.stop() 
     
@@ -683,11 +685,11 @@ if bank_choice != "----":
                             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
                         
                         if is_correct: 
-                            # 🚀 FIX YÊU CẦU 3: Đổi st.success sang st.markdown, chỉ in đậm đáp án
+                            # FIX YÊU CẦU 3: Đổi st.success sang st.markdown, chỉ in đậm đáp án
                             st.markdown(f"✅ Đúng – Đáp án: **{q['answer']}**") 
                             score += 1
                         else: 
-                            # 🚀 FIX YÊU CẦU 3: Đổi st.error sang st.markdown, chỉ in đậm đáp án đúng
+                            # FIX YÊU CẦU 3: Đổi st.error sang st.markdown, chỉ in đậm đáp án đúng
                             st.markdown(f"❌ Sai – Đáp án đúng: **{q['answer']}**") 
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
 
