@@ -439,31 +439,32 @@ h1, h2 {{ visibility: hidden;
     z-index: 1000;
 }} 
 
-/* ======================= NÚT VỀ TRANG CHỦ (Góc Trái, Khung ôm chữ) - KHÔNG FIX ======================= */
+/* ======================= NÚT VỀ TRANG CHỦ (Góc Trái Màn Hình, Khung ôm vừa chữ) ======================= */
 #back-to-home-btn-container {{
-    /* Loại bỏ position: absolute, dùng margin để định vị */
-    margin: 10px 0 10px 15px; 
+    position: fixed;
+    top: 10px;
+    left: 10px;
     pointer-events: auto;
     width: fit-content;
-    z-index: 1100;
-    display: inline-block; /* Quan trọng để bao vừa text */
+    z-index: 2000;
+    display: inline-block;
 }}
 
 a#manual-home-btn {{
     background-color: rgba(0, 0, 0, 0.85);
     color: #FFEA00;
     border: 2px solid #FFEA00;
-    padding: 8px 16px; 
-    border-radius: 8px; 
+    padding: 6px 12px; 
+    border-radius: 6px; 
     font-weight: bold;
-    font-size: 14px; 
+    font-size: 13px; 
     transition: all 0.3s;
     cursor: pointer;
     font-family: 'Oswald', sans-serif;
     text-decoration: none;
     display: inline-block; 
     white-space: nowrap; 
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
 }}
 
 a#manual-home-btn:hover {{
