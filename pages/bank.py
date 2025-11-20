@@ -18,10 +18,8 @@ def clean_text(s: str) -> str:
 
 def read_docx_paragraphs(source):
     try:
-        # Tìm file tương đối so với file script hiện tại
         doc = Document(os.path.join(os.path.dirname(__file__), source))
     except Exception as e:
-        # Fallback: thử đường dẫn trực tiếp hoặc thư mục pages/
         try:
              doc = Document(source)
         except Exception:
@@ -47,7 +45,7 @@ def get_base64_encoded_file(file_path):
         return fallback_base64
 
 # ====================================================
-# 🧩 PARSER NGÂN HÀNG KỸ THUẬT (CABBANK)
+# 🧩 PARSER 1: NGÂN HÀNG KỸ THUẬT (CABBANK)
 # ====================================================
 def parse_cabbank(source):
     paras = read_docx_paragraphs(source)
@@ -99,7 +97,7 @@ def parse_cabbank(source):
     return questions
 
 # ====================================================
-# 🧩 PARSER NGÂN HÀNG LUẬT (LAWBANK)
+# 🧩 PARSER 2: NGÂN HÀNG LUẬT (LAWBANK)
 # ====================================================
 def parse_lawbank(source):
     paras = read_docx_paragraphs(source)
@@ -151,6 +149,73 @@ def parse_lawbank(source):
         if not current["answer"] and current["options"]:
             current["answer"] = current["options"][0]
         questions.append(current)
+    return questions
+
+# ====================================================
+# 🧩 PARSER 3: PHỤ LỤC 1 (ĐỊNH DẠNG ĐẶC BIỆT)
+# ====================================================
+def parse_pl1(source):
+    """
+    Parser cho định dạng PL1:
+    - Câu hỏi bắt đầu bằng số (1. ...)
+    - Đáp án là các dòng tiếp theo (tự động gán A, B, C, D)
+    - Đáp án đúng có dấu (*) ở cuối
+    """
+    paras = read_docx_paragraphs(source)
+    if not paras: return []
+
+    questions = []
+    current = {"question": "", "options": [], "answer": ""}
+    
+    # Regex bắt đầu câu hỏi: Số + dấu chấm (VD: "1.", "10.")
+    q_start_pat = re.compile(r'^\d+[\.\)]\s+')
+    
+    # Danh sách nhãn tự động vì file Word bị ẩn A,B,C
+    labels = ["A", "B", "C", "D", "E", "F"]
+
+    for p in paras:
+        clean_p = clean_text(p)
+        if not clean_p: continue
+        
+        # Kiểm tra xem có phải bắt đầu câu hỏi mới không
+        if q_start_pat.match(clean_p):
+            # Lưu câu hỏi cũ trước khi sang câu mới
+            if current["question"]:
+                # Nếu chưa có đáp án đúng, mặc định lấy A (hoặc xử lý lỗi)
+                if not current["answer"] and current["options"]:
+                    current["answer"] = current["options"][0]
+                questions.append(current)
+            
+            # Loại bỏ số thứ tự ở đầu câu hỏi để hiển thị đẹp hơn (vì UI đã tự đánh số)
+            # Hoặc giữ nguyên nếu muốn. Ở đây ta xóa "1. " đi.
+            q_text = q_start_pat.sub('', clean_p)
+            current = {"question": q_text, "options": [], "answer": ""}
+        
+        else:
+            # Nếu không phải câu hỏi, thì là đáp án (do lỗi dính dòng, ta coi mỗi dòng là 1 đáp án)
+            if current["question"]: # Chỉ xử lý nếu đã có câu hỏi
+                is_correct = False
+                # Kiểm tra dấu hiệu đáp án đúng (*)
+                if "(*)" in clean_p:
+                    is_correct = True
+                    clean_p = clean_p.replace("(*)", "").strip() # Xóa dấu (*) đi
+                
+                # Tự động gán nhãn A, B, C, D
+                idx = len(current["options"])
+                if idx < len(labels):
+                    label = labels[idx]
+                    opt_text = f"{label}. {clean_p}"
+                    current["options"].append(opt_text)
+                    
+                    if is_correct:
+                        current["answer"] = opt_text
+
+    # Lưu câu cuối cùng
+    if current["question"]:
+        if not current["answer"] and current["options"]:
+            current["answer"] = current["options"][0]
+        questions.append(current)
+        
     return questions
 
 # ====================================================
@@ -297,7 +362,7 @@ html, body, .stApp {{
     position: relative;
 }}
 
-/* BACKGROUND RÕ HƠN */
+/* BACKGROUND */
 .stApp {{
     background: none !important;
 }}
@@ -384,7 +449,7 @@ a#manual-home-btn:hover {{
     line-height: 1.5 !important;
 }}
 
-/* SỐ 1 ĐỒNG SIZE VỚI CHỮ */
+/* SỐ 1 */
 .number-one {{
     font-family: 'Oswald', sans-serif !important; 
     font-size: 1em !important; 
@@ -403,7 +468,7 @@ a#manual-home-btn:hover {{
     padding-top: 40px !important; padding-bottom: 2rem !important; 
 }}
 
-/* FIX YÊU CẦU 2: TITLE DÀI TRÊN MOBILE 1 HÀNG */
+/* FIX YÊU CẦU 2: TITLE LỚN NHƯNG VẪN 1 HÀNG */
 #sub-static-title, .result-title {{
     margin-top: 150px; margin-bottom: 30px; text-align: center;
 }}
@@ -415,8 +480,9 @@ a#manual-home-btn:hover {{
 }}
 @media (max-width: 768px) {{
     #sub-static-title h2, .result-title h3 {{
-        /* Giảm size xuống 3.8vw để dòng dài như "Luyện tập theo nhóm..." vẫn vừa 1 hàng */
-        font-size: 3.8vw !important; 
+        /* Tăng lên 4.8vw và giảm spacing để chữ to hơn mà vẫn 1 dòng */
+        font-size: 4.8vw !important; 
+        letter-spacing: -0.5px;
         white-space: nowrap; 
     }}
 }}
@@ -532,8 +598,8 @@ if bank_choice != "----":
 
     # LOAD CÂU HỎI
     if is_docwise:
-        # Docwise dùng parser giống Law (hoặc tùy format PL1)
-        questions = parse_lawbank(source)
+        # Docwise dùng parser đặc biệt PL1
+        questions = parse_pl1(source)
     elif "Kỹ thuật" in bank_choice:
         questions = parse_cabbank(source)
     else:
