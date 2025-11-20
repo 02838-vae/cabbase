@@ -156,12 +156,13 @@ def parse_lawbank(source):
     return questions
 
 # ====================================================
-# 🧩 PARSER 3: PHỤ LỤC 1 (STRICTLY NUMBERED + UNNUMBERED HEADERS)
+# 🧩 PARSER 3: PHỤ LỤC 1 (STRICTLY NUMBERED + UNNUMBERED HEADERS) - FIX DANGLED OPTION
 # ====================================================
 def parse_pl1(source):
     """
     Parser thông minh FIX lỗi dính câu và mất đáp án, tập trung vào việc 
-    sử dụng số thứ tự hoặc tiêu đề "Choose..." làm ranh giới câu hỏi.
+    sử dụng số thứ tự hoặc tiêu đề "Choose..." làm ranh giới câu hỏi, 
+    và xử lý các "dangling options" (đáp án dính vào số câu hỏi tiếp theo).
     """
     paras = read_docx_paragraphs(source)
     if not paras: return []
@@ -171,6 +172,8 @@ def parse_pl1(source):
     
     # Pattern: Bắt đầu bằng số thứ tự (1. 10. 43))
     QUESTION_NUMBER_PATTERN = re.compile(r'^\s*(\d+)[\.\)]\s*(.*)')
+    # Pattern: Bắt đầu bằng đáp án (A., B), dùng để kiểm tra "dangling option"
+    OPTION_START_PATTERN = re.compile(r'^\s*[A-Z][\.\)]', re.IGNORECASE)
     
     current_q_data = None
     
@@ -184,7 +187,6 @@ def parse_pl1(source):
         labels = ["A", "B", "C", "D", "E", "F", "G"]
         
         for i, opt in enumerate(raw_options):
-            # Bỏ qua dòng trống
             if clean_text(opt) == "":
                 continue
                 
@@ -217,17 +219,36 @@ def parse_pl1(source):
         
         # --- A. Gặp câu hỏi CÓ SỐ THỨ TỰ (Ranh giới rõ ràng) ---
         if q_match:
-            # 1. Lưu câu hỏi cũ (nếu có)
-            if current_q_data:
+            new_q_raw_text = q_match.group(2).strip()
+            
+            # CHECK: Kiểm tra "Dangling Option" - Nếu văn bản sau số câu hỏi mới lại giống một đáp án
+            is_dangled_option = OPTION_START_PATTERN.match(new_q_raw_text)
+
+            if is_dangled_option and current_q_data and current_q_data["options"]:
+                # 1. Thêm đáp án dính vào câu hỏi CŨ
+                current_q_data["options"].append(new_q_raw_text)
+                
+                # 2. Hoàn tất câu hỏi CŨ
                 _finalize_and_save(current_q_data)
                 
-            # 2. Bắt đầu câu hỏi mới
-            q_text = q_match.group(2).strip()
-            current_q_data = {
-                "question": q_text, 
-                "options": [],
-                "type": "NUMBERED"
-            }
+                # 3. Bắt đầu câu hỏi MỚI với Question Text rỗng (vì Question Text có thể ở dòng tiếp theo)
+                current_q_data = {
+                    "question": "", # Sẽ được điền ở bước C nếu dòng tiếp theo là text
+                    "options": [],
+                    "type": "NUMBERED"
+                }
+                
+            else: # Trường hợp chuẩn: Bắt đầu câu hỏi mới
+                # 1. Lưu câu hỏi cũ (nếu có)
+                if current_q_data:
+                    _finalize_and_save(current_q_data)
+                
+                # 2. Bắt đầu câu hỏi mới
+                current_q_data = {
+                    "question": new_q_raw_text, 
+                    "options": [],
+                    "type": "NUMBERED"
+                }
             
         # --- B. Gặp tiêu đề "CHOOSE THE CORRECT..." (Ranh giới cho phần đầu file) ---
         elif line.lower().startswith("choose the correct group of words"):
@@ -244,10 +265,14 @@ def parse_pl1(source):
 
         # --- C. Gặp Dữ liệu Options/Question Text phụ ---
         elif current_q_data is not None:
-            # Nếu dòng không trống, thêm vào Options/Question Text. 
-            # Dòng này sẽ được xử lý thành Options trong _finalize_and_save
             if line.strip():
-                current_q_data["options"].append(line)
+                # 1. Nếu Question Text đang trống (do vừa xử lý dangling option) VÀ dòng này không phải option, 
+                # thì nó là Question Text chính thức. (Xử lý trường hợp Q44)
+                if not current_q_data["question"] and not OPTION_START_PATTERN.match(line):
+                    current_q_data["question"] = line
+                # 2. Ngược lại, đây là một đáp án của câu hỏi hiện tại.
+                else:
+                    current_q_data["options"].append(line)
 
     # 4. Lưu câu hỏi cuối cùng
     if current_q_data and current_q_data["options"]:
