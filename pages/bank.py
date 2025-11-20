@@ -9,7 +9,7 @@ import os
 import random 
 
 # ====================================================
-# ⚙️ HAM HO TRO VA FILE I/O
+# \u2699\ufe0f HAM HO TRO VA FILE I/O
 # ====================================================
 def clean_text(s: str) -> str:
     if s is None:
@@ -30,6 +30,7 @@ def read_docx_paragraphs(source):
                 doc = Document(f"pages/{source}")
             except Exception:
                 return []
+    # Thay the p.text.strip() de tranh loi encoding
     return [p.text.strip() for p.paragraphs if p.text.strip()]
 
 def get_base64_encoded_file(file_path):
@@ -48,7 +49,7 @@ def get_base64_encoded_file(file_path):
         return fallback_base64
 
 # ====================================================
-# 🧩 PARSER 1: NGAN HANG KY THUAT (CABBANK)
+# \uD83D\uDCD7 PARSER 1: NGAN HANG KY THUAT (CABBANK)
 # ====================================================
 def parse_cabbank(source):
     paras = read_docx_paragraphs(source)
@@ -100,7 +101,7 @@ def parse_cabbank(source):
     return questions
 
 # ====================================================
-# 🧩 PARSER 2: NGAN HANG LUAT (LAWBANK)
+# \uD83D\uDCD7 PARSER 2: NGAN HANG LUAT (LAWBANK)
 # ====================================================
 def parse_lawbank(source):
     paras = read_docx_paragraphs(source)
@@ -155,7 +156,7 @@ def parse_lawbank(source):
     return questions
 
 # ====================================================
-# 🧩 PARSER 3: PHU LUC 1 (DINH DANG DAC BIET)
+# \uD83D\uDCD7 PARSER 3: PHU LUC 1 (DINH DANG DAC BIET)
 # ====================================================
 def parse_pl1(source):
     """
@@ -221,7 +222,7 @@ def parse_pl1(source):
     return questions
 
 # ====================================================
-# 🌟 HAM: XEM TOAN BO CAU HOI
+# \u2B50\ufe0f HAM: XEM TOAN BO CAU HOI
 # ====================================================
 def display_all_questions(questions):
     st.markdown('<div class="result-title"><h3>&#x1F4DA; TOAN BO NGAN HANG CAU HOI</h3></div>', unsafe_allow_html=True)
@@ -244,7 +245,7 @@ def display_all_questions(questions):
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
 
 # ====================================================
-# 🌟 HAM: TEST MODE
+# \u2B50\ufe0f HAM: TEST MODE
 # ====================================================
 def get_random_questions(questions, count=50):
     if len(questions) <= count: return questions
@@ -267,7 +268,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         st.markdown('<div class="result-title"><h3>&#x1F4DD; LAM BAI TEST 50 CAU</h3></div>', unsafe_allow_html=True)
         st.info(f"Bai test se gom **{min(TOTAL_QUESTIONS, len(questions))}** cau hoi duoc chon ngau nhien tu **{bank_name}**. Ty le dat (PASS) la **{int(PASS_RATE*100)}%** ({int(TOTAL_QUESTIONS * PASS_RATE)} cau dung).")
         
-        if st.button("&#x1F680; Bat dau Bai Test", key=f"{test_key_prefix}_start_btn"):
+        if st.button("\uD83D\uDE80 Bat dau Bai Test", key=f"{test_key_prefix}_start_btn"):
             st.session_state[f"{test_key_prefix}_questions"] = get_random_questions(questions, TOTAL_QUESTIONS)
             st.session_state[f"{test_key_prefix}_started"] = True
             st.session_state[f"{test_key_prefix}_submitted"] = False
@@ -276,18 +277,18 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         return
 
     if not st.session_state[f"{test_key_prefix}_submitted"]:
-        st.markdown('<div class="result-title"><h3>&#x23F3; DANG LAM BAI TEST</h3></div>', unsafe_allow_html=True)
+        st.markdown('<div class="result-title"><h3>\u23F3 DANG LAM BAI TEST</h3></div>', unsafe_allow_html=True)
         test_batch = st.session_state[f"{test_key_prefix}_questions"]
         for i, q in enumerate(test_batch, start=1):
             st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
             st.radio("", q["options"], key=f"{test_key_prefix}_q_{i}")
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
-        if st.button("&#x2705; Nop bai Test", key=f"{test_key_prefix}_submit_btn"):
+        if st.button("\u2705 Nop bai Test", key=f"{test_key_prefix}_submit_btn"):
             st.session_state[f"{test_key_prefix}_submitted"] = True
             st.rerun()
             
     else:
-        st.markdown('<div class="result-title"><h3>&#x1F389; KET QUA BAI TEST</h3></div>', unsafe_allow_html=True)
+        st.markdown('<div class="result-title"><h3>\uD83C\uDF89 KET QUA BAI TEST</h3></div>', unsafe_allow_html=True)
         test_batch = st.session_state[f"{test_key_prefix}_questions"]
         score = 0
         for i, q in enumerate(test_batch, start=1):
@@ -308,20 +309,20 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
 
             if is_correct: score += 1
             # FIX YEU CAU 4: Chuyen sang dung markdown de kiem soat dinh dang
-            st.markdown(f"&#x1F4A1; Dap an dung: **{q['answer']}**") 
+            st.markdown(f"\uD83D\uDCA1 Dap an dung: **{q['answer']}**") 
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
         
         total_q = len(test_batch)
         pass_threshold = total_q * PASS_RATE
-        st.markdown(f'<div class="result-title"><h3>&#x1F3AF; KET QUA: {score}/{total_q}</h3></div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="result-title"><h3>\uD83C\uDFAF KET QUA: {score}/{total_q}</h3></div>', unsafe_allow_html=True)
 
         if score >= pass_threshold:
             st.balloons()
-            st.success(f"&#x1F38A; **CHUC MUNG!** Ban da DAT (PASS).")
+            st.success(f"\uD83C\uDF8A **CHUC MUNG!** Ban da DAT (PASS).")
         else:
-            st.error(f"&#x1F622; **KHONG DAT (FAIL)**.")
+            st.error(f"\uD83D\uDE22 **KHONG DAT (FAIL)**.")
 
-        if st.button("&#x1F504; Lam lai Bai Test", key=f"{test_key_prefix}_restart_btn"):
+        if st.button("\u21BA\ufe0f Lam lai Bai Test", key=f"{test_key_prefix}_restart_btn"):
             for i in range(1, total_q + 1):
                 st.session_state.pop(f"{test_key_prefix}_q_{i}", None) 
             st.session_state[f"{test_key_prefix}_started"] = False
@@ -329,7 +330,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             st.rerun()
 
 # ====================================================
-# 🖥️ GIAO DIEN STREAMLIT
+# \uD83D\uDDA5\ufe0f GIAO DIEN STREAMLIT
 # ====================================================
 st.set_page_config(page_title="Ngan hang trac nghiem", layout="wide")
 
@@ -551,7 +552,7 @@ div.stSelectbox label p {{
 st.markdown(css_style, unsafe_allow_html=True)
 
 # ====================================================
-# 🧭 HEADER & BODY
+# \uD83D\uDDFA\ufe0f HEADER & BODY
 # ====================================================
 st.markdown("""
 <div id="header-content-wrapper">
@@ -603,7 +604,7 @@ if bank_choice != "----":
         doc_selected = st.selectbox("Chon Phu luc:", doc_options)
         
         if doc_selected == "Phu Luc 1":
-            # 🚀 FIX YEU CAU 1: Doi duong dan source de doc dung file trong thu muc pages
+            # \uD83D\uDE80 FIX YEU CAU 1: Doi duong dan source de doc dung file trong thu muc pages
             source = "pages/PL1.docx" 
 
     # LOAD CAU HOI
@@ -616,7 +617,7 @@ if bank_choice != "----":
         questions = parse_lawbank(source)
 
     if not questions:
-        st.error(f"&#x274C; Khong doc duoc cau hoi nao tu file **{source}**.")
+        st.error(f"\u274C Khong doc duoc cau hoi nao tu file **{source}**.")
         st.stop() 
     
     total = len(questions)
@@ -642,7 +643,7 @@ if bank_choice != "----":
             st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
             col_all_bank, col_test = st.columns(2)
             with col_all_bank:
-                if st.button("&#x1F4D6; Hien thi toan bo ngan hang", key="btn_show_all"):
+                if st.button("\uD83D\uDCD6 Hien thi toan bo ngan hang", key="btn_show_all"):
                     st.session_state.current_mode = "all"
                     st.rerun()
             with col_test:
@@ -662,7 +663,7 @@ if bank_choice != "----":
                         st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
                         st.radio("", q["options"], key=f"q_{i}")
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
-                    if st.button("&#x2705; Nop bai", key="submit_group"):
+                    if st.button("\u2705 Nop bai", key="submit_group"):
                         st.session_state.submitted = True
                         st.rerun()
                 else:
@@ -684,40 +685,40 @@ if bank_choice != "----":
                         
                         if is_correct: 
                             # FIX YEU CAU 3: Khong in dam, in dam dap an dung
-                            st.markdown(f"&#x2705; Dung &ndash; Dap an: **{q['answer']}**") 
+                            st.markdown(f"\u2705 Dung &ndash; Dap an: **{q['answer']}**") 
                             score += 1
                         else: 
                             # FIX YEU CAU 3: Khong in dam, in dam dap an dung
-                            st.markdown(f"&#x274C; Sai &ndash; Dap an dung: **{q['answer']}**") 
+                            st.markdown(f"\u274C Sai &ndash; Dap an dung: **{q['answer']}**") 
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
 
-                    st.markdown(f'<div class="result-title"><h3>&#x1F3AF; KET QUA: {score}/{len(batch)}</h3></div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="result-title"><h3>\uD83C\uDFAF KET QUA: {score}/{len(batch)}</h3></div>', unsafe_allow_html=True)
                     col_reset, col_next = st.columns(2)
                     with col_reset:
-                        if st.button("&#x1F504; Lam lai nhom nay", key="reset_group"):
+                        if st.button("\u21BA\ufe0f Lam lai nhom nay", key="reset_group"):
                             for i in range(start+1, end+1): st.session_state.pop(f"q_{i}", None) 
                             st.session_state.submitted = False
                             st.rerun()
                     with col_next:
                         if st.session_state.current_group_idx < len(groups) - 1:
-                            if st.button("&#x27A1; Tiep tuc nhom sau", key="next_group"):
+                            if st.button("\u27A1\ufe0f Tiep tuc nhom sau", key="next_group"):
                                 st.session_state.current_group_idx += 1
                                 st.session_state.submitted = False
                                 st.rerun()
                         else: 
-                            st.info("&#x1F389; Da hoan thanh tat ca cac nhom cau hoi!")
+                            st.info("\uD83C\uDF89 Da hoan thanh tat ca cac nhom cau hoi!")
             else: st.warning("Khong co cau hoi trong nhom nay.")
         else: st.warning("Khong co cau hoi nao trong ngan hang nay.")
 
     elif st.session_state.current_mode == "all":
-        if st.button("&#x2B05; Quay lai che do Luyen tap theo nhom"):
+        if st.button("\u2B05\ufe0f Quay lai che do Luyen tap theo nhom"):
             st.session_state.current_mode = "group"
             st.rerun()
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
         display_all_questions(questions)
         
     elif st.session_state.current_mode == "test":
-        if st.button("&#x2B05; Quay lai che do Luyen tap theo nhom"):
+        if st.button("\u2B05\ufe0f Quay lai che do Luyen tap theo nhom"):
             st.session_state.current_mode = "group"
             st.rerun()
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
