@@ -154,105 +154,119 @@ def parse_lawbank(source):
     return questions
 
 # ====================================================
-# 🧩 PARSER 3: PHỤ LỤC 1 (ĐỊNH DẠNG ĐẶC BIỆT)
+# 🧩 PARSER 3: PHỤ LỤC 1 (THÔNG MINH - ANCHOR LOGIC)
 # ====================================================
 def parse_pl1(source):
     """
     Parser thông minh cho PL1:
-    - Không phụ thuộc vào số thứ tự (vì Word thường ẩn số này).
-    - Dựa vào 'Choose the correct...' hoặc sự thay đổi nhóm câu hỏi.
+    - Sử dụng (*) làm 'Neo' để xác định nhóm câu hỏi.
+    - Quét ngược lên để tìm các đáp án khác và câu hỏi.
     - Tự động gán A, B, C nếu thiếu.
     """
     paras = read_docx_paragraphs(source)
     if not paras: return []
-
-    questions = []
-    current_group = []
     
-    def flush_group(group):
-        if not group: return
+    # Lọc bỏ dòng trống
+    lines = [clean_text(p) for p in paras if clean_text(p)]
+    questions = []
+    
+    # Hàm kiểm tra xem một dòng có giống tiêu đề câu hỏi không
+    def is_question_header(text):
+        # Bắt đầu bằng số (1. 10.)
+        if re.match(r'^\d+[\.\)]', text): return True
+        # Bắt đầu bằng từ để hỏi hoặc từ lệnh
+        if text.lower().startswith(("choose", "select", "what", "where", "when", "who", "how", "which", "match")): return True
+        # Kết thúc bằng dấu hỏi chấm
+        if text.strip().endswith("?"): return True
+        return False
+
+    i = 0
+    while i < len(lines):
+        # 1. Tìm dòng chứa đáp án đúng (*) tiếp theo làm mốc (Anchor)
+        anchor_idx = -1
+        for j in range(i, len(lines)):
+            if "(*)" in lines[j]:
+                anchor_idx = j
+                break
         
-        # 1. Tìm dòng chứa đáp án đúng (*)
-        ans_idx = -1
-        for i, line in enumerate(group):
+        if anchor_idx == -1:
+            break # Không còn câu hỏi nào nữa
+            
+        # 2. Xác định vùng chứa các đáp án (Option Block)
+        # Quét NGƯỢC từ Anchor để tìm dòng bắt đầu các đáp án
+        # Mặc định quét tối đa 5 dòng ngược lên
+        opt_start = anchor_idx
+        for k in range(anchor_idx - 1, max(i - 1, anchor_idx - 6), -1):
+            line = lines[k]
+            # Nếu gặp dòng trông giống câu hỏi -> Dừng, đáp án bắt đầu từ dòng sau đó
+            if is_question_header(line):
+                opt_start = k + 1
+                break
+            # Nếu gặp dòng kết thúc bằng dấu hai chấm (:) -> Khả năng là hết câu hỏi
+            if line.strip().endswith(":"):
+                opt_start = k + 1
+                break
+            # Mặc định coi là đáp án nếu không có dấu hiệu câu hỏi rõ ràng
+            opt_start = k
+        
+        # Đảm bảo không lùi quá vị trí đang xét (i)
+        opt_start = max(opt_start, i)
+        
+        # 3. Lấy nội dung câu hỏi (Là phần nằm trước các đáp án)
+        q_text_list = lines[i : opt_start]
+        q_text = " ".join(q_text_list)
+        
+        # Fallback: Nếu không tìm thấy câu hỏi (q_text rỗng), có thể do dòng đầu tiên bị nhận nhầm là đáp án
+        # Lấy dòng đầu tiên của nhóm đáp án làm câu hỏi tạm
+        if not q_text and opt_start <= anchor_idx:
+            q_text = lines[opt_start]
+            opt_start += 1
+            
+        # 4. Quét XUÔI để tìm các đáp án còn lại sau Anchor
+        opt_end = anchor_idx
+        for k in range(anchor_idx + 1, min(len(lines), anchor_idx + 5)):
+            line = lines[k]
+            # Nếu gặp dấu hiệu câu hỏi mới -> Dừng
+            if is_question_header(line):
+                break
+            # Nếu gặp một đáp án đúng khác (*) -> Dừng (thuộc câu sau)
             if "(*)" in line:
-                ans_idx = i
                 break
-        
-        if ans_idx == -1: return # Bỏ qua nếu không tìm thấy dấu hiệu đáp án
-        
-        # 2. Phân tách Câu hỏi và Đáp án
-        # Logic: Dòng đầu tiên là câu hỏi. Các dòng sau là đáp án.
-        # Nếu có dòng bắt đầu bằng A. B. C. thì ưu tiên dùng nó làm mốc.
-        
-        opt_start_idx = 1 # Mặc định: Dòng 0 là Question, Dòng 1 trở đi là Options
-        
-        # Kiểm tra xem có dòng nào bắt đầu bằng A. B. C. không
-        for i, line in enumerate(group):
-            if re.match(r'^[A-F][\.\)]', line):
-                opt_start_idx = i
-                break
-        
-        # Lấy nội dung câu hỏi
-        q_text = " ".join(group[:opt_start_idx])
-        # Xóa số thứ tự (1. 10.) nếu có dính vào text
-        q_text = re.sub(r'^\d+[\.\)]\s*', '', q_text).strip()
-        
-        # Xử lý các dòng đáp án
-        raw_opts = group[opt_start_idx:]
-        final_opts = []
-        final_ans = ""
+            opt_end = k
+            
+        # 5. Xử lý và lưu kết quả
+        raw_options = lines[opt_start : opt_end + 1]
+        processed_opts = []
+        correct_ans = ""
         labels = ["A", "B", "C", "D", "E", "F"]
         
-        for i, opt in enumerate(raw_opts):
-            is_corr = "(*)" in opt
-            clean = opt.replace("(*)", "").strip()
+        for idx, opt in enumerate(raw_options):
+            is_correct = "(*)" in opt
+            clean_opt = opt.replace("(*)", "").strip()
             
-            # Tự động thêm A. B. C. nếu thiếu
-            if not re.match(r'^[A-F][\.\)]', clean):
-                lbl = labels[i] if i < len(labels) else "-"
-                clean = f"{lbl}. {clean}"
+            # Tự động thêm nhãn A. B. C. nếu thiếu
+            if not re.match(r'^[A-F][\.\)]', clean_opt):
+                lbl = labels[idx] if idx < len(labels) else "-"
+                clean_opt = f"{lbl}. {clean_opt}"
             
-            final_opts.append(clean)
-            if is_corr: final_ans = clean
+            processed_opts.append(clean_opt)
+            if is_correct:
+                correct_ans = clean_opt
         
-        # Fallback nếu không tìm thấy ans (hiếm)
-        if not final_ans and final_opts: final_ans = final_opts[0]
+        # Xóa số thứ tự ở đầu câu hỏi cho đẹp (VD: "1. " -> "")
+        q_text = re.sub(r'^\d+[\.\)]\s*', '', q_text).strip()
         
-        questions.append({
-            "question": q_text,
-            "options": final_opts,
-            "answer": final_ans
-        })
+        # Chỉ lưu nếu có đủ dữ liệu
+        if q_text and processed_opts:
+            questions.append({
+                "question": q_text,
+                "options": processed_opts,
+                "answer": correct_ans
+            })
+            
+        # Cập nhật vị trí duyệt tiếp theo
+        i = opt_end + 1
 
-    # VÒNG LẶP CHÍNH DUYỆT FILE
-    for p in paras:
-        text = clean_text(p)
-        if not text: continue
-        
-        # NHẬN DIỆN BẮT ĐẦU CÂU HỎI MỚI
-        # 1. Bắt đầu bằng số (1. ...)
-        # 2. Bắt đầu bằng cụm từ lệnh "Choose the correct..."
-        is_start_marker = re.match(r'^\d+[\.\)]', text) or text.lower().startswith("choose the correct") or text.lower().startswith("match the")
-        
-        # 3. Logic ngầm: Nếu nhóm cũ đã có đáp án (*), mà dòng mới KHÔNG giống đáp án (k có A,B,C hay *)
-        # -> Khả năng cao là text của câu hỏi mới bị mất số
-        has_ans_already = any("(*)" in line for line in current_group)
-        is_opt_looking = re.match(r'^[A-F][\.\)]', text) or "(*)" in text
-        
-        if is_start_marker:
-            flush_group(current_group)
-            current_group = [text]
-        elif has_ans_already and not is_opt_looking:
-            # Đã xong câu cũ, đây là text câu mới
-            flush_group(current_group)
-            current_group = [text]
-        else:
-            # Vẫn thuộc nhóm cũ (dòng tiếp theo của câu hỏi hoặc là đáp án)
-            current_group.append(text)
-            
-    # Flush nhóm cuối cùng
-    flush_group(current_group)
     return questions
 
 # ====================================================
