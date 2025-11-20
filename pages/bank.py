@@ -7,6 +7,7 @@ import pandas as pd
 import base64
 import os
 import random 
+from typing import List
 
 # ====================================================
 # ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
@@ -16,13 +17,15 @@ def clean_text(s: str) -> str:
         return ""
     # Xử lý các ký tự đặc biệt của Word (tab, non-breaking space)
     s = s.replace(u'\xa0', u' ').replace(u'\t', u' ')
+    # Xử lý các ký tự xuống dòng từ PDF/Text và các dấu cách dư thừa
     return re.sub(r'\s+', ' ', s).strip()
 
 def read_docx_paragraphs(source):
+    """Đọc nội dung từ file DOCX."""
     try:
         # Tìm file tương đối so với file script hiện tại
         doc = Document(os.path.join(os.path.dirname(__file__), source))
-    except Exception as e:
+    except Exception:
         # Fallback: thử đường dẫn trực tiếp hoặc thư mục pages/
         try:
              doc = Document(source)
@@ -45,7 +48,7 @@ def get_base64_encoded_file(file_path):
             
         with open(path_to_check, "rb") as f:
             return base64.b64encode(f.read()).decode("utf-8")
-    except Exception as e:
+    except Exception:
         return fallback_base64
 
 # ====================================================
@@ -158,22 +161,18 @@ def parse_lawbank(source):
 # ====================================================
 # 🧩 PARSER 3: PHỤ LỤC 1 (STRICTLY NUMBERED + UNNUMBERED HEADERS) - FIX TRIỆT ĐỂ
 # ====================================================
-def parse_pl1(source):
+def parse_pl1(raw_content: str) -> List[dict]:
     """
     Parser thông minh FIX lỗi dính câu và mất đáp án, tập trung vào việc 
-    sử dụng số thứ tự hoặc tiêu đề "Choose..." làm ranh giới câu hỏi, 
-    và xử lý các "dangling options" (đáp án dính vào số câu hỏi tiếp theo)
-    cùng với logic cứu Question Text bị thất lạc.
+    sử dụng số thứ tự hoặc tiêu đề "Choose..." làm ranh giới câu hỏi.
+    Sử dụng raw_content (từ PDF/Text) thay vì docx paragraphs.
     """
-    paras = read_docx_paragraphs(source)
-    if not paras: return []
-    
-    lines = [clean_text(p) for p in paras if clean_text(p)]
+    lines = [clean_text(line) for line in raw_content.split('\n') if clean_text(line) and not line.startswith('--- PAGE')]
     questions = []
     
-    # Pattern: Bắt đầu bằng số thứ tự (1. 10. 43))
+    # Pattern 1: Bắt đầu bằng số thứ tự (dùng cho câu hỏi)
     QUESTION_NUMBER_PATTERN = re.compile(r'^\s*(\d+)[\.\)]\s*(.*)')
-    # Pattern: Bắt đầu bằng đáp án (A., B, E.), dùng để kiểm tra "dangling option"
+    # Pattern 2: Bắt đầu bằng đáp án (A., B, E.)
     OPTION_START_PATTERN = re.compile(r'^\s*[A-Z][\.\)]', re.IGNORECASE)
     
     current_q_data = None
@@ -207,20 +206,22 @@ def parse_pl1(source):
         # 2. Xử lý Question Text: xóa số thứ tự (nếu có)
         q_data["question"] = re.sub(r'^\d+[\.\)]\s*', '', q_data["question"]).strip()
         
-        # --- FIX TRIỆT ĐỂ LỖI 43/44: Loại bỏ nhãn đáp án bị dính trong Question Text ('D. Bird strikes...') ---
+        # --- FIX TRIỆT ĐỂ LỖI DÍNH CÂU: Loại bỏ nhãn đáp án bị dính ('D. Bird strikes...') ---
         # Nếu Question Text sau khi xóa số thứ tự vẫn bắt đầu bằng nhãn đáp án, xóa nhãn đó đi.
+        # Lỗi cũ xảy ra khi parser không nhận ra Question Text mới vẫn bị dính option letter.
         if OPTION_START_PATTERN.match(q_data["question"]):
             q_data["question"] = re.sub(r'^[A-Z][\.\)]\s*', '', q_data["question"]).strip()
 
 
         # --- FIX FALLBACK: Cứu Question Text nếu nó bị mất do lỗi phân tách ---
-        # Cơ chế này chạy sau khi đã cố gắng làm sạch nhãn đáp án dính ở trên
-        if not q_data["question"] and processed_opts and q_data.get("type") == "NUMBERED":
+        # Chỉ chạy nếu Question Text rỗng VÀ có options
+        if not q_data["question"] and processed_opts:
             # Giả định mục đầu tiên trong Options chính là Question Text bị thất lạc
             first_opt_text = processed_opts[0]
+            # Loại bỏ nhãn A., B.,... khỏi Question Text bị thất lạc
             q_text_from_opt = re.sub(r'^[A-Z][\.\)]\s*', '', first_opt_text).strip()
             
-            if q_text_from_opt:
+            if q_text_from_opt and len(processed_opts) > 1: # Đảm bảo không phải câu 1 đáp án
                 q_data["question"] = q_text_from_opt
                 processed_opts.pop(0) # Xóa mục đã dùng làm Question Text
 
@@ -239,34 +240,16 @@ def parse_pl1(source):
         if q_match:
             new_q_raw_text = q_match.group(2).strip()
             
-            # CHECK: Kiểm tra "Dangling Option" - Nếu văn bản sau số câu hỏi mới lại giống một đáp án
-            is_dangled_option = OPTION_START_PATTERN.match(new_q_raw_text)
-
-            # --- Logic 1: Xử lý Option dính (Q43/Q44) ---
-            if is_dangled_option and current_q_data and current_q_data.get("options"):
-                # 1. Hoàn tất câu hỏi CŨ (Q43) AS IS (Chấp nhận Q43 thiếu đáp án D)
+            # 1. Lưu câu hỏi cũ (nếu có)
+            if current_q_data:
                 _finalize_and_save(current_q_data)
                 
-                # 2. Bắt đầu câu hỏi MỚI (Q44) với Question Text là full new_q_raw_text.
-                # Phần "D." sẽ được làm sạch trong hàm _finalize_and_save tiếp theo.
-                current_q_data = {
-                    "question": new_q_raw_text, 
-                    "options": [],
-                    "type": "NUMBERED"
-                }
-                
-            # --- Logic 2: Bắt đầu câu hỏi mới bình thường ---
-            else: 
-                # 1. Lưu câu hỏi cũ (nếu có)
-                if current_q_data:
-                    _finalize_and_save(current_q_data)
-                
-                # 2. Bắt đầu câu hỏi mới
-                current_q_data = {
-                    "question": new_q_raw_text, # Question text là phần còn lại của dòng
-                    "options": [],
-                    "type": "NUMBERED"
-                }
+            # 2. Bắt đầu câu hỏi mới (Question Text là phần còn lại của dòng)
+            current_q_data = {
+                "question": new_q_raw_text, 
+                "options": [],
+                "type": "NUMBERED"
+            }
             
         # --- B. Gặp tiêu đề "CHOOSE THE CORRECT..." (Ranh giới cho phần đầu file) ---
         elif line.lower().startswith("choose the correct group of words"):
@@ -286,8 +269,7 @@ def parse_pl1(source):
             if line.strip():
                 is_option_line = OPTION_START_PATTERN.match(line)
                 
-                # Logic 3: Nếu Question Text đang trống 
-                # VÀ dòng này không phải option (tức là Question Text), thì gán vào Question
+                # Logic 3: Nếu Question Text đang trống VÀ dòng này không phải option
                 if not current_q_data["question"] and not is_option_line:
                     current_q_data["question"] = line
                 
@@ -676,17 +658,27 @@ if bank_choice != "----":
         doc_selected = st.selectbox("Chọn Phụ lục:", doc_options)
         
         if doc_selected == "Phụ Lục 1":
-            source = "PL1.docx"
-
+            # Dùng file PDF mới được upload
+            source = "PL1.pdf" 
+            source_id = "uploaded:PL1.pdf" # Content ID của file
+            
     # LOAD CÂU HỎI
-    if is_docwise:
-        # Dùng parser mới cho PL1
-        questions = parse_pl1(source)
+    questions = []
+    
+    if is_docwise and source == "PL1.pdf":
+        try:
+            # Lấy content từ file PDF
+            raw_content = file_content_fetcher.fetch(query=f"Nội dung file {source_id}", source_references=[source_id])
+            # Parse nội dung raw text
+            questions = parse_pl1(raw_content)
+        except Exception:
+            st.error(f"❌ Không thể đọc file **{source}**. Vui lòng đảm bảo file tồn tại và được tải lên.")
+            st.stop()
     elif "Kỹ thuật" in bank_choice:
         questions = parse_cabbank(source)
-    else:
+    elif "Luật VAECO" in bank_choice:
         questions = parse_lawbank(source)
-
+    
     if not questions:
         st.error(f"❌ Không đọc được câu hỏi nào từ file **{source}**.")
         st.stop() 
