@@ -205,9 +205,11 @@ def display_all_questions(questions):
         st.warning("Không có câu hỏi nào để hiển thị.")
         return
     
-    # Tăng font size lên 1.6em cho câu hỏi và đáp án
-    q_style = "color: #FFDD00; font-weight: 700; font-size: 1.6em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
-    style_base = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.6em; text-shadow: none; padding: 5px 15px; margin: 1px 0;"
+    # 🔴 FIX FONT SIZE: Tăng kích thước chữ (22px) để bằng với chế độ làm bài
+    q_style = "color: #FFDD00; font-weight: 700; font-size: 22px; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
+    
+    # FIX YÊU CẦU 3: Tăng font-size cứng lên 22px
+    style_base = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 22px !important; text-shadow: none; padding: 5px 15px; margin: 2px 0;"
 
     for i, q in enumerate(questions, start=1):
         st.markdown(f"<div style='{q_style}'>{i}. {q['question']}</div>", unsafe_allow_html=True)
@@ -247,9 +249,9 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
     if f"{test_key_prefix}_questions" not in st.session_state:
         st.session_state[f"{test_key_prefix}_questions"] = []
     
-    # Tăng font size lên 1.6em cho câu hỏi và đáp án
-    q_style = "color: #FFDD00; font-weight: 700; font-size: 1.6em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
-    style_base = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.6em; text-shadow: none; padding: 5px 15px; margin: 1px 0;"
+    # FIX FONT SIZE: Sử dụng 22px đồng nhất
+    q_style = "color: #FFDD00; font-weight: 700; font-size: 22px; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
+    style_base = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 22px !important; text-shadow: none; padding: 5px 15px; margin: 2px 0;"
 
 
     # Bắt đầu bài test
@@ -349,7 +351,7 @@ MOBILE_IMAGE_FILE = "bank_mobile.jpg"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
-# === CSS ĐÃ TỐI ƯU CHO FONT VÀ KHOẢNG CÁCH (FIX CỰ PHÉP) ===
+# === CSS ĐÃ TỐI ƯU CHO FONT VÀ KHOẢNG CÁCH (FIX CÚ PHÁP) ===
 css_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -362,7 +364,7 @@ css_style = f"""
 }}
 
 @keyframes scrollRight {{
-    0% {{ transform: translateX(100vw); }}
+    0% {{ transform: translateX(100%); }}
     100% {{ transform: translateX(-100%); }}
 }}
 
@@ -433,38 +435,41 @@ h1, h2 {{ visibility: hidden;
 #header-content-wrapper {{
     /* Loại bỏ position: fixed, để nó cuộn theo nội dung */
     width: 100%;
-    /* Tăng margin bottom để tạo khoảng trống giữa header block và nội dung chính */
     margin-bottom: 20px; 
     display: block; 
-    z-index: 1000;
+    /* Giảm z-index để nút có thể nổi lên trên */
+    z-index: 999;
 }} 
 
-/* ======================= NÚT VỀ TRANG CHỦ (Góc Trái Màn Hình, Khung ôm vừa chữ) ======================= */
+/* ======================= NÚT VỀ TRANG CHỦ (FIX YÊU CẦU 1) ======================= */
 #back-to-home-btn-container {{
-    position: fixed;
+    /* Thiết lập vị trí cố định ở góc trên trái */
+    position: fixed; 
     top: 10px;
-    left: 10px;
+    left: 10px; /* Sát lề trái hơn */
+    margin: 0; 
     pointer-events: auto;
-    width: fit-content;
-    z-index: 2000;
-    display: inline-block;
+    width: auto !important; /* 🔴 FIX: Tự động co giãn theo nội dung */
+    /* Tăng z-index lên cao hơn tất cả (1500) */
+    z-index: 1500; 
+    display: inline-block; 
 }}
 
 a#manual-home-btn {{
     background-color: rgba(0, 0, 0, 0.85);
     color: #FFEA00;
     border: 2px solid #FFEA00;
-    padding: 6px 12px; 
-    border-radius: 6px; 
+    padding: 5px 10px; /* 🔴 FIX: Giảm padding để nút gọn hơn */
+    border-radius: 8px; 
     font-weight: bold;
-    font-size: 13px; 
+    font-size: 14px; 
     transition: all 0.3s;
     cursor: pointer;
     font-family: 'Oswald', sans-serif;
     text-decoration: none;
     display: inline-block; 
     white-space: nowrap; 
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }}
 
 a#manual-home-btn:hover {{
@@ -473,21 +478,21 @@ a#manual-home-btn:hover {{
     transform: scale(1.05);
 }}
 
-/* ======================= TIÊU ĐỀ CHẠY LỚN (Đã chỉnh kích thước và vị trí) - KHÔNG FIX ======================= */
+/* ======================= TIÊU ĐỀ CHẠY LỚN (FIX YÊU CẦU 2) ======================= */
 #main-title-container {{
     position: relative; /* Giữ relative để H1 bên trong dùng absolute */
     left: 0;
     top: 0; 
     width: 100%;
-    /* Tăng chiều cao lên 90px */
-    height: 90px; 
+    /* 🔴 FIX TITLE: Đưa tiêu đề lên cao, ngay dưới nút Home. Giảm chiều cao để tiết kiệm không gian. */
+    height: 120px; /* Tăng nhẹ chiều cao để chứa chữ có dấu */
     overflow: hidden; 
     pointer-events: none;
     background-color: transparent;
     display: block;
-    /* Tăng padding top để chữ có khoảng trống trên, tránh cắt nét trên */
+    /* 🔴 FIX TITLE: Giảm padding top để đưa nội dung lên cao, cách nút home 1 khoảng nhỏ */
     padding-top: 20px; 
-    margin-top: 10px; /* Thêm khoảng trống sau nút home */
+    margin-top: 0px; 
     z-index: 1200; 
 }}
 
@@ -495,12 +500,12 @@ a#manual-home-btn:hover {{
     visibility: visible !important;
     height: auto !important;
     font-family: 'Playfair Display', serif;
-    /* Tăng kích thước font để hiển thị full */
-    font-size: 6vh; 
+    /* Tăng font size một chút */
+    font-size: 5vh; 
     margin: 0;
-    padding: 0;
+    padding: 10px 0; /* 🔴 FIX: Thêm padding trên dưới để dấu không bị cắt */
     font-weight: 900;
-    letter-spacing: 8px;
+    letter-spacing: 5px;
     white-space: nowrap;
     display: inline-block;
     background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
@@ -508,12 +513,16 @@ a#manual-home-btn:hover {{
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
-    animation: scrollRight 20s linear infinite, colorShift 8s ease infinite;
+    /* Animation chạy từ phải sang trái */
+    animation: scrollRight 15s linear infinite, colorShift 8s ease infinite;
     text-shadow: 2px 2px 8px rgba(255, 255, 255, 0.3);
     position: absolute;
     left: 0; 
-    bottom: 0; 
-    line-height: 1; 
+    /* 🔴 FIX TITLE: Đưa chữ bám sát đỉnh container để hiển thị cao hơn */
+    top: 5px; 
+    bottom: auto;
+    /* 🔴 FIX TITLE: Tăng line-height để hiển thị đủ dấu tiếng Việt */
+    line-height: 1.4 !important; 
     transform: none; 
 }}
 
@@ -522,24 +531,27 @@ a#manual-home-btn:hover {{
         margin-bottom: 10px;
     }}
     #back-to-home-btn-container {{
-        margin: 10px auto; 
-        width: 90%;
+        position: fixed;
+        top: 5px; 
+        left: 5px;
+        width: auto !important;
         display: block; 
     }}
     a#manual-home-btn {{
-        width: 100%;
+        width: auto;
         text-align: center;
-        font-size: 16px;
-        padding: 10px 20px;
+        font-size: 14px; /* Giảm font size chút cho mobile gọn */
+        padding: 5px 8px;
     }}
     #main-title-container {{
         position: relative;
         width: 100%;
-        /* Tăng chiều cao trên mobile */
-        height: 60px; 
+        /* 🔴 FIX TITLE: Đưa tiêu đề lên cao, giảm chiều cao */
+        height: 100px; 
         top: 0; 
         z-index: 1200;
-        padding-top: 5px;
+        /* 🔴 FIX TITLE: Giảm padding top để đưa nội dung lên cao */
+        padding-top: 10px; 
         display: block;
     }}
     #main-title-container h1 {{
@@ -547,8 +559,10 @@ a#manual-home-btn:hover {{
         font-size: 8vw; 
         animation: scrollRight 12s linear infinite, colorShift 8s ease infinite;
         left: 0;
-        bottom: 0;
-        line-height: 1;
+        /* 🔴 FIX TITLE: Đưa chữ bám sát đỉnh container để hiển thị cao hơn */
+        top: 5px; 
+        bottom: auto;
+        line-height: 1.4 !important;
         transform: none;
     }}
     /* Giảm padding top cho nội dung chính trên mobile (do không fixed) */
@@ -616,13 +630,13 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
     color: #FFFFFF !important;
 }}
 
-/* ======================= STYLE CÂU HỎI & ĐÁP ÁN ======================= */
-/* Điều chỉnh cho P (Câu hỏi trong chế độ làm bài chưa nộp) */
+/* ======================= STYLE CÂU HỎI & ĐÁP ÁN (FIX YÊU CẦU 3) ======================= */
+/* Điều chỉnh cho P (Câu hỏi trong chế độ làm bài chưa nộp) - nhẹ hơn so với DIV kết quả */
 div[data-testid="stMarkdownContainer"] p {{
     color: #ffffff !important; 
     font-weight: 400; 
-    /* Tăng size chữ câu hỏi chưa nộp */
-    font-size: 1.5em; /* Đồng bộ với 1.6em của div, hơi giảm nhẹ */
+    /* 🔴 FIX FONT SIZE: Đặt cứng 22px để đồng bộ mọi nơi */
+    font-size: 22px !important; 
     font-family: 'Oswald', sans-serif !important; 
     text-shadow: none; 
     background-color: transparent; 
@@ -631,11 +645,11 @@ div[data-testid="stMarkdownContainer"] p {{
     margin-bottom: 5px; 
 }}
 
-/* Tăng độ đậm và size cho Radio label */
+/* Tăng độ đậm và size cho Radio label (trước khi nộp bài) */
 .stRadio label {{
     color: #f9f9f9 !important;
-    /* Tăng size chữ đáp án */
-    font-size: 1.6em !important; 
+    /* 🔴 FIX FONT SIZE: Đặt cứng 22px */
+    font-size: 22px !important; 
     font-weight: 700 !important; 
     font-family: 'Oswald', sans-serif !important; 
     text-shadow: none !important;
@@ -644,22 +658,6 @@ div[data-testid="stMarkdownContainer"] p {{
     border-radius: 6px;
     display: inline-block;
     margin: 1px 0 !important;
-}}
-
-/* FIX: Tăng size cho message boxes (success/error/info) để đồng bộ */
-.stAlert, [data-testid="stNotificationContentSuccess"], 
-[data-testid="stNotificationContentError"],
-[data-testid="stNotificationContentInfo"] {{
-    font-size: 1.4em !important;
-    font-weight: 600 !important;
-    font-family: 'Oswald', sans-serif !important;
-}}
-
-/* FIX: Tăng size cho text trong success/error/info boxes */
-.stSuccess p, .stError p, .stInfo p, .stWarning p {{
-    font-size: 1.4em !important;
-    font-weight: 600 !important;
-    font-family: 'Oswald', sans-serif !important;
 }}
 
 /* NÚT BẤM */
@@ -713,7 +711,7 @@ st.markdown("""
         </a>
     </div>
     <div id="main-title-container">
-        <h1>Tổ Bảo Dưỡng Số 1</h1>
+        <h1>TỔ BẢO DƯỠNG SỐ 1</h1>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -823,14 +821,15 @@ if bank_choice != "----":
             
             # --- 2.3. Logic hiển thị bài làm theo nhóm (như cũ) ---
             if batch:
-                # Tăng font size lên 1.6em cho câu hỏi khi đã nộp/xem lại
-                q_style = "color: #FFDD00; font-weight: 700; font-size: 1.6em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
-                style_base = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.6em; text-shadow: none; padding: 5px 15px; margin: 1px 0;"
+                # 🔴 FIX FONT SIZE: Tăng kích thước chữ câu hỏi/đáp án lên 22px
+                q_style = "color: #FFDD00; font-weight: 700; font-size: 22px; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
+                
+                # FIX YÊU CẦU 3: Ép cứng font-size 22px cho phần hiển thị kết quả
+                style_base = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 22px !important; text-shadow: none; padding: 5px 15px; margin: 2px 0;"
 
                 if not st.session_state.submitted:
                     # Giao diện làm bài
                     for i, q in enumerate(batch, start=start+1):
-                        # Dùng q_style (font-size: 1.6em) cho câu hỏi
                         st.markdown(f"<div style='{q_style}'>{i}. {q['question']}</div>", unsafe_allow_html=True)
                         st.radio("", q["options"], key=f"q_{i}")
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
@@ -861,10 +860,10 @@ if bank_choice != "----":
                             st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
 
                         if is_correct:
-                            st.success(f"✅ Đúng — Đáp án: {q['answer']}")
+                            st.success(f"✅ Đúng – Đáp án: {q['answer']}")
                             score += 1
                         else:
-                            st.error(f"❌ Sai — Đáp án đúng: {q['answer']}")
+                            st.error(f"❌ Sai – Đáp án đúng: {q['answer']}")
                         
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
 
