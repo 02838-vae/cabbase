@@ -292,7 +292,7 @@ html, body, .stApp {{
     position: relative;
 }}
 
-/* FIX YÊU CẦU 3: BACKGROUND RÕ HƠN (BỎ BLUR, TĂNG BRIGHTNESS) */
+/* BACKGROUND RÕ HƠN (Sepia + Brightness) */
 .stApp {{
     background: none !important;
 }}
@@ -307,7 +307,7 @@ html, body, .stApp {{
     background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed;
     background-size: cover;
     
-    /* FILTER ĐÃ CHỈNH: Sepia nhẹ hơn, không blur, sáng hơn */
+    /* FILTER ĐÃ CHỈNH: Giữ sepia, tăng độ sáng, bỏ blur */
     filter: sepia(0.5) brightness(0.9) blur(0px); 
     
     z-index: -1; 
@@ -382,14 +382,12 @@ a#manual-home-btn:hover {{
     line-height: 1.5 !important;
 }}
 
-/* FIX YÊU CẦU 1: SỐ 1 CÂN BẰNG VỚI CHỮ */
+/* FIX: SỐ 1 ĐỒNG SIZE VỚI CHỮ */
 .number-one {{
-    font-family: 'Oswald', sans-serif !important; /* Dùng font không chân blocky */
-    font-size: 1.1em !important; /* Tăng size nhẹ để cao bằng chữ */
+    font-family: 'Oswald', sans-serif !important; 
+    font-size: 1em !important; /* Về 1em để bằng chữ */
     font-weight: 700;
-    vertical-align: middle; /* Căn giữa theo chiều dọc */
     display: inline-block;
-    margin-bottom: 5px; /* Tinh chỉnh vị trí */
 }}
 
 @media (max-width: 768px) {{
@@ -403,7 +401,7 @@ a#manual-home-btn:hover {{
     padding-top: 40px !important; padding-bottom: 2rem !important; 
 }}
 
-/* FIX YÊU CẦU 2: SUB-TITLE MOBILE LỚN HƠN (6.5vw) */
+/* SUB-TITLE MOBILE LỚN HƠN (6.5vw) */
 #sub-static-title, .result-title {{
     margin-top: 150px; margin-bottom: 30px; text-align: center;
 }}
@@ -415,7 +413,6 @@ a#manual-home-btn:hover {{
 }}
 @media (max-width: 768px) {{
     #sub-static-title h2, .result-title h3 {{
-        /* Tăng từ 5vw lên 6.5vw để to hơn nhưng vẫn 1 hàng */
         font-size: 6.5vw !important; 
         white-space: nowrap; 
     }}
