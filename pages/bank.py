@@ -205,9 +205,9 @@ def display_all_questions(questions):
         st.warning("Không có câu hỏi nào để hiển thị.")
         return
     
-    # 🔴 YÊU CẦU 3: Giữ kích thước LỚN cho chế độ kết quả/toàn bộ
-    q_style = "color: #FFDD00; font-weight: 700; font-size: 1.6em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
-    style_base = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.6em; text-shadow: none; padding: 5px 15px; margin: 1px 0;"
+    # 🔴 FIX YÊU CẦU 3: Đồng nhất size chữ câu hỏi/đáp án về 1.5em
+    q_style = "color: #FFDD00; font-weight: 700; font-size: 1.5em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
+    style_base = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.5em; text-shadow: none; padding: 5px 15px; margin: 1px 0;"
 
     for i, q in enumerate(questions, start=1):
         st.markdown(f"<div style='{q_style}'>{i}. {q['question']}</div>", unsafe_allow_html=True)
@@ -247,11 +247,9 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
     if f"{test_key_prefix}_questions" not in st.session_state:
         st.session_state[f"{test_key_prefix}_questions"] = []
     
-    # 🔴 YÊU CẦU 3: Kích thước nhỏ cho câu hỏi chính (1.4em)
-    q_style_small = "color: #FFDD00; font-weight: 700; font-size: 1.4em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
-    # 🔴 YÊU CẦU 3: Kích thước lớn cho kết quả sau khi nộp (1.6em)
-    q_style_large = "color: #FFDD00; font-weight: 700; font-size: 1.6em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
-    style_base_large = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.6em; text-shadow: none; padding: 5px 15px; margin: 1px 0;"
+    # 🔴 FIX YÊU CẦU 3: Đồng nhất size chữ câu hỏi/đáp án về 1.5em
+    q_style = "color: #FFDD00; font-weight: 700; font-size: 1.5em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
+    style_base = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.5em; text-shadow: none; padding: 5px 15px; margin: 1px 0;"
 
 
     # Bắt đầu bài test
@@ -276,8 +274,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         test_batch = st.session_state[f"{test_key_prefix}_questions"]
         
         for i, q in enumerate(test_batch, start=1):
-            # Dùng q_style_small cho chế độ làm bài (trước khi nộp)
-            st.markdown(f"<div style='{q_style_small}'>{i}. {q['question']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='{q_style}'>{i}. {q['question']}</div>", unsafe_allow_html=True)
             st.radio("", q["options"], key=f"{test_key_prefix}_q_{i}")
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
             
@@ -296,20 +293,19 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             correct = clean_text(q["answer"])
             is_correct = clean_text(selected_opt) == correct
 
-            # Dùng q_style_large cho chế độ kết quả
-            st.markdown(f"<div style='{q_style_large}'>{i}. {q['question']}</div>", unsafe_allow_html=True)
+            st.markdown(f"<div style='{q_style}'>{i}. {q['question']}</div>", unsafe_allow_html=True)
             
             # Hiển thị các lựa chọn với style theo kết quả
             for opt in q["options"]:
                 opt_clean = clean_text(opt)
-                style = f"color:#FFFFFF; {style_base_large}"
+                style = f"color:#FFFFFF; {style_base}"
                 
                 if opt_clean == correct:
                     # Đáp án đúng (Màu xanh lá, đậm hơn)
-                    style = f"color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); {style_base_large}"
+                    style = f"color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); {style_base}"
                 elif opt_clean == clean_text(selected_opt):
                     # Đáp án đã chọn (Màu đỏ, đậm hơn)
-                    style = f"color:#ff3333; text-decoration: underline; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8); {style_base_large}"
+                    style = f"color:#ff3333; text-decoration: underline; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8); {style_base}"
                 
                 st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
 
@@ -445,9 +441,9 @@ h1, h2 {{ visibility: hidden;
 
 /* ======================= NÚT VỀ TRANG CHỦ (FIX GÓC TRÊN TRÁI) ======================= */
 #back-to-home-btn-container {{
-    /* 🔴 YÊU CẦU 1: Thay đổi từ fixed thành absolute để cuộn cùng trang */
     position: absolute; 
-    top: 10px;
+    /* 🔴 FIX YÊU CẦU 1: Đẩy nút xuống để không chồng tiêu đề */
+    top: 20px;
     left: 15px;
     margin: 0; 
     pointer-events: auto;
@@ -486,13 +482,14 @@ a#manual-home-btn:hover {{
     left: 0;
     top: 0; 
     width: 100%;
-    /* 🔴 YÊU CẦU 2: Tăng thêm chiều cao container để đảm bảo full nét */
-    height: 150px; /* Đã tăng chiều cao lên 150px */
+    /* 🔴 FIX YÊU CẦU 2: Tăng thêm chiều cao container để đảm bảo full nét */
+    height: 160px; /* Đã tăng chiều cao lên 160px */
     overflow: hidden; 
     pointer-events: none;
     background-color: transparent;
     display: block;
-    padding-top: 30px; /* Đã tăng padding top */
+    /* 🔴 FIX YÊU CẦU 2: Tăng padding top để dịch nội dung xuống và tạo khoảng trống phía trên */
+    padding-top: 40px; 
     margin-top: 0px; 
     z-index: 1200; 
 }}
@@ -519,7 +516,6 @@ a#manual-home-btn:hover {{
     text-shadow: 2px 2px 8px rgba(255, 255, 255, 0.3);
     position: absolute;
     left: 0; 
-    /* 🔴 YÊU CẦU 2: Đặt top về 0 */
     top: 0px; 
     bottom: auto;
     /* Giảm line-height để kiểm soát tốt hơn */
@@ -532,9 +528,9 @@ a#manual-home-btn:hover {{
         margin-bottom: 10px;
     }}
     #back-to-home-btn-container {{
-        /* 🔴 YÊU CẦU 1: Thay đổi từ fixed thành absolute để cuộn cùng trang */
         position: absolute;
-        top: 5px; 
+        /* 🔴 FIX YÊU CẦU 1: Đẩy nút xuống trên mobile */
+        top: 15px; 
         left: 5px;
         width: auto;
         display: block; 
@@ -548,11 +544,12 @@ a#manual-home-btn:hover {{
     #main-title-container {{
         position: relative;
         width: 100%;
-        /* 🔴 YÊU CẦU 2: Tăng thêm chiều cao container trên mobile */
-        height: 120px; /* Đã tăng chiều cao lên 120px */
+        /* 🔴 FIX YÊU CẦU 2: Tăng thêm chiều cao container trên mobile */
+        height: 130px; /* Đã tăng chiều cao lên 130px */
         top: 0; 
         z-index: 1200;
-        padding-top: 20px; /* Đã tăng padding top */
+        /* 🔴 FIX YÊU CẦU 2: Tăng padding top trên mobile */
+        padding-top: 25px; 
         display: block;
     }}
     #main-title-container h1 {{
@@ -560,7 +557,6 @@ a#manual-home-btn:hover {{
         font-size: 8vw; 
         animation: scrollRight 12s linear infinite, colorShift 8s ease infinite;
         left: 0;
-        /* 🔴 YÊU CẦU 2: Đặt top về 0 */
         top: 0px; 
         bottom: auto;
         line-height: 1;
@@ -631,12 +627,12 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
     color: #FFFFFF !important;
 }}
 
-/* ======================= STYLE CÂU HỎI & ĐÁP ÁN ======================= */
-/* 🔴 YÊU CẦU 3: Giảm size chữ câu hỏi trước khi nộp về 1.4em */
+/* ======================= STYLE CÂU HỎI & ĐÁP ÁN (ĐỒNG NHẤT VỀ 1.5EM) ======================= */
+/* 🔴 FIX YÊU CẦU 3: Đồng nhất size chữ câu hỏi trước khi nộp về 1.5em */
 div[data-testid="stMarkdownContainer"] p {{
     color: #ffffff !important; 
     font-weight: 400; 
-    font-size: 1.4em !important; 
+    font-size: 1.5em !important; 
     font-family: 'Oswald', sans-serif !important; 
     text-shadow: none; 
     background-color: transparent; 
@@ -645,10 +641,10 @@ div[data-testid="stMarkdownContainer"] p {{
     margin-bottom: 5px; 
 }}
 
-/* 🔴 YÊU CẦU 3: Giảm size chữ đáp án trước khi nộp về 1.4em */
+/* 🔴 FIX YÊU CẦU 3: Đồng nhất size chữ đáp án trước khi nộp về 1.5em */
 .stRadio label {{
     color: #f9f9f9 !important;
-    font-size: 1.4em !important; 
+    font-size: 1.5em !important; 
     font-weight: 700 !important; 
     font-family: 'Oswald', sans-serif !important; 
     text-shadow: none !important;
@@ -820,18 +816,15 @@ if bank_choice != "----":
             
             # --- 2.3. Logic hiển thị bài làm theo nhóm (như cũ) ---
             if batch:
-                # 🔴 YÊU CẦU 3: Kích thước nhỏ cho câu hỏi/đáp án khi làm bài (1.4em)
-                q_style_small = "color: #FFDD00; font-weight: 700; font-size: 1.4em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
-                # 🔴 YÊU CẦU 3: Kích thước lớn cho kết quả sau khi nộp (1.6em)
-                q_style_large = "color: #FFDD00; font-weight: 700; font-size: 1.6em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
-                style_base_large = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.6em; text-shadow: none; padding: 5px 15px; margin: 1px 0;"
+                # 🔴 FIX YÊU CẦU 3: Đồng nhất size chữ câu hỏi/đáp án về 1.5em
+                q_style = "color: #FFDD00; font-weight: 700; font-size: 1.5em; font-family: 'Oswald', sans-serif; text-shadow: 0 0 5px rgba(255, 221, 0, 0.5); padding: 5px 15px;"
+                style_base = "font-family: 'Oswald', sans-serif; font-weight:700; font-size: 1.5em; text-shadow: none; padding: 5px 15px; margin: 1px 0;"
 
 
                 if not st.session_state.submitted:
                     # Giao diện làm bài
                     for i, q in enumerate(batch, start=start+1):
-                        # Dùng q_style_small cho chế độ làm bài (trước khi nộp)
-                        st.markdown(f"<div style='{q_style_small}'>{i}. {q['question']}</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='{q_style}'>{i}. {q['question']}</div>", unsafe_allow_html=True)
                         st.radio("", q["options"], key=f"q_{i}")
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
                     if st.button("✅ Nộp bài", key="submit_group"):
@@ -845,19 +838,18 @@ if bank_choice != "----":
                         correct = clean_text(q["answer"])
                         is_correct = clean_text(selected_opt) == correct
 
-                        # Dùng q_style_large cho chế độ kết quả
-                        st.markdown(f"<div style='{q_style_large}'>{i}. {q['question']}</div>", unsafe_allow_html=True)
+                        st.markdown(f"<div style='{q_style}'>{i}. {q['question']}</div>", unsafe_allow_html=True)
 
                         for opt in q["options"]:
                             opt_clean = clean_text(opt)
-                            style = f"color:#FFFFFF; {style_base_large}"
+                            style = f"color:#FFFFFF; {style_base}"
                             
                             if opt_clean == correct:
                                 # Đáp án đúng
-                                style = f"color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); {style_base_large}"
+                                style = f"color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); {style_base}"
                             elif opt_clean == clean_text(selected_opt):
                                 # Đáp án đã chọn
-                                style = f"color:#ff3333; text-decoration: underline; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8); {style_base_large}"
+                                style = f"color:#ff3333; text-decoration: underline; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8); {style_base}"
                             
                             st.markdown(f"<div style='{style}'>{opt}</div>", unsafe_allow_html=True)
 
