@@ -17,17 +17,25 @@ def clean_text(s: str) -> str:
     return re.sub(r'\s+', ' ', s).strip()
 
 def read_docx_paragraphs(source):
-    try:
-        doc = Document(os.path.join(os.path.dirname(__file__), source))
-    except Exception as e:
+    # Thử nhiều đường dẫn khác nhau
+    paths_to_try = [
+        os.path.join(os.path.dirname(__file__), source),
+        source,
+        f"pages/{source}",
+        os.path.join("pages", source),
+        os.path.join(os.getcwd(), source),
+        os.path.join(os.getcwd(), "pages", source)
+    ]
+    
+    for path in paths_to_try:
         try:
-             doc = Document(source)
+            if os.path.exists(path):
+                doc = Document(path)
+                return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
         except Exception:
-            try:
-                doc = Document(f"pages/{source}")
-            except Exception:
-                return []
-    return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
+            continue
+    
+    return []
 
 def get_base64_encoded_file(file_path):
     fallback_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
@@ -298,16 +306,16 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             for opt in q["options"]:
                 opt_clean = clean_text(opt)
                 if opt_clean == correct:
-                    color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
+                    color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); font-weight: 400;"
                 elif opt_clean == clean_text(selected_opt):
-                    color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8);"
+                    color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8); font-weight: 400;"
                 else:
-                    color_style = "color:#FFFFFF;"
+                    color_style = "color:#FFFFFF; font-weight: 400;"
                 
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
 
             if is_correct: score += 1
-            st.info(f"Đáp án đúng: **{q['answer']}**", icon="💡")
+            st.info(f"**💡 Đáp án đúng: {q['answer']}**", icon="💡")
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
         
         total_q = len(test_batch)
@@ -449,7 +457,7 @@ a#manual-home-btn:hover {{
     line-height: 1.5 !important;
 }}
 
-/* SỐ 1 */
+/* Số 1 */
 .number-one {{
     font-family: 'Oswald', sans-serif !important; 
     font-size: 1em !important; 
@@ -507,7 +515,7 @@ a#manual-home-btn:hover {{
 }}
 
 .stRadio label {{
-    color: #f9f9f9 !important;
+    color: #FFFFFF !important;
     font-size: 22px !important; 
     font-weight: 400 !important; 
     font-family: 'Oswald', sans-serif !important; 
@@ -665,18 +673,18 @@ if bank_choice != "----":
                         for opt in q["options"]:
                             opt_clean = clean_text(opt)
                             if opt_clean == correct:
-                                color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
+                                color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8); font-weight: 400;"
                             elif opt_clean == clean_text(selected_opt):
-                                color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8);"
+                                color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8); font-weight: 400;"
                             else:
-                                color_style = "color:#FFFFFF;"
+                                color_style = "color:#FFFFFF; font-weight: 400;"
                             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
                         
                         if is_correct: 
-                            st.success(f"✅ Đúng – Đáp án: {q['answer']}")
+                            st.success(f"**✅ Đúng — Đáp án: {q['answer']}**")
                             score += 1
                         else: 
-                            st.error(f"❌ Sai – Đáp án đúng: {q['answer']}")
+                            st.error(f"**❌ Sai — Đáp án đúng: {q['answer']}**")
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
 
                     st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{len(batch)}</h3></div>', unsafe_allow_html=True)
