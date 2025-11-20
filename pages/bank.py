@@ -207,9 +207,14 @@ def parse_pl1(source):
         # 2. Xử lý Question Text: xóa số thứ tự (nếu có)
         q_data["question"] = re.sub(r'^\d+[\.\)]\s*', '', q_data["question"]).strip()
         
-        # --- FIX FALLBACK: Cứu Question Text nếu nó bị mất do lỗi phân tách
-        # Cơ chế này chỉ chạy nếu Question Text rỗng VÀ không phải do Logic 1 đặt Question Text
-        # Lý do: Trong trường hợp lỗi 43/44, Question Text đã được đặt trong Logic 1
+        # --- FIX TRIỆT ĐỂ LỖI 43/44: Loại bỏ nhãn đáp án bị dính trong Question Text ('D. Bird strikes...') ---
+        # Nếu Question Text sau khi xóa số thứ tự vẫn bắt đầu bằng nhãn đáp án, xóa nhãn đó đi.
+        if OPTION_START_PATTERN.match(q_data["question"]):
+            q_data["question"] = re.sub(r'^[A-Z][\.\)]\s*', '', q_data["question"]).strip()
+
+
+        # --- FIX FALLBACK: Cứu Question Text nếu nó bị mất do lỗi phân tách ---
+        # Cơ chế này chạy sau khi đã cố gắng làm sạch nhãn đáp án dính ở trên
         if not q_data["question"] and processed_opts and q_data.get("type") == "NUMBERED":
             # Giả định mục đầu tiên trong Options chính là Question Text bị thất lạc
             first_opt_text = processed_opts[0]
@@ -237,21 +242,15 @@ def parse_pl1(source):
             # CHECK: Kiểm tra "Dangling Option" - Nếu văn bản sau số câu hỏi mới lại giống một đáp án
             is_dangled_option = OPTION_START_PATTERN.match(new_q_raw_text)
 
-            # --- Logic 1: Xử lý Option dính (FIX LỖI Q43/Q44) ---
+            # --- Logic 1: Xử lý Option dính (Q43/Q44) ---
             if is_dangled_option and current_q_data and current_q_data.get("options"):
-                # 1. Thêm đáp án dính vào câu hỏi CŨ (Q43)
-                current_q_data["options"].append(new_q_raw_text)
+                # 1. Hoàn tất câu hỏi CŨ (Q43) AS IS (Chấp nhận Q43 thiếu đáp án D)
+                _finalize_and_save(current_q_data)
                 
-                # 2. Hoàn tất câu hỏi CŨ (Q43)
-                _finalize_and_save(current_q_data) 
-                
-                # 3. TRÍCH XUẤT QUESTION TEXT CHO Q44 TỪ CHÍNH DÒNG BỊ DÍNH NÀY
-                # Lấy phần nội dung sau nhãn đáp án (D. hoặc E. hoặc bất cứ chữ cái nào)
-                q44_text_from_dangle = re.sub(r'^[A-Z][\.\)]\s*', '', new_q_raw_text).strip()
-                
-                # 4. Bắt đầu câu hỏi MỚI (Q44) - Đã có Question Text chính xác
+                # 2. Bắt đầu câu hỏi MỚI (Q44) với Question Text là full new_q_raw_text.
+                # Phần "D." sẽ được làm sạch trong hàm _finalize_and_save tiếp theo.
                 current_q_data = {
-                    "question": q44_text_from_dangle,
+                    "question": new_q_raw_text, 
                     "options": [],
                     "type": "NUMBERED"
                 }
@@ -287,9 +286,8 @@ def parse_pl1(source):
             if line.strip():
                 is_option_line = OPTION_START_PATTERN.match(line)
                 
-                # Logic 3: Nếu Question Text đang trống (chỉ xảy ra nếu Q-Text ở dòng tiếp theo) 
-                # VÀ dòng này không phải option, thì gán vào Question
-                # Lưu ý: Trường hợp lỗi Q43/Q44, Question Text đã được gán ở Logic 1
+                # Logic 3: Nếu Question Text đang trống 
+                # VÀ dòng này không phải option (tức là Question Text), thì gán vào Question
                 if not current_q_data["question"] and not is_option_line:
                     current_q_data["question"] = line
                 
