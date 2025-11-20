@@ -385,7 +385,7 @@ a#manual-home-btn:hover {{
 /* FIX: SỐ 1 ĐỒNG SIZE VỚI CHỮ */
 .number-one {{
     font-family: 'Oswald', sans-serif !important; 
-    font-size: 0.9em !important; 
+    font-size: 0.8em !important; 
     font-weight: 700;
     display: inline-block;
 }}
