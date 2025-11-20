@@ -18,12 +18,17 @@ def clean_text(s: str) -> str:
 
 def read_docx_paragraphs(source):
     try:
+        # Tìm file tương đối so với file script hiện tại
         doc = Document(os.path.join(os.path.dirname(__file__), source))
     except Exception as e:
+        # Fallback: thử đường dẫn trực tiếp hoặc thư mục pages/
         try:
              doc = Document(source)
         except Exception:
-            return []
+            try:
+                doc = Document(f"pages/{source}")
+            except Exception:
+                return []
     return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
 
 def get_base64_encoded_file(file_path):
@@ -292,7 +297,7 @@ html, body, .stApp {{
     position: relative;
 }}
 
-/* BACKGROUND RÕ HƠN (Sepia + Brightness) */
+/* BACKGROUND RÕ HƠN */
 .stApp {{
     background: none !important;
 }}
@@ -306,10 +311,7 @@ html, body, .stApp {{
     height: 100%;
     background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed;
     background-size: cover;
-    
-    /* FILTER ĐÃ CHỈNH: Giữ sepia, tăng độ sáng, bỏ blur */
     filter: sepia(0.5) brightness(0.9) blur(0px); 
-    
     z-index: -1; 
     pointer-events: none;
 }}
@@ -382,10 +384,10 @@ a#manual-home-btn:hover {{
     line-height: 1.5 !important;
 }}
 
-/* FIX: SỐ 1 ĐỒNG SIZE VỚI CHỮ */
+/* SỐ 1 ĐỒNG SIZE VỚI CHỮ */
 .number-one {{
     font-family: 'Oswald', sans-serif !important; 
-    font-size: 0.8em !important; 
+    font-size: 1em !important; 
     font-weight: 700;
     display: inline-block;
 }}
@@ -401,7 +403,7 @@ a#manual-home-btn:hover {{
     padding-top: 40px !important; padding-bottom: 2rem !important; 
 }}
 
-/* SUB-TITLE MOBILE LỚN HƠN (6.5vw) */
+/* FIX YÊU CẦU 2: TITLE DÀI TRÊN MOBILE 1 HÀNG */
 #sub-static-title, .result-title {{
     margin-top: 150px; margin-bottom: 30px; text-align: center;
 }}
@@ -413,7 +415,8 @@ a#manual-home-btn:hover {{
 }}
 @media (max-width: 768px) {{
     #sub-static-title h2, .result-title h3 {{
-        font-size: 6.5vw !important; 
+        /* Giảm size xuống 3.8vw để dòng dài như "Luyện tập theo nhóm..." vẫn vừa 1 hàng */
+        font-size: 3.8vw !important; 
         white-space: nowrap; 
     }}
 }}
@@ -491,7 +494,8 @@ if "submitted" not in st.session_state: st.session_state.submitted = False
 if "current_mode" not in st.session_state: st.session_state.current_mode = "group"
 if "last_bank_choice" not in st.session_state: st.session_state.last_bank_choice = "----" 
 
-BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật"]
+# FIX YÊU CẦU 1, 3: CẬP NHẬT LIST NGÂN HÀNG
+BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật VAECO", "Ngân hàng Docwise"]
 bank_choice = st.selectbox("Chọn ngân hàng:", BANK_OPTIONS, index=BANK_OPTIONS.index(st.session_state.get('bank_choice_val', '----')), key="bank_selector_master")
 st.session_state.bank_choice_val = bank_choice
 
@@ -509,8 +513,32 @@ if st.session_state.get('last_bank_choice') != bank_choice and bank_choice != "-
     st.rerun()
 
 if bank_choice != "----":
-    source = "cabbank.docx" if "Kỹ thuật" in bank_choice else "lawbank.docx"
-    questions = parse_cabbank(source) if "Kỹ thuật" in bank_choice else parse_lawbank(source)
+    # XỬ LÝ LOGIC NGUỒN DỮ LIỆU
+    source = ""
+    is_docwise = False
+    
+    if "Kỹ thuật" in bank_choice:
+        source = "cabbank.docx"
+    elif "Luật VAECO" in bank_choice:
+        source = "lawbank.docx"
+    elif "Docwise" in bank_choice:
+        is_docwise = True
+        # FIX YÊU CẦU 3: Dropdown phụ cho Docwise
+        doc_options = ["Phụ Lục 1"]
+        doc_selected = st.selectbox("Chọn Phụ lục:", doc_options)
+        
+        if doc_selected == "Phụ Lục 1":
+            source = "PL1.docx"
+
+    # LOAD CÂU HỎI
+    if is_docwise:
+        # Docwise dùng parser giống Law (hoặc tùy format PL1)
+        questions = parse_lawbank(source)
+    elif "Kỹ thuật" in bank_choice:
+        questions = parse_cabbank(source)
+    else:
+        questions = parse_lawbank(source)
+
     if not questions:
         st.error(f"❌ Không đọc được câu hỏi nào từ file **{source}**.")
         st.stop() 
