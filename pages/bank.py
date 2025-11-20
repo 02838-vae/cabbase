@@ -27,20 +27,15 @@ def read_docx_paragraphs(source):
         # Tìm file tương đối so với file script hiện tại
         doc = Document(os.path.join(os.path.dirname(__file__), source))
     except Exception:
-        # Fallback 1: thử đường dẫn trực tiếp
+        # Fallback: thử đường dẫn trực tiếp hoặc thư mục pages/
         try:
              doc = Document(source)
        
  except Exception:
-            # Fallback 2: thử thư mục pages/
             try:
-                # Đã fix lỗi: Thử đường dẫn trong thư mục pages/
-                doc = Document(os.path.join(os.path.dirname(__file__), f"pages/{source}"))
+                doc = Document(f"pages/{source}")
             except Exception:
-                try:
-                    doc = Document(f"pages/{source}") # Thử đường dẫn tương đối đơn giản
-                except Exception:
-                    return []
+                return []
     return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
 
 def get_base64_encoded_file(file_path):
@@ -52,11 +47,11 @@ def get_base64_encoded_file(file_path):
             path_to_check = file_path 
         
         if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
-            # Thêm check trong thư mục pages/ cho ảnh
+            # FIX: Thêm check trong thư mục pages/ cho ảnh
             path_to_check = os.path.join(os.path.dirname(__file__), f"pages/{file_path}")
             if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
                 return fallback_base64
-            
+
         with open(path_to_check, "rb") as f:
             return base64.b64encode(f.read()).decode("utf-8")
     
@@ -343,10 +338,9 @@ nào để hiển thị.")
           
       color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
             else:
-                # Đáp án thường: Trắng (Đã fix từ màu xám)
+                # Đáp án thường: Trắng
                 color_style = "color:#FFFFFF;"
             
-            # Đảm bảo font-weight là 400 (không in đậm) đã được set trong CSS cho .bank-answer-text
             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
        
  
@@ -418,16 +412,15 @@ Tỷ lệ đạt (PASS) là **{int(PASS_RATE*100)}%** ({int(TOTAL_QUESTIONS * PA
 elif opt_clean == clean_text(selected_opt):
                     color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8);"
 else:
-                    # Đã fix lỗi: Màu trắng
                     color_style = "color:#FFFFFF;"
 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
 
             if is_correct: 
                 score += 1
-                # Đã fix lỗi: Diễn giải in đậm
+                # FIX: Diễn giải in đậm (Sử dụng st.success cho câu đúng)
                 st.success(f"✅ Đúng – Đáp án: **{q['answer']}**", icon="💡")
             else:
-                # Đã fix lỗi: Diễn giải in đậm
+                # FIX: Diễn giải in đậm (Sử dụng st.error cho câu sai)
                 st.error(f"❌ Sai – Đáp án đúng: **{q['answer']}**", icon="💡")
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
         
@@ -631,7 +624,7 @@ padding: 5px 15px; margin-bottom: 10px; line-height: 1.4 !important;
 
 .bank-answer-text {{
     font-family: 'Oswald', sans-serif !important;
-    font-weight: 400 !important; /* Đã fix: Đảm bảo KHÔNG in đậm */
+    font-weight: 400 !important;
 font-size: 22px !important; 
     padding: 5px 15px; margin: 2px 0;
     line-height: 1.5 !important; 
@@ -741,7 +734,7 @@ LOAD CÂU HỎI
     
     if is_docwise and source == "PL1.pdf":
         try:
-            # Lấy content từ file PDF. Giữ nguyên logic này vì đây là cách đọc PDF hiện tại.
+            # Lấy content từ file PDF
             raw_content = file_content_fetcher.fetch(query=f"Nội dung file {source_id}", source_references=[source_id])
             # Parse nội dung raw text
             questions = parse_pl1(raw_content)
@@ -833,19 +826,17 @@ text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
                                 color_style = "color:#ff3333;
 text-shadow: 0 0 3px rgba(255, 0, 0, 0.8);"
                             else:
-                                # Đã fix lỗi: Màu trắng
                                 color_style = "color:#FFFFFF;"
-                            # Đảm bảo font-weight là 400 (không in đậm) đã được set trong CSS cho .bank-answer-text
                             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', 
 unsafe_allow_html=True)
                         
                         if is_correct: 
-                            # Đã fix lỗi: Diễn giải in đậm
+                            # FIX: Diễn giải in đậm
                             st.success(f"✅ Đúng – Đáp án: **{q['answer']}**")
                  
            score += 1
                         else: 
-                            # Đã fix lỗi: Diễn giải in đậm
+                            # FIX: Diễn giải in đậm
                             st.error(f"❌ Sai – Đáp án đúng: **{q['answer']}**")
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
 
