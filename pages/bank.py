@@ -338,8 +338,8 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         test_batch = st.session_state[f"{test_key_prefix}_questions"]
         for i, q in enumerate(test_batch, start=1):
             st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
-            # SỬ DỤNG HASH CỦA CÂU HỎI LÀM KEY ĐỂ TRÁNH LỖI KHI TRỘN/CHUYỂN NHÓM
-            q_key = f"{test_key_prefix}_q_{hash(q['question'])}" 
+            # SỬA LỖI KEY: THÊM INDEX (i) ĐỂ ĐẢM BẢO TÍNH DUY NHẤT VÀ KHẮC PHỤC StreamlitDuplicateElementKey
+            q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}" 
             # Đảm bảo radio button có giá trị mặc định để tránh lỗi
             default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
             st.radio("", q["options"], index=q["options"].index(default_val) if default_val in q["options"] else 0, key=q_key)
@@ -354,7 +354,8 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         score = 0
         
         for i, q in enumerate(test_batch, start=1):
-            q_key = f"{test_key_prefix}_q_{hash(q['question'])}" 
+            # SỬ DỤNG KEY ĐÃ ĐƯỢC FIX
+            q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}" 
             selected_opt = st.session_state.get(q_key)
             correct = clean_text(q["answer"])
             is_correct = clean_text(selected_opt) == correct
@@ -386,8 +387,9 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             st.error(f"😢 **KHÔNG ĐẠT (FAIL)**. Cần {math.ceil(pass_threshold)} câu đúng để Đạt.")
 
         if st.button("🔄 Làm lại Bài Test", key=f"{test_key_prefix}_restart_btn"):
-            for q in test_batch:
-                st.session_state.pop(f"{test_key_prefix}_q_{hash(q['question'])}", None)
+            # Cần lặp lại với index để xoá key chính xác
+            for i, q in enumerate(test_batch, start=1):
+                st.session_state.pop(f"{test_key_prefix}_q_{i}_{hash(q['question'])}", None)
             st.session_state.pop(f"{test_key_prefix}_questions", None)
             st.session_state[f"{test_key_prefix}_started"] = False
             st.session_state[f"{test_key_prefix}_submitted"] = False
@@ -573,11 +575,12 @@ a#manual-home-btn:hover {{
 }}
 
 .stRadio label {{
-    color: #f9f9f9 !important;
+    color: #FFFFFF !important; /* Đã chuyển sang màu trắng theo yêu cầu */
     font-size: 22px !important; 
     font-weight: 400 !important; 
     font-family: 'Oswald', sans-serif !important; 
     padding: 2px 12px; 
+    text-shadow: 0 0 2px rgba(0, 0, 0, 0.5); /* Thêm đổ bóng nhẹ để tăng tương phản */
 }}
 div[data-testid="stMarkdownContainer"] p {{
     font-size: 22px !important; 
