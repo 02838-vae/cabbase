@@ -14,7 +14,8 @@ import random
 def clean_text(s: str) -> str:
     if s is None:
         return ""
-    return re.sub(r'\s+', ' ', s).strip()
+    # ĐÃ SỬA: CHỈ LOẠI BỎ DẤU CÁCH THỪA, GIỮ NGUYÊN DẤU BA CHẤM VÀ CÁC KÝ TỰ KHÁC
+    return re.sub(r' +', ' ', s).strip()
 
 def read_docx_paragraphs(source):
     """
@@ -574,13 +575,14 @@ a#manual-home-btn:hover {{
     display: block; 
 }}
 
+/* ĐÃ CHỈNH SỬA MÀU SẮC VÀ ĐỘ DÀY CHỮ THEO YÊU CẦU */
 .stRadio label {{
-    color: #FFFFFF !important; /* Đã chuyển sang màu trắng theo yêu cầu */
+    color: #FFFFFF !important; /* Màu trắng tuyệt đối */
     font-size: 22px !important; 
-    font-weight: 400 !important; 
+    font-weight: 500 !important; /* Tăng độ dày chữ */
     font-family: 'Oswald', sans-serif !important; 
     padding: 2px 12px; 
-    text-shadow: 0 0 2px rgba(0, 0, 0, 0.5); /* Thêm đổ bóng nhẹ để tăng tương phản */
+    /* Đã xóa text-shadow */
 }}
 div[data-testid="stMarkdownContainer"] p {{
     font-size: 22px !important; 
