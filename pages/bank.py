@@ -187,7 +187,6 @@ def parse_pl1(source):
     phrase_start_pat = re.compile(r'Choose the correct group of words', re.I)
     
     # FIX 2: Regex cho prefix đáp án cần loại bỏ. Phải có dấu chấm/ngoặc HOẶC ít nhất một khoảng trắng sau chữ cái.
-    # r'^\s*[A-Ca-c]([\.\)]|\s+)\s*'
     opt_prefix_pat = re.compile(r'^\s*[A-Ca-c]([\.\)]|\s+)\s*') 
     
     labels = ["a", "b", "c"] # Chỉ có 3 đáp án
@@ -206,25 +205,41 @@ def parse_pl1(source):
         clean_p = clean_text(p)
         if not clean_p: continue
         
-        is_q_start_numbered = q_start_pat.match(clean_p)
         is_q_start_phrased = phrase_start_pat.search(clean_p)
+        is_explicitly_numbered = q_start_pat.match(clean_p) # Matches N. or N)
         is_max_options_reached = len(current["options"]) >= MAX_OPTIONS
-        is_first_line = not current["question"] and not current["options"]
+        is_question_started = current["question"]
+        is_first_line = not is_question_started and not current["options"]
         
-        # FIX 1: Stricter logic for starting a new question (must_switch_q)
-        must_switch_q = (
-            is_first_line or 
-            is_q_start_phrased or
-            (current["question"] and is_max_options_reached) or
-            # Chỉ chuyển sang câu hỏi mới dựa vào số thứ tự nếu câu hỏi hiện tại chưa có đáp án nào.
-            (is_q_start_numbered and current["question"] and not current["options"])
-        )
+        # --- NEW QUESTION LOGIC (FIX 1: Stricter switch to prevent absorbing Q41/5 inch content) ---
+        must_switch_q = False
         
-        # Thêm logic loại trừ: Nếu dòng bắt đầu bằng số VÀ đang ở giữa các đáp án (có 1 hoặc 2 đáp án), thì KHÔNG chuyển câu
-        if is_q_start_numbered and current["question"] and len(current["options"]) > 0 and not is_max_options_reached:
-            must_switch_q = False # Giữ dòng này lại làm nội dung đáp án
+        if is_first_line:
+            must_switch_q = True # Luôn bắt đầu câu hỏi ở dòng đầu tiên
+        
+        elif is_question_started:
+            # Câu hỏi đang được xử lý
             
-        # --- NEW QUESTION LOGIC (using must_switch_q) ---
+            # Scenario 1: Đã thu thập đủ đáp án, buộc phải chuyển câu
+            if is_max_options_reached:
+                must_switch_q = True
+                
+            # Scenario 2: Tìm thấy cụm từ bắt đầu câu hỏi rõ ràng (ví dụ: "Choose...")
+            elif is_q_start_phrased:
+                must_switch_q = True
+            
+            # Scenario 3: Tìm thấy một số thứ tự câu hỏi (ví dụ: 41.) - ĐÂY LÀ LOGIC CỐT LÕI
+            elif is_explicitly_numbered:
+                # Nếu chưa có đáp án nào (0 options), có thể là câu hỏi nhiều đoạn, vẫn chuyển câu
+                if len(current["options"]) == 0:
+                    must_switch_q = True
+                else:
+                    # KHÔNG CHUYỂN CÂU nếu đang trong quá trình thu thập đáp án (1 hoặc 2 options).
+                    # Điều này buộc dòng '5 inch...' (nếu nó bị hiểu nhầm là câu hỏi 41) 
+                    # phải trở thành Option B của Q40.
+                    must_switch_q = False 
+
+        # --- APPLY SWITCH DECISION ---
         if must_switch_q:
             
             # 1. Lưu câu hỏi cũ (nếu có)
@@ -232,7 +247,7 @@ def parse_pl1(source):
             
             # 2. Khởi tạo câu hỏi mới
             q_text = clean_p
-            if is_q_start_numbered:
+            if is_explicitly_numbered:
                 # Loại bỏ số thứ tự ở đầu câu hỏi nếu có (VD: "40. ")
                 q_text = q_start_pat.sub('', clean_p).strip()
             
@@ -243,7 +258,7 @@ def parse_pl1(source):
             # --- OPTION LOGIC ---
             
             # Nếu đã có câu hỏi VÀ chưa đủ MAX_OPTIONS, thì dòng này là một đáp án/lựa chọn
-            if current["question"] and not is_max_options_reached:
+            if is_question_started and not is_max_options_reached:
                 is_correct = False
                 
                 # Kiểm tra dấu hiệu đáp án đúng (*)
@@ -252,7 +267,7 @@ def parse_pl1(source):
                     # Xóa dấu (*)
                     clean_p = clean_p.replace("(*)", "").strip() 
                 
-                # Loại bỏ prefix A., B., C., A, B, C... khỏi đáp án thô (Sử dụng opt_prefix_pat đã chỉnh sửa)
+                # Loại bỏ prefix A., B., C., A, B, C... khỏi đáp án thô (Fix 2)
                 match_prefix = opt_prefix_pat.match(clean_p)
                 if match_prefix:
                     clean_p = clean_p[match_prefix.end():].strip()
@@ -268,13 +283,11 @@ def parse_pl1(source):
                         # Ghi nhận đây là đáp án đúng
                         current["answer"] = opt_text
             
-            # Nếu đã đủ 3 đáp án, dòng này *phải* là câu hỏi mới nhưng không được nhận diện,
-            # có thể là phần ngắt dòng của câu hỏi trước đó. Ta thêm nó vào Question text.
-            elif current["question"] and is_max_options_reached:
+            # Nếu đã đủ 3 đáp án (hoặc không phải option) nhưng không chuyển câu, thêm vào Question text.
+            elif is_question_started:
                  current["question"] += " " + clean_p
             
-            elif not current["question"] and not current["options"]:
-                # Nếu không phải dòng đầu tiên nhưng chưa có Q/Opt nào, thêm vào Question text.
+            elif not is_question_started and not current["options"]:
                 current["question"] = clean_p
 
     # Lưu câu cuối cùng
