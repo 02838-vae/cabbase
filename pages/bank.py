@@ -19,22 +19,36 @@ def clean_text(s: str) -> str:
 def read_docx_paragraphs(source):
     # Thử nhiều đường dẫn khác nhau
     paths_to_try = [
-        os.path.join(os.path.dirname(__file__), source),
         source,
+        os.path.join(os.path.dirname(__file__), source),
         f"pages/{source}",
         os.path.join("pages", source),
         os.path.join(os.getcwd(), source),
-        os.path.join(os.getcwd(), "pages", source)
+        os.path.join(os.getcwd(), "pages", source),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), source),
+        os.path.join(os.path.dirname(os.path.abspath(__file__)), "pages", source)
     ]
     
+    # Debug: In ra các đường dẫn đang thử
+    st.sidebar.write(f"🔍 Đang tìm file: {source}")
+    st.sidebar.write(f"📁 Thư mục hiện tại: {os.getcwd()}")
+    
     for path in paths_to_try:
+        st.sidebar.write(f"Thử: {path}")
         try:
             if os.path.exists(path):
+                st.sidebar.success(f"✅ Tìm thấy: {path}")
                 doc = Document(path)
-                return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
-        except Exception:
+                paras = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
+                st.sidebar.write(f"📄 Đọc được {len(paras)} đoạn văn")
+                return paras
+            else:
+                st.sidebar.warning(f"❌ Không tồn tại: {path}")
+        except Exception as e:
+            st.sidebar.error(f"❌ Lỗi đọc {path}: {str(e)}")
             continue
     
+    st.sidebar.error("⚠️ Không tìm thấy file ở bất kỳ đường dẫn nào!")
     return []
 
 def get_base64_encoded_file(file_path):
