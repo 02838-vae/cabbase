@@ -206,39 +206,20 @@ def parse_pl1(source):
         if not clean_p: continue
         
         is_q_start_phrased = phrase_start_pat.search(clean_p)
-        is_explicitly_numbered = q_start_pat.match(clean_p) # Matches N. or N)
+        is_explicitly_numbered = q_start_pat.match(clean_p) 
         is_max_options_reached = len(current["options"]) >= MAX_OPTIONS
         is_question_started = current["question"]
         is_first_line = not is_question_started and not current["options"]
         
-        # --- NEW QUESTION LOGIC (FIX 1: Stricter switch to prevent absorbing Q41/5 inch content) ---
-        must_switch_q = False
+        # --- NEW QUESTION LOGIC (Fixing the Q40/3.5 issue) ---
+        must_switch_q = (
+            is_first_line or                             # Case 1: Start of doc
+            is_q_start_phrased or                        # Case 2: Explicit phrase
+            (is_question_started and is_max_options_reached) # Case 3: Max options reached
+        )
+        # Note: Bỏ điều kiện chuyển câu dựa trên is_explicitly_numbered 
+        # khi chưa đủ options để tránh nhầm đáp án (ví dụ: "3.5 INCH...") là câu hỏi mới.
         
-        if is_first_line:
-            must_switch_q = True # Luôn bắt đầu câu hỏi ở dòng đầu tiên
-        
-        elif is_question_started:
-            # Câu hỏi đang được xử lý
-            
-            # Scenario 1: Đã thu thập đủ đáp án, buộc phải chuyển câu
-            if is_max_options_reached:
-                must_switch_q = True
-                
-            # Scenario 2: Tìm thấy cụm từ bắt đầu câu hỏi rõ ràng (ví dụ: "Choose...")
-            elif is_q_start_phrased:
-                must_switch_q = True
-            
-            # Scenario 3: Tìm thấy một số thứ tự câu hỏi (ví dụ: 41.) - ĐÂY LÀ LOGIC CỐT LÕI
-            elif is_explicitly_numbered:
-                # Nếu chưa có đáp án nào (0 options), có thể là câu hỏi nhiều đoạn, vẫn chuyển câu
-                if len(current["options"]) == 0:
-                    must_switch_q = True
-                else:
-                    # KHÔNG CHUYỂN CÂU nếu đang trong quá trình thu thập đáp án (1 hoặc 2 options).
-                    # Điều này buộc dòng '5 inch...' (nếu nó bị hiểu nhầm là câu hỏi 41) 
-                    # phải trở thành Option B của Q40.
-                    must_switch_q = False 
-
         # --- APPLY SWITCH DECISION ---
         if must_switch_q:
             
@@ -267,7 +248,7 @@ def parse_pl1(source):
                     # Xóa dấu (*)
                     clean_p = clean_p.replace("(*)", "").strip() 
                 
-                # Loại bỏ prefix A., B., C., A, B, C... khỏi đáp án thô (Fix 2)
+                # Loại bỏ prefix A., B., C. (và các biến thể có space/.) - Fix 2
                 match_prefix = opt_prefix_pat.match(clean_p)
                 if match_prefix:
                     clean_p = clean_p[match_prefix.end():].strip()
