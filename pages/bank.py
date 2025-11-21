@@ -9,7 +9,7 @@ import os
 import random 
 
 # ====================================================
-# ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
+# ⚙️ HÀM HỖ TRỢ VÀ FILE I/O (CẢI TIẾN)
 # ====================================================
 def clean_text(s: str) -> str:
     if s is None:
@@ -17,21 +17,34 @@ def clean_text(s: str) -> str:
     return re.sub(r'\s+', ' ', s).strip()
 
 def read_docx_paragraphs(source):
+    """
+    Hàm đọc paragraphs từ file .docx với cơ chế tìm kiếm đa dạng:
+    1. Thư mục chứa bank.py
+    2. Thư mục làm việc hiện tại
+    3. Thư mục pages/ (ngang hàng với bank.py)
+    """
     try:
+        # Cơ chế 1: Thư mục chứa file bank.py
         doc = Document(os.path.join(os.path.dirname(__file__), source))
-    except Exception as e:
+    except Exception:
         try:
+             # Cơ chế 2: Thư mục làm việc hiện tại
              doc = Document(source)
         except Exception:
             try:
+                # Cơ chế 3: Thư mục con 'pages/'
                 doc = Document(f"pages/{source}")
-            except Exception:
+            except Exception as e:
+                # Nếu tất cả đều thất bại, hiển thị lỗi trong console/log
+                print(f"Lỗi không tìm thấy file DOCX: {source}. Chi tiết: {e}")
                 return []
+    
     return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
 
 def get_base64_encoded_file(file_path):
     fallback_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
     try:
+        # Cơ chế tìm kiếm file ảnh: Ưu tiên trong thư mục hiện tại/chứa script
         path_to_check = os.path.join(os.path.dirname(__file__), file_path)
         if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
             path_to_check = file_path 
@@ -42,6 +55,7 @@ def get_base64_encoded_file(file_path):
         with open(path_to_check, "rb") as f:
             return base64.b64encode(f.read()).decode("utf-8")
     except Exception as e:
+        print(f"Lỗi đọc file ảnh {file_path}: {e}")
         return fallback_base64
 
 # ====================================================
@@ -167,11 +181,11 @@ def parse_pl1(source):
     questions = []
     current = {"question": "", "options": [], "answer": ""}
     
-    # Regex bắt đầu câu hỏi: Số + dấu chấm (VD: "1.", "10.")
-    q_start_pat = re.compile(r'^\d+[\.\)]\s+')
+    # Regex bắt đầu câu hỏi: Số + dấu chấm hoặc dấu đóng ngoặc (VD: "1.", "10)", "1.")
+    q_start_pat = re.compile(r'^\s*\d+[\.\)]\s*')
     
     # Danh sách nhãn tự động vì file Word bị ẩn A,B,C
-    labels = ["A", "B", "C", "D", "E", "F"]
+    labels = ["a", "b", "c", "d", "e", "f"]
 
     for p in paras:
         clean_p = clean_text(p)
@@ -186,9 +200,8 @@ def parse_pl1(source):
                     current["answer"] = current["options"][0]
                 questions.append(current)
             
-            # Loại bỏ số thứ tự ở đầu câu hỏi để hiển thị đẹp hơn (vì UI đã tự đánh số)
-            # Hoặc giữ nguyên nếu muốn. Ở đây ta xóa "1. " đi.
-            q_text = q_start_pat.sub('', clean_p)
+            # Loại bỏ số thứ tự ở đầu câu hỏi để hiển thị đẹp hơn
+            q_text = q_start_pat.sub('', clean_p).strip()
             current = {"question": q_text, "options": [], "answer": ""}
         
         else:
@@ -200,7 +213,7 @@ def parse_pl1(source):
                     is_correct = True
                     clean_p = clean_p.replace("(*)", "").strip() # Xóa dấu (*) đi
                 
-                # Tự động gán nhãn A, B, C, D
+                # Tự động gán nhãn a, b, c, d
                 idx = len(current["options"])
                 if idx < len(labels):
                     label = labels[idx]
@@ -279,7 +292,9 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         test_batch = st.session_state[f"{test_key_prefix}_questions"]
         for i, q in enumerate(test_batch, start=1):
             st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
-            st.radio("", q["options"], key=f"{test_key_prefix}_q_{i}")
+            # Dùng key là question hash để tránh lỗi khi câu hỏi được trộn
+            q_key = f"{test_key_prefix}_q_{hash(q['question'])}" 
+            st.radio("", q["options"], key=q_key)
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
         if st.button("✅ Nộp bài Test", key=f"{test_key_prefix}_submit_btn"):
             st.session_state[f"{test_key_prefix}_submitted"] = True
@@ -289,8 +304,10 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         st.markdown('<div class="result-title"><h3>🎉 KẾT QUẢ BÀI TEST</h3></div>', unsafe_allow_html=True)
         test_batch = st.session_state[f"{test_key_prefix}_questions"]
         score = 0
+        
         for i, q in enumerate(test_batch, start=1):
-            selected_opt = st.session_state.get(f"{test_key_prefix}_q_{i}")
+            q_key = f"{test_key_prefix}_q_{hash(q['question'])}" 
+            selected_opt = st.session_state.get(q_key)
             correct = clean_text(q["answer"])
             is_correct = clean_text(selected_opt) == correct
 
@@ -318,11 +335,12 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             st.balloons()
             st.success(f"🎊 **CHÚC MỪNG!** Bạn đã ĐẠT (PASS).")
         else:
-            st.error(f"😢 **KHÔNG ĐẠT (FAIL)**.")
+            st.error(f"😢 **KHÔNG ĐẠT (FAIL)**. Cần {math.ceil(pass_threshold)} câu đúng để Đạt.")
 
         if st.button("🔄 Làm lại Bài Test", key=f"{test_key_prefix}_restart_btn"):
-            for i in range(1, total_q + 1):
-                st.session_state.pop(f"{test_key_prefix}_q_{i}", None) 
+            for q in test_batch:
+                st.session_state.pop(f"{test_key_prefix}_q_{hash(q['question'])}", None)
+            st.session_state.pop(f"{test_key_prefix}_questions", None)
             st.session_state[f"{test_key_prefix}_started"] = False
             st.session_state[f"{test_key_prefix}_submitted"] = False
             st.rerun()
@@ -559,18 +577,21 @@ if "current_group_idx" not in st.session_state: st.session_state.current_group_i
 if "submitted" not in st.session_state: st.session_state.submitted = False
 if "current_mode" not in st.session_state: st.session_state.current_mode = "group"
 if "last_bank_choice" not in st.session_state: st.session_state.last_bank_choice = "----" 
+if "doc_selected" not in st.session_state: st.session_state.doc_selected = "Phụ Lục 1" 
 
 # FIX YÊU CẦU 1, 3: CẬP NHẬT LIST NGÂN HÀNG
 BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật VAECO", "Ngân hàng Docwise"]
 bank_choice = st.selectbox("Chọn ngân hàng:", BANK_OPTIONS, index=BANK_OPTIONS.index(st.session_state.get('bank_choice_val', '----')), key="bank_selector_master")
 st.session_state.bank_choice_val = bank_choice
 
+# Xử lý khi đổi ngân hàng (reset mode)
 if st.session_state.get('last_bank_choice') != bank_choice and bank_choice != "----":
     st.session_state.current_group_idx = 0
     st.session_state.submitted = False
     st.session_state.current_mode = "group" 
     last_bank_name = st.session_state.get('last_bank_choice')
     if not isinstance(last_bank_name, str) or last_bank_name == "----": last_bank_name = "null bank" 
+    # Xoá session state của bài test cũ
     bank_slug_old = last_bank_name.split()[-1].lower()
     st.session_state.pop(f"test_{bank_slug_old}_started", None)
     st.session_state.pop(f"test_{bank_slug_old}_submitted", None)
@@ -589,28 +610,41 @@ if bank_choice != "----":
         source = "lawbank.docx"
     elif "Docwise" in bank_choice:
         is_docwise = True
-        # FIX YÊU CẦU 3: Dropdown phụ cho Docwise
+        # Dropdown phụ cho Docwise
         doc_options = ["Phụ Lục 1"]
-        doc_selected = st.selectbox("Chọn Phụ lục:", doc_options)
+        doc_selected_new = st.selectbox("Chọn Phụ lục:", doc_options, key="docwise_selector")
         
-        if doc_selected == "Phụ Lục 1":
-            source = "PL1.docx"
+        # Xử lý khi đổi phụ lục (reset mode)
+        if st.session_state.doc_selected != doc_selected_new:
+            st.session_state.doc_selected = doc_selected_new
+            st.session_state.current_group_idx = 0
+            st.session_state.submitted = False
+            st.session_state.current_mode = "group"
+            st.rerun()
+
+        if st.session_state.doc_selected == "Phụ Lục 1":
+            source = "PL1.docx" # File PL1.docx
+        # Có thể thêm các phụ lục khác ở đây
+        # elif st.session_state.doc_selected == "Phụ Lục 2":
+        #     source = "PL2.docx"
 
     # LOAD CÂU HỎI
-    if is_docwise:
-        # Docwise dùng parser đặc biệt PL1
-        questions = parse_pl1(source)
-    elif "Kỹ thuật" in bank_choice:
-        questions = parse_cabbank(source)
-    else:
-        questions = parse_lawbank(source)
-
+    questions = []
+    if source:
+        if "Kỹ thuật" in bank_choice:
+            questions = parse_cabbank(source)
+        elif "Luật VAECO" in bank_choice:
+            questions = parse_lawbank(source)
+        elif is_docwise:
+            questions = parse_pl1(source)
+    
     if not questions:
-        st.error(f"❌ Không đọc được câu hỏi nào từ file **{source}**.")
+        st.error(f"❌ Không đọc được câu hỏi nào từ file **{source}**. Vui lòng kiểm tra file và cấu trúc thư mục (đảm bảo file nằm trong thư mục gốc hoặc thư mục 'pages/').")
         st.stop() 
     
     total = len(questions)
-    
+    st.success(f"Đã tải thành công **{total}** câu hỏi từ **{bank_choice}**.")
+
     # --- MODE: GROUP ---
     if st.session_state.current_mode == "group":
         st.markdown('<div class="result-title" style="margin-top: 0px;"><h3>Luyện tập theo nhóm (10 câu/nhóm)</h3></div>', unsafe_allow_html=True)
@@ -619,6 +653,8 @@ if bank_choice != "----":
             groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
             if st.session_state.current_group_idx >= len(groups): st.session_state.current_group_idx = 0
             selected = st.selectbox("Chọn nhóm câu:", groups, index=st.session_state.current_group_idx, key="group_selector")
+            
+            # Xử lý khi chuyển nhóm câu
             new_idx = groups.index(selected)
             if st.session_state.current_group_idx != new_idx:
                 st.session_state.current_group_idx = new_idx
@@ -636,10 +672,11 @@ if bank_choice != "----":
                     st.session_state.current_mode = "all"
                     st.rerun()
             with col_test:
-                if st.button("Làm bài test", key="btn_start_test"):
+                if st.button("Làm bài test 50 câu", key="btn_start_test"):
                     st.session_state.current_mode = "test"
                     bank_slug_new = bank_choice.split()[-1].lower()
                     test_key_prefix = f"test_{bank_slug_new}"
+                    # Reset session state cho bài test trước khi bắt đầu
                     st.session_state.pop(f"{test_key_prefix}_started", None)
                     st.session_state.pop(f"{test_key_prefix}_submitted", None)
                     st.session_state.pop(f"{test_key_prefix}_questions", None)
@@ -649,8 +686,9 @@ if bank_choice != "----":
             if batch:
                 if not st.session_state.submitted:
                     for i, q in enumerate(batch, start=start+1):
+                        q_key = f"q_{i}_{hash(q['question'])}" # Dùng hash để tránh trùng key
                         st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
-                        st.radio("", q["options"], key=f"q_{i}")
+                        st.radio("", q["options"], key=q_key)
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
                     if st.button("✅ Nộp bài", key="submit_group"):
                         st.session_state.submitted = True
@@ -658,7 +696,8 @@ if bank_choice != "----":
                 else:
                     score = 0
                     for i, q in enumerate(batch, start=start+1):
-                        selected_opt = st.session_state.get(f"q_{i}")
+                        q_key = f"q_{i}_{hash(q['question'])}" 
+                        selected_opt = st.session_state.get(q_key)
                         correct = clean_text(q["answer"])
                         is_correct = clean_text(selected_opt) == correct
                         st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
@@ -683,7 +722,10 @@ if bank_choice != "----":
                     col_reset, col_next = st.columns(2)
                     with col_reset:
                         if st.button("🔄 Làm lại nhóm này", key="reset_group"):
-                            for i in range(start+1, end+1): st.session_state.pop(f"q_{i}", None) 
+                            # Xoá session state của các radio button trong nhóm
+                            for i in range(start+1, end+1): 
+                                q_i = questions[i-1]
+                                st.session_state.pop(f"q_{i}_{hash(q_i['question'])}", None) 
                             st.session_state.submitted = False
                             st.rerun()
                     with col_next:
