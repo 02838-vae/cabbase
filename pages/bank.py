@@ -9,7 +9,7 @@ import os
 import random 
 
 # ====================================================
-# ⚙️ HÀM HỖ TRỢ VÀ FILE I/O (CẢI TIẾN)
+# ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
 # ====================================================
 def clean_text(s: str) -> str:
     if s is None:
@@ -166,14 +166,14 @@ def parse_lawbank(source):
     return questions
 
 # ====================================================
-# 🧩 PARSER 3: PHỤ LỤC 1 (ĐÃ SỬA LỖI LOGIC NHẬN DIỆN CÂU HỎI)
+# 🧩 PARSER 3: PHỤ LỤC 1 (ĐÃ SỬA LỖI LOGIC NHẬN DIỆN CÂU HỎI THEO YÊU CẦU MỚI)
 # ====================================================
 def parse_pl1(source):
     """
-    Parser cho định dạng PL1 (có thể không đánh số câu hỏi, dựa vào đáp án (*) để xác định câu mới):
-    - Câu hỏi có thể bắt đầu bằng số (1. ...) hoặc không (Choose the correct group...)
-    - Đáp án là các dòng tiếp theo (tự động gán A, B, C, D)
-    - Đáp án đúng có dấu (*) ở cuối
+    Parser cho định dạng PL1 (cải tiến để xử lý câu hỏi không đánh số và nhiều đáp án sau (*))
+    - Câu hỏi có thể bắt đầu bằng số (1. ...) hoặc cụm từ "Choose the correct group of words" hoặc dòng đầu tiên.
+    - Đáp án đúng có dấu (*) ở cuối.
+    - Dựa vào giới hạn số lượng đáp án (MAX_OPTIONS) để xác định điểm dừng câu hỏi.
     """
     paras = read_docx_paragraphs(source)
     if not paras: return []
@@ -181,51 +181,65 @@ def parse_pl1(source):
     questions = []
     current = {"question": "", "options": [], "answer": ""}
     
-    # Regex bắt đầu câu hỏi CÓ ĐÁNH SỐ: Số + dấu chấm hoặc dấu đóng ngoặc (VD: "1.", "10)", "1.")
+    # Regex bắt đầu câu hỏi CÓ ĐÁNH SỐ: Số + dấu chấm hoặc dấu đóng ngoặc
     q_start_pat = re.compile(r'^\s*\d+[\.\)]\s*')
+    # Regex bắt đầu câu hỏi CÓ CỤM TỪ (Thêm theo yêu cầu mới)
+    phrase_start_pat = re.compile(r'Choose the correct group of words', re.I)
     
-    # Danh sách nhãn tự động
-    labels = ["a", "b", "c", "d", "e", "f"]
+    labels = ["a", "b", "c", "d", "e", "f"] # Max 6 options
+    MAX_OPTIONS = 5 # Giới hạn an toàn cho số lượng đáp án tối đa
 
+    def finalize_current_question(q_dict, q_list):
+        """Lưu câu hỏi hiện tại và reset dictionary."""
+        if q_dict["question"]:
+            if not q_dict["answer"] and q_dict["options"]:
+                # Nếu không tìm thấy đáp án (*), mặc định lấy A là đúng
+                q_dict["answer"] = q_dict["options"][0] 
+            q_list.append(q_dict)
+        return {"question": "", "options": [], "answer": ""}
+    
     for p in paras:
         clean_p = clean_text(p)
         if not clean_p: continue
         
         is_q_start_numbered = q_start_pat.match(clean_p)
+        is_q_start_phrased = phrase_start_pat.search(clean_p)
         
-        # HEURISTIC QUAN TRỌNG:
-        # 1. Nếu là câu hỏi có đánh số -> New Q
-        # 2. Nếu đã hoàn thành câu hỏi trước (tìm thấy đáp án correct) -> New Q
-        # 3. Nếu là dòng đầu tiên -> New Q
-        is_new_q_by_context = (current["answer"] != "" and len(current["options"]) > 0) or \
-                              (not current["question"] and not current["options"])
-
-        if is_q_start_numbered or is_new_q_by_context:
+        is_explicit_start = is_q_start_numbered or is_q_start_phrased
+        is_max_options_reached = len(current["options"]) >= MAX_OPTIONS
+        is_first_line = not current["question"] and not current["options"]
+        
+        # --- NEW QUESTION LOGIC ---
+        # Bắt đầu câu hỏi mới nếu: 
+        # 1. Dòng đầu tiên
+        # 2. Dòng có tín hiệu rõ ràng (số hoặc cụm từ "Choose...")
+        # 3. Câu hỏi trước đã đủ số lượng đáp án tối đa (ngăn chặn việc đọc tiếp đáp án)
+        if is_first_line or is_explicit_start or (current["question"] and is_max_options_reached):
             
-            # --- Lưu câu hỏi cũ (nếu có) ---
-            if current["question"]:
-                # Final check for old question: Nếu chưa có đáp án đúng, mặc định lấy A, tránh lỗi
-                if not current["answer"] and len(current["options"]) > 0:
-                    current["answer"] = current["options"][0] 
-                questions.append(current)
+            # 1. Lưu câu hỏi cũ (nếu có)
+            current = finalize_current_question(current, questions)
             
-            # --- Khởi tạo câu hỏi mới ---
+            # 2. Khởi tạo câu hỏi mới
             q_text = clean_p
             if is_q_start_numbered:
-                # Loại bỏ số thứ tự ở đầu câu hỏi nếu có
+                # Loại bỏ số thứ tự
                 q_text = q_start_pat.sub('', clean_p).strip()
             
-            # Reset trạng thái cho câu hỏi mới
-            current = {"question": q_text, "options": [], "answer": ""}
+            # Reset và set question text
+            current["question"] = q_text
             
         else:
-            # --- Xử lý như một Lựa chọn/Đáp án ---
-            if current["question"]: # Chỉ xử lý nếu đã có câu hỏi
+            # --- OPTION LOGIC ---
+            
+            # Nếu đã có câu hỏi, thì dòng này là một đáp án/lựa chọn
+            if current["question"]:
                 is_correct = False
+                
                 # Kiểm tra dấu hiệu đáp án đúng (*)
                 if "(*)" in clean_p:
                     is_correct = True
-                    clean_p = clean_p.replace("(*)", "").strip() # Xóa dấu (*) đi
+                    # Remove the marker for display
+                    clean_p = clean_p.replace("(*)", "").strip() 
                 
                 # Tự động gán nhãn a, b, c, d
                 idx = len(current["options"])
@@ -235,13 +249,19 @@ def parse_pl1(source):
                     current["options"].append(opt_text)
                     
                     if is_correct:
+                        # Ghi nhận đây là đáp án đúng
                         current["answer"] = opt_text
+                else:
+                    # Nếu vượt quá giới hạn nhãn an toàn, có thể là một phần của câu hỏi 
+                    # hoặc dòng thừa. Ở đây ta mặc định coi đó là phần thừa/không hợp lệ và bỏ qua.
+                    pass
+            elif not current["question"] and not current["options"]:
+                # Nếu không phải dòng đầu tiên nhưng chưa có Q/Opt nào, có thể do lỗi dính dòng. 
+                # Ta cứ thêm vào Question text.
+                current["question"] = clean_p
 
     # Lưu câu cuối cùng
-    if current["question"]:
-        if not current["answer"] and current["options"]:
-            current["answer"] = current["options"][0]
-        questions.append(current)
+    current = finalize_current_question(current, questions)
         
     return questions
 
