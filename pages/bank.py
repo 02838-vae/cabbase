@@ -166,14 +166,14 @@ def parse_lawbank(source):
     return questions
 
 # ====================================================
-# 🧩 PARSER 3: PHỤ LỤC 1 (ĐÃ SỬA LỖI LOGIC NHẬN DIỆN CÂU HỎI THEO YÊU CẦU MỚI)
+# 🧩 PARSER 3: PHỤ LỤC 1 (ĐÃ SỬA LỖI LOGIC VÀ GIỚI HẠN 3 ĐÁP ÁN)
 # ====================================================
 def parse_pl1(source):
     """
-    Parser cho định dạng PL1 (cải tiến để xử lý câu hỏi không đánh số và nhiều đáp án sau (*))
-    - Câu hỏi có thể bắt đầu bằng số (1. ...) hoặc cụm từ "Choose the correct group of words" hoặc dòng đầu tiên.
-    - Đáp án đúng có dấu (*) ở cuối.
-    - Dựa vào giới hạn số lượng đáp án (MAX_OPTIONS) để xác định điểm dừng câu hỏi.
+    Parser cho định dạng PL1 (cải tiến để xử lý câu hỏi không đánh số, giới hạn 3 đáp án)
+    - Chỉ có 3 đáp án (A, B, C) cho mỗi câu hỏi.
+    - Câu hỏi mới được xác định bởi: 1. Đánh số, 2. Cụm từ 'Choose the correct...', 3. Đã có 3 đáp án cho câu trước.
+    - Xóa prefix A., B., C. nếu có trong đáp án thô.
     """
     paras = read_docx_paragraphs(source)
     if not paras: return []
@@ -181,13 +181,15 @@ def parse_pl1(source):
     questions = []
     current = {"question": "", "options": [], "answer": ""}
     
-    # Regex bắt đầu câu hỏi CÓ ĐÁNH SỐ: Số + dấu chấm hoặc dấu đóng ngoặc
-    q_start_pat = re.compile(r'^\s*\d+[\.\)]\s*')
-    # Regex bắt đầu câu hỏi CÓ CỤM TỪ (Thêm theo yêu cầu mới)
+    # Regex bắt đầu câu hỏi CÓ ĐÁNH SỐ: Số + dấu chấm hoặc dấu đóng ngoặc (ví dụ: 1., 40))
+    q_start_pat = re.compile(r'^\s*(\d+)[\.\)]\s*') 
+    # Regex bắt đầu câu hỏi CÓ CỤM TỪ
     phrase_start_pat = re.compile(r'Choose the correct group of words', re.I)
+    # Regex cho prefix đáp án cần loại bỏ (A., B., C. hoặc A, B, C, a, b, c không có dấu chấm/ngoặc ở cuối)
+    opt_prefix_pat = re.compile(r'^\s*[A-Ca-c][\.\)]?\s*') 
     
-    labels = ["a", "b", "c", "d", "e", "f"] # Max 6 options
-    MAX_OPTIONS = 5 # Giới hạn an toàn cho số lượng đáp án tối đa
+    labels = ["a", "b", "c"] # Chỉ có 3 đáp án
+    MAX_OPTIONS = 3 # Giới hạn tối đa 3 đáp án
 
     def finalize_current_question(q_dict, q_list):
         """Lưu câu hỏi hiện tại và reset dictionary."""
@@ -204,9 +206,9 @@ def parse_pl1(source):
         
         is_q_start_numbered = q_start_pat.match(clean_p)
         is_q_start_phrased = phrase_start_pat.search(clean_p)
-        
         is_explicit_start = is_q_start_numbered or is_q_start_phrased
-        is_max_options_reached = len(current["options"]) >= MAX_OPTIONS
+        
+        is_max_options_reached = len(current["options"]) >= MAX_OPTIONS # Đã có đủ 3 đáp án
         is_first_line = not current["question"] and not current["options"]
         
         # --- NEW QUESTION LOGIC ---
@@ -222,7 +224,7 @@ def parse_pl1(source):
             # 2. Khởi tạo câu hỏi mới
             q_text = clean_p
             if is_q_start_numbered:
-                # Loại bỏ số thứ tự
+                # Loại bỏ số thứ tự ở đầu câu hỏi nếu có (VD: "40. ")
                 q_text = q_start_pat.sub('', clean_p).strip()
             
             # Reset và set question text
@@ -231,17 +233,22 @@ def parse_pl1(source):
         else:
             # --- OPTION LOGIC ---
             
-            # Nếu đã có câu hỏi, thì dòng này là một đáp án/lựa chọn
-            if current["question"]:
+            # Nếu đã có câu hỏi VÀ chưa đủ MAX_OPTIONS, thì dòng này là một đáp án/lựa chọn
+            if current["question"] and not is_max_options_reached:
                 is_correct = False
                 
                 # Kiểm tra dấu hiệu đáp án đúng (*)
                 if "(*)" in clean_p:
                     is_correct = True
-                    # Remove the marker for display
+                    # Xóa dấu (*)
                     clean_p = clean_p.replace("(*)", "").strip() 
                 
-                # Tự động gán nhãn a, b, c, d
+                # Loại bỏ prefix A., B., C., A, B, C... khỏi đáp án thô 
+                match_prefix = opt_prefix_pat.match(clean_p)
+                if match_prefix:
+                    clean_p = clean_p[match_prefix.end():].strip()
+                    
+                # Tự động gán nhãn a, b, c
                 idx = len(current["options"])
                 if idx < len(labels):
                     label = labels[idx]
@@ -251,13 +258,14 @@ def parse_pl1(source):
                     if is_correct:
                         # Ghi nhận đây là đáp án đúng
                         current["answer"] = opt_text
-                else:
-                    # Nếu vượt quá giới hạn nhãn an toàn, có thể là một phần của câu hỏi 
-                    # hoặc dòng thừa. Ở đây ta mặc định coi đó là phần thừa/không hợp lệ và bỏ qua.
-                    pass
+            
+            # Nếu đã đủ 3 đáp án, dòng này *phải* là câu hỏi mới nhưng không được nhận diện,
+            # có thể là phần ngắt dòng của câu hỏi trước đó. Ta thêm nó vào Question text.
+            elif current["question"] and is_max_options_reached:
+                 current["question"] += " " + clean_p
+            
             elif not current["question"] and not current["options"]:
-                # Nếu không phải dòng đầu tiên nhưng chưa có Q/Opt nào, có thể do lỗi dính dòng. 
-                # Ta cứ thêm vào Question text.
+                # Nếu không phải dòng đầu tiên nhưng chưa có Q/Opt nào, thêm vào Question text.
                 current["question"] = clean_p
 
     # Lưu câu cuối cùng
