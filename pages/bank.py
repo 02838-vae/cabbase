@@ -14,8 +14,8 @@ import random
 def clean_text(s: str) -> str:
     if s is None:
         return ""
-    # ĐÃ SỬA: CHỈ LOẠI BỎ DẤU CÁCH THỪA, GIỮ NGUYÊN DẤU BA CHẤM VÀ CÁC KÝ TỰ KHÁC
-    return re.sub(r' +', ' ', s).strip()
+    # ĐÃ SỬA: CHỈ LOẠI BỎ DẤU CÁCH THỪA (>= 2 dấu cách liên tiếp) VÀ DẤU CÁCH Ở ĐẦU/CUỐI, GIỮ NGUYÊN DẤU BA CHẤM, GẠCH DƯỚI, NGOẶC...
+    return re.sub(r'\s{2,}', ' ', s).strip()
 
 def read_docx_paragraphs(source):
     """
@@ -427,7 +427,7 @@ html, body, .stApp {{
     min-height: 100vh !important;
     margin: 0 !important;
     padding: 0 !important;
-    overflow: auto;
+    overflow: auto; /* Giữ nguyên overflow: auto để có thanh cuộn */
     position: relative;
 }}
 
@@ -566,23 +566,23 @@ a#manual-home-btn:hover {{
     padding: 5px 15px; margin-bottom: 10px; line-height: 1.4 !important;
 }}
 
+/* ĐÃ SỬA: Tăng font-weight để chữ trắng nổi bật hơn */
 .bank-answer-text {{
     font-family: 'Oswald', sans-serif !important;
-    font-weight: 400 !important; 
+    font-weight: 700 !important; 
     font-size: 22px !important; 
     padding: 5px 15px; margin: 2px 0;
     line-height: 1.5 !important; 
     display: block; 
 }}
 
-/* ĐÃ CHỈNH SỬA MÀU SẮC VÀ ĐỘ DÀY CHỮ THEO YÊU CẦU */
+/* ĐÃ SỬA: Tăng font-weight để chữ trắng nổi bật hơn */
 .stRadio label {{
     color: #FFFFFF !important; /* Màu trắng tuyệt đối */
     font-size: 22px !important; 
-    font-weight: 500 !important; /* Tăng độ dày chữ */
+    font-weight: 700 !important; /* Tăng độ dày chữ */
     font-family: 'Oswald', sans-serif !important; 
     padding: 2px 12px; 
-    /* Đã xóa text-shadow */
 }}
 div[data-testid="stMarkdownContainer"] p {{
     font-size: 22px !important; 
