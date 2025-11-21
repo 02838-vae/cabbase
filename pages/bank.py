@@ -172,8 +172,8 @@ def parse_pl1(source):
     """
     Parser cho định dạng PL1 (cải tiến để xử lý câu hỏi không đánh số, giới hạn 3 đáp án)
     - Chỉ có 3 đáp án (a, b, c) cho mỗi câu hỏi.
-    - Câu hỏi mới được xác định bởi: 1. Đánh số (40., 41)), 2. Cụm từ 'Choose the correct...', 3. Đã có 3 đáp án cho câu trước.
-    - Xóa prefix A., B., C. nếu có trong đáp án thô và tự động gán nhãn a., b., c.
+    - Logic chuyển câu mới được siết chặt để xử lý lỗi số trong đáp án (ví dụ: '5 inch...').
+    - Xóa prefix A., B., C. nếu có trong đáp án thô và tự động gán nhãn a., b., c., đồng thời khắc phục lỗi xóa chữ cái đầu tiên của đáp án (Fix 2).
     """
     paras = read_docx_paragraphs(source)
     if not paras: return []
@@ -185,8 +185,10 @@ def parse_pl1(source):
     q_start_pat = re.compile(r'^\s*(\d+)[\.\)]\s*') 
     # Regex bắt đầu câu hỏi CÓ CỤM TỪ
     phrase_start_pat = re.compile(r'Choose the correct group of words', re.I)
-    # Regex cho prefix đáp án cần loại bỏ (A., B., C. hoặc A, B, C, a, b, c không có dấu chấm/ngoặc ở cuối)
-    opt_prefix_pat = re.compile(r'^\s*[A-Ca-c][\.\)]?\s*') 
+    
+    # FIX 2: Regex cho prefix đáp án cần loại bỏ. Phải có dấu chấm/ngoặc HOẶC ít nhất một khoảng trắng sau chữ cái.
+    # r'^\s*[A-Ca-c]([\.\)]|\s+)\s*'
+    opt_prefix_pat = re.compile(r'^\s*[A-Ca-c]([\.\)]|\s+)\s*') 
     
     labels = ["a", "b", "c"] # Chỉ có 3 đáp án
     MAX_OPTIONS = 3 # Giới hạn tối đa 3 đáp án
@@ -206,17 +208,24 @@ def parse_pl1(source):
         
         is_q_start_numbered = q_start_pat.match(clean_p)
         is_q_start_phrased = phrase_start_pat.search(clean_p)
-        is_explicit_start = is_q_start_numbered or is_q_start_phrased
-        
-        is_max_options_reached = len(current["options"]) >= MAX_OPTIONS # Đã có đủ 3 đáp án
+        is_max_options_reached = len(current["options"]) >= MAX_OPTIONS
         is_first_line = not current["question"] and not current["options"]
         
-        # --- NEW QUESTION LOGIC ---
-        # Bắt đầu câu hỏi mới nếu: 
-        # 1. Dòng đầu tiên
-        # 2. Dòng có tín hiệu rõ ràng (số hoặc cụm từ "Choose...")
-        # 3. Câu hỏi trước đã đủ số lượng đáp án tối đa (ngăn chặn việc đọc tiếp đáp án)
-        if is_first_line or is_explicit_start or (current["question"] and is_max_options_reached):
+        # FIX 1: Stricter logic for starting a new question (must_switch_q)
+        must_switch_q = (
+            is_first_line or 
+            is_q_start_phrased or
+            (current["question"] and is_max_options_reached) or
+            # Chỉ chuyển sang câu hỏi mới dựa vào số thứ tự nếu câu hỏi hiện tại chưa có đáp án nào.
+            (is_q_start_numbered and current["question"] and not current["options"])
+        )
+        
+        # Thêm logic loại trừ: Nếu dòng bắt đầu bằng số VÀ đang ở giữa các đáp án (có 1 hoặc 2 đáp án), thì KHÔNG chuyển câu
+        if is_q_start_numbered and current["question"] and len(current["options"]) > 0 and not is_max_options_reached:
+            must_switch_q = False # Giữ dòng này lại làm nội dung đáp án
+            
+        # --- NEW QUESTION LOGIC (using must_switch_q) ---
+        if must_switch_q:
             
             # 1. Lưu câu hỏi cũ (nếu có)
             current = finalize_current_question(current, questions)
@@ -243,7 +252,7 @@ def parse_pl1(source):
                     # Xóa dấu (*)
                     clean_p = clean_p.replace("(*)", "").strip() 
                 
-                # Loại bỏ prefix A., B., C., A, B, C... khỏi đáp án thô 
+                # Loại bỏ prefix A., B., C., A, B, C... khỏi đáp án thô (Sử dụng opt_prefix_pat đã chỉnh sửa)
                 match_prefix = opt_prefix_pat.match(clean_p)
                 if match_prefix:
                     clean_p = clean_p[match_prefix.end():].strip()
@@ -335,7 +344,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         test_batch = st.session_state[f"{test_key_prefix}_questions"]
         for i, q in enumerate(test_batch, start=1):
             st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
-            # Dùng key là question hash để tránh lỗi khi câu hỏi được trộn
+            # SỬ DỤNG HASH CỦA CÂU HỎI LÀM KEY ĐỂ TRÁNH LỖI KHI TRỘN/CHUYỂN NHÓM
             q_key = f"{test_key_prefix}_q_{hash(q['question'])}" 
             # Đảm bảo radio button có giá trị mặc định để tránh lỗi
             default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
