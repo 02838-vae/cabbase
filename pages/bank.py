@@ -171,9 +171,9 @@ def parse_lawbank(source):
 def parse_pl1(source):
     """
     Parser cho định dạng PL1 (cải tiến để xử lý câu hỏi không đánh số, giới hạn 3 đáp án)
-    - Chỉ có 3 đáp án (A, B, C) cho mỗi câu hỏi.
-    - Câu hỏi mới được xác định bởi: 1. Đánh số, 2. Cụm từ 'Choose the correct...', 3. Đã có 3 đáp án cho câu trước.
-    - Xóa prefix A., B., C. nếu có trong đáp án thô.
+    - Chỉ có 3 đáp án (a, b, c) cho mỗi câu hỏi.
+    - Câu hỏi mới được xác định bởi: 1. Đánh số (40., 41)), 2. Cụm từ 'Choose the correct...', 3. Đã có 3 đáp án cho câu trước.
+    - Xóa prefix A., B., C. nếu có trong đáp án thô và tự động gán nhãn a., b., c.
     """
     paras = read_docx_paragraphs(source)
     if not paras: return []
@@ -181,7 +181,7 @@ def parse_pl1(source):
     questions = []
     current = {"question": "", "options": [], "answer": ""}
     
-    # Regex bắt đầu câu hỏi CÓ ĐÁNH SỐ: Số + dấu chấm hoặc dấu đóng ngoặc (ví dụ: 1., 40))
+    # Regex bắt đầu câu hỏi CÓ ĐÁNH SỐ: Số + dấu chấm hoặc dấu đóng ngoặc (ví dụ: 40., 41))
     q_start_pat = re.compile(r'^\s*(\d+)[\.\)]\s*') 
     # Regex bắt đầu câu hỏi CÓ CỤM TỪ
     phrase_start_pat = re.compile(r'Choose the correct group of words', re.I)
@@ -195,7 +195,7 @@ def parse_pl1(source):
         """Lưu câu hỏi hiện tại và reset dictionary."""
         if q_dict["question"]:
             if not q_dict["answer"] and q_dict["options"]:
-                # Nếu không tìm thấy đáp án (*), mặc định lấy A là đúng
+                # Nếu không tìm thấy đáp án (*), mặc định lấy A (tức options[0]) là đúng
                 q_dict["answer"] = q_dict["options"][0] 
             q_list.append(q_dict)
         return {"question": "", "options": [], "answer": ""}
@@ -624,7 +624,7 @@ if "current_mode" not in st.session_state: st.session_state.current_mode = "grou
 if "last_bank_choice" not in st.session_state: st.session_state.last_bank_choice = "----" 
 if "doc_selected" not in st.session_state: st.session_state.doc_selected = "Phụ Lục 1" 
 
-# FIX YÊU CẦU 1, 3: CẬP NHẬT LIST NGÂN HÀNG
+# CẬP NHẬT LIST NGÂN HÀNG
 BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật VAECO", "Ngân hàng Docwise"]
 bank_choice = st.selectbox("Chọn ngân hàng:", BANK_OPTIONS, index=BANK_OPTIONS.index(st.session_state.get('bank_choice_val', '----')), key="bank_selector_master")
 st.session_state.bank_choice_val = bank_choice
@@ -669,10 +669,7 @@ if bank_choice != "----":
 
         if st.session_state.doc_selected == "Phụ Lục 1":
             source = "PL1.docx" # File PL1.docx
-        # Có thể thêm các phụ lục khác ở đây
-        # elif st.session_state.doc_selected == "Phụ Lục 2":
-        #     source = "PL2.docx"
-
+        
     # LOAD CÂU HỎI
     questions = []
     if source:
@@ -770,9 +767,8 @@ if bank_choice != "----":
                     with col_reset:
                         if st.button("🔄 Làm lại nhóm này", key="reset_group"):
                             # Xoá session state của các radio button trong nhóm
-                            for i in range(start+1, end+1): 
-                                q_i = questions[i-1]
-                                st.session_state.pop(f"q_{i}_{hash(q_i['question'])}", None) 
+                            for i, q in enumerate(batch, start=start+1):
+                                st.session_state.pop(f"q_{i}_{hash(q['question'])}", None) 
                             st.session_state.submitted = False
                             st.rerun()
                     with col_next:
