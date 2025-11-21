@@ -166,12 +166,12 @@ def parse_lawbank(source):
     return questions
 
 # ====================================================
-# 🧩 PARSER 3: PHỤ LỤC 1 (ĐỊNH DẠNG ĐẶC BIỆT)
+# 🧩 PARSER 3: PHỤ LỤC 1 (ĐÃ SỬA LỖI LOGIC NHẬN DIỆN CÂU HỎI)
 # ====================================================
 def parse_pl1(source):
     """
-    Parser cho định dạng PL1:
-    - Câu hỏi bắt đầu bằng số (1. ...)
+    Parser cho định dạng PL1 (có thể không đánh số câu hỏi, dựa vào đáp án (*) để xác định câu mới):
+    - Câu hỏi có thể bắt đầu bằng số (1. ...) hoặc không (Choose the correct group...)
     - Đáp án là các dòng tiếp theo (tự động gán A, B, C, D)
     - Đáp án đúng có dấu (*) ở cuối
     """
@@ -181,31 +181,45 @@ def parse_pl1(source):
     questions = []
     current = {"question": "", "options": [], "answer": ""}
     
-    # Regex bắt đầu câu hỏi: Số + dấu chấm hoặc dấu đóng ngoặc (VD: "1.", "10)", "1.")
+    # Regex bắt đầu câu hỏi CÓ ĐÁNH SỐ: Số + dấu chấm hoặc dấu đóng ngoặc (VD: "1.", "10)", "1.")
     q_start_pat = re.compile(r'^\s*\d+[\.\)]\s*')
     
-    # Danh sách nhãn tự động vì file Word bị ẩn A,B,C
+    # Danh sách nhãn tự động
     labels = ["a", "b", "c", "d", "e", "f"]
 
     for p in paras:
         clean_p = clean_text(p)
         if not clean_p: continue
         
-        # Kiểm tra xem có phải bắt đầu câu hỏi mới không
-        if q_start_pat.match(clean_p):
-            # Lưu câu hỏi cũ trước khi sang câu mới
+        is_q_start_numbered = q_start_pat.match(clean_p)
+        
+        # HEURISTIC QUAN TRỌNG:
+        # 1. Nếu là câu hỏi có đánh số -> New Q
+        # 2. Nếu đã hoàn thành câu hỏi trước (tìm thấy đáp án correct) -> New Q
+        # 3. Nếu là dòng đầu tiên -> New Q
+        is_new_q_by_context = (current["answer"] != "" and len(current["options"]) > 0) or \
+                              (not current["question"] and not current["options"])
+
+        if is_q_start_numbered or is_new_q_by_context:
+            
+            # --- Lưu câu hỏi cũ (nếu có) ---
             if current["question"]:
-                # Nếu chưa có đáp án đúng, mặc định lấy A (hoặc xử lý lỗi)
-                if not current["answer"] and current["options"]:
-                    current["answer"] = current["options"][0]
+                # Final check for old question: Nếu chưa có đáp án đúng, mặc định lấy A, tránh lỗi
+                if not current["answer"] and len(current["options"]) > 0:
+                    current["answer"] = current["options"][0] 
                 questions.append(current)
             
-            # Loại bỏ số thứ tự ở đầu câu hỏi để hiển thị đẹp hơn
-            q_text = q_start_pat.sub('', clean_p).strip()
+            # --- Khởi tạo câu hỏi mới ---
+            q_text = clean_p
+            if is_q_start_numbered:
+                # Loại bỏ số thứ tự ở đầu câu hỏi nếu có
+                q_text = q_start_pat.sub('', clean_p).strip()
+            
+            # Reset trạng thái cho câu hỏi mới
             current = {"question": q_text, "options": [], "answer": ""}
-        
+            
         else:
-            # Nếu không phải câu hỏi, thì là đáp án (do lỗi dính dòng, ta coi mỗi dòng là 1 đáp án)
+            # --- Xử lý như một Lựa chọn/Đáp án ---
             if current["question"]: # Chỉ xử lý nếu đã có câu hỏi
                 is_correct = False
                 # Kiểm tra dấu hiệu đáp án đúng (*)
@@ -244,6 +258,7 @@ def display_all_questions(questions):
         st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
         
         for opt in q["options"]:
+            # Dùng clean_text để so sánh, bỏ qua khoảng trắng, ký tự ẩn
             if clean_text(opt) == clean_text(q["answer"]):
                 # Đáp án đúng: Xanh lá
                 color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
@@ -294,7 +309,9 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
             # Dùng key là question hash để tránh lỗi khi câu hỏi được trộn
             q_key = f"{test_key_prefix}_q_{hash(q['question'])}" 
-            st.radio("", q["options"], key=q_key)
+            # Đảm bảo radio button có giá trị mặc định để tránh lỗi
+            default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
+            st.radio("", q["options"], index=q["options"].index(default_val) if default_val in q["options"] else 0, key=q_key)
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
         if st.button("✅ Nộp bài Test", key=f"{test_key_prefix}_submit_btn"):
             st.session_state[f"{test_key_prefix}_submitted"] = True
@@ -688,7 +705,9 @@ if bank_choice != "----":
                     for i, q in enumerate(batch, start=start+1):
                         q_key = f"q_{i}_{hash(q['question'])}" # Dùng hash để tránh trùng key
                         st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
-                        st.radio("", q["options"], key=q_key)
+                        # Đảm bảo radio button có giá trị mặc định để tránh lỗi
+                        default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
+                        st.radio("", q["options"], index=q["options"].index(default_val) if default_val in q["options"] else 0, key=q_key)
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
                     if st.button("✅ Nộp bài", key="submit_group"):
                         st.session_state.submitted = True
