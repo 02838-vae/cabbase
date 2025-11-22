@@ -15,16 +15,32 @@ def clean_text(s: str) -> str:
     if s is None:
         return ""
     
-    # BƯỚC 1: Tạm thời thay thế GẠCH DƯỚI bằng ký hiệu giữ chỗ (placeholder)
-    # Điều này ngăn việc làm sạch dấu cách thừa làm ảnh hưởng đến chỗ trống được tạo bằng nhiều dấu gạch dưới.
-    # Kể cả nếu bạn gõ "tôi _ _ _ _ xây dựng" (có space giữa các gạch dưới)
-    temp_s = s.replace('_', '__TMP_UNDERSCORE__')
+    temp_s = s
+    
+    # BƯỚC 1: Tạm thời thay thế GẠCH DƯỚI, DẤU CHẤM và DẤU NGOẶC bằng ký hiệu giữ chỗ.
+    # Việc này giúp bảo vệ các ký tự tạo chỗ trống khỏi việc làm sạch khoảng trắng (space cleanup).
 
-    # BƯỚC 2: CHỈ LOẠI BỎ DẤU CÁCH THỪA (>= 2 dấu cách liên tiếp) VÀ DẤU CÁCH Ở ĐẦU/CUỐI
+    # 1. Bảo vệ chuỗi dấu chấm (3 dấu chấm trở lên, cho chỗ trống: ....)
+    temp_s = re.sub(r'\.{3,}', '__TMP_DOTS__', temp_s) 
+
+    # 2. Bảo vệ gạch dưới (cho chỗ trống: ___, _ _ _)
+    temp_s = temp_s.replace('_', '__TMP_UNDERSCORE__')
+
+    # 3. Bảo vệ ngoặc (cho chỗ trống: (___))
+    temp_s = temp_s.replace('(', '__TMP_OPEN_PAREN__')
+    temp_s = temp_s.replace(')', '__TMP_CLOSE_PAREN__')
+
+    # BƯỚC 4: CHỈ LOẠI BỎ DẤU CÁCH THỪA (>= 2 dấu cách liên tiếp) VÀ DẤU CÁCH Ở ĐẦU/CUỐI
     cleaned_part = re.sub(r'\s{2,}', ' ', temp_s).strip()
 
-    # BƯỚC 3: Khôi phục ký tự gạch dưới
+    # BƯỚC 5: Khôi phục ký tự
+    # Khôi phục chuỗi dấu chấm (chọn 4 dấu chấm làm đại diện)
+    cleaned_text = cleaned_part.replace('__TMP_DOTS__', '....') 
+    # Khôi phục gạch dưới
     cleaned_text = cleaned_part.replace('__TMP_UNDERSCORE__', '_')
+    # Khôi phục ngoặc
+    cleaned_text = cleaned_text.replace('__TMP_OPEN_PAREN__', '(')
+    cleaned_text = cleaned_text.replace('__TMP_CLOSE_PAREN__', ')')
     
     return cleaned_text
 
@@ -51,6 +67,7 @@ def read_docx_paragraphs(source):
                 print(f"Lỗi không tìm thấy file DOCX: {source}. Chi tiết: {e}")
                 return []
     
+    # Giữ nguyên p.text.strip() và filtering để loại bỏ các dòng trống không chứa ký tự nào.
     return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
 
 def get_base64_encoded_file(file_path):
