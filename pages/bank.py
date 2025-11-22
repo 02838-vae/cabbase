@@ -330,7 +330,7 @@ def display_all_questions(questions):
         for opt in q["options"]:
             # Dùng clean_text để so sánh, bỏ qua khoảng trắng, ký tự ẩn
             if clean_text(opt) == clean_text(q["answer"]):
-                # Đáp án đúng: Xanh lá
+                # Đáp án đúng: Xanh lá (vẫn giữ text-shadow cho kết quả)
                 color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
             else:
                 # Đáp án thường: Trắng
@@ -625,8 +625,7 @@ a#manual-home-btn:hover {{
     /* Tăng độ dày chữ */
     font-family: 'Oswald', sans-serif !important; 
     padding: 2px 12px;
-    /* THÊM TEXT-SHADOW ĐỂ CHỮ TRẮNG NỔI BẬT HƠN TRÊN NỀN ẢNH */
-    text-shadow: 0 0 5px rgba(255, 255, 255, 0.5), 0 0 2px rgba(0, 0, 0, 0.8);
+    /* ĐÃ LOẠI BỎ TEXT-SHADOW */
 }}
 div[data-testid="stMarkdownContainer"] p {{
     font-size: 22px !important; 
