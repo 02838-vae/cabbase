@@ -153,64 +153,76 @@ def parse_lawbank(source):
     return questions
 
 # ====================================================
-# 🧩 PARSER 3: PHỤ LỤC 1 (ĐỊNH DẠNG ĐẶC BIỆT)
+# 🧩 PARSER 3: PHỤ LỤC 1 (ĐỊNH DẠNG ĐẶC BIỆT - ĐÃ SỬA LỖI KHÔNG ĐỌC ĐƯỢC CÂU HỎI)
 # ====================================================
 def parse_pl1(source):
     """
     Parser cho định dạng PL1:
-    - Câu hỏi bắt đầu bằng số (1. ...)
-    - Đáp án là các dòng tiếp theo (tự động gán A, B, C, D)
-    - Đáp án đúng có dấu (*) ở cuối
+    - Câu hỏi và đáp án được phân tách bằng các đoạn (paragraph) riêng biệt.
+    - Đáp án được tự động gán nhãn A, B, C, D theo thứ tự xuất hiện.
+    - Đáp án đúng có dấu (*) ở cuối.
     """
     paras = read_docx_paragraphs(source)
     if not paras: return []
 
     questions = []
     current = {"question": "", "options": [], "answer": ""}
-    
-    # Regex bắt đầu câu hỏi: Số + dấu chấm (VD: "1.", "10.")
-    q_start_pat = re.compile(r'^\d+[\.\)]\s+')
-    
-    # Danh sách nhãn tự động vì file Word bị ẩn A,B,C
     labels = ["A", "B", "C", "D", "E", "F"]
 
     for p in paras:
         clean_p = clean_text(p)
         if not clean_p: continue
         
-        # Kiểm tra xem có phải bắt đầu câu hỏi mới không
-        if q_start_pat.match(clean_p):
+        # 1. Heuristic để xác định một dòng là TÙY CHỌN (Option line):
+        # - Bắt đầu bằng chữ cái + dấu chấm/đóng ngoặc (A., B), HOẶC
+        # - Chứa dấu hiệu đáp án đúng (*)
+        is_option_line = bool(re.match(r'^[A-Za-z][\.\)]\s*', clean_p) or '(*)' in clean_p)
+
+        # 2. Xác định khi nào một câu hỏi MỚI bắt đầu:
+        # - Lần đầu tiên chạy (chưa có câu hỏi) HOẶC
+        # - Câu hỏi trước đã hoàn thành (đã có options) VÀ dòng hiện tại không phải là option.
+        is_new_question_start = (current["question"] and current["options"] and not is_option_line)
+        
+        if not current["question"] or is_new_question_start:
+            
             # Lưu câu hỏi cũ trước khi sang câu mới
-            if current["question"]:
+            if current["question"] and current["options"]:
                 if not current["answer"] and current["options"]:
                     current["answer"] = current["options"][0]
                 questions.append(current)
             
-            # Loại bỏ số thứ tự ở đầu câu hỏi để hiển thị đẹp hơn (vì UI đã tự đánh số)
-            q_text = q_start_pat.sub('', clean_p)
-            current = {"question": q_text, "options": [], "answer": ""}
-        
-        else:
-            # Nếu không phải câu hỏi, thì là đáp án (do lỗi dính dòng, ta coi mỗi dòng là 1 đáp án)
-            if current["question"]: # Chỉ xử lý nếu đã có câu hỏi
-                is_correct = False
-                # Kiểm tra dấu hiệu đáp án đúng (*)
-                if "(*)" in clean_p:
-                    is_correct = True
-                    clean_p = clean_p.replace("(*)", "").strip() # Xóa dấu (*) đi
+            # Bắt đầu câu hỏi mới
+            current = {"question": clean_p, "options": [], "answer": ""}
+            
+        elif current["question"] and not is_option_line:
+            # Dòng này là phần tiếp theo của câu hỏi hiện tại (nếu chưa có option nào được ghi nhận)
+            current["question"] += " " + clean_p
+            
+        elif current["question"] and is_option_line:
+            # Dòng này là đáp án/lựa chọn.
+            is_correct = False
+            temp_p = clean_p
+            
+            # Xử lý dấu hiệu đáp án đúng (*)
+            if "(*)" in temp_p:
+                is_correct = True
+                temp_p = temp_p.replace("(*)", "").strip()
+            
+            # Loại bỏ nhãn chữ cái có sẵn (nếu có, VD: "B.have to be") để tự động gán nhãn lại
+            temp_p = re.sub(r'^[A-Da-d][\.\)]\s*', '', temp_p).strip()
+            
+            # Tự động gán nhãn A, B, C, D
+            idx = len(current["options"])
+            if idx < len(labels):
+                label = labels[idx]
+                opt_text = f"{label}. {temp_p}"
+                current["options"].append(opt_text)
                 
-                # Tự động gán nhãn A, B, C, D
-                idx = len(current["options"])
-                if idx < len(labels):
-                    label = labels[idx]
-                    opt_text = f"{label}. {clean_p}"
-                    current["options"].append(opt_text)
-                    
-                    if is_correct:
-                        current["answer"] = opt_text
+                if is_correct:
+                    current["answer"] = opt_text
 
     # Lưu câu cuối cùng
-    if current["question"]:
+    if current["question"] and current["options"]:
         if not current["answer"] and current["options"]:
             current["answer"] = current["options"][0]
         questions.append(current)
