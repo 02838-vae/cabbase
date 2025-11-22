@@ -330,11 +330,11 @@ def display_all_questions(questions):
         for opt in q["options"]:
             # Dùng clean_text để so sánh, bỏ qua khoảng trắng, ký tự ẩn
             if clean_text(opt) == clean_text(q["answer"]):
-                # Đáp án đúng: Xanh lá (vẫn giữ text-shadow cho kết quả)
-                color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
+                # Đáp án đúng: Xanh lá
+                color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8), 1px 1px 2px #000000;"
             else:
-                # Đáp án thường: Trắng
-                color_style = "color:#FFFFFF;"
+                # Đáp án thường: Trắng (vẫn giữ text-shadow đen nhẹ để nổi bật)
+                color_style = "color:#FFFFFF; text-shadow: 1px 1px 2px #000000;"
             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
@@ -402,11 +402,11 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             for opt in q["options"]:
                 opt_clean = clean_text(opt)
                 if opt_clean == correct:
-                    color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
+                    color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8), 1px 1px 2px #000000;"
                 elif opt_clean == clean_text(selected_opt):
-                    color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8);"
+                    color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8), 1px 1px 2px #000000;"
                 else:
-                    color_style = "color:#FFFFFF;"
+                    color_style = "color:#FFFFFF; text-shadow: 1px 1px 2px #000000;"
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
 
             if is_correct: score += 1
@@ -442,7 +442,7 @@ MOBILE_IMAGE_FILE = "bank_mobile.jpg"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
-# === CSS (ĐÃ CHỈNH SỬA) ===
+# === CSS (ĐÃ CHỈNH SỬA LẠI ĐỂ CẢI THIỆN TƯƠNG PHẢN) ===
 css_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -606,7 +606,7 @@ a#manual-home-btn:hover {{
     padding: 5px 15px; margin-bottom: 10px; line-height: 1.4 !important;
 }}
 
-/* ĐÃ SỬA: Tăng font-weight để chữ trắng nổi bật hơn */
+/* ĐÃ SỬA: Tăng font-weight để chữ trắng nổi bật hơn VÀ THÊM TEXT SHADOW */
 .bank-answer-text {{
     font-family: 'Oswald', sans-serif !important;
     font-weight: 700 !important; 
@@ -614,6 +614,8 @@ a#manual-home-btn:hover {{
     padding: 5px 15px; margin: 2px 0;
     line-height: 1.5 !important; 
     display: block;
+    /* THÊM SHADOW ĐEN NHẸ ĐỂ TẠO VIỀN */
+    text-shadow: 1px 1px 2px #000000; 
 }}
 
 /* 💥 CHỈNH SỬA CHO ST.RADIO LABEL (CHẾ ĐỘ LÀM BÀI) */
@@ -625,7 +627,8 @@ a#manual-home-btn:hover {{
     /* Tăng độ dày chữ */
     font-family: 'Oswald', sans-serif !important; 
     padding: 2px 12px;
-    /* ĐÃ LOẠI BỎ TEXT-SHADOW */
+    /* THÊM SHADOW ĐEN NHẸ ĐỂ TẠO VIỀN */
+    text-shadow: 1px 1px 2px #000000;
 }}
 div[data-testid="stMarkdownContainer"] p {{
     font-size: 22px !important; 
@@ -800,11 +803,11 @@ if bank_choice != "----":
                         for opt in q["options"]:
                             opt_clean = clean_text(opt)
                             if opt_clean == correct:
-                                color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
+                                color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8), 1px 1px 2px #000000;"
                             elif opt_clean == clean_text(selected_opt):
-                                color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8);"
+                                color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8), 1px 1px 2px #000000;"
                             else:
-                                color_style = "color:#FFFFFF;"
+                                color_style = "color:#FFFFFF; text-shadow: 1px 1px 2px #000000;"
                             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
                         
                         if is_correct: 
