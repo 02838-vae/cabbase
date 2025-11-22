@@ -18,46 +18,37 @@ def clean_text(s: str) -> str:
     # GIỮ NGUYÊN các pattern điền chỗ trống:
     # - 2-10 dấu chấm (có thể có space xen kẽ): .... hoặc . . . .
     # - 2-10 gạch dưới (có thể có space xen kẽ): ____ hoặc __ __
-    # - Ngoặc chứa các ký tự trên: (____) hoặc (__  __)
+    # - Ngoặc chứa các ký tự trên: (____) hoặc (__  __) → chuẩn hóa thành (____) 
     
     temp_s = s
     placeholders = {}
     counter = 0
     
-    # Pattern tổng quát: ngoặc đơn/vuông chứa 2-10 ký tự (. hoặc _) có thể có space
-    # VD: (__), (. .), [____], etc.
-    bracket_patterns = [
-        r'\([\s._]{0,30}\)',   # Ngoặc đơn
-        r'\[[\s._]{0,30}\]',   # Ngoặc vuông
-    ]
+    # BƯỚC 1: Xử lý ngoặc có nhiều space/ký tự → chuẩn hóa thành 4 spaces
+    # VD: (__           __) → (____)
+    temp_s = re.sub(r'\([\s._-]{2,}\)', '(    )', temp_s)  # Ngoặc đơn
+    temp_s = re.sub(r'\[[\s._-]{2,}\]', '[    ]', temp_s)  # Ngoặc vuông
     
-    # Pattern cho dấu chấm và gạch dưới có space xen kẽ (2-10 ký tự)
-    # VD: . . ., __  __, ..... 
+    # BƯỚC 2: Lưu các pattern điền chỗ trống còn lại
     standalone_patterns = [
         r'(?<!\S)([._])(?:\s*\1){1,9}(?!\S)',  # 2-10 dấu . hoặc _ liên tiếp (có thể có space)
         r'-{2,10}',  # 2-10 gạch ngang liên tiếp
+        r'\([\s]{2,}\)',  # Ngoặc đơn có spaces (đã chuẩn hóa ở bước 1)
+        r'\[[\s]{2,}\]',  # Ngoặc vuông có spaces
     ]
     
-    all_patterns = bracket_patterns + standalone_patterns
-    
-    for pattern in all_patterns:
+    for pattern in standalone_patterns:
         for match in re.finditer(pattern, temp_s):
             matched_text = match.group()
-            
-            # Đếm số ký tự đặc biệt (., _, -)
-            special_count = matched_text.count('.') + matched_text.count('_') + matched_text.count('-')
-            
-            # Chỉ giữ nếu có 2-10 ký tự đặc biệt
-            if 2 <= special_count <= 10:
-                placeholder = f"__PLACEHOLDER_{counter}__"
-                placeholders[placeholder] = matched_text
-                temp_s = temp_s.replace(matched_text, placeholder, 1)
-                counter += 1
+            placeholder = f"__PLACEHOLDER_{counter}__"
+            placeholders[placeholder] = matched_text
+            temp_s = temp_s.replace(matched_text, placeholder, 1)
+            counter += 1
     
-    # Xóa khoảng trắng thừa (2+ spaces → 1 space)
+    # BƯỚC 3: Xóa khoảng trắng thừa (2+ spaces → 1 space)
     temp_s = re.sub(r'\s{2,}', ' ', temp_s)
     
-    # Khôi phục các pattern đã lưu
+    # BƯỚC 4: Khôi phục các pattern đã lưu
     for placeholder, original in placeholders.items():
         temp_s = temp_s.replace(placeholder, original)
     
