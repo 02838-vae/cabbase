@@ -14,48 +14,44 @@ import random
 def clean_text(s: str) -> str:
     if s is None:
         return ""
+    # GIỮ NGUYÊN:
+    # - Dấu chấm liên tiếp: ..... (3 chấm trở lên)
+    # - Gạch dưới liên tiếp: ____ (2 gạch trở lên) 
+    # - Ngoặc có gạch dưới: (____), [____], etc.
+    # - Các ký tự đặc biệt khác cho câu hỏi điền chỗ trống
     
-    # BƯỚC 1: TẠM THỜI THAY THẾ CHỖ TRỐNG BẰNG PLACEHOLDERS VÀ BẢO VỆ CHUỖI DẤU CHẤM
+    # CHỈ XÓA: Nhiều dấu cách liên tiếp (spaces) KHÔNG phải là phần của pattern đặc biệt
+    # Pattern: thay thế 2+ spaces bằng 1 space, NHƯNG bỏ qua nếu xung quanh có ký tự đặc biệt
+    
+    # Bước 1: Tạm thời thay thế các pattern đặc biệt bằng placeholder
     temp_s = s
+    placeholders = {}
+    counter = 0
     
-    # 1. Bảo vệ chuỗi dấu chấm (>= 2 dấu chấm). Dùng hàm thay thế để giữ nguyên số lượng dấu chấm.
-    # Ví dụ: '...' -> '__DOT_3__', '.....' -> '__DOT_5__'
-    def dot_replacer(match):
-        dot_count = len(match.group(0))
-        # Chỉ bảo vệ khi có 2 dấu chấm trở lên
-        if dot_count >= 2:
-            return f'__DOT_{dot_count}__'
-        return match.group(0)
-
-    # Thay thế chuỗi dấu chấm bằng placeholder giữ số lượng
-    temp_s = re.sub(r'\.{2,}', dot_replacer, temp_s) 
-
-    # 2. Bảo vệ gạch dưới
-    temp_s = temp_s.replace('_', '__TMP_UNDERSCORE__')
-
-    # 3. Bảo vệ ngoặc
-    temp_s = temp_s.replace('(', '__TMP_OPEN_PAREN__')
-    temp_s = temp_s.replace(')', '__TMP_CLOSE_PAREN__')
-
-    # BƯỚC 4: CHỈ LOẠI BỎ DẤU CÁCH THỪA (>= 2 dấu cách liên tiếp) VÀ DẤU CÁCH Ở ĐẦU/CUỐI
-    cleaned_text = re.sub(r'\s{2,}', ' ', temp_s).strip()
-
-    # BƯỚC 5: KHÔI PHỤC KÝ TỰ (Phải chaining đúng)
+    # Lưu các pattern cần giữ nguyên
+    patterns_to_keep = [
+        r'\.{3,}',           # 3+ dấu chấm liên tiếp: .....
+        r'_{2,}',            # 2+ gạch dưới liên tiếp: ____
+        r'\([_\s.]{2,}\)',   # Ngoặc đơn chứa gạch/space/chấm: (____)
+        r'\[[_\s.]{2,}\]',   # Ngoặc vuông: [____]
+        r'-{2,}',            # 2+ gạch ngang: ----
+    ]
     
-    # 5.1 Khôi phục gạch dưới
-    cleaned_text = cleaned_text.replace('__TMP_UNDERSCORE__', '_')
-    # 5.2 Khôi phục ngoặc
-    cleaned_text = cleaned_text.replace('__TMP_OPEN_PAREN__', '(')
-    cleaned_text = cleaned_text.replace('__TMP_CLOSE_PAREN__', ')')
-
-    # 5.3 Khôi phục chuỗi dấu chấm (sử dụng regex để khớp và khôi phục)
-    def dot_restorer(match):
-        dot_count = int(match.group(1)) # Lấy số lượng X từ __DOT_X__
-        return '.' * dot_count
-
-    cleaned_text = re.sub(r'__DOT_(\d+)__', dot_restorer, cleaned_text)
+    for pattern in patterns_to_keep:
+        for match in re.finditer(pattern, temp_s):
+            placeholder = f"__PLACEHOLDER_{counter}__"
+            placeholders[placeholder] = match.group()
+            temp_s = temp_s.replace(match.group(), placeholder, 1)
+            counter += 1
     
-    return cleaned_text
+    # Bước 2: Xóa space thừa
+    temp_s = re.sub(r'\s{2,}', ' ', temp_s)
+    
+    # Bước 3: Khôi phục các pattern đặc biệt
+    for placeholder, original in placeholders.items():
+        temp_s = temp_s.replace(placeholder, original)
+    
+    return temp_s.strip()
 
 def read_docx_paragraphs(source):
     """
