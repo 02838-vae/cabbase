@@ -182,7 +182,6 @@ def parse_pl1(source):
         if q_start_pat.match(clean_p):
             # Lưu câu hỏi cũ trước khi sang câu mới
             if current["question"]:
-                # Nếu chưa có đáp án đúng, mặc định lấy A (hoặc xử lý lỗi)
                 if not current["answer"] and current["options"]:
                     current["answer"] = current["options"][0]
                 questions.append(current)
@@ -279,7 +278,6 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         test_batch = st.session_state[f"{test_key_prefix}_questions"]
         for i, q in enumerate(test_batch, start=1):
             st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
-            # FIX LỖI KEY: Cần hash câu hỏi để key là duy nhất và không bị lỗi DuplicateElementKey khi làm lại bài test
             q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}" 
             default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
             st.radio("", q["options"], index=q["options"].index(default_val) if default_val in q["options"] else 0, key=q_key)
@@ -302,13 +300,10 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             for opt in q["options"]:
                 opt_clean = clean_text(opt)
                 if opt_clean == correct:
-                    # ĐÃ FIX: Màu đáp án đúng (xanh lá)
                     color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
                 elif opt_clean == clean_text(selected_opt):
-                    # ĐÃ FIX: Màu đáp án sai (đỏ)
                     color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8);"
                 else:
-                    # ĐÃ FIX: Màu đáp án thường (trắng)
                     color_style = "color:#FFFFFF;"
                 
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
@@ -361,25 +356,24 @@ css_style = f"""
     100% {{ transform: translateX(-100%); }}
 }}
 
-/* Custom Scrollbar Styles (Yêu cầu 3 - Tăng kích thước và làm đậm màu) */
-.stApp::-webkit-scrollbar {
-    width: 15px; /* Chiều rộng thanh cuộn dọc */
-    height: 15px; /* Chiều cao thanh cuộn ngang */
-}
+/* Custom Scrollbar Styles (Áp dụng theo tham khảo techmaster.vn) */
+.stApp::-webkit-scrollbar {{
+    width: 16px; 
+    height: 16px; 
+}}
 
-.stApp::-webkit-scrollbar-track {
-    background: #2b2b2b; /* Nền của thanh cuộn */
-}
+.stApp::-webkit-scrollbar-track {{
+    background: #2b2b2b; 
+}}
 
-.stApp::-webkit-scrollbar-thumb {
-    background-color: #ffffff; /* Màu trắng đậm */
-    border-radius: 10px; /* Bo tròn góc */
-    border: 3px solid #2b2b2b; /* Viền để nổi bật */
-}
-
-.stApp::-webkit-scrollbar-thumb:hover {
+.stApp::-webkit-scrollbar-thumb {{
+    background-color: #ffffff; 
+    border-radius: 100px; 
+    border: 3px solid #2b2b2b; 
+}}
+.stApp::-webkit-scrollbar-thumb:hover {{
     background-color: #cccccc;
-}
+}}
 
 html, body, .stApp {{
     height: 100% !important;
@@ -502,13 +496,12 @@ a#manual-home-btn:hover {{
 }}
 #sub-static-title h2, .result-title h3 {{
     font-family: 'Playfair Display', serif;
-    font-size: 2rem; /* Desktop */
+    font-size: 2rem; 
     color: #FFEA00;
     text-shadow: 0 0 15px #FFEA00; 
 }}
 @media (max-width: 768px) {{
     #sub-static-title h2, .result-title h3 {{
-        /* Tăng lên 4.8vw và giảm spacing để chữ to hơn mà vẫn 1 dòng */
         font-size: 4.8vw !important; 
         letter-spacing: -0.5px;
         white-space: nowrap; 
@@ -525,10 +518,11 @@ a#manual-home-btn:hover {{
     padding: 5px 15px; margin-bottom: 10px; line-height: 1.4 !important;
 }}
 
-/* ĐÃ FIX YÊU CẦU 1: Tăng font-weight để chữ trắng nổi bật hơn */
+/* ĐÃ FIX YÊU CẦU 1: Tăng font-weight và dùng màu trắng tinh khiết #FFFFFF */
 .bank-answer-text {{
     font-family: 'Oswald', sans-serif !important;
     font-weight: 700 !important; 
+    color: #FFFFFF !important; 
     font-size: 22px !important; 
     padding: 5px 15px; margin: 2px 0;
     line-height: 1.5 !important; 
