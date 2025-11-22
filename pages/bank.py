@@ -14,8 +14,7 @@ import random
 def clean_text(s: str) -> str:
     if s is None:
         return ""
-    # ĐÃ SỬA: Thay thế 2 hoặc nhiều dấu cách thành 1 dấu cách duy nhất (an toàn hơn, giữ nguyên ___, ...).
-    # KHÔNG XÓA DẤU '.', '_', '(', ')' để giữ nguyên ký tự điền khuyết.
+    # ĐÃ SỬA: Thay thế 2 hoặc nhiều dấu cách thành 1 dấu cách duy nhất (an toàn hơn, giữ nguyên ___, ...)
     return re.sub(r'\s{2,}', ' ', s).strip()
 
 def read_docx_paragraphs(source):
@@ -55,7 +54,6 @@ def parse_cabbank(source):
 
     questions = []
     current = {"question": "", "options": [], "answer": ""}
-    # Pattern tìm kiếm các đáp án. Cấu trúc này hỗ trợ tách đáp án inline (trên cùng một dòng).
     opt_pat = re.compile(r'(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s+')
 
     for p in paras:
@@ -84,7 +82,6 @@ def parse_cabbank(source):
                 if current["question"]: current["question"] += " " + clean_text(pre_text)
                 else: current["question"] = clean_text(pre_text)
 
-        # Lặp qua tất cả các matches để tách đáp án inline
         for i, m in enumerate(matches):
             s = m.end()
             e = matches[i + 1].start() if i + 1 < len(matches) else len(p)
@@ -109,7 +106,6 @@ def parse_lawbank(source):
 
     questions = []
     current = {"question": "", "options": [], "answer": ""}
-    # Pattern tìm kiếm các đáp án. Cấu trúc này hỗ trợ tách đáp án inline (trên cùng một dòng).
     opt_pat = re.compile(r'(?<![A-Za-z0-9/])(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s+')
 
     for p in paras:
@@ -141,7 +137,6 @@ def parse_lawbank(source):
                 if current["question"]: current["question"] += " " + clean_text(pre_text)
                 else: current["question"] = clean_text(pre_text)
 
-        # Lặp qua tất cả các matches để tách đáp án inline
         for i, m in enumerate(matches):
             s = m.end()
             e = matches[i+1].start() if i+1 < len(matches) else len(p)
@@ -158,100 +153,64 @@ def parse_lawbank(source):
     return questions
 
 # ====================================================
-# 🧩 PARSER 3: PHỤ LỤC 1 (ĐỊNH DẠNG ĐẶC BIỆT - ĐÃ CẢI THIỆN XỬ LÝ OPTIONS DÍNH DÒNG)
+# 🧩 PARSER 3: PHỤ LỤC 1 (ĐỊNH DẠNG ĐẶC BIỆT)
 # ====================================================
 def parse_pl1(source):
     """
     Parser cho định dạng PL1:
-    - Sử dụng heuristic để phân tách câu hỏi và đáp án dựa trên cấu trúc đoạn văn bản.
-    - Đáp án được tự động gán nhãn A, B, C, D theo thứ tự xuất hiện.
-    - Đã cải thiện khả năng thu thập đáp án (một đáp án một paragraph) một cách "tham lam" 
-      sau khi câu hỏi được nhận diện.
+    - Câu hỏi bắt đầu bằng số (1. ...)
+    - Đáp án là các dòng tiếp theo (tự động gán A, B, C, D)
+    - Đáp án đúng có dấu (*) ở cuối
     """
     paras = read_docx_paragraphs(source)
     if not paras: return []
 
     questions = []
     current = {"question": "", "options": [], "answer": ""}
-    labels = ["A", "B", "C", "D", "E", "F"]
     
-    # Regex để tìm kiếm và tách các đáp án inline/đánh dấu.
-    opt_marker_pat = re.compile(r'(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s+')
+    # Regex bắt đầu câu hỏi: Số + dấu chấm (VD: "1.", "10.")
+    q_start_pat = re.compile(r'^\d+[\.\)]\s+')
+    
+    # Danh sách nhãn tự động vì file Word bị ẩn A,B,C
+    labels = ["A", "B", "C", "D", "E", "F"]
 
     for p in paras:
         clean_p = clean_text(p)
         if not clean_p: continue
         
-        matches = list(opt_marker_pat.finditer(clean_p))
-        has_correct_marker = '(*)' in clean_p
-        
-        # 1. Dấu hiệu bắt đầu một câu hỏi mới:
-        # A. Dòng này chứa từ khóa "Choose..." hoặc là câu hỏi có thể nhận diện được.
-        is_clear_question_start = bool(re.match(r'^(Choose|The|It|He|If|This|Keep|The pilot|The tires|The AIRBUS|Be careful|They|You|When|A\.)\b', clean_p, re.I))
-
-        # B. Hoặc câu hỏi trước đã có options (đã hoàn thành) VÀ dòng này là câu hỏi mới.
-        is_next_question_after_options = (current["question"] and current["options"] and is_clear_question_start)
-
-        if not current["question"] or is_next_question_after_options:
-            
-            # Lưu câu hỏi cũ
-            if current["question"] and current["options"]:
+        # Kiểm tra xem có phải bắt đầu câu hỏi mới không
+        if q_start_pat.match(clean_p):
+            # Lưu câu hỏi cũ trước khi sang câu mới
+            if current["question"]:
                 if not current["answer"] and current["options"]:
                     current["answer"] = current["options"][0]
                 questions.append(current)
             
-            # Bắt đầu câu hỏi mới
-            current = {"question": clean_p, "options": [], "answer": ""}
-            continue 
+            # Loại bỏ số thứ tự ở đầu câu hỏi để hiển thị đẹp hơn (vì UI đã tự đánh số)
+            q_text = q_start_pat.sub('', clean_p)
+            current = {"question": q_text, "options": [], "answer": ""}
         
-        # 2. Xử lý phần thân câu hỏi và các tùy chọn
-        
-        options_to_add = []
-
-        # A) Xử lý đáp án (Dòng này là đáp án nếu nó có marker, có (*), hoặc options đã bắt đầu)
-        if matches or has_correct_marker or len(current["options"]) > 0:
-            
-            # A.1. Tách đáp án inline nếu có nhiều nhãn A., B., C.
-            if len(matches) > 1:
-                # Logic tách inline
-                for i, m in enumerate(matches):
-                    s = m.end()
-                    e = matches[i + 1].start() if i + 1 < len(matches) else len(clean_p)
-                    opt_body = clean_text(clean_p[s:e])
-                    is_correct = '(*)' in opt_body or m.group("star")
-                    opt_body = opt_body.replace("(*)", "").strip()
-                    options_to_add.append({"body": opt_body, "is_correct": is_correct})
-                    
-            # A.2. Đáp án đơn trên 1 dòng/paragraph (áp dụng cho PL1)
-            else:
-                is_correct = has_correct_marker
-                temp_p = clean_p.replace("(*)", "").strip()
-                # Loại bỏ nhãn chữ cái có sẵn (nếu có, VD: "B.have to be")
-                temp_p = re.sub(r'^[A-Da-d][\.\)]\s*', '', temp_p).strip()
+        else:
+            # Nếu không phải câu hỏi, thì là đáp án (do lỗi dính dòng, ta coi mỗi dòng là 1 đáp án)
+            if current["question"]: # Chỉ xử lý nếu đã có câu hỏi
+                is_correct = False
+                # Kiểm tra dấu hiệu đáp án đúng (*)
+                if "(*)" in clean_p:
+                    is_correct = True
+                    clean_p = clean_p.replace("(*)", "").strip() # Xóa dấu (*) đi
                 
-                # Nếu nó chỉ là một dòng trống (dấu hiệu ngắt), bỏ qua.
-                if not temp_p and not matches:
-                    pass
-                else:
-                    options_to_add.append({"body": temp_p, "is_correct": is_correct})
-            
-            # A.3. Thêm các tùy chọn đã phân tách
-            for opt in options_to_add:
+                # Tự động gán nhãn A, B, C, D
                 idx = len(current["options"])
                 if idx < len(labels):
                     label = labels[idx]
-                    opt_text = f"{label}. {opt['body']}"
+                    opt_text = f"{label}. {clean_p}"
                     current["options"].append(opt_text)
                     
-                    if opt["is_correct"]:
+                    if is_correct:
                         current["answer"] = opt_text
-        
-        # B) Tiếp tục phần thân câu hỏi (chỉ khi chưa có options nào được thu thập và không phải đáp án)
-        elif current["question"] and not current["options"]:
-            current["question"] += " " + clean_p
 
     # Lưu câu cuối cùng
-    if current["question"] and current["options"]:
+    if current["question"]:
         if not current["answer"] and current["options"]:
             current["answer"] = current["options"][0]
         questions.append(current)
@@ -397,10 +356,10 @@ css_style = f"""
     100% {{ transform: translateX(-100%); }}
 }}
 
-/* Custom Scrollbar Styles (Áp dụng theo tham khảo techmaster.vn) */
+/* Custom Scrollbar Styles (Yêu cầu 3 - ĐÃ FIX LỖI CÚ PHÁP) */
 .stApp::-webkit-scrollbar {{
-    width: 16px; 
-    height: 16px; 
+    width: 15px; 
+    height: 15px; 
 }}
 
 .stApp::-webkit-scrollbar-track {{
@@ -408,8 +367,8 @@ css_style = f"""
 }}
 
 .stApp::-webkit-scrollbar-thumb {{
-    background-color: #ffffff; 
-    border-radius: 100px; 
+    background-color: #ffffff;
+    border-radius: 10px; 
     border: 3px solid #2b2b2b; 
 }}
 .stApp::-webkit-scrollbar-thumb:hover {{
