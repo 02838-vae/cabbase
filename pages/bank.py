@@ -158,15 +158,15 @@ def parse_lawbank(source):
     return questions
 
 # ====================================================
-# 🧩 PARSER 3: PHỤ LỤC 1 (ĐỊNH DẠNG ĐẶC BIỆT - ĐÃ SỬA LỖI TÁCH INLINE)
+# 🧩 PARSER 3: PHỤ LỤC 1 (ĐỊNH DẠNG ĐẶC BIỆT - ĐÃ CẢI THIỆN XỬ LÝ OPTIONS DÍNH DÒNG)
 # ====================================================
 def parse_pl1(source):
     """
     Parser cho định dạng PL1:
-    - Câu hỏi và đáp án được phân tách bằng các đoạn (paragraph) riêng biệt.
+    - Sử dụng heuristic để phân tách câu hỏi và đáp án dựa trên cấu trúc đoạn văn bản.
     - Đáp án được tự động gán nhãn A, B, C, D theo thứ tự xuất hiện.
-    - Đáp án đúng có dấu (*) ở cuối.
-    - Đã thêm khả năng tách các đáp án ghi trên cùng một dòng (inline options).
+    - Đã cải thiện khả năng thu thập đáp án (một đáp án một paragraph) một cách "tham lam" 
+      sau khi câu hỏi được nhận diện.
     """
     paras = read_docx_paragraphs(source)
     if not paras: return []
@@ -175,30 +175,26 @@ def parse_pl1(source):
     current = {"question": "", "options": [], "answer": ""}
     labels = ["A", "B", "C", "D", "E", "F"]
     
-    # Regex để tìm kiếm và tách các đáp án inline.
+    # Regex để tìm kiếm và tách các đáp án inline/đánh dấu.
     opt_marker_pat = re.compile(r'(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s+')
 
     for p in paras:
         clean_p = clean_text(p)
         if not clean_p: continue
         
-        # 1. Check if this line contains option markers, possibly multiple times
         matches = list(opt_marker_pat.finditer(clean_p))
+        has_correct_marker = '(*)' in clean_p
         
-        # Heuristic để xác định một dòng là TÙY CHỌN (Option line):
-        # - Có chứa dấu hiệu đáp án đúng (*) HOẶC
-        # - Bắt đầu bằng chữ cái + dấu chấm/đóng ngoặc (A., B) HOẶC
-        # - Có ít nhất một match (được sử dụng cho việc tách inline)
-        is_option_line = bool(matches or '(*)' in clean_p or re.match(r'^[A-Za-z][\.\)]\s*', clean_p))
-        
-        # 2. Xác định khi nào một câu hỏi MỚI bắt đầu:
-        # - Lần đầu tiên chạy (chưa có câu hỏi) HOẶC
-        # - Câu hỏi trước đã hoàn thành (đã có options) VÀ dòng hiện tại không phải là option.
-        is_new_question_start = (current["question"] and current["options"] and not is_option_line)
-        
-        if not current["question"] or is_new_question_start:
+        # 1. Dấu hiệu bắt đầu một câu hỏi mới:
+        # A. Dòng này chứa từ khóa "Choose..." hoặc là câu hỏi có thể nhận diện được.
+        is_clear_question_start = bool(re.match(r'^(Choose|The|It|He|If|This|Keep|The pilot|The tires|The AIRBUS|Be careful|They|You|When|A\.)\b', clean_p, re.I))
+
+        # B. Hoặc câu hỏi trước đã có options (đã hoàn thành) VÀ dòng này là câu hỏi mới.
+        is_next_question_after_options = (current["question"] and current["options"] and is_clear_question_start)
+
+        if not current["question"] or is_next_question_after_options:
             
-            # Lưu câu hỏi cũ trước khi sang câu mới
+            # Lưu câu hỏi cũ
             if current["question"] and current["options"]:
                 if not current["answer"] and current["options"]:
                     current["answer"] = current["options"][0]
@@ -206,48 +202,40 @@ def parse_pl1(source):
             
             # Bắt đầu câu hỏi mới
             current = {"question": clean_p, "options": [], "answer": ""}
+            continue 
+        
+        # 2. Xử lý phần thân câu hỏi và các tùy chọn
+        
+        options_to_add = []
+
+        # A) Xử lý đáp án (Dòng này là đáp án nếu nó có marker, có (*), hoặc options đã bắt đầu)
+        if matches or has_correct_marker or len(current["options"]) > 0:
             
-        elif current["question"] and not is_option_line:
-            # Dòng này là phần tiếp theo của câu hỏi hiện tại (nếu chưa có option nào được ghi nhận)
-            current["question"] += " " + clean_p
-            
-        elif current["question"] and is_option_line:
-            # Dòng này chứa một hoặc nhiều đáp án.
-            
-            options_to_add = []
-            
-            # 2.1. Nếu có ít nhất 2 matches hoặc dòng chứa nhiều chữ cái đánh dấu (dấu hiệu inline)
+            # A.1. Tách đáp án inline nếu có nhiều nhãn A., B., C.
             if len(matches) > 1:
-                # Trường hợp: Nhiều đáp án inline (e.g., "A. Opt1 B. Opt2 (*)")
+                # Logic tách inline
                 for i, m in enumerate(matches):
                     s = m.end()
                     e = matches[i + 1].start() if i + 1 < len(matches) else len(clean_p)
                     opt_body = clean_text(clean_p[s:e])
-                    
-                    is_correct = '(*)' in opt_body
+                    is_correct = '(*)' in opt_body or m.group("star")
                     opt_body = opt_body.replace("(*)", "").strip()
+                    options_to_add.append({"body": opt_body, "is_correct": is_correct})
                     
-                    options_to_add.append({
-                        "body": opt_body,
-                        "is_correct": is_correct or m.group("star")
-                    })
-                    
-            # 2.2. Trường hợp còn lại: Chỉ có 1 đáp án trên dòng (dù có hay không có marker ở đầu)
+            # A.2. Đáp án đơn trên 1 dòng/paragraph (áp dụng cho PL1)
             else:
-                # Trường hợp: Đáp án chỉ có 1 dòng (e.g., "Opt1 (*)" hoặc "A. Opt1 (*)" trong một paragraph riêng)
-                
-                is_correct = '(*)' in clean_p
+                is_correct = has_correct_marker
                 temp_p = clean_p.replace("(*)", "").strip()
-                
-                # Loại bỏ nhãn chữ cái có sẵn (nếu có, VD: "B.have to be") để tự động gán nhãn lại
+                # Loại bỏ nhãn chữ cái có sẵn (nếu có, VD: "B.have to be")
                 temp_p = re.sub(r'^[A-Da-d][\.\)]\s*', '', temp_p).strip()
                 
-                options_to_add.append({
-                    "body": temp_p,
-                    "is_correct": is_correct
-                })
+                # Nếu nó chỉ là một dòng trống (dấu hiệu ngắt), bỏ qua.
+                if not temp_p and not matches:
+                    pass
+                else:
+                    options_to_add.append({"body": temp_p, "is_correct": is_correct})
             
-            # 2.3. Thêm các tùy chọn đã phân tách vào `current["options"]`
+            # A.3. Thêm các tùy chọn đã phân tách
             for opt in options_to_add:
                 idx = len(current["options"])
                 if idx < len(labels):
@@ -257,6 +245,10 @@ def parse_pl1(source):
                     
                     if opt["is_correct"]:
                         current["answer"] = opt_text
+        
+        # B) Tiếp tục phần thân câu hỏi (chỉ khi chưa có options nào được thu thập và không phải đáp án)
+        elif current["question"] and not current["options"]:
+            current["question"] += " " + clean_p
 
     # Lưu câu cuối cùng
     if current["question"] and current["options"]:
