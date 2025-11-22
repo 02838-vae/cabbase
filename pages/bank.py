@@ -14,38 +14,26 @@ import random
 def clean_text(s: str) -> str:
     if s is None:
         return ""
-    # ĐÃ SỬA: CHỈ LOẠI BỎ DẤU CÁCH THỪA (>= 2 dấu cách liên tiếp) VÀ DẤU CÁCH Ở ĐẦU/CUỐI, GIỮ NGUYÊN DẤU BA CHẤM, GẠCH DƯỚI, NGOẶC...
+    # ĐÃ SỬA: Thay thế 2 hoặc nhiều dấu cách thành 1 dấu cách duy nhất (an toàn hơn, giữ nguyên ___, ...).
+    # KHÔNG XÓA DẤU '.', '_', '(', ')' để giữ nguyên ký tự điền khuyết.
     return re.sub(r'\s{2,}', ' ', s).strip()
 
 def read_docx_paragraphs(source):
-    """
-    Hàm đọc paragraphs từ file .docx với cơ chế tìm kiếm đa dạng:
-    1. Thư mục chứa bank.py
-    2. Thư mục làm việc hiện tại
-    3. Thư mục pages/ (ngang hàng với bank.py)
-    """
     try:
-        # Cơ chế 1: Thư mục chứa file bank.py
         doc = Document(os.path.join(os.path.dirname(__file__), source))
-    except Exception:
+    except Exception as e:
         try:
-             # Cơ chế 2: Thư mục làm việc hiện tại
              doc = Document(source)
         except Exception:
             try:
-                # Cơ chế 3: Thư mục con 'pages/'
                 doc = Document(f"pages/{source}")
-            except Exception as e:
-                # Nếu tất cả đều thất bại, hiển thị lỗi trong console/log
-                print(f"Lỗi không tìm thấy file DOCX: {source}. Chi tiết: {e}")
+            except Exception:
                 return []
-    
     return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
 
 def get_base64_encoded_file(file_path):
     fallback_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
     try:
-        # Cơ chế tìm kiếm file ảnh: Ưu tiên trong thư mục hiện tại/chứa script
         path_to_check = os.path.join(os.path.dirname(__file__), file_path)
         if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
             path_to_check = file_path 
@@ -56,7 +44,6 @@ def get_base64_encoded_file(file_path):
         with open(path_to_check, "rb") as f:
             return base64.b64encode(f.read()).decode("utf-8")
     except Exception as e:
-        print(f"Lỗi đọc file ảnh {file_path}: {e}")
         return fallback_base64
 
 # ====================================================
@@ -68,6 +55,7 @@ def parse_cabbank(source):
 
     questions = []
     current = {"question": "", "options": [], "answer": ""}
+    # Pattern tìm kiếm các đáp án. Cấu trúc này hỗ trợ tách đáp án inline (trên cùng một dòng).
     opt_pat = re.compile(r'(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s+')
 
     for p in paras:
@@ -96,6 +84,7 @@ def parse_cabbank(source):
                 if current["question"]: current["question"] += " " + clean_text(pre_text)
                 else: current["question"] = clean_text(pre_text)
 
+        # Lặp qua tất cả các matches để tách đáp án inline
         for i, m in enumerate(matches):
             s = m.end()
             e = matches[i + 1].start() if i + 1 < len(matches) else len(p)
@@ -120,6 +109,7 @@ def parse_lawbank(source):
 
     questions = []
     current = {"question": "", "options": [], "answer": ""}
+    # Pattern tìm kiếm các đáp án. Cấu trúc này hỗ trợ tách đáp án inline (trên cùng một dòng).
     opt_pat = re.compile(r'(?<![A-Za-z0-9/])(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s+')
 
     for p in paras:
@@ -151,6 +141,7 @@ def parse_lawbank(source):
                 if current["question"]: current["question"] += " " + clean_text(pre_text)
                 else: current["question"] = clean_text(pre_text)
 
+        # Lặp qua tất cả các matches để tách đáp án inline
         for i, m in enumerate(matches):
             s = m.end()
             e = matches[i+1].start() if i+1 < len(matches) else len(p)
@@ -167,113 +158,111 @@ def parse_lawbank(source):
     return questions
 
 # ====================================================
-# 🧩 PARSER 3: PHỤ LỤC 1 (ĐÃ SỬA LỖI LOGIC VÀ GIỚI HẠN 3 ĐÁP ÁN)
+# 🧩 PARSER 3: PHỤ LỤC 1 (ĐỊNH DẠNG ĐẶC BIỆT - ĐÃ SỬA LỖI TÁCH INLINE)
 # ====================================================
 def parse_pl1(source):
     """
-    Parser cho định dạng PL1 (cải tiến để xử lý câu hỏi không đánh số, giới hạn 3 đáp án)
-    - Chỉ có 3 đáp án (a, b, c) cho mỗi câu hỏi.
-    - Logic chuyển câu mới được siết chặt để xử lý lỗi số trong đáp án (ví dụ: '5 inch...').
-    - Xóa prefix A., B., C. nếu có trong đáp án thô và tự động gán nhãn a., b., c., đồng thời khắc phục lỗi xóa chữ cái đầu tiên của đáp án (Fix 2).
+    Parser cho định dạng PL1:
+    - Câu hỏi và đáp án được phân tách bằng các đoạn (paragraph) riêng biệt.
+    - Đáp án được tự động gán nhãn A, B, C, D theo thứ tự xuất hiện.
+    - Đáp án đúng có dấu (*) ở cuối.
+    - Đã thêm khả năng tách các đáp án ghi trên cùng một dòng (inline options).
     """
     paras = read_docx_paragraphs(source)
     if not paras: return []
 
     questions = []
     current = {"question": "", "options": [], "answer": ""}
+    labels = ["A", "B", "C", "D", "E", "F"]
     
-    # Regex bắt đầu câu hỏi CÓ ĐÁNH SỐ: Số + dấu chấm hoặc dấu đóng ngoặc (ví dụ: 40., 41))
-    q_start_pat = re.compile(r'^\s*(\d+)[\.\)]\s*') 
-    # Regex bắt đầu câu hỏi CÓ CỤM TỪ
-    phrase_start_pat = re.compile(r'Choose the correct group of words', re.I)
-    
-    # FIX 2: Regex cho prefix đáp án cần loại bỏ. Phải có dấu chấm/ngoặc HOẶC ít nhất một khoảng trắng sau chữ cái.
-    opt_prefix_pat = re.compile(r'^\s*[A-Ca-c]([\.\)]|\s+)\s*') 
-    
-    labels = ["a", "b", "c"] # Chỉ có 3 đáp án
-    MAX_OPTIONS = 3 # Giới hạn tối đa 3 đáp án
+    # Regex để tìm kiếm và tách các đáp án inline.
+    opt_marker_pat = re.compile(r'(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s+')
 
-    def finalize_current_question(q_dict, q_list):
-        """Lưu câu hỏi hiện tại và reset dictionary."""
-        if q_dict["question"]:
-            if not q_dict["answer"] and q_dict["options"]:
-                # Nếu không tìm thấy đáp án (*), mặc định lấy A (tức options[0]) là đúng
-                q_dict["answer"] = q_dict["options"][0] 
-            q_list.append(q_dict)
-        return {"question": "", "options": [], "answer": ""}
-    
     for p in paras:
         clean_p = clean_text(p)
         if not clean_p: continue
         
-        is_q_start_phrased = phrase_start_pat.search(clean_p)
-        is_explicitly_numbered = q_start_pat.match(clean_p) 
-        is_max_options_reached = len(current["options"]) >= MAX_OPTIONS
-        is_question_started = current["question"]
-        is_first_line = not is_question_started and not current["options"]
+        # 1. Check if this line contains option markers, possibly multiple times
+        matches = list(opt_marker_pat.finditer(clean_p))
         
-        # --- NEW QUESTION LOGIC (Fixing the Q40/3.5 issue) ---
-        must_switch_q = (
-            is_first_line or                             # Case 1: Start of doc
-            is_q_start_phrased or                        # Case 2: Explicit phrase
-            (is_question_started and is_max_options_reached) # Case 3: Max options reached
-        )
-        # Note: Bỏ điều kiện chuyển câu dựa trên is_explicitly_numbered 
-        # khi chưa đủ options để tránh nhầm đáp án (ví dụ: "3.5 INCH...") là câu hỏi mới.
+        # Heuristic để xác định một dòng là TÙY CHỌN (Option line):
+        # - Có chứa dấu hiệu đáp án đúng (*) HOẶC
+        # - Bắt đầu bằng chữ cái + dấu chấm/đóng ngoặc (A., B) HOẶC
+        # - Có ít nhất một match (được sử dụng cho việc tách inline)
+        is_option_line = bool(matches or '(*)' in clean_p or re.match(r'^[A-Za-z][\.\)]\s*', clean_p))
         
-        # --- APPLY SWITCH DECISION ---
-        if must_switch_q:
+        # 2. Xác định khi nào một câu hỏi MỚI bắt đầu:
+        # - Lần đầu tiên chạy (chưa có câu hỏi) HOẶC
+        # - Câu hỏi trước đã hoàn thành (đã có options) VÀ dòng hiện tại không phải là option.
+        is_new_question_start = (current["question"] and current["options"] and not is_option_line)
+        
+        if not current["question"] or is_new_question_start:
             
-            # 1. Lưu câu hỏi cũ (nếu có)
-            current = finalize_current_question(current, questions)
+            # Lưu câu hỏi cũ trước khi sang câu mới
+            if current["question"] and current["options"]:
+                if not current["answer"] and current["options"]:
+                    current["answer"] = current["options"][0]
+                questions.append(current)
             
-            # 2. Khởi tạo câu hỏi mới
-            q_text = clean_p
-            if is_explicitly_numbered:
-                # Loại bỏ số thứ tự ở đầu câu hỏi nếu có (VD: "40. ")
-                q_text = q_start_pat.sub('', clean_p).strip()
+            # Bắt đầu câu hỏi mới
+            current = {"question": clean_p, "options": [], "answer": ""}
             
-            # Reset và set question text
-            current["question"] = q_text
+        elif current["question"] and not is_option_line:
+            # Dòng này là phần tiếp theo của câu hỏi hiện tại (nếu chưa có option nào được ghi nhận)
+            current["question"] += " " + clean_p
             
-        else:
-            # --- OPTION LOGIC ---
+        elif current["question"] and is_option_line:
+            # Dòng này chứa một hoặc nhiều đáp án.
             
-            # Nếu đã có câu hỏi VÀ chưa đủ MAX_OPTIONS, thì dòng này là một đáp án/lựa chọn
-            if is_question_started and not is_max_options_reached:
-                is_correct = False
-                
-                # Kiểm tra dấu hiệu đáp án đúng (*)
-                if "(*)" in clean_p:
-                    is_correct = True
-                    # Xóa dấu (*)
-                    clean_p = clean_p.replace("(*)", "").strip() 
-                
-                # Loại bỏ prefix A., B., C. (và các biến thể có space/.) - Fix 2
-                match_prefix = opt_prefix_pat.match(clean_p)
-                if match_prefix:
-                    clean_p = clean_p[match_prefix.end():].strip()
+            options_to_add = []
+            
+            # 2.1. Nếu có ít nhất 2 matches hoặc dòng chứa nhiều chữ cái đánh dấu (dấu hiệu inline)
+            if len(matches) > 1:
+                # Trường hợp: Nhiều đáp án inline (e.g., "A. Opt1 B. Opt2 (*)")
+                for i, m in enumerate(matches):
+                    s = m.end()
+                    e = matches[i + 1].start() if i + 1 < len(matches) else len(clean_p)
+                    opt_body = clean_text(clean_p[s:e])
                     
-                # Tự động gán nhãn a, b, c
+                    is_correct = '(*)' in opt_body
+                    opt_body = opt_body.replace("(*)", "").strip()
+                    
+                    options_to_add.append({
+                        "body": opt_body,
+                        "is_correct": is_correct or m.group("star")
+                    })
+                    
+            # 2.2. Trường hợp còn lại: Chỉ có 1 đáp án trên dòng (dù có hay không có marker ở đầu)
+            else:
+                # Trường hợp: Đáp án chỉ có 1 dòng (e.g., "Opt1 (*)" hoặc "A. Opt1 (*)" trong một paragraph riêng)
+                
+                is_correct = '(*)' in clean_p
+                temp_p = clean_p.replace("(*)", "").strip()
+                
+                # Loại bỏ nhãn chữ cái có sẵn (nếu có, VD: "B.have to be") để tự động gán nhãn lại
+                temp_p = re.sub(r'^[A-Da-d][\.\)]\s*', '', temp_p).strip()
+                
+                options_to_add.append({
+                    "body": temp_p,
+                    "is_correct": is_correct
+                })
+            
+            # 2.3. Thêm các tùy chọn đã phân tách vào `current["options"]`
+            for opt in options_to_add:
                 idx = len(current["options"])
                 if idx < len(labels):
                     label = labels[idx]
-                    opt_text = f"{label}. {clean_p}"
+                    opt_text = f"{label}. {opt['body']}"
                     current["options"].append(opt_text)
                     
-                    if is_correct:
-                        # Ghi nhận đây là đáp án đúng
+                    if opt["is_correct"]:
                         current["answer"] = opt_text
-            
-            # Nếu đã đủ 3 đáp án (hoặc không phải option) nhưng không chuyển câu, thêm vào Question text.
-            elif is_question_started:
-                 current["question"] += " " + clean_p
-            
-            elif not is_question_started and not current["options"]:
-                current["question"] = clean_p
 
     # Lưu câu cuối cùng
-    current = finalize_current_question(current, questions)
+    if current["question"] and current["options"]:
+        if not current["answer"] and current["options"]:
+            current["answer"] = current["options"][0]
+        questions.append(current)
         
     return questions
 
@@ -290,12 +279,11 @@ def display_all_questions(questions):
         st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
         
         for opt in q["options"]:
-            # Dùng clean_text để so sánh, bỏ qua khoảng trắng, ký tự ẩn
             if clean_text(opt) == clean_text(q["answer"]):
                 # Đáp án đúng: Xanh lá
                 color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
             else:
-                # Đáp án thường: Trắng
+                # Đáp án thường: Trắng (ĐÃ FIX: đảm bảo màu trắng sắc nét)
                 color_style = "color:#FFFFFF;"
             
             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
@@ -339,9 +327,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         test_batch = st.session_state[f"{test_key_prefix}_questions"]
         for i, q in enumerate(test_batch, start=1):
             st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
-            # SỬA LỖI KEY: THÊM INDEX (i) ĐỂ ĐẢM BẢO TÍNH DUY NHẤT VÀ KHẮC PHỤC StreamlitDuplicateElementKey
             q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}" 
-            # Đảm bảo radio button có giá trị mặc định để tránh lỗi
             default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
             st.radio("", q["options"], index=q["options"].index(default_val) if default_val in q["options"] else 0, key=q_key)
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
@@ -353,9 +339,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         st.markdown('<div class="result-title"><h3>🎉 KẾT QUẢ BÀI TEST</h3></div>', unsafe_allow_html=True)
         test_batch = st.session_state[f"{test_key_prefix}_questions"]
         score = 0
-        
         for i, q in enumerate(test_batch, start=1):
-            # SỬ DỤNG KEY ĐÃ ĐƯỢC FIX
             q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}" 
             selected_opt = st.session_state.get(q_key)
             correct = clean_text(q["answer"])
@@ -387,13 +371,12 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         else:
             st.error(f"😢 **KHÔNG ĐẠT (FAIL)**. Cần {math.ceil(pass_threshold)} câu đúng để Đạt.")
 
+
         if st.button("🔄 Làm lại Bài Test", key=f"{test_key_prefix}_restart_btn"):
-            # Cần lặp lại với index để xoá key chính xác
             for i, q in enumerate(test_batch, start=1):
                 st.session_state.pop(f"{test_key_prefix}_q_{i}_{hash(q['question'])}", None)
-            st.session_state.pop(f"{test_key_prefix}_questions", None)
-            st.session_state[f"{test_key_prefix}_started"] = False
-            st.session_state[f"{test_key_prefix}_submitted"] = False
+            st.session_state.pop(f"{test_key_prefix}_started", None)
+            st.session_state.pop(f"{test_key_prefix}_submitted", None)
             st.rerun()
 
 # ====================================================
@@ -422,12 +405,31 @@ css_style = f"""
     100% {{ transform: translateX(-100%); }}
 }}
 
+/* Custom Scrollbar Styles (Áp dụng theo tham khảo techmaster.vn) */
+.stApp::-webkit-scrollbar {{
+    width: 16px; 
+    height: 16px; 
+}}
+
+.stApp::-webkit-scrollbar-track {{
+    background: #2b2b2b; 
+}}
+
+.stApp::-webkit-scrollbar-thumb {{
+    background-color: #ffffff; 
+    border-radius: 100px; 
+    border: 3px solid #2b2b2b; 
+}}
+.stApp::-webkit-scrollbar-thumb:hover {{
+    background-color: #cccccc;
+}}
+
 html, body, .stApp {{
     height: 100% !important;
     min-height: 100vh !important;
     margin: 0 !important;
     padding: 0 !important;
-    overflow: auto; /* Giữ nguyên overflow: auto để có thanh cuộn */
+    overflow: auto;
     position: relative;
 }}
 
@@ -543,13 +545,12 @@ a#manual-home-btn:hover {{
 }}
 #sub-static-title h2, .result-title h3 {{
     font-family: 'Playfair Display', serif;
-    font-size: 2rem; /* Desktop */
+    font-size: 2rem; 
     color: #FFEA00;
     text-shadow: 0 0 15px #FFEA00; 
 }}
 @media (max-width: 768px) {{
     #sub-static-title h2, .result-title h3 {{
-        /* Tăng lên 4.8vw và giảm spacing để chữ to hơn mà vẫn 1 dòng */
         font-size: 4.8vw !important; 
         letter-spacing: -0.5px;
         white-space: nowrap; 
@@ -566,21 +567,22 @@ a#manual-home-btn:hover {{
     padding: 5px 15px; margin-bottom: 10px; line-height: 1.4 !important;
 }}
 
-/* ĐÃ SỬA: Tăng font-weight để chữ trắng nổi bật hơn */
+/* ĐÃ FIX YÊU CẦU 1: Tăng font-weight và dùng màu trắng tinh khiết #FFFFFF */
 .bank-answer-text {{
     font-family: 'Oswald', sans-serif !important;
     font-weight: 700 !important; 
+    color: #FFFFFF !important; 
     font-size: 22px !important; 
     padding: 5px 15px; margin: 2px 0;
     line-height: 1.5 !important; 
     display: block; 
 }}
 
-/* ĐÃ SỬA: Tăng font-weight để chữ trắng nổi bật hơn */
+/* ĐÃ FIX YÊU CẦU 1: Tăng font-weight và dùng màu trắng tinh khiết #FFFFFF */
 .stRadio label {{
-    color: #FFFFFF !important; /* Màu trắng tuyệt đối */
+    color: #FFFFFF !important;
     font-size: 22px !important; 
-    font-weight: 700 !important; /* Tăng độ dày chữ */
+    font-weight: 700 !important; 
     font-family: 'Oswald', sans-serif !important; 
     padding: 2px 12px; 
 }}
@@ -632,19 +634,16 @@ if "current_mode" not in st.session_state: st.session_state.current_mode = "grou
 if "last_bank_choice" not in st.session_state: st.session_state.last_bank_choice = "----" 
 if "doc_selected" not in st.session_state: st.session_state.doc_selected = "Phụ Lục 1" 
 
-# CẬP NHẬT LIST NGÂN HÀNG
 BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật VAECO", "Ngân hàng Docwise"]
 bank_choice = st.selectbox("Chọn ngân hàng:", BANK_OPTIONS, index=BANK_OPTIONS.index(st.session_state.get('bank_choice_val', '----')), key="bank_selector_master")
 st.session_state.bank_choice_val = bank_choice
 
-# Xử lý khi đổi ngân hàng (reset mode)
 if st.session_state.get('last_bank_choice') != bank_choice and bank_choice != "----":
     st.session_state.current_group_idx = 0
     st.session_state.submitted = False
     st.session_state.current_mode = "group" 
     last_bank_name = st.session_state.get('last_bank_choice')
     if not isinstance(last_bank_name, str) or last_bank_name == "----": last_bank_name = "null bank" 
-    # Xoá session state của bài test cũ
     bank_slug_old = last_bank_name.split()[-1].lower()
     st.session_state.pop(f"test_{bank_slug_old}_started", None)
     st.session_state.pop(f"test_{bank_slug_old}_submitted", None)
@@ -663,11 +662,9 @@ if bank_choice != "----":
         source = "lawbank.docx"
     elif "Docwise" in bank_choice:
         is_docwise = True
-        # Dropdown phụ cho Docwise
         doc_options = ["Phụ Lục 1"]
-        doc_selected_new = st.selectbox("Chọn Phụ lục:", doc_options, key="docwise_selector")
+        doc_selected_new = st.selectbox("Chọn Phụ lục:", doc_options, key="docwise_selector", index=doc_options.index(st.session_state.doc_selected))
         
-        # Xử lý khi đổi phụ lục (reset mode)
         if st.session_state.doc_selected != doc_selected_new:
             st.session_state.doc_selected = doc_selected_new
             st.session_state.current_group_idx = 0
@@ -676,8 +673,8 @@ if bank_choice != "----":
             st.rerun()
 
         if st.session_state.doc_selected == "Phụ Lục 1":
-            source = "PL1.docx" # File PL1.docx
-        
+            source = "PL1.docx"
+
     # LOAD CÂU HỎI
     questions = []
     if source:
@@ -687,7 +684,7 @@ if bank_choice != "----":
             questions = parse_lawbank(source)
         elif is_docwise:
             questions = parse_pl1(source)
-    
+
     if not questions:
         st.error(f"❌ Không đọc được câu hỏi nào từ file **{source}**. Vui lòng kiểm tra file và cấu trúc thư mục (đảm bảo file nằm trong thư mục gốc hoặc thư mục 'pages/').")
         st.stop() 
@@ -703,8 +700,6 @@ if bank_choice != "----":
             groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
             if st.session_state.current_group_idx >= len(groups): st.session_state.current_group_idx = 0
             selected = st.selectbox("Chọn nhóm câu:", groups, index=st.session_state.current_group_idx, key="group_selector")
-            
-            # Xử lý khi chuyển nhóm câu
             new_idx = groups.index(selected)
             if st.session_state.current_group_idx != new_idx:
                 st.session_state.current_group_idx = new_idx
@@ -726,7 +721,6 @@ if bank_choice != "----":
                     st.session_state.current_mode = "test"
                     bank_slug_new = bank_choice.split()[-1].lower()
                     test_key_prefix = f"test_{bank_slug_new}"
-                    # Reset session state cho bài test trước khi bắt đầu
                     st.session_state.pop(f"{test_key_prefix}_started", None)
                     st.session_state.pop(f"{test_key_prefix}_submitted", None)
                     st.session_state.pop(f"{test_key_prefix}_questions", None)
@@ -738,7 +732,6 @@ if bank_choice != "----":
                     for i, q in enumerate(batch, start=start+1):
                         q_key = f"q_{i}_{hash(q['question'])}" # Dùng hash để tránh trùng key
                         st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
-                        # Đảm bảo radio button có giá trị mặc định để tránh lỗi
                         default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
                         st.radio("", q["options"], index=q["options"].index(default_val) if default_val in q["options"] else 0, key=q_key)
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
@@ -774,7 +767,6 @@ if bank_choice != "----":
                     col_reset, col_next = st.columns(2)
                     with col_reset:
                         if st.button("🔄 Làm lại nhóm này", key="reset_group"):
-                            # Xoá session state của các radio button trong nhóm
                             for i, q in enumerate(batch, start=start+1):
                                 st.session_state.pop(f"q_{i}_{hash(q['question'])}", None) 
                             st.session_state.submitted = False
