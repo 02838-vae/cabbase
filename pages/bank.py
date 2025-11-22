@@ -14,40 +14,50 @@ import random
 def clean_text(s: str) -> str:
     if s is None:
         return ""
-    # GIỮ NGUYÊN:
-    # - Dấu chấm liên tiếp: ..... (3 chấm trở lên)
-    # - Gạch dưới liên tiếp: ____ (2 gạch trở lên) 
-    # - Ngoặc có gạch dưới: (____), [____], etc.
-    # - Các ký tự đặc biệt khác cho câu hỏi điền chỗ trống
     
-    # CHỈ XÓA: Nhiều dấu cách liên tiếp (spaces) KHÔNG phải là phần của pattern đặc biệt
-    # Pattern: thay thế 2+ spaces bằng 1 space, NHƯNG bỏ qua nếu xung quanh có ký tự đặc biệt
+    # GIỮ NGUYÊN các pattern điền chỗ trống:
+    # - 2-10 dấu chấm (có thể có space xen kẽ): .... hoặc . . . .
+    # - 2-10 gạch dưới (có thể có space xen kẽ): ____ hoặc __ __
+    # - Ngoặc chứa các ký tự trên: (____) hoặc (__  __)
     
-    # Bước 1: Tạm thời thay thế các pattern đặc biệt bằng placeholder
     temp_s = s
     placeholders = {}
     counter = 0
     
-    # Lưu các pattern cần giữ nguyên
-    patterns_to_keep = [
-        r'\.{3,}',           # 3+ dấu chấm liên tiếp: .....
-        r'_{2,}',            # 2+ gạch dưới liên tiếp: ____
-        r'\([_\s.]{2,}\)',   # Ngoặc đơn chứa gạch/space/chấm: (____)
-        r'\[[_\s.]{2,}\]',   # Ngoặc vuông: [____]
-        r'-{2,}',            # 2+ gạch ngang: ----
+    # Pattern tổng quát: ngoặc đơn/vuông chứa 2-10 ký tự (. hoặc _) có thể có space
+    # VD: (__), (. .), [____], etc.
+    bracket_patterns = [
+        r'\([\s._]{0,30}\)',   # Ngoặc đơn
+        r'\[[\s._]{0,30}\]',   # Ngoặc vuông
     ]
     
-    for pattern in patterns_to_keep:
-        for match in re.finditer(pattern, temp_s):
-            placeholder = f"__PLACEHOLDER_{counter}__"
-            placeholders[placeholder] = match.group()
-            temp_s = temp_s.replace(match.group(), placeholder, 1)
-            counter += 1
+    # Pattern cho dấu chấm và gạch dưới có space xen kẽ (2-10 ký tự)
+    # VD: . . ., __  __, ..... 
+    standalone_patterns = [
+        r'(?<!\S)([._])(?:\s*\1){1,9}(?!\S)',  # 2-10 dấu . hoặc _ liên tiếp (có thể có space)
+        r'-{2,10}',  # 2-10 gạch ngang liên tiếp
+    ]
     
-    # Bước 2: Xóa space thừa
+    all_patterns = bracket_patterns + standalone_patterns
+    
+    for pattern in all_patterns:
+        for match in re.finditer(pattern, temp_s):
+            matched_text = match.group()
+            
+            # Đếm số ký tự đặc biệt (., _, -)
+            special_count = matched_text.count('.') + matched_text.count('_') + matched_text.count('-')
+            
+            # Chỉ giữ nếu có 2-10 ký tự đặc biệt
+            if 2 <= special_count <= 10:
+                placeholder = f"__PLACEHOLDER_{counter}__"
+                placeholders[placeholder] = matched_text
+                temp_s = temp_s.replace(matched_text, placeholder, 1)
+                counter += 1
+    
+    # Xóa khoảng trắng thừa (2+ spaces → 1 space)
     temp_s = re.sub(r'\s{2,}', ' ', temp_s)
     
-    # Bước 3: Khôi phục các pattern đặc biệt
+    # Khôi phục các pattern đã lưu
     for placeholder, original in placeholders.items():
         temp_s = temp_s.replace(placeholder, original)
     
