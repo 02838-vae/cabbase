@@ -16,12 +16,10 @@ def clean_text(s: str) -> str:
         return ""
     
     # BƯỚC 1: Tạm thời thay thế GẠCH DƯỚI bằng ký hiệu giữ chỗ (placeholder)
-    # Lý do: Dấu cách thường bị làm sạch, nhưng nếu chỗ trống là "_ _ _" (gạch dưới có space),
-    # ta muốn giữ nó. Giải pháp là tạm thời ẩn ký tự gạch dưới.
+    # Điều này ngăn việc làm sạch dấu cách thừa làm ảnh hưởng đến chỗ trống được tạo bằng nhiều dấu gạch dưới.
     temp_s = s.replace('_', '__TMP_UNDERSCORE__')
 
-    # BƯỚC 2: CHỈ LOẠI BỎ DẤU CÁCH THỪA (>= 2 dấu cách liên tiếp) VÀ DẤU CÁCH Ở ĐẦU/CUỐI 
-    # Giữ nguyên dấu ba chấm, gạch dưới (đã bị ẩn), ngoặc... 
+    # BƯỚC 2: CHỈ LOẠI BỎ DẤU CÁCH THỪA (>= 2 dấu cách liên tiếp) VÀ DẤU CÁCH Ở ĐẦU/CUỐI
     cleaned_part = re.sub(r'\s{2,}', ' ', temp_s).strip()
 
     # BƯỚC 3: Khôi phục ký tự gạch dưới
