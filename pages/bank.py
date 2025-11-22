@@ -15,32 +15,45 @@ def clean_text(s: str) -> str:
     if s is None:
         return ""
     
+    # BƯỚC 1: TẠM THỜI THAY THẾ CHỖ TRỐNG BẰNG PLACEHOLDERS VÀ BẢO VỆ CHUỖI DẤU CHẤM
     temp_s = s
     
-    # BƯỚC 1: Tạm thời thay thế GẠCH DƯỚI, DẤU CHẤM và DẤU NGOẶC bằng ký hiệu giữ chỗ.
-    # Việc này giúp bảo vệ các ký tự tạo chỗ trống khỏi việc làm sạch khoảng trắng (space cleanup).
+    # 1. Bảo vệ chuỗi dấu chấm (>= 2 dấu chấm). Dùng hàm thay thế để giữ nguyên số lượng dấu chấm.
+    # Ví dụ: '...' -> '__DOT_3__', '.....' -> '__DOT_5__'
+    def dot_replacer(match):
+        dot_count = len(match.group(0))
+        # Chỉ bảo vệ khi có 2 dấu chấm trở lên
+        if dot_count >= 2:
+            return f'__DOT_{dot_count}__'
+        return match.group(0)
 
-    # 1. Bảo vệ chuỗi dấu chấm (3 dấu chấm trở lên, cho chỗ trống: ....)
-    temp_s = re.sub(r'\.{3,}', '__TMP_DOTS__', temp_s) 
+    # Thay thế chuỗi dấu chấm bằng placeholder giữ số lượng
+    temp_s = re.sub(r'\.{2,}', dot_replacer, temp_s) 
 
-    # 2. Bảo vệ gạch dưới (cho chỗ trống: ___, _ _ _)
+    # 2. Bảo vệ gạch dưới
     temp_s = temp_s.replace('_', '__TMP_UNDERSCORE__')
 
-    # 3. Bảo vệ ngoặc (cho chỗ trống: (___))
+    # 3. Bảo vệ ngoặc
     temp_s = temp_s.replace('(', '__TMP_OPEN_PAREN__')
     temp_s = temp_s.replace(')', '__TMP_CLOSE_PAREN__')
 
     # BƯỚC 4: CHỈ LOẠI BỎ DẤU CÁCH THỪA (>= 2 dấu cách liên tiếp) VÀ DẤU CÁCH Ở ĐẦU/CUỐI
-    cleaned_part = re.sub(r'\s{2,}', ' ', temp_s).strip()
+    cleaned_text = re.sub(r'\s{2,}', ' ', temp_s).strip()
 
-    # BƯỚC 5: Khôi phục ký tự
-    # Khôi phục chuỗi dấu chấm (chọn 4 dấu chấm làm đại diện)
-    cleaned_text = cleaned_part.replace('__TMP_DOTS__', '....') 
-    # Khôi phục gạch dưới
-    cleaned_text = cleaned_part.replace('__TMP_UNDERSCORE__', '_')
-    # Khôi phục ngoặc
+    # BƯỚC 5: KHÔI PHỤC KÝ TỰ (Phải chaining đúng)
+    
+    # 5.1 Khôi phục gạch dưới
+    cleaned_text = cleaned_text.replace('__TMP_UNDERSCORE__', '_')
+    # 5.2 Khôi phục ngoặc
     cleaned_text = cleaned_text.replace('__TMP_OPEN_PAREN__', '(')
     cleaned_text = cleaned_text.replace('__TMP_CLOSE_PAREN__', ')')
+
+    # 5.3 Khôi phục chuỗi dấu chấm (sử dụng regex để khớp và khôi phục)
+    def dot_restorer(match):
+        dot_count = int(match.group(1)) # Lấy số lượng X từ __DOT_X__
+        return '.' * dot_count
+
+    cleaned_text = re.sub(r'__DOT_(\d+)__', dot_restorer, cleaned_text)
     
     return cleaned_text
 
