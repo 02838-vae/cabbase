@@ -324,17 +324,20 @@ def display_all_questions(questions):
         st.warning("Không có câu hỏi nào để hiển thị.")
         return
     
+    # Định nghĩa SHARP_OUTLINE (Đổ bóng đen sắc nét)
+    SHARP_OUTLINE = "-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000"
+
     for i, q in enumerate(questions, start=1):
         st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
         
         for opt in q["options"]:
             # Dùng clean_text để so sánh, bỏ qua khoảng trắng, ký tự ẩn
             if clean_text(opt) == clean_text(q["answer"]):
-                # Đáp án đúng: Xanh lá
-                color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8), 1px 1px 2px #000000;"
+                # Đáp án đúng: Xanh lá + Đổ bóng đen sắc nét + Glow xanh
+                color_style = f"color:#00ff00; text-shadow: {SHARP_OUTLINE}, 0 0 3px rgba(0, 255, 0, 0.8);"
             else:
-                # Đáp án thường: Trắng (vẫn giữ text-shadow đen nhẹ để nổi bật)
-                color_style = "color:#FFFFFF; text-shadow: 1px 1px 2px #000000;"
+                # Đáp án thường: Trắng + Đổ bóng đen sắc nét
+                color_style = f"color:#FFFFFF; text-shadow: {SHARP_OUTLINE};"
             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
@@ -351,6 +354,9 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
     PASS_RATE = 0.75
     bank_slug = bank_name.split()[-1].lower()
     test_key_prefix = f"{key_prefix}_{bank_slug}"
+
+    # Định nghĩa SHARP_OUTLINE (Đổ bóng đen sắc nét)
+    SHARP_OUTLINE = "-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000"
     
     if f"{test_key_prefix}_started" not in st.session_state:
         st.session_state[f"{test_key_prefix}_started"] = False
@@ -402,11 +408,14 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             for opt in q["options"]:
                 opt_clean = clean_text(opt)
                 if opt_clean == correct:
-                    color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8), 1px 1px 2px #000000;"
+                    # Đúng: Xanh lá + Đổ bóng đen sắc nét + Glow xanh
+                    color_style = f"color:#00ff00; text-shadow: {SHARP_OUTLINE}, 0 0 3px rgba(0, 255, 0, 0.8);"
                 elif opt_clean == clean_text(selected_opt):
-                    color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8), 1px 1px 2px #000000;"
+                    # Sai: Đỏ + Đổ bóng đen sắc nét + Glow đỏ
+                    color_style = f"color:#ff3333; text-shadow: {SHARP_OUTLINE}, 0 0 3px rgba(255, 0, 0, 0.8);"
                 else:
-                    color_style = "color:#FFFFFF; text-shadow: 1px 1px 2px #000000;"
+                    # Thường: Trắng + Đổ bóng đen sắc nét
+                    color_style = f"color:#FFFFFF; text-shadow: {SHARP_OUTLINE};"
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
 
             if is_correct: score += 1
@@ -442,7 +451,7 @@ MOBILE_IMAGE_FILE = "bank_mobile.jpg"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
-# === CSS (ĐÃ CHỈNH SỬA LẠI ĐỂ CẢI THIỆN TƯƠNG PHẢN) ===
+# === CSS (ĐÃ CHỈNH SỬA LẠI VỚI SHARP OUTLINE) ===
 css_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -606,7 +615,7 @@ a#manual-home-btn:hover {{
     padding: 5px 15px; margin-bottom: 10px; line-height: 1.4 !important;
 }}
 
-/* ĐÃ SỬA: Tăng font-weight để chữ trắng nổi bật hơn VÀ THÊM TEXT SHADOW */
+/* ĐÃ SỬA: DÙNG SHARP OUTLINE ĐỂ TĂNG CƯỜNG TƯƠNG PHẢN TỐI ĐA */
 .bank-answer-text {{
     font-family: 'Oswald', sans-serif !important;
     font-weight: 700 !important; 
@@ -614,8 +623,8 @@ a#manual-home-btn:hover {{
     padding: 5px 15px; margin: 2px 0;
     line-height: 1.5 !important; 
     display: block;
-    /* THÊM SHADOW ĐEN NHẸ ĐỂ TẠO VIỀN */
-    text-shadow: 1px 1px 2px #000000; 
+    /* ĐỔ BÓNG ĐEN SẮC NÉT (SHARP OUTLINE) */
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
 }}
 
 /* 💥 CHỈNH SỬA CHO ST.RADIO LABEL (CHẾ ĐỘ LÀM BÀI) */
@@ -627,8 +636,8 @@ a#manual-home-btn:hover {{
     /* Tăng độ dày chữ */
     font-family: 'Oswald', sans-serif !important; 
     padding: 2px 12px;
-    /* THÊM SHADOW ĐEN NHẸ ĐỂ TẠO VIỀN */
-    text-shadow: 1px 1px 2px #000000;
+    /* ĐỔ BÓNG ĐEN SẮC NÉT (SHARP OUTLINE) */
+    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
 }}
 div[data-testid="stMarkdownContainer"] p {{
     font-size: 22px !important; 
@@ -794,6 +803,9 @@ if bank_choice != "----":
                         st.rerun()
                 else:
                     score = 0
+                    # Định nghĩa SHARP_OUTLINE (Đổ bóng đen sắc nét)
+                    SHARP_OUTLINE = "-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000"
+                    
                     for i, q in enumerate(batch, start=start+1):
                         q_key = f"q_{i}_{hash(q['question'])}" 
                         selected_opt = st.session_state.get(q_key)
@@ -803,11 +815,14 @@ if bank_choice != "----":
                         for opt in q["options"]:
                             opt_clean = clean_text(opt)
                             if opt_clean == correct:
-                                color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8), 1px 1px 2px #000000;"
+                                # Đúng: Xanh lá + Đổ bóng đen sắc nét + Glow xanh
+                                color_style = f"color:#00ff00; text-shadow: {SHARP_OUTLINE}, 0 0 3px rgba(0, 255, 0, 0.8);"
                             elif opt_clean == clean_text(selected_opt):
-                                color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8), 1px 1px 2px #000000;"
+                                # Sai: Đỏ + Đổ bóng đen sắc nét + Glow đỏ
+                                color_style = f"color:#ff3333; text-shadow: {SHARP_OUTLINE}, 0 0 3px rgba(255, 0, 0, 0.8);"
                             else:
-                                color_style = "color:#FFFFFF; text-shadow: 1px 1px 2px #000000;"
+                                # Thường: Trắng + Đổ bóng đen sắc nét
+                                color_style = f"color:#FFFFFF; text-shadow: {SHARP_OUTLINE};"
                             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
                         
                         if is_correct: 
