@@ -29,7 +29,8 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except Exception as e:
-        st.error(f"Lỗi khi đọc file {file_path}: {str(e)}")
+        # Trong môi trường Streamlit, st.error có thể không hiển thị nếu lỗi xảy ra quá sớm
+        # print(f"Lỗi khi đọc file {file_path}: {str(e)}") 
         return None
 
 
@@ -46,14 +47,14 @@ try:
     logo_base64 = get_base64_encoded_file("logo.jpg")
 
     # Kiểm tra file bắt buộc
-    if not all([video_pc_base64, video_mobile_base64, audio_base64, bg_pc_base64, bg_mobile_base64]):
-        missing_files = []
-        if not video_pc_base64: missing_files.append("airplane.mp4")
-        if not video_mobile_base64: missing_files.append("mobile.mp4")
-        if not audio_base64: missing_files.append("plane_fly.mp3")
-        if not bg_pc_base64: missing_files.append("cabbase.jpg")
-        if not bg_mobile_base64: missing_files.append("mobile.jpg")
-        
+    missing_files = []
+    if not video_pc_base64: missing_files.append("airplane.mp4")
+    if not video_mobile_base64: missing_files.append("mobile.mp4")
+    if not audio_base64: missing_files.append("plane_fly.mp3")
+    if not bg_pc_base64: missing_files.append("cabbase.jpg")
+    if not bg_mobile_base64: missing_files.append("mobile.jpg")
+
+    if missing_files:
         st.error(f"⚠️ Thiếu các file media cần thiết hoặc file rỗng. Vui lòng kiểm tra lại các file sau trong thư mục:")
         st.write(" - " + "\n - ".join(missing_files))
         st.stop()
@@ -438,8 +439,11 @@ iframe:first-of-type {{
     padding: 0 80px; 
     
     opacity: 0;
-    transition: opacity 2s ease-out 3s;
+    /* CHỈNH SỬA QUAN TRỌNG: Tăng độ trễ lên 5s để chắc chắn intro và reveal kết thúc */
+    transition: opacity 2s ease-out 5s; 
     z-index: 10000;
+    /* CHỈNH SỬA QUAN TRỌNG: Chặn tương tác click cho đến khi hiển thị hoàn toàn */
+    pointer-events: none;
 }}
 
 .nav-container,
@@ -457,8 +461,10 @@ iframe:first-of-type {{
     align-items: center;
 }}
 
+/* CHỈNH SỬA QUAN TRỌNG: Khi video kết thúc, hiện opacity và cho phép click */
 .video-finished #nav-buttons-wrapper {{
     opacity: 1;
+    pointer-events: all;
 }}
 
 /* KHỞI TẠO CÁC BIẾN CSS (Giữ nguyên) */
@@ -674,22 +680,9 @@ iframe:first-of-type {{
     }}
 }}
 
-@keyframes fadeInUp {{
-    from {{
-        opacity: 0;
-        transform: translateY(50px) scale(0.9);
-    }}
-    to {{
-        opacity: 1;
-        transform: translateY(0) scale(1);
-    }}
-}}
+/* Đã xóa khối keyframes fadeInUp và animation-delay của .video-finished .button 
+   và chuyển logic delay sang #nav-buttons-wrapper để kiểm soát tốt hơn. */
 
-.video-finished .button {{
-    animation: fadeInUp 1s ease-out forwards;
-    animation-delay: 3.2s;
-    opacity: 0;
-}}
 </style>
 """
 
@@ -732,7 +725,8 @@ js_callback_video = f"""
             }}
         }}
 
-        setTimeout(initMusicPlayer, 100);
+        // Music player có độ trễ riêng (2s sau khi add class video-finished)
+        setTimeout(initMusicPlayer, 100); 
     }}
     
     function initRevealEffect() {{
@@ -747,9 +741,10 @@ js_callback_video = f"""
                 cell.style.opacity = 0;
             }}, index * 10);
         }});
+        // 🌟 FIX: Tăng thời gian chờ sau khi hiệu ứng reveal kết thúc để đồng bộ với delay của nút (5s)
         setTimeout(() => {{
              revealGrid.remove();
-        }}, shuffledCells.length * 10 + 1000);
+        }}, shuffledCells.length * 10 + 1000); 
     }}
 
     function initMusicPlayer() {{
@@ -921,7 +916,8 @@ js_callback_video = f"""
                     }}).catch(err => {{
                         console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
                         overlay.textContent = "LỖI PHÁT. ĐANG CHUYỂN TRANG...";
-                        setTimeout(() => sendBackToStreamlit(false), 2000); // Pass false: video failed
+                        // GỌI sendBackToStreamlit() sau 2s, không phải 200ms
+                        setTimeout(() => sendBackToStreamlit(false), 2000); 
                     }});
                     audio.play().catch(e => {{
                         console.log("Audio autoplay blocked (normal), waiting for video end.");
