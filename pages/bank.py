@@ -457,7 +457,7 @@ MOBILE_IMAGE_FILE = "bank_mobile.jpg"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
-# === CSS (ĐÃ CHỈNH SỬA LẠI VỚI HỘP NỀN ĐEN BÁN TRONG SUỐT VÀ MÀU TRẮNG ĐẬM) ===
+# === CSS (ĐÃ CHỈNH SỬA LẠI - THÊM !important CHO ST.RADIO LABEL) ===
 css_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -621,7 +621,7 @@ a#manual-home-btn:hover {{
     padding: 5px 15px; margin-bottom: 10px; line-height: 1.4 !important;
 }}
 
-/* ĐÃ SỬA ROOT CAUSE: Thêm HỘP NỀN ĐEN BÁN TRONG SUỐT VÀ MÀU TRẮNG ĐẬM */
+/* ĐÃ SỬA: LOẠI BỎ HOÀN TOÀN BOX BAO QUANH ĐÁP ÁN */
 .bank-answer-text {{
     font-family: 'Oswald', sans-serif !important;
     font-weight: 700 !important; 
@@ -629,26 +629,26 @@ a#manual-home-btn:hover {{
     padding: 4px 15px; margin: 4px 0; 
     line-height: 1.5 !important; 
     display: block;
-    /* MÀU TRẮNG ĐẬM RÕ RÀNG */
-    color: #FFFFFF; /* ĐÃ XÓA !important ĐỂ CHO PHÉP INLINE STYLE (ĐỎ/XANH) GHI ĐÈ KHI NỘP BÀI */
-    /* KHẮC PHỤC TRIỆT ĐỂ: Thêm nền đen bán trong suốt */
-    background-color: rgba(0, 0, 0, 0.7); /* Tăng độ đậm nền lên 0.7 */
-    border-radius: 6px;
+    /* MÀU TRẮNG ĐẬM RÕ RÀNG (ĐÃ BỎ !important CHO PHÉP INLINE STYLE GHI ĐÈ) */
+    color: #FFFFFF; 
+    /* LOẠI BỎ BOX */
+    background-color: transparent; 
+    border-radius: 0;
     /* Giữ sharp outline để chữ nổi hơn nữa */
     text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
 }}
 
-/* 💥 CHỈNH SỬA CHO ST.RADIO LABEL (CHẾ ĐỘ LÀM BÀI) */
+/* 💥 CHỈNH SỬA CHO ST.RADIO LABEL (CHẾ ĐỘ LÀM BÀI) - ĐÃ THÊM !important */
 .stRadio label {{
-    /* MÀU TRẮNG ĐẬM RÕ RÀNG */
+    /* MÀU TRẮNG ĐẬM RÕ RÀNG - ĐÃ THÊM !important */
     color: #FFFFFF !important; 
     font-size: 22px !important; 
-    font-weight: 700 !important;
+    font-weight: 700 !important; /* Đã thêm !important */
     font-family: 'Oswald', sans-serif !important; 
     padding: 4px 12px;
-    /* KHẮC PHỤC TRIỆT ĐỂ: Thêm nền đen bán trong suốt */
-    background-color: rgba(0, 0, 0, 0.7); /* Tăng độ đậm nền lên 0.7 */
-    border-radius: 6px;
+    /* LOẠI BỎ BOX */
+    background-color: transparent; 
+    border-radius: 0;
     /* Giữ sharp outline */
     text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
 }}
