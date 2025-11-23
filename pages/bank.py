@@ -630,7 +630,7 @@ a#manual-home-btn:hover {{
     line-height: 1.5 !important; 
     display: block;
     /* MÀU TRẮNG ĐẬM RÕ RÀNG */
-    color: #FFFFFF !important; 
+    color: #FFFFFF; /* ĐÃ XÓA !important ĐỂ CHO PHÉP INLINE STYLE (ĐỎ/XANH) GHI ĐÈ KHI NỘP BÀI */
     /* KHẮC PHỤC TRIỆT ĐỂ: Thêm nền đen bán trong suốt */
     background-color: rgba(0, 0, 0, 0.7); /* Tăng độ đậm nền lên 0.7 */
     border-radius: 6px;
@@ -828,7 +828,8 @@ if bank_choice != "----":
                         st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
                         for opt in q["options"]:
                             opt_clean = clean_text(opt)
-                            # CHỈNH SỬA TẠI ĐÂY: KHÔNG CẦN SET LẠI MÀU TRẮNG TRONG STYLE TRƯỜNG HỢP THƯỜNG
+                            
+                            # LOGIC TÔ MÀU ĐÁP ÁN:
                             if opt_clean == correct:
                                 # Đúng: Xanh lá + Glow xanh 
                                 color_style = f"color:#00ff00; text-shadow: {SHARP_OUTLINE}, 0 0 3px rgba(0, 255, 0, 0.8);"
@@ -838,7 +839,8 @@ if bank_choice != "----":
                             else:
                                 # Thường: Trắng (Màu trắng đã được set trong CSS chung, giữ nguyên chỉ cần gán viền đen)
                                 color_style = f"color:#FFFFFF; text-shadow: {SHARP_OUTLINE};"
-                            # ĐÃ FIX MÀU TRẮNG ĐẬM RÕ RÀNG TRONG CSS LỚP .bank-answer-text
+                            
+                            # Màu sẽ được áp dụng chính xác nhờ việc loại bỏ !important khỏi .bank-answer-text
                             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
                         
                         if is_correct: 
