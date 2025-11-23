@@ -680,9 +680,6 @@ iframe:first-of-type {{
     }}
 }}
 
-/* Đã xóa khối keyframes fadeInUp và animation-delay của .video-finished .button 
-   và chuyển logic delay sang #nav-buttons-wrapper để kiểm soát tốt hơn. */
-
 </style>
 """
 
@@ -724,6 +721,32 @@ js_callback_video = f"""
                 revealGrid.remove();
             }}
         }}
+        
+        // --- CHỈNH SỬA QUAN TRỌNG: KÍCH HOẠT SỰ KIỆN CLICK SAU KHI REVEAL HOÀN TẤT ---
+        const partNumberBtn = window.parent.document.getElementById('partnumber-btn');
+        const bankBtn = window.parent.document.getElementById('bank-btn');
+
+        // Định nghĩa hàm điều hướng
+        const navigateToPartNumber = (e) => {{
+            e.preventDefault(); // Chặn hành vi mặc định của href="#"
+            window.parent.location.href = '/partnumber'; 
+        }};
+        const navigateToBank = (e) => {{
+            e.preventDefault(); // Chặn hành vi mặc định của href="#"
+            window.parent.location.href = '/bank';
+        }};
+
+        // Thêm listener (chỉ 1 lần)
+        if (partNumberBtn && !partNumberBtn._listenerAttached) {{
+            partNumberBtn.addEventListener('click', navigateToPartNumber);
+            partNumberBtn._listenerAttached = true; // Dùng cờ để tránh gắn lại
+        }}
+
+        if (bankBtn && !bankBtn._listenerAttached) {{
+            bankBtn.addEventListener('click', navigateToBank);
+            bankBtn._listenerAttached = true;
+        }}
+        // --- KẾT THÚC KHỐI CHỈNH SỬA ---
 
         // Music player có độ trễ riêng (2s sau khi add class video-finished)
         setTimeout(initMusicPlayer, 100); 
@@ -1150,7 +1173,7 @@ svg_bank = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 
 nav_buttons_html = f"""
 <div id="nav-buttons-wrapper">
     <div class="nav-container">
-        <a href="/partnumber" target="_self" class="button">
+        <a href="#" id="partnumber-btn" target="_self" class="button">
             <div class="dots_border"></div>
             {svg_part_number} 
             <span class="text_button">TRA CỨU PART NUMBER</span> 
@@ -1158,7 +1181,7 @@ nav_buttons_html = f"""
     </div>
     
     <div class="nav-container-right">
-        <a href="/bank" target="_self" class="button">
+        <a href="#" id="bank-btn" target="_self" class="button">
             <div class="dots_border"></div> 
             {svg_bank}
             <span class="text_button">NGÂN HÀNG TRẮC NGHIỆM</span> 
@@ -1167,10 +1190,8 @@ nav_buttons_html = f"""
 </div>
 """
 
-# *** BƯỚC KHẮC PHỤC TRIỆT ĐỂ: LÀM SẠCH CHUỖI HTML ***
-# 1. Loại bỏ tất cả khoảng trắng ở đầu mỗi dòng và giữa các thẻ HTML để tránh lỗi phân tích cú pháp Markdown.
+# BƯỚC KHẮC PHỤC TRIỆT ĐỂ: LÀM SẠCH CHUỖI HTML
 nav_buttons_html_cleaned = re.sub(r'>\s+<', '><', nav_buttons_html.strip())
-# 2. Loại bỏ tất cả ký tự xuống dòng (\n) để tạo thành chuỗi một dòng.
 nav_buttons_html_cleaned = nav_buttons_html_cleaned.replace('\n', '')
 
 # Hiển thị chuỗi HTML đã được làm sạch
