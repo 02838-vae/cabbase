@@ -105,10 +105,11 @@ hide_streamlit_style = f"""
     100% {{ background-position: 0% 50%; }}
 }}
 
-/* ✅ TIÊU ĐỀ CHẠY - GIỐNG Y HỆT TRANG CHÍNH */
+/* ✅ TIÊU ĐỀ CHẠY - ĐÃ CHỈNH SỬA ĐỂ CUỘN THEO NỘI DUNG */
 #main-title-container {{
-    position: fixed;
-    top: 5vh;
+    position: relative; /* ĐIỀU CHỈNH: Cho phép cuộn theo nội dung */
+    top: 0;
+    margin-top: 30px; /* Tạo khoảng cách dưới nút Home cố định */
     left: 0;
     width: 100%;
     height: 10vh;
@@ -140,6 +141,8 @@ hide_streamlit_style = f"""
 
 @media (max-width: 768px) {{
     #main-title-container {{
+        top: 0;
+        margin-top: 20px; /* Tạo khoảng cách dưới nút Home cố định trên di động */
         height: 8vh;
         width: 100%;
         left: 0;
