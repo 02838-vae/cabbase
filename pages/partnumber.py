@@ -5,25 +5,87 @@ import pandas as pd
 import base64
 import os
 
+# --- CẤU HÌNH (PHẢI Ở ĐẦU TIÊN) ---
+st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1 - Tra Cứu PN", layout="wide", initial_sidebar_state="collapsed")
+
 # --- KIỂM TRA VÀ REDIRECT VỀ TRANG CHỦ ---
 if 'from_home' not in st.query_params:
     # Nếu không có query param from_home, redirect về trang chủ
     st.markdown("""
+    <meta http-equiv="refresh" content="0; url=/" />
     <script>
-        window.parent.location.href = '/';
+        window.location.href = '/';
     </script>
     """, unsafe_allow_html=True)
     st.stop()
-else:
-    # Xóa query param sau khi đã check để URL sạch hơn
+
+# Xóa query param sau khi đã check để URL sạch hơn
+if 'from_home' in st.query_params:
     if 'pn_cleaned_url' not in st.session_state:
         st.session_state.pn_cleaned_url = True
         st.query_params.clear()
         st.rerun()
 
+# --- HÀM HỖ TRỢ ---
+def get_base64_encoded_file(file_path):
+    """Mã hóa file ảnh sang base64."""
+    # ... phần còn lại giữ nguyên
+Sửa lại bank.py:
+python# -*- coding: utf-8 -*-
+import streamlit as st
+from docx import Document
+import re
+import math
+import pandas as pd
+import base64
+import os
+import random 
 
-# --- CẤU HÌNH ---
-st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1 - Tra Cứu PN", layout="wide", initial_sidebar_state="collapsed")
+# --- CẤU HÌNH (PHẢI Ở ĐẦU TIÊN) ---
+st.set_page_config(page_title="Ngân hàng trắc nghiệm", layout="wide")
+
+# --- KIỂM TRA VÀ REDIRECT VỀ TRANG CHỦ ---
+if 'from_home' not in st.query_params:
+    # Nếu không có query param from_home, redirect về trang chủ
+    st.markdown("""
+    <meta http-equiv="refresh" content="0; url=/" />
+    <script>
+        window.location.href = '/';
+    </script>
+    """, unsafe_allow_html=True)
+    st.stop()
+
+# Xóa query param sau khi đã check để URL sạch hơn
+if 'from_home' in st.query_params:
+    if 'bank_cleaned_url' not in st.session_state:
+        st.session_state.bank_cleaned_url = True
+        st.query_params.clear()
+        st.rerun()
+
+# ====================================================
+# ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
+# ====================================================
+def clean_text(s: str) -> str:
+    # ... phần còn lại giữ nguyên
+Thay đổi chính:
+
+Di chuyển st.set_page_config() lên đầu tiên - đây là quy tắc bắt buộc của Streamlit
+Tách logic xóa query param thành block riêng sau khi check
+Thêm <meta http-equiv="refresh"> để đảm bảo redirect hoạt động tốt hơn
+
+Bây giờ luồng sẽ là:
+
+Click button → /partnumber?from_home=1
+Page config được set → trang load bình thường
+Check có from_home → OK, tiếp tục
+Xóa query param và rerun → URL thành /partnumber
+Hiển thị nội dung trang partnumber đầy đủ
+
+Nếu refresh:
+
+URL là /partnumber (không có from_home)
+Redirect ngay về / (trang chủ)
+RetryClaude can make mistakes. Please double-check responses.
 
 # --- HÀM HỖ TRỢ ---
 def get_base64_encoded_file(file_path):
