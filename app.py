@@ -14,6 +14,8 @@ st.set_page_config(
 # Khởi tạo session state
 if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
+if 'first_load' not in st.session_state:
+    st.session_state.first_load = True
 
 # --- CÁC HÀM TIỆN ÍCH ---
 
@@ -73,10 +75,10 @@ font_links = """
 st.markdown(font_links, unsafe_allow_html=True)
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
-# Tích hợp toàn bộ CSS, bao gồm cả các selector mới cho st.page_link
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+
 /* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
 
@@ -234,7 +236,6 @@ iframe:first-of-type {{
     }}
 }}
 
-
 /* 🌟 KEYFRAMES: HIỆU ỨNG TỎA SÁNG MÀU NGẪU NHIÊN */
 @keyframes glow-random-color {{
     0%, 57.14%, 100% {{
@@ -262,7 +263,6 @@ iframe:first-of-type {{
     }}
 }}
 
-
 /* === MUSIC PLAYER STYLES === */
 #music-player-container {{
     position: fixed;
@@ -277,7 +277,6 @@ iframe:first-of-type {{
     opacity: 0;
     transform: translateY(100px);
     transition: opacity 1s ease-out 2s, transform 1s ease-out 2s;
-    position: fixed;
 }}
 
 #music-player-container::before {{
@@ -305,7 +304,6 @@ iframe:first-of-type {{
     animation: glow-random-color 7s linear infinite;
 }}
 
-/* Đảm bảo các thành phần con ở trên lớp giả */
 #music-player-container * {{
     position: relative;
     z-index: 5; 
@@ -316,7 +314,6 @@ iframe:first-of-type {{
     transform: translateY(0);
 }}
 
-/* Các style khác của player */
 #music-player-container .controls,
 #music-player-container .time-info {{
     color: #fff;
@@ -406,76 +403,70 @@ iframe:first-of-type {{
     }}
 }}
 
-/* ---------------------------------------------------- */
-/* === KHỐI CSS MỚI: TÙY CHỈNH ST.PAGE_LINK (FIX VISIBILITY) === */
-/* ---------------------------------------------------- */
+/* ================================================ */
+/* === CSS CHO NAVIGATION BUTTONS (FIXED) === */
+/* ================================================ */
 
-/* Wrapper cho các nút Streamlit (Fixed position cho desktop) */
-.stNavWrapper {{
+/* Container chứa buttons */
+.nav-buttons-wrapper {{
     position: fixed;
     top: 50%;
     left: 0;
-    width: 100%; 
-    height: 1px;
+    width: 100%;
     transform: translateY(-50%);
-    
     display: flex;
-    justify-content: space-between; 
+    justify-content: space-between;
     align-items: center;
-    padding: 0 80px; 
-    
-    opacity: 0;
-    /* ĐIỀU CHỈNH QUAN TRỌNG: GỠ BỎ ĐỘ TRỄ 5S */
-    transition: opacity 1s ease-out; 
+    padding: 0 80px;
     z-index: 10000;
-    pointer-events: none; 
+    opacity: 0;
+    transition: opacity 1s ease-out;
+    pointer-events: none;
 }}
 
-.video-finished .stNavWrapper {{
+.video-finished .nav-buttons-wrapper {{
     opacity: 1;
-    pointer-events: all; 
+    pointer-events: all;
 }}
 
-/* Streamlit Page Link (thành phần bao ngoài thẻ <a>) */
-.stPageLink {{
-    position: static !important; 
-    left: auto !important;
-    right: auto !important;
-    top: auto !important;
-    transform: none !important;
-    padding: 0 !important;
+/* Ẩn columns và elements mặc định của Streamlit */
+.nav-buttons-wrapper .stColumn {{
+    display: contents !important;
 }}
 
-/* === UIverse BUTTON STYLES (Áp dụng cho thẻ <a> bên trong) === */
-.stPageLink a {{
-    --black-700: hsla(0, 0%, 12%, 1);
-    --border_radius: 9999px; 
-    --transtion: 0.3s ease-in-out;
-    --active: 0; 
-    --hover-color: hsl(40, 60%, 85%);
-    --text-color: hsl(0, 0%, 100%); 
-    
-    min-width: 280px;
-    
-    cursor: pointer;
-    position: relative;
-    display: flex;
+.nav-buttons-wrapper [data-testid="column"] {{
+    display: contents !important;
+}}
+
+/* Reset CSS cho thẻ a trong page_link */
+.nav-buttons-wrapper a {{
+    all: unset;
+    display: flex !important;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
+    cursor: pointer;
+    position: relative;
     transform-origin: center;
     padding: 1rem 2rem;
-    background-color: transparent;
-    border: none;
-    border-radius: var(--border_radius);
+    border-radius: 9999px;
+    min-width: 280px;
+    text-decoration: none;
+    
+    /* Button variables */
+    --black-700: hsla(0, 0%, 12%, 1);
+    --border_radius: 9999px;
+    --transtion: 0.3s ease-in-out;
+    --active: 0;
+    --hover-color: hsl(40, 60%, 85%);
+    --text-color: hsl(0, 0%, 100%);
     
     transform: scale(calc(1 + (var(--active, 0) * 0.2)));
     transition: transform var(--transtion);
-    text-decoration: none; 
 }}
 
-/* NỀN ĐEN CỦA BUTTON (::before) */
-.stPageLink a::before {{
+/* Background đen của button */
+.nav-buttons-wrapper a::before {{
     content: "";
     position: absolute;
     top: 50%;
@@ -494,8 +485,8 @@ iframe:first-of-type {{
     z-index: 0;
 }}
 
-/* HIỆU ỨNG TIA SÁNG BÊN TRONG KHI HOVER (::after) */
-.stPageLink a::after {{
+/* Hiệu ứng sáng bên trong khi hover */
+.nav-buttons-wrapper a::after {{
     content: "";
     position: absolute;
     top: 50%;
@@ -509,97 +500,79 @@ iframe:first-of-type {{
         radial-gradient(at 100% 100%, hsla(35, 60%, 80%, 1) 0px, transparent 50%), 
         radial-gradient(at 22% 91%, hsla(35, 60%, 80%, 1) 0px, transparent 50%);
     background-position: top;
-    opacity: var(--active, 0); 
+    opacity: var(--active, 0);
     border-radius: var(--border_radius);
     transition: opacity var(--transtion);
     z-index: 2;
 }}
 
-/* KÍCH HOẠT TRẠNG THÁI HOVER */
-.stPageLink a:is(:hover, :focus-visible) {{
+/* Hover state */
+.nav-buttons-wrapper a:hover,
+.nav-buttons-wrapper a:focus-visible {{
     --active: 1;
-}}
-
-.stPageLink a {{
-    box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.2); 
-    transition: box-shadow 0.3s ease;
-}}
-.stPageLink a:is(:hover, :focus-visible) {{
     box-shadow: 0 0 15px 5px var(--hover-color), 0 0 0 0.375rem var(--hover-color);
 }}
 
-
-/* NỘI DUNG VÀ ICON */
-/* Chứa text: Thẻ <span> */
-.stPageLink span {{
+/* Text styling */
+.nav-buttons-wrapper a span {{
     position: relative;
     z-index: 10;
     background-image: linear-gradient(
         90deg, 
         var(--text-color) 0%, 
-        hsla(0, 0%, 100%, var(--active, 0.5)) 120% 
-    ) !important;
-    background-clip: text !important;
-    -webkit-background-clip: text !important; 
-    color: transparent !important; 
+        hsla(0, 0%, 100%, var(--active, 0.5)) 120%
+    );
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
     font-weight: 600;
     letter-spacing: 1px;
     white-space: nowrap;
-    text-shadow: 0 0 5px rgba(0, 0, 0, 0.5); 
-    font-size: 1.1rem !important; 
-    padding-left: 0 !important; 
-    margin: 0 !important; 
-    min-width: max-content; 
+    text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+    font-size: 1.1rem;
+    line-height: 1.1rem;
 }}
 
-/* Chứa Icon: Thẻ SVG */
-.stPageLink svg {{
+/* SVG icon styling */
+.nav-buttons-wrapper a svg {{
     position: relative;
     z-index: 10;
-    width: 1.75rem !important; 
-    height: 1.75rem !important;
-    color: var(--text-color) !important;
-    margin-right: -0.2rem !important; 
+    width: 1.75rem;
+    height: 1.75rem;
+    color: var(--text-color);
+    flex-shrink: 0;
 }}
 
-
-/* --- MEDIA QUERY CHO MOBILE --- */
+/* Mobile responsive */
 @media (max-width: 768px) {{
-    .stNavWrapper {{
-        bottom: 120px; 
+    .nav-buttons-wrapper {{
+        bottom: 120px;
+        top: auto;
         left: 50%;
         width: calc(100% - 40px);
-        max-width: 450px; 
-        flex-direction: column; 
-        gap: 15px; 
-        padding: 0;
-        top: auto;
+        max-width: 450px;
         transform: translateX(-50%);
-        height: auto;
-    }}
-
-    .stPageLink {{
-        width: 100%;
+        flex-direction: column;
+        gap: 15px;
+        padding: 0;
     }}
     
-    .stPageLink a {{
+    .nav-buttons-wrapper a {{
+        width: 100%;
+        min-width: unset;
         padding: 0.8rem 1.5rem;
-        width: 100%;
-        min-width: unset; 
-        justify-content: center;
     }}
     
-    .stPageLink svg {{
-        width: 1.5rem !important;
-        height: 1.5rem !important;
+    .nav-buttons-wrapper a svg {{
+        width: 1.5rem;
+        height: 1.5rem;
     }}
 }}
 </style>
 """
 
-# Thêm CSS vào trang chính
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
 
 # --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
@@ -768,7 +741,6 @@ js_callback_video = f"""
             return; 
         }}
 
-
         const waitForElements = setInterval(() => {{
             const video = document.getElementById('intro-video');
             const audio = document.getElementById('background-audio');
@@ -817,53 +789,47 @@ js_callback_video = f"""
                     }});
                 }};
 
-
                 video.addEventListener('canplaythrough', () => {{
                     tryToPlayAndHideOverlay({{ preventDefault: () => {{}} }}); 
                 }}, {{ once: true }});
-                
-                const tryToPlayAndPlay = tryToPlayAndHideOverlay;
-
 
                 video.addEventListener('ended', () => {{
                     console.log("Video ended, transitioning...");
-                    video.style.opacity = 0;
-                    audio.pause();
-                    audio.currentTime = 0;
-                    
-                    introTextContainer.style.opacity = 0;
-                    setTimeout(() => sendBackToStreamlit(false), 500); 
-                }});
-                video.addEventListener('error', (e) => {{
-                    console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
-                    sendBackToStreamlit(false); 
-                }});
-                
-                // Dùng lớp phủ để bắt tương tác
-                overlay.addEventListener('click', tryToPlayAndHideOverlay, {{ once: true }});
-                overlay.addEventListener('touchstart', tryToPlayAndHideOverlay, {{ once: true }});
-                overlay.addEventListener('dblclick', tryToPlayAndHideOverlay, {{ once: true }}); 
-                
-                video.load();
-                const chars = introTextContainer.querySelectorAll('.intro-char');
-                chars.forEach((char, index) => {{
-                    char.style.animationDelay = `${{index * 0.1}}s`;
-                    char.classList.add('char-shown');
-                }});
-            }}
-        }}, 100);
-        setTimeout(() => {{
-            clearInterval(waitForElements);
-            const video = document.getElementById('intro-video');
-            if (video && !video.src) {{
-                console.warn("Timeout before video source set. Force transitioning to main content.");
+                    video.
+                    style.opacity = 0;
+audio.pause();
+audio.currentTime = 0;
+                introTextContainer.style.opacity = 0;
+                setTimeout(() => sendBackToStreamlit(false), 500); 
+            }});
+            video.addEventListener('error', (e) => {{
+                console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
                 sendBackToStreamlit(false); 
-            }}
-        }}, 5000);
-    }});
+            }});
+            
+            overlay.addEventListener('click', tryToPlayAndHideOverlay, {{ once: true }});
+            overlay.addEventListener('touchstart', tryToPlayAndHideOverlay, {{ once: true }});
+            overlay.addEventListener('dblclick', tryToPlayAndHideOverlay, {{ once: true }}); 
+            
+            video.load();
+            const chars = introTextContainer.querySelectorAll('.intro-char');
+            chars.forEach((char, index) => {{
+                char.style.animationDelay = `${{index * 0.1}}s`;
+                char.classList.add('char-shown');
+            }});
+        }}
+    }}, 100);
+    setTimeout(() => {{
+        clearInterval(waitForElements);
+        const video = document.getElementById('intro-video');
+        if (video && !video.src) {{
+            console.warn("Timeout before video source set. Force transitioning to main content.");
+            sendBackToStreamlit(false); 
+        }}
+    }}, 5000);
+}});
 </script>
 """
-
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -877,94 +843,92 @@ html_content_modified = f"""
             width: 100vw;
             background-color: #000;
         }}
-        
-        #intro-video {{
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            z-index: 0;
-            transition: opacity 1s;
-        }}
+    #intro-video {{
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: 0;
+        transition: opacity 1s;
+    }}
 
-        #intro-text-container {{
-            position: fixed;
-            top: 5vh;
-            width: 100%;
-            text-align: center;
-            color: #FFD700;
-            font-size: 3vw;
-            font-family: 'Sacramento', cursive;
-            font-weight: 400;
-            text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
-            z-index: 100;
-            pointer-events: none;
-            display: flex;
-            justify-content: center;
-            opacity: 1;
-            transition: opacity 0.5s;
-        }}
-        
-        .intro-char {{
-            display: inline-block;
+    #intro-text-container {{
+        position: fixed;
+        top: 5vh;
+        width: 100%;
+        text-align: center;
+        color: #FFD700;
+        font-size: 3vw;
+        font-family: 'Sacramento', cursive;
+        font-weight: 400;
+        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+        z-index: 100;
+        pointer-events: none;
+        display: flex;
+        justify-content: center;
+        opacity: 1;
+        transition: opacity 0.5s;
+    }}
+    
+    .intro-char {{
+        display: inline-block;
+        opacity: 0;
+        transform: translateY(-50px);
+        animation-fill-mode: forwards;
+        animation-duration: 0.8s;
+        animation-timing-function: ease-out;
+    }}
+
+    @keyframes charDropIn {{
+        from {{
             opacity: 0;
             transform: translateY(-50px);
-            animation-fill-mode: forwards;
-            animation-duration: 0.8s;
-            animation-timing-function: ease-out;
         }}
+        to {{
+            opacity: 1;
+            transform: translateY(0);
+        }}
+    }}
 
-        @keyframes charDropIn {{
-            from {{
-                opacity: 0;
-                transform: translateY(-50px);
-            }}
-            to {{
-                opacity: 1;
-                transform: translateY(0);
-            }}
-        }}
+    .intro-char.char-shown {{
+        animation-name: charDropIn;
+    }}
+    
+    #click-to-play-overlay {{
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 200; 
+        cursor: pointer;
+        background: rgba(0, 0, 0, 0.5); 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Playfair Display', serif;
+        color: #fff;
+        font-size: 2vw;
+        text-shadow: 1px 1px 3px #000;
+        transition: opacity 0.5s;
+    }}
 
-        .intro-char.char-shown {{
-            animation-name: charDropIn;
-        }}
-        
-        /* CSS cho lớp phủ chặn click */
-        #click-to-play-overlay {{
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 200; 
-            cursor: pointer;
-            background: rgba(0, 0, 0, 0.5); 
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-family: 'Playfair Display', serif;
-            color: #fff;
-            font-size: 2vw;
-            text-shadow: 1px 1px 3px #000;
-            transition: opacity 0.5s;
-        }}
+    #click-to-play-overlay.hidden {{
+        opacity: 0;
+        pointer-events: none; 
+    }}
 
-        #click-to-play-overlay.hidden {{
-            opacity: 0;
-            pointer-events: none; 
+    @media (max-width: 768px) {{
+        #intro-text-container {{
+            font-size: 6vw;
         }}
-
-        @media (max-width: 768px) {{
-            #intro-text-container {{
-                font-size: 6vw;
-            }}
-             #click-to-play-overlay {{
-                font-size: 4vw;
-            }}
+         #click-to-play-overlay {{
+            font-size: 4vw;
         }}
-    </style>
+    }}
+</style>
 </head>
 <body>
     <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
@@ -975,48 +939,37 @@ html_content_modified = f"""
 </body>
 </html>
 """
-
-# Xử lý nội dung của tiêu đề video intro để thêm hiệu ứng chữ thả
 intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
-    f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'
-    for char in intro_title
+f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char"> </span>'
+for char in intro_title
 ])
 html_content_modified = html_content_modified.replace(
-    "<div id=\"intro-text-container\">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>",
-    f"<div id=\"intro-text-container\">{intro_chars_html}</div>"
+"<div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>",
+f"<div id="intro-text-container">{intro_chars_html}</div>"
 )
-
-# --- HIỂN THỊ IFRAME VIDEO ---
+--- HIỂN THỊ IFRAME VIDEO ---
 st.components.v1.html(html_content_modified, height=1080, scrolling=False)
-
-# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
-
-# Tạo Lưới Reveal
+--- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
 grid_cells_html = ""
 for i in range(240):
-    grid_cells_html += f'<div class="grid-cell"></div>'
-
+grid_cells_html += f'<div class="grid-cell"></div>'
 reveal_grid_html = f"""
 <div class="reveal-grid">
     {grid_cells_html}
 </div>
 """
 st.markdown(reveal_grid_html, unsafe_allow_html=True)
-
-# --- NỘI DUNG CHÍNH (TIÊU ĐỀ ĐƠN, ĐỔI MÀU) ---
+--- NỘI DUNG CHÍNH (TIÊU ĐỀ) ---
 main_title_text = "TỔ BẢO DƯỠNG SỐ 1"
-
-# Nhúng tiêu đề
 st.markdown(f"""
 <div id="main-title-container">
     <h1>{main_title_text}</h1>
 </div>
 """, unsafe_allow_html=True)
-
-# --- MUSIC PLAYER ---
+--- MUSIC PLAYER ---
 if len(music_files) > 0:
-    st.markdown("""
+st.markdown("""
 <div id="music-player-container">
     <div class="controls">
         <button class="control-btn" id="prev-btn">⏮</button>
@@ -1032,32 +985,23 @@ if len(music_files) > 0:
     </div>
 </div>
 """, unsafe_allow_html=True)
-
-# --- NAVIGATION BUTTON MỚI (DÙNG ST.PAGE_LINK) ---
-
-# Định nghĩa SVG và Label cho st.page_link (Cần phải dùng style inline cho SVG và Span)
-svg_part_number = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="sparkle" style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem;"><path class="path" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" fill="currentColor" d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4" ></path></svg>'
-partnumber_label = f'{svg_part_number} <span style="font-size:1.1rem; line-height: 1.1rem;">TRA CỨU PART NUMBER</span>'
-
-svg_bank = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" class="sparkle" style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem;"><path class="path" stroke-linecap="round" stroke-linejoin="round" stroke="currentColor" fill="currentColor" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>'
-bank_label = f'{svg_bank} <span style="font-size:1.1rem; line-height: 1.1rem;">NGÂN HÀNG TRẮC NGHIỆM</span>'
-
-# Bọc các nút trong một DIV để kiểm soát vị trí trên Mobile (CSS class stNavWrapper)
-st.markdown("<div class='stNavWrapper'>", unsafe_allow_html=True)
-
-# Sử dụng Streamlit Page Link 
+--- NAVIGATION BUTTONS (FIXED VERSION) ---
+Bọc buttons trong wrapper div với CSS class đã định nghĩa
+st.markdown('<div class="nav-buttons-wrapper">', unsafe_allow_html=True)
 col1, col2 = st.columns(2)
-
 with col1:
-    st.page_link("pages/partnumber.py", 
-                 label=partnumber_label, 
-                 use_container_width=False,
-                 unsafe_allow_html=True) 
-
+st.page_link(
+"pages/partnumber.py",
+label="TRA CỨU PART NUMBER",
+icon="🔍"
+)
 with col2:
-    st.page_link("pages/bank.py", 
-                 label=bank_label, 
-                 use_container_width=False,
-                 unsafe_allow_html=True) 
-             
-st.markdown("</div>", unsafe_allow_html=True)
+st.page_link(
+"pages/bank.py",
+label="NGÂN HÀNG TRẮC NGHIỆM",
+icon="✅"
+)
+st.markdown('</div>', unsafe_allow_html=True)
+Mark first load as complete
+if st.session_state.first_load:
+st.session_state.first_load = False
