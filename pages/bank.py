@@ -8,17 +8,22 @@ import base64
 import os
 import random 
 
+# --- CẤU HÌNH (PHẢI Ở ĐẦU TIÊN) ---
+st.set_page_config(page_title="Ngân hàng trắc nghiệm", layout="wide")
+
 # --- KIỂM TRA VÀ REDIRECT VỀ TRANG CHỦ ---
 if 'from_home' not in st.query_params:
     # Nếu không có query param from_home, redirect về trang chủ
     st.markdown("""
+    <meta http-equiv="refresh" content="0; url=/" />
     <script>
-        window.parent.location.href = '/';
+        window.location.href = '/';
     </script>
     """, unsafe_allow_html=True)
     st.stop()
-else:
-    # Xóa query param sau khi đã check để URL sạch hơn
+
+# Xóa query param sau khi đã check để URL sạch hơn
+if 'from_home' in st.query_params:
     if 'bank_cleaned_url' not in st.session_state:
         st.session_state.bank_cleaned_url = True
         st.query_params.clear()
