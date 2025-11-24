@@ -972,7 +972,51 @@ html_content_modified = html_content_modified.replace(
     f'<div id="intro-text-container">{intro_chars_html}</div>'
 )
 
-# --- HIỂN THỊ IFRAME VIDEO ---
+# --- HIỂ# --- HIỂN THỊ IFRAME VIDEO / KÍCH HOẠT CHUYỂN TRANG NGAY LẬP TỨC ---
+if not st.session_state.video_ended:
+    # HIỂN THỊ IFRAME VIDEO CHỈ KHI CHƯA CHẠY XONG
+    st.components.v1.html(html_content_modified, height=1080, scrolling=False)
+
+    # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
+    grid_cells_html = ""
+    for i in range(240):
+        grid_cells_html += f'<div class="grid-cell"></div>'
+
+    reveal_grid_html = f"""
+    <div class="reveal-grid">
+        {grid_cells_html}
+    </div>
+    """
+    st.markdown(reveal_grid_html, unsafe_allow_html=True)
+    
+    # CSS/JS trong Iframe sẽ đảm bảo class 'video-finished' và 'main-content-revealed' được thêm vào .stApp
+    # và sau đó JS sẽ gọi hàm sendBackToStreamlit(false) để kết thúc (bao gồm cả việc set session state nếu cần).
+
+else:
+    # 🎯 KHI st.session_state.video_ended LÀ TRUE (TỪ TRANG PHỤ QUAY VỀ HOẶC ĐÃ XEM XONG):
+    # Thêm class CSS vào stApp để kích hoạt hiển thị nội dung chính/ẩn intro
+    st.markdown("""
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const stApp = window.parent.document.querySelector('.stApp');
+        if (stApp) {
+            // Bỏ qua video/reveal, chuyển thẳng sang trạng thái đã kết thúc
+            stApp.classList.add('video-finished', 'main-content-revealed'); 
+            stApp.classList.remove('video-running');
+            // Kích hoạt nhạc nền ngay lập tức
+            setTimeout(initMusicPlayer, 100); 
+            // Xóa reveal grid nếu nó tồn tại
+            const revealGrid = window.parent.document.querySelector('.reveal-grid');
+            if (revealGrid) {
+                revealGrid.remove();
+            }
+        }
+    });
+    </script>
+    """, unsafe_allow_html=True)
+    
+    # Phải set video_ended về false để đảm bảo video chạy lại nếu người dùng refresh TRỰC TIẾP trên trang chủ (URL gốc)
+    # Tuy nhiên, ta đang dùng logic ở đầu file để handle refresh. Tạm thời KHÔNG CẦN set lại ở đây.EO ---
 st.components.v1.html(html_content_modified, height=1080, scrolling=False)
 
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
@@ -1037,6 +1081,7 @@ st.markdown("""
 # Mark first load as complete
 if st.session_state.first_load:
     st.session_state.first_load = False
+
 
 
 
