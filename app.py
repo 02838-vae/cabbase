@@ -993,53 +993,28 @@ if len(music_files) > 0:
 </div>
 """, unsafe_allow_html=True)
 
-# --- NAVIGATION BUTTONS (JAVASCRIPT INJECTION VERSION) ---
-st.components.v1.html("""
-<script>
-(function() {
-    // Wait for parent document to be ready
-    if (!window.parent.document.body) {
-        setTimeout(arguments.callee, 100);
-        return;
-    }
-    
-    // Check if buttons already exist
-    if (window.parent.document.querySelector('.nav-buttons-wrapper')) {
-        return;
-    }
-    
-    // Create buttons HTML
-    const buttonsHTML = `
-        <div class="nav-buttons-wrapper">
-            <a href="/partnumber" class="nav-button">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
-                </svg>
-                <span>TRA CỨU PART NUMBER</span>
-            </a>
-            
-            <a href="/bank" class="nav-button">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>NGÂN HÀNG TRẮC NGHIỆM</span>
-            </a>
-        </div>
-    `;
-    
-    // Inject into parent document
-    const container = window.parent.document.createElement('div');
-    container.innerHTML = buttonsHTML;
-    window.parent.document.body.appendChild(container.firstElementChild);
-    
-    console.log('Navigation buttons injected successfully');
-})();
-</script>
-""", height=0)
+# --- NAVIGATION BUTTONS (SIMPLE HTML VERSION) ---
+st.markdown("""
+<div class="nav-buttons-wrapper">
+    <a href="/partnumber" class="nav-button">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
+        </svg>
+        <span>TRA CỨU PART NUMBER</span>
+    </a>
+    <a href="/bank" class="nav-button">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span>NGÂN HÀNG TRẮC NGHIỆM</span>
+    </a>
+</div>
+""", unsafe_allow_html=True)
 
 # Mark first load as complete
 if st.session_state.first_load:
     st.session_state.first_load = False
+
 
 
 
