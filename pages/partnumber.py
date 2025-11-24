@@ -5,12 +5,18 @@ import pandas as pd
 import base64
 import os
 
-# --- KIỂM TRA VÀ RESET URL KHI REFRESH ---
-if 'pn_initialized' not in st.session_state:
-    st.session_state.pn_initialized = True
-    # Nếu có query params skip_intro, xóa nó đi
-    if 'skip_intro' in st.query_params:
-        st.query_params.clear()
+# --- REDIRECT VỀ TRANG CHỦ KHI REFRESH ---
+if 'pn_visited' not in st.session_state:
+    st.session_state.pn_visited = True
+    # Redirect về trang chủ bằng JavaScript
+    st.markdown("""
+    <script>
+        if (window.performance && window.performance.navigation.type === 1) {
+            // Nếu là refresh (type = 1), redirect về trang chủ
+            window.parent.location.href = '/';
+        }
+    </script>
+    """, unsafe_allow_html=True)
 
 # --- CẤU HÌNH ---
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1 - Tra Cứu PN", layout="wide", initial_sidebar_state="collapsed")
