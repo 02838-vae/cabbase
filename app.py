@@ -11,11 +11,27 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Khởi tạo session state
-if 'video_ended' not in st.session_state:
+# =================================================================
+# 🛠️ FIX 3: CƠ CHẾ RESET SESSION STATE KHI TRUY CẬP/REFRESH
+# =================================================================
+if st.session_state.get('app_initialized') is None:
+    # Chạy lần đầu tiên trong một session mới (Hard Refresh)
+    
+    # Lấy danh sách các keys để xóa, trừ key 'app_initialized'
+    keys_to_delete = [key for key in st.session_state.keys()]
+    for key in keys_to_delete:
+        del st.session_state[key]
+        
+    # Đánh dấu đã khởi tạo và cài đặt lại trạng thái ban đầu
+    st.session_state.app_initialized = True
     st.session_state.video_ended = False
-if 'first_load' not in st.session_state:
     st.session_state.first_load = True
+else:
+    # Khởi tạo lại các biến cần thiết (nếu bị xóa ở lần chạy trước đó)
+    if 'video_ended' not in st.session_state:
+        st.session_state.video_ended = False
+    if 'first_load' not in st.session_state:
+        st.session_state.first_load = True
 
 # --- CÁC HÀM TIỆN ÍCH ---
 
@@ -36,6 +52,7 @@ def get_base64_encoded_file(file_path):
 
 # Mã hóa các file media chính (bắt buộc)
 try:
+    # Lưu ý: Các file này phải nằm cùng thư mục với app.py
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
@@ -237,7 +254,7 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === ĐIỀU CHỈNH CHO MOBILE LANDSCAPE (MÀN HÌNH NGANG) - ĐÃ CHUYỂN SANG VMIN === */
+/* === ĐIỀU CHỈNH CHO MOBILE LANDSCAPE (MÀN HÌNH NGANG) - ĐÃ TĂNG KÍCH THƯỚC CHỮ === */
 @media (max-width: 900px) and (orientation: landscape) and (max-height: 500px) {{
     #main-title-container {{
         top: 2vh !important; 
@@ -245,8 +262,8 @@ iframe:first-of-type {{
     }}
     
     #main-title-container h1 {{
-        /* SỬ DỤNG VMIN THAY CHO VW */
-        font-size: 3.5vmin !important; 
+        /* FIX 1: TĂNG KÍCH THƯỚC CHỮ LÊN 5.5vmin */
+        font-size: 5.5vmin !important; 
         animation-duration: 12s !important; 
     }}
 }}
@@ -849,115 +866,6 @@ audio.currentTime = 0;
 }});
 </script>
 """
-html_content_modified = f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        html, body {{
-            margin: 0;
-            padding: 0;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-            background-color: #000;
-        }}
-    #intro-video {{
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        z-index: 0;
-        transition: opacity 1s;
-    }}
-
-    #intro-text-container {{
-        position: fixed;
-        top: 5vh;
-        width: 100%;
-        text-align: center;
-        color: #FFD700;
-        font-size: 3vw;
-        font-family: 'Sacramento', cursive;
-        font-weight: 400;
-        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
-        z-index: 100;
-        pointer-events: none;
-        display: flex;
-        justify-content: center;
-        opacity: 1;
-        transition: opacity 0.5s;
-    }}
-    
-    .intro-char {{
-        display: inline-block;
-        opacity: 0;
-        transform: translateY(-50px);
-        animation-fill-mode: forwards;
-        animation-duration: 0.8s;
-        animation-timing-function: ease-out;
-    }}
-
-    @keyframes charDropIn {{
-        from {{
-            opacity: 0;
-            transform: translateY(-50px);
-        }}
-        to {{
-            opacity: 1;
-            transform: translateY(0);
-        }}
-    }}
-
-    .intro-char.char-shown {{
-        animation-name: charDropIn;
-    }}
-    
-    #click-to-play-overlay {{
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 200; 
-        cursor: pointer;
-        background: rgba(0, 0, 0, 0.5); 
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-family: 'Playfair Display', serif;
-        color: #fff;
-        font-size: 2vw;
-        text-shadow: 1px 1px 3px #000;
-        transition: opacity 0.5s;
-    }}
-
-    #click-to-play-overlay.hidden {{
-        opacity: 0;
-        pointer-events: none; 
-    }}
-
-    @media (max-width: 768px) {{
-        #intro-text-container {{
-            font-size: 6vw;
-        }}
-         #click-to-play-overlay {{
-            font-size: 4vw;
-        }}
-    }}
-</style>
-</head>
-<body>
-    <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-    <video id="intro-video" muted playsinline></video>
-    <audio id="background-audio"></audio>
-    <div id="click-to-play-overlay">CLICK/TOUCH VÀO ĐÂY ĐỂ BẮT ĐẦU</div>
-    {js_callback_video}
-</body>
-</html>
-"""
 intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
     f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'
@@ -1013,15 +921,16 @@ if len(music_files) > 0:
 """, unsafe_allow_html=True)
 
 # --- NAVIGATION BUTTONS (SIMPLE HTML VERSION) ---
+# FIX 2: Thêm target="_blank" để mở ra tab mới
 st.markdown("""
 <div class="nav-buttons-wrapper">
-    <a href="/partnumber" class="nav-button">
+    <a href="/partnumber" target="_blank" class="nav-button">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
         </svg>
         <span>TRA CỨU PART NUMBER</span>
     </a>
-    <a href="/bank" class="nav-button">
+    <a href="/bank" target="_blank" class="nav-button">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
