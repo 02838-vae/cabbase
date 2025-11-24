@@ -9,10 +9,20 @@ import os
 import random 
 
 # --- KIỂM TRA VÀ REDIRECT VỀ TRANG CHỦ ---
-if 'from_home' not in st.session_state:
-    # Nếu không có flag từ trang chủ, redirect về trang chủ
-    st.switch_page("app.py")
-
+check_access = st.markdown("""
+<script>
+    const fromHome = sessionStorage.getItem('from_home');
+    if (fromHome === 'true') {
+        // Xóa flag sau khi đã check
+        sessionStorage.removeItem('from_home');
+        // Gửi tín hiệu cho Streamlit biết là được phép truy cập
+        window.parent.postMessage({type: 'streamlit:setComponentValue', value: true}, '*');
+    } else {
+        // Không có flag, redirect về trang chủ
+        window.parent.location.href = '/';
+    }
+</script>
+""", unsafe_allow_html=True)
 # ====================================================
 # ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
 # ====================================================
