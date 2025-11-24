@@ -948,28 +948,35 @@ html_content_modified = html_content_modified.replace(
     '<div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>',
     f'<div id="intro-text-container">{intro_chars_html}</div>'
 )
---- HIỂN THỊ IFRAME VIDEO ---
+
+# --- HIỂN THỊ IFRAME VIDEO ---
 st.components.v1.html(html_content_modified, height=1080, scrolling=False)
---- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
+
+# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
+
 grid_cells_html = ""
 for i in range(240):
-grid_cells_html += f'<div class="grid-cell"></div>'
+    grid_cells_html += f'<div class="grid-cell"></div>'
+
 reveal_grid_html = f"""
 <div class="reveal-grid">
     {grid_cells_html}
 </div>
 """
 st.markdown(reveal_grid_html, unsafe_allow_html=True)
---- NỘI DUNG CHÍNH (TIÊU ĐỀ) ---
+
+# --- NỘI DUNG CHÍNH (TIÊU ĐỀ) ---
 main_title_text = "TỔ BẢO DƯỠNG SỐ 1"
+
 st.markdown(f"""
 <div id="main-title-container">
     <h1>{main_title_text}</h1>
 </div>
 """, unsafe_allow_html=True)
---- MUSIC PLAYER ---
+
+# --- MUSIC PLAYER ---
 if len(music_files) > 0:
-st.markdown("""
+    st.markdown("""
 <div id="music-player-container">
     <div class="controls">
         <button class="control-btn" id="prev-btn">⏮</button>
@@ -985,24 +992,32 @@ st.markdown("""
     </div>
 </div>
 """, unsafe_allow_html=True)
---- NAVIGATION BUTTONS (FIXED VERSION) ---
-Bọc buttons trong wrapper div với CSS class đã định nghĩa
+
+# --- NAVIGATION BUTTONS (FIXED VERSION) ---
+
+# Bọc buttons trong wrapper div với CSS class đã định nghĩa
 st.markdown('<div class="nav-buttons-wrapper">', unsafe_allow_html=True)
+
 col1, col2 = st.columns(2)
+
 with col1:
-st.page_link(
-"pages/partnumber.py",
-label="TRA CỨU PART NUMBER",
-icon="🔍"
-)
+    st.page_link(
+        "pages/partnumber.py",
+        label="TRA CỨU PART NUMBER",
+        icon="🔍"
+    )
+
 with col2:
-st.page_link(
-"pages/bank.py",
-label="NGÂN HÀNG TRẮC NGHIỆM",
-icon="✅"
-)
+    st.page_link(
+        "pages/bank.py",
+        label="NGÂN HÀNG TRẮC NGHIỆM",
+        icon="✅"
+    )
+
 st.markdown('</div>', unsafe_allow_html=True)
-Mark first load as complete
+
+# Mark first load as complete
 if st.session_state.first_load:
-st.session_state.first_load = False
+    st.session_state.first_load = False
+
 
