@@ -13,7 +13,8 @@ st.set_page_config(
 
 # Khởi tạo session state
 if 'video_ended' not in st.session_state:
-    st.session_session.video_ended = False
+    # SỬA LỖI: Đổi st.session_session thành st.session_state
+    st.session_state.video_ended = False
 
 # --- CÁC HÀM TIỆN ÍCH ---
 
@@ -29,7 +30,6 @@ def get_base64_encoded_file(file_path):
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
     except Exception as e:
-        # print(f"Lỗi khi đọc file {file_path}: {str(e)}") 
         return None
 
 
@@ -64,10 +64,6 @@ if not 'logo_base64' in locals() or not logo_base64:
 # --- CẤU HÌNH NHẠC NỀN ---
 BASE_MUSIC_URL = "https://raw.githubusercontent.com/02838-vae/cabbase/main/"
 music_files = [f"{BASE_MUSIC_URL}background{i}.mp3" for i in range(1, 7)]
-
-if len(music_files) == 0:
-    # Không cần dừng nếu thiếu nhạc nền
-    pass 
 
 
 # --- PHẦN 1: NHÚNG FONT VÀ CSS CHÍNH ---
@@ -451,7 +447,6 @@ iframe:first-of-type {{
 }}
 
 /* === UIverse BUTTON STYLES (Áp dụng cho thẻ <a> bên trong) === */
-/* FIX: Simplified selector to target the a tag reliably */
 .stPageLink a {{
     --black-700: hsla(0, 0%, 12%, 1);
     --border_radius: 9999px; 
@@ -460,14 +455,13 @@ iframe:first-of-type {{
     --hover-color: hsl(40, 60%, 85%);
     --text-color: hsl(0, 0%, 100%); 
     
-    /* FIX: Set a width for the button */
     min-width: 280px;
     
     cursor: pointer;
     position: relative;
     display: flex;
     align-items: center;
-    justify-content: center; /* Tự động căn giữa nội dung */
+    justify-content: center;
     gap: 0.5rem;
     transform-origin: center;
     padding: 1rem 2rem;
@@ -526,9 +520,16 @@ iframe:first-of-type {{
     --active: 1;
 }}
 
-/* NỘI DUNG VÀ ICON */
-/* FIX: Simplified and added !important for Streamlit overrides */
+.stPageLink a {{
+    box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.2); 
+    transition: box-shadow 0.3s ease;
+}}
+.stPageLink a:is(:hover, :focus-visible) {{
+    box-shadow: 0 0 15px 5px var(--hover-color), 0 0 0 0.375rem var(--hover-color);
+}}
 
+
+/* NỘI DUNG VÀ ICON */
 /* Chứa text: Thẻ <span> */
 .stPageLink span {{
     position: relative;
@@ -548,7 +549,6 @@ iframe:first-of-type {{
     font-size: 1.1rem !important; 
     padding-left: 0 !important; 
     margin: 0 !important; 
-    /* Đảm bảo text không bị co lại */
     min-width: max-content; 
 }}
 
@@ -585,7 +585,7 @@ iframe:first-of-type {{
     .stPageLink a {{
         padding: 0.8rem 1.5rem;
         width: 100%;
-        min-width: unset; /* Tắt min-width trên mobile */
+        min-width: unset; 
         justify-content: center;
     }}
     
@@ -603,18 +603,15 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
-# Tạo danh sách music sources cho JavaScript 
 if len(music_files) > 0:
     music_sources_js = ",\n\t\t\t".join([f"'{url}'" for url in music_files])
 else:
     music_sources_js = ""
 
-# PHẦN JS (Được giữ nguyên)
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
     
-    // Hàm thực hiện chuyển đổi sang nội dung chính
     function sendBackToStreamlit(isSkipped = false) {{
         console.log("Transitioning to main content. Is Skipped:", isSkipped);
         const stApp = window.parent.document.querySelector('.stApp');
@@ -756,7 +753,6 @@ js_callback_video = f"""
             stApp.classList.add('video-running'); 
         }}
 
-        // LOGIC MỚI: KIỂM TRA THAM SỐ SKIP_INTRO
         const urlParams = new URLSearchParams(window.parent.location.search);
         const skipIntro = urlParams.get('skip_intro');
         
@@ -793,7 +789,6 @@ js_callback_video = f"""
 
                 let interactionHandled = false; 
                 
-                // Hàm phát video và ẩn lớp phủ
                 const tryToPlayAndHideOverlay = (e) => {{
                     e.preventDefault(); 
                     
@@ -827,7 +822,6 @@ js_callback_video = f"""
                     tryToPlayAndHideOverlay({{ preventDefault: () => {{}} }}); 
                 }}, {{ once: true }});
                 
-                // Đổi tên biến (FIX: lỗi đánh máy trong code cũ)
                 const tryToPlayAndPlay = tryToPlayAndHideOverlay;
 
 
@@ -1042,7 +1036,6 @@ if len(music_files) > 0:
 # --- NAVIGATION BUTTON MỚI (DÙNG ST.PAGE_LINK) ---
 
 # Định nghĩa SVG và Label cho st.page_link (Cần phải dùng style inline cho SVG và Span)
-# Đảm bảo style inline chỉ áp dụng cho nội dung bên trong, còn định dạng nút dùng CSS
 svg_part_number = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="sparkle" style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem;"><path class="path" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" fill="currentColor" d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4" ></path></svg>'
 partnumber_label = f'{svg_part_number} <span style="font-size:1.1rem; line-height: 1.1rem;">TRA CỨU PART NUMBER</span>'
 
@@ -1056,7 +1049,6 @@ st.markdown("<div class='stNavWrapper'>", unsafe_allow_html=True)
 col1, col2 = st.columns(2)
 
 with col1:
-    # use_container_width=False là rất quan trọng để CSS Fixed Position hoạt động
     st.page_link("pages/partnumber.py", 
                  label=partnumber_label, 
                  use_container_width=False,
