@@ -6,9 +6,21 @@ import base64
 import os
 
 # --- KIỂM TRA VÀ REDIRECT VỀ TRANG CHỦ ---
-if 'from_home' not in st.session_state:
-    # Nếu không có flag từ trang chủ, redirect về trang chủ
-    st.switch_page("app.py")
+# Thêm JavaScript để kiểm tra sessionStorage
+check_access = st.markdown("""
+<script>
+    const fromHome = sessionStorage.getItem('from_home');
+    if (fromHome === 'true') {
+        // Xóa flag sau khi đã check
+        sessionStorage.removeItem('from_home');
+        // Gửi tín hiệu cho Streamlit biết là được phép truy cập
+        window.parent.postMessage({type: 'streamlit:setComponentValue', value: true}, '*');
+    } else {
+        // Không có flag, redirect về trang chủ
+        window.parent.location.href = '/';
+    }
+</script>
+""", unsafe_allow_html=True)
 
 # --- CẤU HÌNH ---
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1 - Tra Cứu PN", layout="wide", initial_sidebar_state="collapsed")
