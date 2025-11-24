@@ -941,12 +941,12 @@ html_content_modified = f"""
 """
 intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
-f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char"> </span>'
-for char in intro_title
+    f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'
+    for char in intro_title
 ])
 html_content_modified = html_content_modified.replace(
-"<div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>",
-f"<div id="intro-text-container">{intro_chars_html}</div>"
+    '<div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>',
+    f'<div id="intro-text-container">{intro_chars_html}</div>'
 )
 --- HIỂN THỊ IFRAME VIDEO ---
 st.components.v1.html(html_content_modified, height=1080, scrolling=False)
@@ -1005,3 +1005,4 @@ st.markdown('</div>', unsafe_allow_html=True)
 Mark first load as complete
 if st.session_state.first_load:
 st.session_state.first_load = False
+
