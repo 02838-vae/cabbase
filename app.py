@@ -993,31 +993,30 @@ if len(music_files) > 0:
 </div>
 """, unsafe_allow_html=True)
 
-# --- NAVIGATION BUTTONS (FIXED VERSION) ---
+# --- NAVIGATION BUTTONS (HTML VERSION) ---
+navigation_buttons_html = """
+<div class="nav-buttons-wrapper">
+    <a href="partnumber" class="nav-button" onclick="window.parent.location.href='partnumber'; return false;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z" />
+        </svg>
+        <span>TRA CỨU PART NUMBER</span>
+    </a>
+    
+    <a href="bank" class="nav-button" onclick="window.parent.location.href='bank'; return false;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>NGÂN HÀNG TRẮC NGHIỆM</span>
+    </a>
+</div>
+"""
 
-# Bọc buttons trong wrapper div với CSS class đã định nghĩa
-st.markdown('<div class="nav-buttons-wrapper">', unsafe_allow_html=True)
-
-col1, col2 = st.columns(2)
-
-with col1:
-    st.page_link(
-        "pages/partnumber.py",
-        label="TRA CỨU PART NUMBER",
-        icon="🔍"
-    )
-
-with col2:
-    st.page_link(
-        "pages/bank.py",
-        label="NGÂN HÀNG TRẮC NGHIỆM",
-        icon="✅"
-    )
-
-st.markdown('</div>', unsafe_allow_html=True)
+st.markdown(navigation_buttons_html, unsafe_allow_html=True)
 
 # Mark first load as complete
 if st.session_state.first_load:
     st.session_state.first_load = False
+
 
 
