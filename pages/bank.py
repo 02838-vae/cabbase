@@ -8,18 +8,10 @@ import base64
 import os
 import random 
 
-# --- REDIRECT VỀ TRANG CHỦ KHI REFRESH ---
-if 'bank_visited' not in st.session_state:
-    st.session_state.bank_visited = True
-    # Redirect về trang chủ bằng JavaScript
-    st.markdown("""
-    <script>
-        if (window.performance && window.performance.navigation.type === 1) {
-            // Nếu là refresh (type = 1), redirect về trang chủ
-            window.parent.location.href = '/';
-        }
-    </script>
-    """, unsafe_allow_html=True)
+# --- KIỂM TRA VÀ REDIRECT VỀ TRANG CHỦ ---
+if 'from_home' not in st.session_state:
+    # Nếu không có flag từ trang chủ, redirect về trang chủ
+    st.switch_page("app.py")
 
 # ====================================================
 # ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
