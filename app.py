@@ -8,8 +8,24 @@ import time
 # Nếu không có session_state 'initialized', nghĩa là đây là lần đầu load hoặc refresh
 if 'initialized' not in st.session_state:
     st.session_state.initialized = True
-    # Reset về trang chủ nếu đang ở URL khác
-    st.query_params.clear()
+    # Kiểm tra URL hiện tại. Nếu có query param 'from_home=1' hoặc 'skip_intro=1', tức là đang ở trang phụ (hoặc refresh trang phụ)
+    # LƯU Ý: Tuy nhiên, st.query_params.clear() sẽ xóa hết query param, nên ta sẽ dùng logic dựa trên st.session_state.video_ended
+    
+    # Logic: Nếu đang ở trang phụ, đánh dấu video đã kết thúc (để khi quay lại trang chủ không chiếu lại)
+    # Các trang phụ có thể set query param như 'from_home=1'
+    
+    # ⚠️ GIẢ ĐỊNH LOGIC: Nếu đang có `from_home=1` trong URL, tức là đang ở trang phụ.
+    # Khi refresh ở trang phụ, ta sẽ KHÔNG clear query params và đặt video_ended = True.
+    # Khi quay về trang chủ, logic clear() sẽ chạy, nhưng biến session state đã được set.
+    
+    # Kiểm tra nếu URL hiện tại không phải là URL trống (trang chủ)
+    if st.query_params.get("from_home") == "1":
+        # Nếu đang ở trang phụ, đánh dấu video đã xem để khi quay lại trang chủ (dù có refresh) sẽ bỏ qua.
+        st.session_state.video_ended = True
+        # Không reset URL ở đây, để logic trang phụ tự xử lý nếu cần.
+    else:
+        # Nếu không có from_home=1 (hoặc URL trống), reset về trang chủ
+        st.query_params.clear()
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
@@ -1021,6 +1037,7 @@ st.markdown("""
 # Mark first load as complete
 if st.session_state.first_load:
     st.session_state.first_load = False
+
 
 
 
