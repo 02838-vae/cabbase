@@ -231,13 +231,13 @@ iframe:first-of-type {{
     }}
     
     #main-title-container h1 {{
-        font-size: 6.5vw;
+        /* SỬ DỤNG VMIN cho chế độ dọc mobile */
+        font-size: 7.0vmin; 
         animation-duration: 8s;
     }}
 }}
 
-/* === ĐIỀU CHỈNH CHO MOBILE LANDSCAPE (MÀN HÌNH NGANG) - ĐÃ TĂNG ĐỘ ƯU TIÊN === */
-/* Sử dụng !important và tăng độ ưu tiên selector nếu cần thiết */
+/* === ĐIỀU CHỈNH CHO MOBILE LANDSCAPE (MÀN HÌNH NGANG) - ĐÃ CHUYỂN SANG VMIN === */
 @media (max-width: 900px) and (orientation: landscape) and (max-height: 500px) {{
     #main-title-container {{
         top: 2vh !important; 
@@ -245,7 +245,8 @@ iframe:first-of-type {{
     }}
     
     #main-title-container h1 {{
-        font-size: 4.0vw !important; /* GIẢM KÍCH THƯỚC PHÔNG CHỮ XUỐNG 4.0vw */
+        /* SỬ DỤNG VMIN THAY CHO VW */
+        font-size: 3.5vmin !important; 
         animation-duration: 12s !important; 
     }}
 }}
@@ -454,7 +455,7 @@ iframe:first-of-type {{
     display: contents !important;
 }}
 
-/* Reset CSS cho thẻ a trong page_link - ĐÃ KHẮC PHỤC LỖI all: unset */
+/* Reset CSS cho thẻ a trong page_link */
 .nav-buttons-wrapper a {{
     /* Không dùng all: unset; nữa để giữ lại hành vi liên kết */
     text-decoration: none; /* Đảm bảo gạch chân biến mất */
