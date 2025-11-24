@@ -5,6 +5,13 @@ import pandas as pd
 import base64
 import os
 
+# --- KIỂM TRA VÀ RESET URL KHI REFRESH ---
+if 'pn_initialized' not in st.session_state:
+    st.session_state.pn_initialized = True
+    # Nếu có query params skip_intro, xóa nó đi
+    if 'skip_intro' in st.query_params:
+        st.query_params.clear()
+
 # --- CẤU HÌNH ---
 st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1 - Tra Cứu PN", layout="wide", initial_sidebar_state="collapsed")
 
