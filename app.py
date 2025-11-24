@@ -20,8 +20,8 @@ if 'initialized' not in st.session_state:
     st.session_state.initialized = True # Mark initialization (Chỉ chạy 1 lần khi hard refresh)
 
 # 🚀 LOGIC FIX: KIỂM TRA NẾU QUAY VỀ TỪ TRANG PHỤ (CHẠY MỖI KHI LOAD LẠI)
-# 🎯 NEW LOGIC: Check if we are returning from a sub-page using the 'from_home=1' query parameter
-is_returning_from_subpage = st.query_params.get("from_home") == "1"
+# Kiểm tra nếu có một trong hai tham số chỉ ra việc bỏ qua video
+is_returning_from_subpage = st.query_params.get("from_home") == "1" or st.query_params.get("skip_intro") == "1"
 
 if is_returning_from_subpage:
     # Nếu quay về từ trang phụ, đánh dấu video đã kết thúc/bỏ qua
@@ -957,3 +957,4 @@ if st.session_state.first_load:
 # 🎯 FINAL LOGIC: Mark video as ended after initial load (if it ran) to skip on subsequent direct refreshes
 if not st.session_state.video_ended:
     st.session_state.video_ended = True
+
