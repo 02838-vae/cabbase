@@ -9,20 +9,20 @@ import os
 import random 
 
 # --- KIỂM TRA VÀ REDIRECT VỀ TRANG CHỦ ---
-check_access = st.markdown("""
-<script>
-    const fromHome = sessionStorage.getItem('from_home');
-    if (fromHome === 'true') {
-        // Xóa flag sau khi đã check
-        sessionStorage.removeItem('from_home');
-        // Gửi tín hiệu cho Streamlit biết là được phép truy cập
-        window.parent.postMessage({type: 'streamlit:setComponentValue', value: true}, '*');
-    } else {
-        // Không có flag, redirect về trang chủ
+if 'from_home' not in st.query_params:
+    # Nếu không có query param from_home, redirect về trang chủ
+    st.markdown("""
+    <script>
         window.parent.location.href = '/';
-    }
-</script>
-""", unsafe_allow_html=True)
+    </script>
+    """, unsafe_allow_html=True)
+    st.stop()
+else:
+    # Xóa query param sau khi đã check để URL sạch hơn
+    if 'bank_cleaned_url' not in st.session_state:
+        st.session_state.bank_cleaned_url = True
+        st.query_params.clear()
+        st.rerun()
 # ====================================================
 # ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
 # ====================================================
