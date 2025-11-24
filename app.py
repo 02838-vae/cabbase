@@ -866,6 +866,117 @@ audio.currentTime = 0;
 }});
 </script>
 """
+# ĐỊNH NGHĨA html_content_modified TẠI ĐÂY
+html_content_modified = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        html, body {{
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+            background-color: #000;
+        }}
+    #intro-video {{
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        z-index: 0;
+        transition: opacity 1s;
+    }}
+
+    #intro-text-container {{
+        position: fixed;
+        top: 5vh;
+        width: 100%;
+        text-align: center;
+        color: #FFD700;
+        font-size: 3vw;
+        font-family: 'Sacramento', cursive;
+        font-weight: 400;
+        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
+        z-index: 100;
+        pointer-events: none;
+        display: flex;
+        justify-content: center;
+        opacity: 1;
+        transition: opacity 0.5s;
+    }}
+    
+    .intro-char {{
+        display: inline-block;
+        opacity: 0;
+        transform: translateY(-50px);
+        animation-fill-mode: forwards;
+        animation-duration: 0.8s;
+        animation-timing-function: ease-out;
+    }}
+
+    @keyframes charDropIn {{
+        from {{
+            opacity: 0;
+            transform: translateY(-50px);
+        }}
+        to {{
+            opacity: 1;
+            transform: translateY(0);
+        }}
+    }}
+
+    .intro-char.char-shown {{
+        animation-name: charDropIn;
+    }}
+    
+    #click-to-play-overlay {{
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        z-index: 200; 
+        cursor: pointer;
+        background: rgba(0, 0, 0, 0.5); 
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-family: 'Playfair Display', serif;
+        color: #fff;
+        font-size: 2vw;
+        text-shadow: 1px 1px 3px #000;
+        transition: opacity 0.5s;
+    }}
+
+    #click-to-play-overlay.hidden {{
+        opacity: 0;
+        pointer-events: none; 
+    }}
+
+    @media (max-width: 768px) {{
+        #intro-text-container {{
+            font-size: 6vw;
+        }}
+         #click-to-play-overlay {{
+            font-size: 4vw;
+        }}
+    }}
+</style>
+</head>
+<body>
+    <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+    <video id="intro-video" muted playsinline></video>
+    <audio id="background-audio"></audio>
+    <div id="click-to-play-overlay">CLICK/TOUCH VÀO ĐÂY ĐỂ BẮT ĐẦU</div>
+    {js_callback_video}
+</body>
+</html>
+"""
+
 intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
     f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'
@@ -921,7 +1032,7 @@ if len(music_files) > 0:
 """, unsafe_allow_html=True)
 
 # --- NAVIGATION BUTTONS (SIMPLE HTML VERSION) ---
-# FIX 2: Thêm target="_blank" để mở ra tab mới
+# Đã thêm target="_blank" để mở ra tab mới
 st.markdown("""
 <div class="nav-buttons-wrapper">
     <a href="/partnumber" target="_blank" class="nav-button">
