@@ -4,27 +4,21 @@ import os
 import re 
 import time
 
-# --- KIỂM TRA VÀ RESET URL KHI REFRESH ---
+# --- KIỂM TRA VÀ RESET URL KHI REFRESH (ĐÃ CẬP NHẬT LOGIC BỎ QUA) ---
 # Nếu không có session_state 'initialized', nghĩa là đây là lần đầu load hoặc refresh
 if 'initialized' not in st.session_state:
     st.session_state.initialized = True
-    # Kiểm tra URL hiện tại. Nếu có query param 'from_home=1' hoặc 'skip_intro=1', tức là đang ở trang phụ (hoặc refresh trang phụ)
-    # LƯU Ý: Tuy nhiên, st.query_params.clear() sẽ xóa hết query param, nên ta sẽ dùng logic dựa trên st.session_state.video_ended
     
-    # Logic: Nếu đang ở trang phụ, đánh dấu video đã kết thúc (để khi quay lại trang chủ không chiếu lại)
-    # Các trang phụ có thể set query param như 'from_home=1'
+    # 🎯 NEW LOGIC: Check if we are returning from a sub-page using the 'from_home=1' query parameter
+    is_returning_from_subpage = st.query_params.get("from_home") == "1"
     
-    # ⚠️ GIẢ ĐỊNH LOGIC: Nếu đang có `from_home=1` trong URL, tức là đang ở trang phụ.
-    # Khi refresh ở trang phụ, ta sẽ KHÔNG clear query params và đặt video_ended = True.
-    # Khi quay về trang chủ, logic clear() sẽ chạy, nhưng biến session state đã được set.
-    
-    # Kiểm tra nếu URL hiện tại không phải là URL trống (trang chủ)
-    if st.query_params.get("from_home") == "1":
-        # Nếu đang ở trang phụ, đánh dấu video đã xem để khi quay lại trang chủ (dù có refresh) sẽ bỏ qua.
+    if is_returning_from_subpage:
+        # Nếu quay về từ trang phụ, đánh dấu video đã kết thúc/bỏ qua
         st.session_state.video_ended = True
-        # Không reset URL ở đây, để logic trang phụ tự xử lý nếu cần.
+        # Xóa query param để URL trở về trang chủ sạch (/)
+        st.query_params.clear()
     else:
-        # Nếu không có from_home=1 (hoặc URL trống), reset về trang chủ
+        # Reset về trang chủ nếu đang ở URL khác (hoặc là lần load đầu tiên)
         st.query_params.clear()
 
 # --- CẤU HÌNH BAN ĐẦU ---
@@ -36,6 +30,7 @@ st.set_page_config(
 
 # Khởi tạo session state
 if 'video_ended' not in st.session_state:
+    # Set default value nếu chưa được set bởi logic ở trên
     st.session_state.video_ended = False
 if 'first_load' not in st.session_state:
     st.session_state.first_load = True
@@ -53,6 +48,7 @@ def get_base64_encoded_file(file_path):
         with open(path_to_check, "rb") as f:
             data = f.read()
         return base64.b64encode(data).decode("utf-8")
+    
     except Exception as e:
         return None
 
@@ -93,7 +89,8 @@ music_files = [f"{BASE_MUSIC_URL}background{i}.mp3" for i in range(1, 7)]
 # --- PHẦN 1: NHÚNG FONT VÀ CSS CHÍNH ---
 font_links = """
 <link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" 
+rel="stylesheet">
 """
 st.markdown(font_links, unsafe_allow_html=True)
 
@@ -101,13 +98,12 @@ st.markdown(font_links, unsafe_allow_html=True)
 hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
-
 /* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
 
 .main {{
     padding: 0;
-    margin: 0;
+margin: 0;
 }}
 
 div.block-container {{
@@ -119,7 +115,7 @@ div.block-container {{
 /* Chặn hành vi dblclick và chọn văn bản trên toàn bộ ứng dụng khi video đang chạy */
 .stApp.video-running * {{
     user-select: none;
-    -webkit-user-select: none;
+-webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
     cursor: default !important; 
@@ -128,7 +124,7 @@ div.block-container {{
 /* Iframe Video Intro */
 iframe:first-of-type {{
     transition: opacity 1s ease-out, visibility 1s ease-out;
-    opacity: 1;
+opacity: 1;
     visibility: visible;
     width: 100vw !important;
     height: 100vh !important;
@@ -156,7 +152,7 @@ iframe:first-of-type {{
 .reveal-grid {{
     position: fixed;
     top: 0;
-    left: 0;
+left: 0;
     width: 100vw;
     height: 100vh;
     display: grid;
@@ -174,7 +170,7 @@ iframe:first-of-type {{
 
 .main-content-revealed {{
     background-image: var(--main-bg-url-pc);
-    background-size: cover;
+background-size: cover;
     background-position: center;
     background-attachment: fixed;
     filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%);
@@ -184,29 +180,33 @@ iframe:first-of-type {{
 @media (max-width: 768px) {{
     .main-content-revealed {{
         background-image: var(--main-bg-url-mobile);
-    }}
+}}
     .reveal-grid {{
         grid-template-columns: repeat(10, 1fr);
         grid-template-rows: repeat(20, 1fr);
-    }}
+}}
 }}
 
 /* Keyframes cho hiệu ứng chữ chạy đơn */
 @keyframes scrollText {{
-    0% {{ transform: translate(100vw, 0); }}
+    0% {{ transform: translate(100vw, 0);
+}}
     100% {{ transform: translate(-100%, 0); }}
 }}
 
 /* Keyframes cho hiệu ứng Đổi Màu Gradient */
 @keyframes colorShift {{
-    0% {{ background-position: 0% 50%; }}
+    0% {{ background-position: 0% 50%;
+}}
     50% {{ background-position: 100% 50%; }}
-    100% {{ background-position: 0% 50%; }}
+    100% {{ background-position: 0% 50%;
+}}
 }}
 
 /* Keyframes xoay (bắt buộc phải có) */
 @keyframes rotate {{
-    to {{ transform: translate(-50%, -50%) rotate(360deg); }}
+    to {{ transform: translate(-50%, -50%) rotate(360deg);
+}}
 }}
 
 /* === TIÊU ĐỀ TRANG CHÍNH === */
@@ -215,7 +215,7 @@ iframe:first-of-type {{
     top: 5vh;
     left: 0;
     width: 100%;
-    height: 10vh;
+height: 10vh;
     overflow: hidden;
     z-index: 20;
     pointer-events: none;
@@ -230,19 +230,19 @@ iframe:first-of-type {{
 #main-title-container h1 {{
     font-family: 'Playfair Display', serif;
     font-size: 3.5vw;
-    margin: 0;
+margin: 0;
     font-weight: 900;
     font-feature-settings: "lnum" 1;
     letter-spacing: 5px;
     white-space: nowrap;
     display: inline-block;
     animation: scrollText 15s linear infinite;
-    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
+background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
     background-size: 400% 400%;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
-    animation: colorShift 10s ease infinite, scrollText 15s linear infinite;
+animation: colorShift 10s ease infinite, scrollText 15s linear infinite;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }}
 
@@ -250,12 +250,12 @@ iframe:first-of-type {{
     #main-title-container {{
         height: 8vh;
         width: 100%;
-        left: 0;
+left: 0;
     }}
     
     #main-title-container h1 {{
         font-size: 6.5vw;
-        animation-duration: 8s;
+animation-duration: 8s;
     }}
 }}
 
@@ -263,27 +263,27 @@ iframe:first-of-type {{
 @keyframes glow-random-color {{
     0%, 57.14%, 100% {{
         box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
-    }}
+}}
     
     0% {{
         box-shadow: 0 0 10px 4px rgba(255, 0, 0, 0.9), 0 0 20px 8px rgba(255, 0, 0, 0.6), inset 0 0 5px 2px rgba(255, 0, 0, 0.9);
-    }}
+}}
     
     14.28% {{ 
         box-shadow: 0 0 10px 4px rgba(0, 255, 0, 0.9), 0 0 20px 8px rgba(0, 255, 0, 0.6), inset 0 0 5px 2px rgba(0, 255, 0, 0.9);
-    }}
+}}
     
     28.56% {{ 
         box-shadow: 0 0 10px 4px rgba(0, 0, 255, 0.9), 0 0 20px 8px rgba(0, 0, 255, 0.6), inset 0 0 5px 2px rgba(0, 0, 255, 0.9);
-    }}
+}}
 
     42.84% {{ 
         box-shadow: 0 0 10px 4px rgba(255, 255, 0, 0.9), 0 0 20px 8px rgba(255, 255, 0, 0.6), inset 0 0 5px 2px rgba(255, 255, 0, 0.9);
-    }}
+}}
     
     57.14% {{ 
         box-shadow: 0 0 10px 4px rgba(255, 0, 255, 0.9), 0 0 20px 8px rgba(255, 0, 255, 0.6), inset 0 0 5px 2px rgba(255, 0, 255, 0.9);
-    }}
+}}
 }}
 
 /* === MUSIC PLAYER STYLES === */
@@ -291,20 +291,20 @@ iframe:first-of-type {{
     position: fixed;
     bottom: 20px;
     right: 20px;
-    width: 350px; 
-    padding: 8px 16px; 
+    width: 350px;
+padding: 8px 16px; 
     background: rgba(0, 0, 0, 0.7); 
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
     z-index: 999;
-    opacity: 0;
+opacity: 0;
     transform: translateY(100px);
     transition: opacity 1s ease-out 2s, transform 1s ease-out 2s;
 }}
 
 #music-player-container::before {{
     content: '';
-    position: absolute;
+position: absolute;
     top: 0;
     left: 0;
     width: 100%;
@@ -312,8 +312,7 @@ iframe:first-of-type {{
     margin: -3px;
     width: calc(100% + 6px);
     height: calc(100% + 6px);
-    
-    background-image: var(--logo-bg-url);
+background-image: var(--logo-bg-url);
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
@@ -323,13 +322,13 @@ iframe:first-of-type {{
     
     border-radius: 12px;
     
-    box-sizing: border-box; 
-    animation: glow-random-color 7s linear infinite;
+    box-sizing: border-box;
+animation: glow-random-color 7s linear infinite;
 }}
 
 #music-player-container * {{
     position: relative;
-    z-index: 5; 
+    z-index: 5;
 }}
 
 .video-finished #music-player-container {{
@@ -340,7 +339,7 @@ iframe:first-of-type {{
 #music-player-container .controls,
 #music-player-container .time-info {{
     color: #fff;
-    text-shadow: 0 0 7px #000;
+text-shadow: 0 0 7px #000;
 }}
 
 #music-player-container .controls {{
@@ -348,14 +347,14 @@ iframe:first-of-type {{
     align-items: center;
     justify-content: center;
     gap: 8px;
-    margin-bottom: 6px; 
+margin-bottom: 6px; 
 }}
 
 #music-player-container .control-btn {{
     background: rgba(255, 255, 255, 0.2);
     border: 2px solid #FFFFFF; 
     color: #FFD700;
-    width: 32px; 
+width: 32px; 
     height: 32px;
     border-radius: 50%;
     cursor: pointer;
@@ -379,20 +378,20 @@ iframe:first-of-type {{
 
 #music-player-container .progress-container {{
     width: 100%;
-    height: 5px; 
+height: 5px; 
     background: rgba(0, 0, 0, 0.5);
     border-radius: 3px;
     cursor: pointer;
     margin-bottom: 4px; 
     position: relative;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.4); 
+border: 1px solid rgba(255, 255, 255, 0.4); 
 }}
 
 #music-player-container .progress-bar {{
     height: 100%;
     background: linear-gradient(90deg, #FFD700, #FFA500);
-    border-radius: 3px;
+border-radius: 3px;
     width: 0%;
     transition: width 0.1s linear;
 }}
@@ -400,7 +399,7 @@ iframe:first-of-type {{
 #music-player-container .time-info {{
     display: flex;
     justify-content: space-between;
-    color: rgba(255, 255, 255, 1);
+color: rgba(255, 255, 255, 1);
     font-size: 10px; 
     font-family: monospace;
 }}
@@ -408,7 +407,7 @@ iframe:first-of-type {{
 @media (max-width: 768px) {{
     #music-player-container {{
         width: calc(100% - 40px);
-        right: 20px;
+right: 20px;
         left: 20px;
         bottom: 15px;
         padding: 8px 12px;
@@ -416,12 +415,12 @@ iframe:first-of-type {{
     #music-player-container .control-btn,
     #music-player-container .control-btn.play-pause {{
         width: 36px;
-        height: 36px;
+height: 36px;
         font-size: 16px;
     }}
     #music-player-container .control-btn.play-pause {{
         width: 44px;
-        height: 44px;
+height: 44px;
         font-size: 20px;
     }}
 }}
@@ -433,7 +432,7 @@ iframe:first-of-type {{
 /* Container chứa buttons */
 .nav-buttons-wrapper {{
     position: fixed;
-    top: 50%;
+top: 50%;
     left: 0;
     width: 100%;
     transform: translateY(-50%);
@@ -442,7 +441,7 @@ iframe:first-of-type {{
     align-items: center;
     padding: 0 80px;
     z-index: 10000;
-    opacity: 0;
+opacity: 0;
     transition: opacity 1s ease-out;
     pointer-events: none;
 }}
@@ -464,7 +463,7 @@ iframe:first-of-type {{
 /* Reset CSS cho thẻ a trong page_link */
 .nav-buttons-wrapper a {{
     all: unset;
-    display: flex !important;
+display: flex !important;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
@@ -473,19 +472,19 @@ iframe:first-of-type {{
     transform-origin: center;
     padding: 1rem 2rem;
     border-radius: 9999px;
-    min-width: 280px;
+min-width: 280px;
     text-decoration: none;
     
     /* Button variables */
     --black-700: hsla(0, 0%, 12%, 1);
     --border_radius: 9999px;
-    --transtion: 0.3s ease-in-out;
+--transtion: 0.3s ease-in-out;
     --active: 0;
     --hover-color: hsl(40, 60%, 85%);
     --text-color: hsl(0, 0%, 100%);
     
     transform: scale(calc(1 + (var(--active, 0) * 0.2)));
-    transition: transform var(--transtion);
+transition: transform var(--transtion);
 }}
 
 /* Background đen của button */
@@ -493,36 +492,36 @@ iframe:first-of-type {{
     content: "";
     position: absolute;
     top: 50%;
-    left: 50%;
+left: 50%;
     transform: translate(-50%, -50%);
     width: 100%;
     height: 100%;
     background-color: var(--black-700);
     border-radius: var(--border_radius);
-    box-shadow: 
+box-shadow: 
         inset 0 0.5px hsl(0, 0%, 100%), 
         inset 0 -1px 2px 0 hsl(0, 0%, 0%), 
         0px 4px 10px -4px hsla(0, 0%, 0%, calc(1 - var(--active, 0))), 
         0 0 0 calc(var(--active, 0) * 0.375rem) var(--hover-color);
-    transition: all var(--transtion);
+transition: all var(--transtion);
     z-index: 0;
 }}
 
 /* Hiệu ứng sáng bên trong khi hover */
 .nav-buttons-wrapper a::after {{
     content: "";
-    position: absolute;
+position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     width: 90%;
     height: 90%;
     background-color: hsla(40, 60%, 85%, 0.75);
-    background-image: 
+background-image: 
         radial-gradient(at 51% 89%, hsla(45, 60%, 90%, 1) 0px, transparent 50%), 
         radial-gradient(at 100% 100%, hsla(35, 60%, 80%, 1) 0px, transparent 50%), 
         radial-gradient(at 22% 91%, hsla(35, 60%, 80%, 1) 0px, transparent 50%);
-    background-position: top;
+background-position: top;
     opacity: var(--active, 0);
     border-radius: var(--border_radius);
     transition: opacity var(--transtion);
@@ -533,26 +532,26 @@ iframe:first-of-type {{
 .nav-buttons-wrapper a:hover,
 .nav-buttons-wrapper a:focus-visible {{
     --active: 1;
-    box-shadow: 0 0 15px 5px var(--hover-color), 0 0 0 0.375rem var(--hover-color);
+box-shadow: 0 0 15px 5px var(--hover-color), 0 0 0 0.375rem var(--hover-color);
 }}
 
 /* Text styling */
 .nav-buttons-wrapper a span {{
     position: relative;
     z-index: 10;
-    background-image: linear-gradient(
+background-image: linear-gradient(
         90deg, 
         var(--text-color) 0%, 
         hsla(0, 0%, 100%, var(--active, 0.5)) 120%
     );
-    background-clip: text;
+background-clip: text;
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     color: transparent;
     font-weight: 600;
     letter-spacing: 1px;
     white-space: nowrap;
-    text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
+text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
     font-size: 1.1rem;
     line-height: 1.1rem;
 }}
@@ -563,7 +562,7 @@ iframe:first-of-type {{
     z-index: 10;
     width: 1.75rem;
     height: 1.75rem;
-    color: var(--text-color);
+color: var(--text-color);
     flex-shrink: 0;
 }}
 
@@ -571,7 +570,7 @@ iframe:first-of-type {{
 @media (max-width: 768px) {{
     .nav-buttons-wrapper {{
         bottom: 120px;
-        top: auto;
+top: auto;
         left: 50%;
         width: calc(100% - 40px);
         max-width: 450px;
@@ -579,17 +578,17 @@ iframe:first-of-type {{
         flex-direction: column;
         gap: 15px;
         padding: 0;
-    }}
+}}
     
     .nav-buttons-wrapper a {{
         width: 100%;
-        min-width: unset;
+min-width: unset;
         padding: 0.8rem 1.5rem;
     }}
     
     .nav-buttons-wrapper a svg {{
         width: 1.5rem;
-        height: 1.5rem;
+height: 1.5rem;
     }}
 }}
 </style>
@@ -607,128 +606,126 @@ else:
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
-    
-    function sendBackToStreamlit(isSkipped = false) {{
+function sendBackToStreamlit(isSkipped = false) {{
         console.log("Transitioning to main content. Is Skipped:", isSkipped);
-        const stApp = window.parent.document.querySelector('.stApp');
+const stApp = window.parent.document.querySelector('.stApp');
         if (stApp) {{
             stApp.classList.add('video-finished', 'main-content-revealed');
-            stApp.classList.remove('video-running'); 
+stApp.classList.remove('video-running'); 
         }}
         
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
-
-        if (!isSkipped) {{
+if (!isSkipped) {{
             initRevealEffect();
-        }} else {{
+}} else {{
             if (revealGrid) {{
                 revealGrid.remove();
-            }}
+}}
         }}
         
-        setTimeout(initMusicPlayer, 100); 
-    }}
+        setTimeout(initMusicPlayer, 100);
+}}
     
     function initRevealEffect() {{
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
-        if (!revealGrid) {{ return; }}
+if (!revealGrid) {{ return; }}
 
         const cells = revealGrid.querySelectorAll('.grid-cell');
-        const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
+const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
 
         shuffledCells.forEach((cell, index) => {{
             setTimeout(() => {{
                 cell.style.opacity = 0;
             }}, index * 10);
         }});
-        setTimeout(() => {{
+setTimeout(() => {{
              revealGrid.remove();
-        }}, shuffledCells.length * 10 + 1000); 
-    }}
+        }}, shuffledCells.length * 10 + 1000);
+}}
 
     function initMusicPlayer() {{
         console.log("Initializing music player");
-        const musicSources = [{music_sources_js}];
+const musicSources = [{music_sources_js}];
         
         if (musicSources.length === 0) {{
             console.log("No music files available");
-            return;
+return;
         }}
         
         let currentTrack = 0;
-        let isPlaying = false;
+let isPlaying = false;
         
         const audio = new Audio();
         audio.volume = 0.3;
         
         const playPauseBtn = window.parent.document.getElementById('play-pause-btn');
         const prevBtn = window.parent.document.getElementById('prev-btn');
-        const nextBtn = window.parent.document.getElementById('next-btn');
+const nextBtn = window.parent.document.getElementById('next-btn');
         const progressBar = window.parent.document.getElementById('progress-bar');
         const progressContainer = window.parent.document.getElementById('progress-container');
         const currentTimeEl = window.parent.document.getElementById('current-time');
         const durationEl = window.parent.document.getElementById('duration');
-        if (!playPauseBtn || !prevBtn || !nextBtn) {{
+if (!playPauseBtn || !prevBtn || !nextBtn) {{
             console.error("Music player elements not found in parent document");
-            return;
+return;
         }}
         
         function loadTrack(index) {{
             console.log("Loading track", index + 1, "from URL:", musicSources[index]);
-            audio.src = musicSources[index]; 
+audio.src = musicSources[index]; 
             audio.load();
         }}
         
         function togglePlayPause() {{
             if (isPlaying) {{
                 audio.pause();
-                playPauseBtn.textContent = '▶';
+playPauseBtn.textContent = '▶';
             }} else {{
                 audio.play().catch(e => console.error("Play error:", e));
-                playPauseBtn.textContent = '⏸';
+playPauseBtn.textContent = '⏸';
             }}
             isPlaying = !isPlaying;
-        }}
+}}
         
         function nextTrack() {{
             currentTrack = (currentTrack + 1) % musicSources.length;
-            loadTrack(currentTrack);
+loadTrack(currentTrack);
             if (isPlaying) {{
                 audio.play().catch(e => console.error("Play error:", e));
-            }}
+}}
         }}
         
         function prevTrack() {{
             currentTrack = (currentTrack - 1 + musicSources.length) % musicSources.length;
-            loadTrack(currentTrack);
+loadTrack(currentTrack);
             if (isPlaying) {{
                 audio.play().catch(e => console.error("Play error:", e));
-            }}
+}}
         }}
         
         function formatTime(seconds) {{
             if (isNaN(seconds)) return '0:00';
-            const mins = Math.floor(seconds / 60);
+const mins = Math.floor(seconds / 60);
             const secs = Math.floor(seconds % 60);
             return `${{mins}}:${{secs.toString().padStart(2, '0')}}`;
-        }}
+}}
         
         audio.addEventListener('timeupdate', () => {{
             const progress = (audio.currentTime / audio.duration) * 100;
             progressBar.style.width = progress + '%';
             currentTimeEl.textContent = formatTime(audio.currentTime);
         }});
-        audio.addEventListener('loadedmetadata', () => {{
+audio.addEventListener('loadedmetadata', () => {{
             durationEl.textContent = formatTime(audio.duration);
         }});
-        audio.addEventListener('ended', () => {{
+audio.addEventListener('ended', () => {{
             nextTrack();
         }});
-        audio.addEventListener('error', (e) => {{ 
+audio.addEventListener('error', (e) => {{ 
             console.error("Error loading music track:", e);
             nextTrack();
         }});
-        playPauseBtn.addEventListener('click', togglePlayPause);
+playPauseBtn.addEventListener('click', togglePlayPause);
         nextBtn.addEventListener('click', nextTrack);
         prevBtn.addEventListener('click', prevTrack);
         
@@ -737,7 +734,7 @@ js_callback_video = f"""
             const percent = (e.clientX - rect.left) / rect.width;
             audio.currentTime = percent * audio.duration;
         }});
-        loadTrack(0);
+loadTrack(0);
         console.log("Music player initialized successfully");
     }}
 
@@ -751,6 +748,7 @@ js_callback_video = f"""
 
         const urlParams = new URLSearchParams(window.parent.location.search);
         const skipIntro = urlParams.get('skip_intro');
+    
         
         if (skipIntro === '1') {{
             console.log("Skip intro detected. Directly revealing main content.");
@@ -758,7 +756,8 @@ js_callback_video = f"""
             const iframe = window.frameElement;
             if (iframe) {{
                  iframe.style.opacity = 0;
-                 iframe.style.visibility = 'hidden';
+     
+            iframe.style.visibility = 'hidden';
                  iframe.style.pointerEvents = 'none'; 
             }}
             return; 
@@ -766,81 +765,76 @@ js_callback_video = f"""
 
         const waitForElements = setInterval(() => {{
             const video = document.getElementById('intro-video');
-            const audio = document.getElementById('background-audio');
+const audio = document.getElementById('background-audio');
             const introTextContainer = document.getElementById('intro-text-container');
             const overlay = document.getElementById('click-to-play-overlay');
-           
-            if (video && audio && introTextContainer && overlay) {{
+if (video && audio && introTextContainer && overlay) {{
                 clearInterval(waitForElements);
-                console.log("All elements found, initializing...");
+console.log("All elements found, initializing...");
                 
                 const isMobile = window.innerWidth <= 768;
          
                 const videoSource = isMobile ? 'data:video/mp4;base64,{video_mobile_base64}' : 'data:video/mp4;base64,{video_pc_base64}';
-                video.src = videoSource;
+video.src = videoSource;
                 audio.src = 'data:audio/mp3;base64,{audio_base64}';
 
                 console.log("Video/Audio source set. Loading metadata...");
 
-                let interactionHandled = false; 
-                
-                const tryToPlayAndHideOverlay = (e) => {{
-                    e.preventDefault(); 
-                    
-                    if (interactionHandled) {{
+                let interactionHandled = false;
+const tryToPlayAndHideOverlay = (e) => {{
+                    e.preventDefault();
+if (interactionHandled) {{
                         console.log("Interaction already handled, ignoring.");
-                        return;
+return;
                     }}
                     interactionHandled = true;
-
-                    console.log("Attempting to play video (User interaction)");
+console.log("Attempting to play video (User interaction)");
                     
                     overlay.removeEventListener('click', tryToPlayAndHideOverlay);
                     overlay.removeEventListener('touchstart', tryToPlayAndHideOverlay);
-                    overlay.removeEventListener('dblclick', tryToPlayAndHideOverlay); 
-
-                    video.play().then(() => {{
+                    overlay.removeEventListener('dblclick', tryToPlayAndHideOverlay);
+video.play().then(() => {{
                         console.log("✅ Video is playing, hiding overlay!");
                         overlay.classList.add('hidden'); 
                     }}).catch(err => {{
-                        console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
+                      
+console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
                         overlay.textContent = "LỖI PHÁT. ĐANG CHUYỂN TRANG...";
                         setTimeout(() => sendBackToStreamlit(false), 2000); 
                     }});
-                    audio.play().catch(e => {{
+audio.play().catch(e => {{
                         console.log("Audio autoplay blocked (normal), waiting for video end.");
                     }});
-                }};
+}};
 
                 video.addEventListener('canplaythrough', () => {{
                     tryToPlayAndHideOverlay({{ preventDefault: () => {{}} }}); 
                 }}, {{ once: true }});
-
-                video.addEventListener('ended', () => {{
+video.addEventListener('ended', () => {{
                     console.log("Video ended, transitioning...");
                     video.
                     style.opacity = 0;
 audio.pause();
 audio.currentTime = 0;
                 introTextContainer.style.opacity = 0;
-                setTimeout(() => sendBackToStreamlit(false), 500); 
+             
+setTimeout(() => sendBackToStreamlit(false), 500); 
             }});
-            video.addEventListener('error', (e) => {{
+video.addEventListener('error', (e) => {{
                 console.error("Video error detected (Codec/Base64/File corrupted). Skipping intro:", e);
                 sendBackToStreamlit(false); 
             }});
-            
-            overlay.addEventListener('click', tryToPlayAndHideOverlay, {{ once: true }});
+overlay.addEventListener('click', tryToPlayAndHideOverlay, {{ once: true }});
             overlay.addEventListener('touchstart', tryToPlayAndHideOverlay, {{ once: true }});
             overlay.addEventListener('dblclick', tryToPlayAndHideOverlay, {{ once: true }}); 
             
             video.load();
-            const chars = introTextContainer.querySelectorAll('.intro-char');
+const chars = introTextContainer.querySelectorAll('.intro-char');
             chars.forEach((char, index) => {{
                 char.style.animationDelay = `${{index * 0.1}}s`;
                 char.classList.add('char-shown');
             }});
-        }}
+}}
     }}, 100);
     setTimeout(() => {{
         clearInterval(waitForElements);
@@ -860,68 +854,68 @@ html_content_modified = f"""
     <style>
         html, body {{
             margin: 0;
-            padding: 0;
+padding: 0;
             overflow: hidden;
             height: 100vh;
             width: 100vw;
             background-color: #000;
-        }}
+}}
     #intro-video {{
         position: absolute;
         top: 0;
         left: 0;
-        width: 100%;
+width: 100%;
         height: 100%;
         object-fit: cover;
         z-index: 0;
         transition: opacity 1s;
-    }}
+}}
 
     #intro-text-container {{
         position: fixed;
         top: 5vh;
         width: 100%;
-        text-align: center;
+text-align: center;
         color: #FFD700;
         font-size: 3vw;
         font-family: 'Sacramento', cursive;
         font-weight: 400;
         text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
-        z-index: 100;
+z-index: 100;
         pointer-events: none;
         display: flex;
         justify-content: center;
         opacity: 1;
         transition: opacity 0.5s;
-    }}
+}}
     
     .intro-char {{
         display: inline-block;
-        opacity: 0;
+opacity: 0;
         transform: translateY(-50px);
         animation-fill-mode: forwards;
         animation-duration: 0.8s;
         animation-timing-function: ease-out;
-    }}
+}}
 
     @keyframes charDropIn {{
         from {{
             opacity: 0;
-            transform: translateY(-50px);
+transform: translateY(-50px);
         }}
         to {{
             opacity: 1;
-            transform: translateY(0);
+transform: translateY(0);
         }}
     }}
 
     .intro-char.char-shown {{
         animation-name: charDropIn;
-    }}
+}}
     
     #click-to-play-overlay {{
         position: absolute;
-        top: 0;
+top: 0;
         left: 0;
         width: 100%;
         height: 100%;
@@ -929,27 +923,27 @@ html_content_modified = f"""
         cursor: pointer;
         background: rgba(0, 0, 0, 0.5); 
         display: flex;
-        align-items: center;
+align-items: center;
         justify-content: center;
         font-family: 'Playfair Display', serif;
         color: #fff;
         font-size: 2vw;
         text-shadow: 1px 1px 3px #000;
         transition: opacity 0.5s;
-    }}
+}}
 
     #click-to-play-overlay.hidden {{
         opacity: 0;
-        pointer-events: none; 
-    }}
+        pointer-events: none;
+}}
 
     @media (max-width: 768px) {{
         #intro-text-container {{
             font-size: 6vw;
-        }}
+}}
          #click-to-play-overlay {{
             font-size: 4vw;
-        }}
+}}
     }}
 </style>
 </head>
@@ -972,9 +966,10 @@ html_content_modified = html_content_modified.replace(
     f'<div id="intro-text-container">{intro_chars_html}</div>'
 )
 
-# --- HIỂ# --- HIỂN THỊ IFRAME VIDEO / KÍCH HOẠT CHUYỂN TRANG NGAY LẬP TỨC ---
+# --- HIỂN THỊ IFRAME VIDEO / LOGIC BỎ QUA ---
+
 if not st.session_state.video_ended:
-    # HIỂN THỊ IFRAME VIDEO CHỈ KHI CHƯA CHẠY XONG
+    # --- HIỂN THỊ IFRAME VIDEO ---
     st.components.v1.html(html_content_modified, height=1080, scrolling=False)
 
     # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
@@ -989,48 +984,37 @@ if not st.session_state.video_ended:
     """
     st.markdown(reveal_grid_html, unsafe_allow_html=True)
     
-    # CSS/JS trong Iframe sẽ đảm bảo class 'video-finished' và 'main-content-revealed' được thêm vào .stApp
-    # và sau đó JS sẽ gọi hàm sendBackToStreamlit(false) để kết thúc (bao gồm cả việc set session state nếu cần).
-
 else:
-    # 🎯 KHI st.session_state.video_ended LÀ TRUE (TỪ TRANG PHỤ QUAY VỀ HOẶC ĐÃ XEM XONG):
-    # Thêm class CSS vào stApp để kích hoạt hiển thị nội dung chính/ẩn intro
+    # 🎯 LOGIC BỎ QUA VIDEO: Inject CSS classes và cố gắng gọi initMusicPlayer
     st.markdown("""
     <script>
     document.addEventListener("DOMContentLoaded", function() {
-        const stApp = window.parent.document.querySelector('.stApp');
+        const stApp = document.querySelector('.stApp');
         if (stApp) {
-            // Bỏ qua video/reveal, chuyển thẳng sang trạng thái đã kết thúc
+            // Thêm các class CSS cần thiết để hiển thị nội dung chính và ẩn intro components
             stApp.classList.add('video-finished', 'main-content-revealed'); 
             stApp.classList.remove('video-running');
-            // Kích hoạt nhạc nền ngay lập tức
-            setTimeout(initMusicPlayer, 100); 
+            
             // Xóa reveal grid nếu nó tồn tại
-            const revealGrid = window.parent.document.querySelector('.reveal-grid');
+            const revealGrid = document.querySelector('.reveal-grid');
             if (revealGrid) {
                 revealGrid.remove();
+            }
+            
+            // Kích hoạt nhạc nền (Dựa trên việc JS đã được nhúng vào parent window)
+            try {
+                if (typeof initMusicPlayer === 'function') {
+                    initMusicPlayer();
+                } else if (typeof window.parent.initMusicPlayer === 'function') {
+                     window.parent.initMusicPlayer();
+                }
+            } catch (e) {
+                console.warn("Music player function not available on skip.");
             }
         }
     });
     </script>
     """, unsafe_allow_html=True)
-    
-    # Phải set video_ended về false để đảm bảo video chạy lại nếu người dùng refresh TRỰC TIẾP trên trang chủ (URL gốc)
-    # Tuy nhiên, ta đang dùng logic ở đầu file để handle refresh. Tạm thời KHÔNG CẦN set lại ở đây.EO ---
-st.components.v1.html(html_content_modified, height=1080, scrolling=False)
-
-# --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
-
-grid_cells_html = ""
-for i in range(240):
-    grid_cells_html += f'<div class="grid-cell"></div>'
-
-reveal_grid_html = f"""
-<div class="reveal-grid">
-    {grid_cells_html}
-</div>
-"""
-st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
 # --- NỘI DUNG CHÍNH (TIÊU ĐỀ) ---
 main_title_text = "TỔ BẢO DƯỠNG SỐ 1"
@@ -1050,7 +1034,8 @@ if len(music_files) > 0:
         <button class="control-btn play-pause" id="play-pause-btn">▶</button>
         <button class="control-btn" id="next-btn">⏭</button>
     </div>
-    <div class="progress-container" id="progress-container">
+   
+ <div class="progress-container" id="progress-container">
         <div class="progress-bar" id="progress-bar"></div>
     </div>
     <div class="time-info">
@@ -1065,7 +1050,8 @@ st.markdown("""
 <div class="nav-buttons-wrapper">
     <a href="/partnumber?from_home=1" class="nav-button" target="_self">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 
+0 0010.607 10.607z"></path>
         </svg>
         <span>TRA CỨU PART NUMBER</span>
     </a>
@@ -1074,7 +1060,8 @@ st.markdown("""
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
         <span>NGÂN HÀNG TRẮC NGHIỆM</span>
-    </a>
+    
+ </a>
 </div>
 """, unsafe_allow_html=True)
 
@@ -1082,11 +1069,6 @@ st.markdown("""
 if st.session_state.first_load:
     st.session_state.first_load = False
 
-
-
-
-
-
-
-
-
+# 🎯 NEW LOGIC: Mark video as ended after initial load (if it ran) to skip on subsequent direct refreshes
+if not st.session_state.video_ended:
+    st.session_state.video_ended = True
