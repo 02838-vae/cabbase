@@ -11,27 +11,11 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# =================================================================
-# 🛠️ FIX 3: CƠ CHẾ RESET SESSION STATE KHI TRUY CẬP/REFRESH
-# =================================================================
-if st.session_state.get('app_initialized') is None:
-    # Chạy lần đầu tiên trong một session mới (Hard Refresh)
-    
-    # Lấy danh sách các keys để xóa, trừ key 'app_initialized'
-    keys_to_delete = [key for key in st.session_state.keys()]
-    for key in keys_to_delete:
-        del st.session_state[key]
-        
-    # Đánh dấu đã khởi tạo và cài đặt lại trạng thái ban đầu
-    st.session_state.app_initialized = True
+# Khởi tạo session state
+if 'video_ended' not in st.session_state:
     st.session_state.video_ended = False
+if 'first_load' not in st.session_state:
     st.session_state.first_load = True
-else:
-    # Khởi tạo lại các biến cần thiết (nếu bị xóa ở lần chạy trước đó)
-    if 'video_ended' not in st.session_state:
-        st.session_state.video_ended = False
-    if 'first_load' not in st.session_state:
-        st.session_state.first_load = True
 
 # --- CÁC HÀM TIỆN ÍCH ---
 
@@ -52,7 +36,6 @@ def get_base64_encoded_file(file_path):
 
 # Mã hóa các file media chính (bắt buộc)
 try:
-    # Lưu ý: Các file này phải nằm cùng thư mục với app.py
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
@@ -248,27 +231,10 @@ iframe:first-of-type {{
     }}
     
     #main-title-container h1 {{
-        /* SỬ DỤNG VMIN cho chế độ dọc mobile */
-        font-size: 7.0vmin; 
+        font-size: 6.5vw;
         animation-duration: 8s;
     }}
 }}
-
-/* === ĐIỀU CHỈNH CHO MOBILE LANDSCAPE (MÀN HÌNH NGANG) - ĐÃ TĂNG KÍCH THƯỚC CHỮ === */
-@media (max-width: 900px) and (orientation: landscape) and (max-height: 500px) {{
-    #main-title-container {{
-        top: 2vh !important; 
-        height: 12vh !important; 
-    }}
-    
-    #main-title-container h1 {{
-        /* FIX 1: TĂNG KÍCH THƯỚC CHỮ LÊN 5.5vmin */
-        font-size: 5.5vmin !important; 
-        animation-duration: 12s !important; 
-    }}
-}}
-/* ========================================================= */
-
 
 /* 🌟 KEYFRAMES: HIỆU ỨNG TỎA SÁNG MÀU NGẪU NHIÊN */
 @keyframes glow-random-color {{
@@ -474,10 +440,7 @@ iframe:first-of-type {{
 
 /* Reset CSS cho thẻ a trong page_link */
 .nav-buttons-wrapper a {{
-    /* Không dùng all: unset; nữa để giữ lại hành vi liên kết */
-    text-decoration: none; /* Đảm bảo gạch chân biến mất */
-    color: inherit; /* Giữ màu chữ mặc định nếu cần */
-    
+    all: unset;
     display: flex !important;
     align-items: center;
     justify-content: center;
@@ -488,6 +451,7 @@ iframe:first-of-type {{
     padding: 1rem 2rem;
     border-radius: 9999px;
     min-width: 280px;
+    text-decoration: none;
     
     /* Button variables */
     --black-700: hsla(0, 0%, 12%, 1);
@@ -610,7 +574,7 @@ iframe:first-of-type {{
 
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (KHÔNG THAY ĐỔI) ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
 
 if len(music_files) > 0:
     music_sources_js = ",\n\t\t\t".join([f"'{url}'" for url in music_files])
@@ -866,7 +830,6 @@ audio.currentTime = 0;
 }});
 </script>
 """
-# ĐỊNH NGHĨA html_content_modified TẠI ĐÂY
 html_content_modified = f"""
 <!DOCTYPE html>
 <html>
@@ -976,7 +939,6 @@ html_content_modified = f"""
 </body>
 </html>
 """
-
 intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
     f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'
@@ -1032,16 +994,15 @@ if len(music_files) > 0:
 """, unsafe_allow_html=True)
 
 # --- NAVIGATION BUTTONS (SIMPLE HTML VERSION) ---
-# Đã thêm target="_blank" để mở ra tab mới
 st.markdown("""
 <div class="nav-buttons-wrapper">
-    <a href="/partnumber" target="_blank" class="nav-button">
+    <a href="/partnumber" class="nav-button" target="_self">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
         </svg>
         <span>TRA CỨU PART NUMBER</span>
     </a>
-    <a href="/bank" target="_blank" class="nav-button">
+    <a href="/bank" class="nav-button" target="_self">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
@@ -1053,3 +1014,6 @@ st.markdown("""
 # Mark first load as complete
 if st.session_state.first_load:
     st.session_state.first_load = False
+
+
+
