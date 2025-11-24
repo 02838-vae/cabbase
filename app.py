@@ -4,6 +4,13 @@ import os
 import re 
 import time
 
+# --- KIỂM TRA VÀ RESET URL KHI REFRESH ---
+# Nếu không có session_state 'initialized', nghĩa là đây là lần đầu load hoặc refresh
+if 'initialized' not in st.session_state:
+    st.session_state.initialized = True
+    # Reset về trang chủ nếu đang ở URL khác
+    st.query_params.clear()
+
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
     page_title="Tổ Bảo Dưỡng Số 1",
@@ -1014,6 +1021,7 @@ st.markdown("""
 # Mark first load as complete
 if st.session_state.first_load:
     st.session_state.first_load = False
+
 
 
 
