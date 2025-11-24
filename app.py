@@ -13,13 +13,12 @@ st.set_page_config(
 
 # Khởi tạo session state
 if 'video_ended' not in st.session_state:
-    st.session_state.video_ended = False
+    st.session_session.video_ended = False
 
 # --- CÁC HÀM TIỆN ÍCH ---
 
 def get_base64_encoded_file(file_path):
     """Đọc file và trả về Base64 encoded string."""
-    # Sửa đường dẫn nếu cần thiết để phù hợp với môi trường triển khai
     path_to_check = os.path.join(os.path.dirname(__file__), file_path)
     
     if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
@@ -31,21 +30,18 @@ def get_base64_encoded_file(file_path):
         return base64.b64encode(data).decode("utf-8")
     except Exception as e:
         # print(f"Lỗi khi đọc file {file_path}: {str(e)}") 
-        # Không dùng st.error ở đây vì có thể lỗi xảy ra trước khi Streamlit render
         return None
 
 
 # Mã hóa các file media chính (bắt buộc)
 try:
-    # Đảm bảo các file này nằm cùng thư mục với app.py
     video_pc_base64 = get_base64_encoded_file("airplane.mp4")
     video_mobile_base64 = get_base64_encoded_file("mobile.mp4")
     audio_base64 = get_base64_encoded_file("plane_fly.mp3")
     bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
     logo_base64 = get_base64_encoded_file("logo.jpg")
-    
-    # Kiểm tra file bắt buộc
+
     missing_files = []
     if not video_pc_base64: missing_files.append("airplane.mp4")
     if not video_mobile_base64: missing_files.append("mobile.mp4")
@@ -56,25 +52,22 @@ try:
     if missing_files:
         st.error(f"⚠️ Thiếu các file media cần thiết hoặc file rỗng. Vui lòng kiểm tra lại các file sau trong thư mục:")
         st.write(" - " + "\n - ".join(missing_files))
-        # Dùng st.stop() để dừng script nếu thiếu file quan trọng
         st.stop()
         
 except Exception as e:
     st.error(f"❌ Lỗi khi đọc file: {str(e)}")
     st.stop()
 
-# Đảm bảo logo_base64 được khởi tạo nếu file không tồn tại
 if not 'logo_base64' in locals() or not logo_base64:
     logo_base64 = "" 
-    st.info("ℹ️ Không tìm thấy file logo.jpg. Music player sẽ không có hình nền logo.")
-
 
 # --- CẤU HÌNH NHẠC NỀN ---
 BASE_MUSIC_URL = "https://raw.githubusercontent.com/02838-vae/cabbase/main/"
 music_files = [f"{BASE_MUSIC_URL}background{i}.mp3" for i in range(1, 7)]
 
 if len(music_files) == 0:
-    st.info("ℹ️ Không tìm thấy URL nhạc nền. Music player sẽ không hoạt động.")
+    # Không cần dừng nếu thiếu nhạc nền
+    pass 
 
 
 # --- PHẦN 1: NHÚNG FONT VÀ CSS CHÍNH ---
@@ -189,6 +182,11 @@ iframe:first-of-type {{
     0% {{ background-position: 0% 50%; }}
     50% {{ background-position: 100% 50%; }}
     100% {{ background-position: 0% 50%; }}
+}}
+
+/* Keyframes xoay (bắt buộc phải có) */
+@keyframes rotate {{
+    to {{ transform: translate(-50%, -50%) rotate(360deg); }}
 }}
 
 /* === TIÊU ĐỀ TRANG CHÍNH === */
@@ -414,17 +412,16 @@ iframe:first-of-type {{
 }}
 
 /* ---------------------------------------------------- */
-/* === KHỐI CSS MỚI: TÙY CHỈNH ST.PAGE_LINK (FIX) === */
+/* === KHỐI CSS MỚI: TÙY CHỈNH ST.PAGE_LINK (FIX VISIBILITY) === */
 /* ---------------------------------------------------- */
 
-/* Wrapper cho các nút Streamlit (Cần để định vị Fixed/Mobile Flex) */
-/* Selector này là cần thiết để bọc 2 nút st.page_link lại với nhau */
+/* Wrapper cho các nút Streamlit (Fixed position cho desktop) */
 .stNavWrapper {{
     position: fixed;
     top: 50%;
     left: 0;
     width: 100%; 
-    height: 1px; /* Chiều cao tối thiểu */
+    height: 1px;
     transform: translateY(-50%);
     
     display: flex;
@@ -435,17 +432,16 @@ iframe:first-of-type {{
     opacity: 0;
     transition: opacity 2s ease-out 5s; 
     z-index: 10000;
-    pointer-events: none; /* CHẶN CLICK SỚM */
+    pointer-events: none; 
 }}
 
 .video-finished .stNavWrapper {{
     opacity: 1;
-    pointer-events: all; /* CHO PHÉP CLICK */
+    pointer-events: all; 
 }}
 
 /* Streamlit Page Link (thành phần bao ngoài thẻ <a>) */
 .stPageLink {{
-    /* Loại bỏ định vị riêng lẻ của Streamlit */
     position: static !important; 
     left: auto !important;
     right: auto !important;
@@ -455,13 +451,8 @@ iframe:first-of-type {{
 }}
 
 /* === UIverse BUTTON STYLES (Áp dụng cho thẻ <a> bên trong) === */
-
-.stPageLink > div > div > a {{
-    /* Streamlit's st.page_link structure is usually .stPageLink > div > div > a */
-    /* Nếu không hoạt động, thử .stPageLink > a */
-    /* Để đảm bảo, ta dùng selector tổng quát nhất: */
-    
-    /* Các thuộc tính cơ bản của nút */
+/* FIX: Simplified selector to target the a tag reliably */
+.stPageLink a {{
     --black-700: hsla(0, 0%, 12%, 1);
     --border_radius: 9999px; 
     --transtion: 0.3s ease-in-out;
@@ -469,10 +460,14 @@ iframe:first-of-type {{
     --hover-color: hsl(40, 60%, 85%);
     --text-color: hsl(0, 0%, 100%); 
     
+    /* FIX: Set a width for the button */
+    min-width: 280px;
+    
     cursor: pointer;
     position: relative;
     display: flex;
     align-items: center;
+    justify-content: center; /* Tự động căn giữa nội dung */
     gap: 0.5rem;
     transform-origin: center;
     padding: 1rem 2rem;
@@ -486,7 +481,7 @@ iframe:first-of-type {{
 }}
 
 /* NỀN ĐEN CỦA BUTTON (::before) */
-.stPageLink > div > div > a::before {{
+.stPageLink a::before {{
     content: "";
     position: absolute;
     top: 50%;
@@ -506,7 +501,7 @@ iframe:first-of-type {{
 }}
 
 /* HIỆU ỨNG TIA SÁNG BÊN TRONG KHI HOVER (::after) */
-.stPageLink > div > div > a::after {{
+.stPageLink a::after {{
     content: "";
     position: absolute;
     top: 50%;
@@ -527,34 +522,12 @@ iframe:first-of-type {{
 }}
 
 /* KÍCH HOẠT TRẠNG THÁI HOVER */
-.stPageLink > div > div > a:is(:hover, :focus-visible) {{
+.stPageLink a:is(:hover, :focus-visible) {{
     --active: 1;
 }}
 
-/* --- DOTS BORDER (Ánh sáng xoay) --- */
-/* Thêm một div giả lập bên trong thẻ <a> để chứa hiệu ứng xoay */
-/* Vì không thể chèn HTML vào st.page_link, ta sẽ dùng JS để inject nó sau */
-
-/* 🌟 BỔ SUNG: KEYFRAME XOAY */
-@keyframes rotate {{
-    to {{ transform: translate(-50%, -50%) rotate(360deg); }}
-}}
-
-/* Ta không thể tạo .dots_border ở đây vì nó cần được inject bằng JS */
-/* Hoặc áp dụng hiệu ứng cho ::before nếu có thể, nhưng phức tạp. Tạm thời chấp nhận không có hiệu ứng này. */
-/* Thay vào đó, ta sẽ dùng hiệu ứng ánh sáng nền cố định cho toàn bộ nút: */
-.stPageLink > div > div > a {{
-    box-shadow: 0 0 0 0.2rem rgba(255, 255, 255, 0.2); 
-    transition: box-shadow 0.3s ease;
-}}
-.stPageLink > div > div > a:is(:hover, :focus-visible) {{
-    box-shadow: 0 0 15px 5px var(--hover-color), 0 0 0 0.375rem var(--hover-color);
-}}
-
-
 /* NỘI DUNG VÀ ICON */
-/* Streamlit tạo ra: a > div[data-testid="stLinkButton"] > span (Text) */
-/* và a > div[data-testid="stLinkButton"] > svg (Icon nếu có) */
+/* FIX: Simplified and added !important for Streamlit overrides */
 
 /* Chứa text: Thẻ <span> */
 .stPageLink span {{
@@ -564,64 +537,63 @@ iframe:first-of-type {{
         90deg, 
         var(--text-color) 0%, 
         hsla(0, 0%, 100%, var(--active, 0.5)) 120% 
-    );
-    background-clip: text;
-    -webkit-background-clip: text; 
-    color: transparent !important; /* Text color phải là transparent */
+    ) !important;
+    background-clip: text !important;
+    -webkit-background-clip: text !important; 
+    color: transparent !important; 
     font-weight: 600;
     letter-spacing: 1px;
     white-space: nowrap;
     text-shadow: 0 0 5px rgba(0, 0, 0, 0.5); 
     font-size: 1.1rem !important; 
-    padding-left: 0 !important; /* Xóa padding mặc định của Streamlit */
+    padding-left: 0 !important; 
+    margin: 0 !important; 
+    /* Đảm bảo text không bị co lại */
+    min-width: max-content; 
 }}
 
 /* Chứa Icon: Thẻ SVG */
 .stPageLink svg {{
     position: relative;
     z-index: 10;
-    width: 1.75rem;
-    height: 1.75rem;
-    color: var(--text-color) !important; /* Màu của icon */
-    margin-right: -0.2rem; /* Điều chỉnh khoảng cách với text */
+    width: 1.75rem !important; 
+    height: 1.75rem !important;
+    color: var(--text-color) !important;
+    margin-right: -0.2rem !important; 
 }}
 
 
 /* --- MEDIA QUERY CHO MOBILE --- */
 @media (max-width: 768px) {{
-    /* Vị trí mới cho mobile: xếp dọc, chiếm gần hết chiều rộng */
     .stNavWrapper {{
         bottom: 120px; 
         left: 50%;
         width: calc(100% - 40px);
         max-width: 450px; 
-        flex-direction: column; /* Xếp dọc */
+        flex-direction: column; 
         gap: 15px; 
         padding: 0;
-        top: auto; /* Dùng bottom thay vì top: 50% */
+        top: auto;
         transform: translateX(-50%);
-        height: auto; /* Thay đổi chiều cao */
+        height: auto;
     }}
 
     .stPageLink {{
         width: 100%;
     }}
     
-    .stPageLink > div > div > a {{
+    .stPageLink a {{
         padding: 0.8rem 1.5rem;
         width: 100%;
+        min-width: unset; /* Tắt min-width trên mobile */
         justify-content: center;
     }}
     
     .stPageLink svg {{
-        width: 1.5rem;
-        height: 1.5rem;
-    }}
-    .stPageLink span {{
-        font-size: 1.1rem !important;
+        width: 1.5rem !important;
+        height: 1.5rem !important;
     }}
 }}
-/* Kết thúc Khối CSS mới cho St.page_link */
 </style>
 """
 
@@ -637,7 +609,7 @@ if len(music_files) > 0:
 else:
     music_sources_js = ""
 
-# PHẦN JS (Đã xóa logic gắn listener cho nút Partnumber/Bank)
+# PHẦN JS (Được giữ nguyên)
 js_callback_video = f"""
 <script>
     console.log("Script loaded");
@@ -654,16 +626,13 @@ js_callback_video = f"""
         const revealGrid = window.parent.document.querySelector('.reveal-grid');
 
         if (!isSkipped) {{
-            // Chạy hiệu ứng reveal khi video phát xong
             initRevealEffect();
         }} else {{
-            // Xóa lưới reveal ngay lập tức khi skip
             if (revealGrid) {{
                 revealGrid.remove();
             }}
         }}
         
-        // Music player có độ trễ riêng (2s sau khi add class video-finished)
         setTimeout(initMusicPlayer, 100); 
     }}
     
@@ -679,7 +648,6 @@ js_callback_video = f"""
                 cell.style.opacity = 0;
             }}, index * 10);
         }});
-        // Tăng thời gian chờ sau khi hiệu ứng reveal kết thúc 
         setTimeout(() => {{
              revealGrid.remove();
         }}, shuffledCells.length * 10 + 1000); 
@@ -794,17 +762,14 @@ js_callback_video = f"""
         
         if (skipIntro === '1') {{
             console.log("Skip intro detected. Directly revealing main content.");
-            // Giả lập sự kiện video kết thúc và bỏ hiệu ứng reveal
-            sendBackToStreamlit(true); // Pass true to skip reveal
-            // Ẩn ngay lập tức video iframe
+            sendBackToStreamlit(true); 
             const iframe = window.frameElement;
             if (iframe) {{
                  iframe.style.opacity = 0;
                  iframe.style.visibility = 'hidden';
-                 // Đảm bảo iframe không chặn tương tác
                  iframe.style.pointerEvents = 'none'; 
             }}
-            return; // Dừng khởi tạo video/audio
+            return; 
         }}
 
 
@@ -840,14 +805,13 @@ js_callback_video = f"""
 
                     console.log("Attempting to play video (User interaction)");
                     
-                    // Loại bỏ ngay lập tức các listener trên overlay 
                     overlay.removeEventListener('click', tryToPlayAndHideOverlay);
                     overlay.removeEventListener('touchstart', tryToPlayAndHideOverlay);
                     overlay.removeEventListener('dblclick', tryToPlayAndHideOverlay); 
 
                     video.play().then(() => {{
                         console.log("✅ Video is playing, hiding overlay!");
-                        overlay.classList.add('hidden'); // Ẩn lớp phủ sau khi play thành công
+                        overlay.classList.add('hidden'); 
                     }}).catch(err => {{
                         console.error("❌ Still can't play video, skipping intro (Error/File issue):", err);
                         overlay.textContent = "LỖI PHÁT. ĐANG CHUYỂN TRANG...";
@@ -860,9 +824,7 @@ js_callback_video = f"""
 
 
                 video.addEventListener('canplaythrough', () => {{
-                    // Tự động phát nếu không cần tương tác (PC/Môi trường không chặn)
-                    // Vẫn gọi hàm tryToPlayAndHideOverlay, nhưng truyền vào một đối tượng event rỗng để e.preventDefault() không gây lỗi
-                    tryToPlayAndPlay({{ preventDefault: () => {{}} }}); 
+                    tryToPlayAndHideOverlay({{ preventDefault: () => {{}} }}); 
                 }}, {{ once: true }});
                 
                 // Đổi tên biến (FIX: lỗi đánh máy trong code cũ)
@@ -1079,7 +1041,8 @@ if len(music_files) > 0:
 
 # --- NAVIGATION BUTTON MỚI (DÙNG ST.PAGE_LINK) ---
 
-# Định nghĩa SVG và Label cho st.page_link (Cần phải dùng style inline cho SVG để Streamlit render nó)
+# Định nghĩa SVG và Label cho st.page_link (Cần phải dùng style inline cho SVG và Span)
+# Đảm bảo style inline chỉ áp dụng cho nội dung bên trong, còn định dạng nút dùng CSS
 svg_part_number = '<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="sparkle" style="width: 1.25rem; height: 1.25rem; margin-right: 0.5rem;"><path class="path" stroke-linejoin="round" stroke-linecap="round" stroke="currentColor" fill="currentColor" d="M10 17a7 7 0 100-14 7 7 0 000 14zM21 21l-4-4" ></path></svg>'
 partnumber_label = f'{svg_part_number} <span style="font-size:1.1rem; line-height: 1.1rem;">TRA CỨU PART NUMBER</span>'
 
@@ -1089,10 +1052,11 @@ bank_label = f'{svg_bank} <span style="font-size:1.1rem; line-height: 1.1rem;">N
 # Bọc các nút trong một DIV để kiểm soát vị trí trên Mobile (CSS class stNavWrapper)
 st.markdown("<div class='stNavWrapper'>", unsafe_allow_html=True)
 
-# Sử dụng Streamlit Page Link (Streamlit sẽ tạo ra HTML và JS an toàn)
+# Sử dụng Streamlit Page Link 
 col1, col2 = st.columns(2)
 
 with col1:
+    # use_container_width=False là rất quan trọng để CSS Fixed Position hoạt động
     st.page_link("pages/partnumber.py", 
                  label=partnumber_label, 
                  use_container_width=False,
@@ -1105,7 +1069,3 @@ with col2:
                  unsafe_allow_html=True) 
              
 st.markdown("</div>", unsafe_allow_html=True)
-
-# --- BỔ SUNG: LOGIC RENDER TỰ ĐỘNG ---
-# Do các phần tử Fixed cần render ngay lập tức, ta không cần dùng session state để kiểm soát
-# việc render các thành phần sau intro (chúng đã được kiểm soát bằng CSS/JS opacity).
