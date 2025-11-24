@@ -236,17 +236,17 @@ iframe:first-of-type {{
     }}
 }}
 
-/* === ĐIỀU CHỈNH CHO MOBILE LANDSCAPE (MÀN HÌNH NGANG) === */
-/* Áp dụng khi màn hình hẹp (max-width 900px) và chiều cao rất hạn chế (max-height 500px) */
+/* === ĐIỀU CHỈNH CHO MOBILE LANDSCAPE (MÀN HÌNH NGANG) - ĐÃ TĂNG ĐỘ ƯU TIÊN === */
+/* Sử dụng !important và tăng độ ưu tiên selector nếu cần thiết */
 @media (max-width: 900px) and (orientation: landscape) and (max-height: 500px) {{
     #main-title-container {{
-        top: 2vh; /* Dời tiêu đề lên cao hơn để có không gian */
-        height: 12vh; /* Tăng chiều cao container để tránh cắt chữ */
+        top: 2vh !important; 
+        height: 12vh !important; 
     }}
     
     #main-title-container h1 {{
-        font-size: 4.5vw; /* GIẢM KÍCH THƯỚC PHÔNG CHỮ để phù hợp với chiều cao hẹp */
-        animation-duration: 12s; /* Cuộn chậm lại một chút */
+        font-size: 4.0vw !important; /* GIẢM KÍCH THƯỚC PHÔNG CHỮ XUỐNG 4.0vw */
+        animation-duration: 12s !important; 
     }}
 }}
 /* ========================================================= */
@@ -454,9 +454,12 @@ iframe:first-of-type {{
     display: contents !important;
 }}
 
-/* Reset CSS cho thẻ a trong page_link */
+/* Reset CSS cho thẻ a trong page_link - ĐÃ KHẮC PHỤC LỖI all: unset */
 .nav-buttons-wrapper a {{
-    all: unset;
+    /* Không dùng all: unset; nữa để giữ lại hành vi liên kết */
+    text-decoration: none; /* Đảm bảo gạch chân biến mất */
+    color: inherit; /* Giữ màu chữ mặc định nếu cần */
+    
     display: flex !important;
     align-items: center;
     justify-content: center;
@@ -467,7 +470,6 @@ iframe:first-of-type {{
     padding: 1rem 2rem;
     border-radius: 9999px;
     min-width: 280px;
-    text-decoration: none;
     
     /* Button variables */
     --black-700: hsla(0, 0%, 12%, 1);
@@ -590,7 +592,7 @@ iframe:first-of-type {{
 
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (KHÔNG THAY ĐỔI) ---
 
 if len(music_files) > 0:
     music_sources_js = ",\n\t\t\t".join([f"'{url}'" for url in music_files])
