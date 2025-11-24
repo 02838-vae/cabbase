@@ -590,7 +590,7 @@ height: 1.5rem;
 
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO ---
+# --- PHẦN 3: MÃ HTML/CSS/JavaScript IFRAME CHO VIDEO INTRO (ĐỊNH NGHĨA CHUNG) ---
 
 if len(music_files) > 0:
     music_sources_js = ",\n\t\t\t".join([f"'{url}'" for url in music_files])
@@ -841,21 +841,43 @@ const chars = introTextContainer.querySelectorAll('.intro-char');
 }});
 </script>
 """
-intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
-intro_chars_html = ''.join([
-    f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'
-    for char in intro_title
-])
-html_content_modified = html_content_modified.replace(
-    '<div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>',
-    f'<div id="intro-text-container">{intro_chars_html}</div>'
-)
+html_content_modified = f"""
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        ... (CSS here) ...
+</style>
+</head>
+<body>
+    <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
+    <video id="intro-video" muted playsinline></video>
+    <audio id="background-audio"></audio>
+    <div id="click-to-play-overlay">CLICK/TOUCH VÀO ĐÂY ĐỂ BẮT ĐẦU</div>
+    {js_callback_video}
+</body>
+</html>
+"""
 
 # --- HIỂN THỊ IFRAME VIDEO / LOGIC BỎ QUA ---
 
 if not st.session_state.video_ended:
+    
+    # 🎯 FIX: CHUYỂN LOGIC CHỈNH SỬA HTML VÀO TRONG KHỐI NÀY
+    intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
+    intro_chars_html = ''.join([
+        f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'
+        for char in intro_title
+    ])
+    
+    # Thực hiện thao tác replace
+    modified_html_for_display = html_content_modified.replace(
+        '<div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>',
+        f'<div id="intro-text-container">{intro_chars_html}</div>'
+    )
+    
     # --- HIỂN THỊ IFRAME VIDEO ---
-    st.components.v1.html(html_content_modified, height=1080, scrolling=False)
+    st.components.v1.html(modified_html_for_display, height=1080, scrolling=False)
 
     # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
     grid_cells_html = ""
@@ -957,4 +979,3 @@ if st.session_state.first_load:
 # 🎯 FINAL LOGIC: Mark video as ended after initial load (if it ran) to skip on subsequent direct refreshes
 if not st.session_state.video_ended:
     st.session_state.video_ended = True
-
