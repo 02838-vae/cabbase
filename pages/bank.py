@@ -93,6 +93,7 @@ def get_base64_encoded_file(file_path):
             
         with open(path_to_check, "rb") as f:
             return base64.b64encode(f.read()).decode("utf-8")
+ 
     except Exception as e:
         print(f"Lỗi đọc file ảnh {file_path}: {e}")
         return fallback_base64
@@ -306,7 +307,6 @@ def parse_pl1(source):
             elif is_question_started:
                  current["question"] += " " + clean_p
             
-            # Xử lý trường hợp dòng đầu tiên không phải là câu hỏi có đánh số/phrase (đã bị bỏ qua bởi must_switch_q)
             elif not is_question_started and not current["options"]:
                 current["question"] = clean_p
 
@@ -324,22 +324,17 @@ def display_all_questions(questions):
         st.warning("Không có câu hỏi nào để hiển thị.")
         return
     
-    # Định nghĩa SHARP_OUTLINE (Đổ bóng đen sắc nét)
-    SHARP_OUTLINE = "-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000"
-
     for i, q in enumerate(questions, start=1):
         st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
         
         for opt in q["options"]:
             # Dùng clean_text để so sánh, bỏ qua khoảng trắng, ký tự ẩn
             if clean_text(opt) == clean_text(q["answer"]):
-                # Đáp án đúng: Xanh lá + Glow xanh (Tận dụng nền đen bán trong suốt từ CSS class)
-                # ĐÃ THÊM MÀU TRẮNG VÀ VIỀN ĐEN SẮC NÉT TRONG CSS CHUNG
-                color_style = f"color:#00ff00; text-shadow: {SHARP_OUTLINE}, 0 0 3px rgba(0, 255, 0, 0.8);"
+                # Đáp án đúng: Xanh lá
+                color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
             else:
-                # Đáp án thường: Trắng (Tận dụng nền đen bán trong suốt từ CSS class)
-                # ĐÃ THÊM MÀU TRẮNG VÀ VIỀN ĐEN SẮC NÉT TRONG CSS CHUNG
-                color_style = f"color:#FFFFFF; text-shadow: {SHARP_OUTLINE};"
+                # Đáp án thường: Trắng (ĐÃ THÊM FONT-WEIGHT)
+                color_style = "color:#FFFFFF; font-weight: 700 !important;" 
             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
@@ -356,9 +351,6 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
     PASS_RATE = 0.75
     bank_slug = bank_name.split()[-1].lower()
     test_key_prefix = f"{key_prefix}_{bank_slug}"
-
-    # Định nghĩa SHARP_OUTLINE (Đổ bóng đen sắc nét)
-    SHARP_OUTLINE = "-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000"
     
     if f"{test_key_prefix}_started" not in st.session_state:
         st.session_state[f"{test_key_prefix}_started"] = False
@@ -388,9 +380,6 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}" 
             # Đảm bảo radio button có giá trị mặc định để tránh lỗi
             default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
-            
-            # DÙNG ST.RADIO - CẦN ĐẢM BẢO LABEL CÓ MÀU TRẮNG ĐẬM RÕ RÀNG.
-            # Đã fix trong CSS chung
             st.radio("", q["options"], index=q["options"].index(default_val) if default_val in q["options"] else 0, key=q_key)
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
         if st.button("✅ Nộp bài Test", key=f"{test_key_prefix}_submit_btn"):
@@ -412,16 +401,13 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
             for opt in q["options"]:
                 opt_clean = clean_text(opt)
-                # CHỈNH SỬA TẠI ĐÂY: KHÔNG CẦN SET LẠI MÀU TRẮNG TRONG STYLE TRƯỜNG HỢP THƯỜNG
                 if opt_clean == correct:
-                    # Đúng: Xanh lá + Glow xanh 
-                    color_style = f"color:#00ff00; text-shadow: {SHARP_OUTLINE}, 0 0 3px rgba(0, 255, 0, 0.8);"
+                    color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
                 elif opt_clean == clean_text(selected_opt):
-                    # Sai: Đỏ + Glow đỏ 
-                    color_style = f"color:#ff3333; text-shadow: {SHARP_OUTLINE}, 0 0 3px rgba(255, 0, 0, 0.8);"
+                    color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8);"
                 else:
-                    # Thường: Trắng (Màu trắng đã được set trong CSS chung, giữ nguyên chỉ cần gán viền đen)
-                    color_style = f"color:#FFFFFF; text-shadow: {SHARP_OUTLINE};"
+                    # Đáp án khác: Trắng (ĐÃ THÊM FONT-WEIGHT)
+                    color_style = "color:#FFFFFF; font-weight: 700 !important;" 
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
 
             if is_correct: score += 1
@@ -457,7 +443,7 @@ MOBILE_IMAGE_FILE = "bank_mobile.jpg"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
-# === CSS (ĐÃ CHỈNH SỬA LẠI - THÊM !important CHO ST.RADIO LABEL) ===
+# === CSS ===
 css_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -582,7 +568,8 @@ a#manual-home-btn:hover {{
 @media (max-width: 768px) {{
     #back-to-home-btn-container {{ top: 5px; left: 5px; }}
     #main-title-container {{ height: 100px; padding-top: 10px; }}
-    #main-title-container h1 {{ font-size: 8vw; line-height: 1.5 !important; }}
+    #main-title-container h1 {{ font-size: 8vw;
+    line-height: 1.5 !important; }}
     .main > div:first-child {{ padding-top: 20px !important; }}
 }}
 
@@ -621,36 +608,25 @@ a#manual-home-btn:hover {{
     padding: 5px 15px; margin-bottom: 10px; line-height: 1.4 !important;
 }}
 
-/* ĐÃ SỬA: LOẠI BỎ HOÀN TOÀN BOX BAO QUANH ĐÁP ÁN */
+/* ĐÃ SỬA: Tăng font-weight để chữ trắng nổi bật hơn */
 .bank-answer-text {{
     font-family: 'Oswald', sans-serif !important;
     font-weight: 700 !important; 
     font-size: 22px !important; 
-    padding: 4px 15px; margin: 4px 0; 
+    padding: 5px 15px; margin: 2px 0;
     line-height: 1.5 !important; 
     display: block;
-    /* MÀU TRẮNG ĐẬM RÕ RÀNG (ĐÃ BỎ !important CHO PHÉP INLINE STYLE GHI ĐÈ) */
-    color: #FFFFFF; 
-    /* LOẠI BỎ BOX */
-    background-color: transparent; 
-    border-radius: 0;
-    /* Giữ sharp outline để chữ nổi hơn nữa */
-    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
 }}
 
-/* 💥 CHỈNH SỬA CHO ST.RADIO LABEL (CHẾ ĐỘ LÀM BÀI) - ĐÃ THÊM !important */
+/* ĐÃ SỬA: Tăng font-weight để chữ trắng nổi bật hơn */
 .stRadio label {{
-    /* MÀU TRẮNG ĐẬM RÕ RÀNG - ĐÃ THÊM !important */
-    color: #FFFFFF !important; 
+    color: #FFFFFF !important;
+    /* Màu trắng tuyệt đối */
     font-size: 22px !important; 
-    font-weight: 700 !important; /* Đã thêm !important */
+    font-weight: 700 !important;
+    /* Tăng độ dày chữ */
     font-family: 'Oswald', sans-serif !important; 
-    padding: 4px 12px;
-    /* LOẠI BỎ BOX */
-    background-color: transparent; 
-    border-radius: 0;
-    /* Giữ sharp outline */
-    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+    padding: 2px 12px;
 }}
 div[data-testid="stMarkdownContainer"] p {{
     font-size: 22px !important; 
@@ -809,7 +785,6 @@ if bank_choice != "----":
                         st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
                         # Đảm bảo radio button có giá trị mặc định để tránh lỗi
                         default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
-                        # ĐÃ FIX MÀU TRẮNG ĐẬM RÕ RÀNG TRONG CSS LỚP .stRadio label
                         st.radio("", q["options"], index=q["options"].index(default_val) if default_val in q["options"] else 0, key=q_key)
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
                     if st.button("✅ Nộp bài", key="submit_group"):
@@ -817,9 +792,6 @@ if bank_choice != "----":
                         st.rerun()
                 else:
                     score = 0
-                    # Định nghĩa SHARP_OUTLINE (Đổ bóng đen sắc nét)
-                    SHARP_OUTLINE = "-1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000"
-                    
                     for i, q in enumerate(batch, start=start+1):
                         q_key = f"q_{i}_{hash(q['question'])}" 
                         selected_opt = st.session_state.get(q_key)
@@ -828,19 +800,13 @@ if bank_choice != "----":
                         st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
                         for opt in q["options"]:
                             opt_clean = clean_text(opt)
-                            
-                            # LOGIC TÔ MÀU ĐÁP ÁN:
                             if opt_clean == correct:
-                                # Đúng: Xanh lá + Glow xanh 
-                                color_style = f"color:#00ff00; text-shadow: {SHARP_OUTLINE}, 0 0 3px rgba(0, 255, 0, 0.8);"
+                                color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
                             elif opt_clean == clean_text(selected_opt):
-                                # Sai: Đỏ + Glow đỏ 
-                                color_style = f"color:#ff3333; text-shadow: {SHARP_OUTLINE}, 0 0 3px rgba(255, 0, 0, 0.8);"
+                                color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8);"
                             else:
-                                # Thường: Trắng (Màu trắng đã được set trong CSS chung, giữ nguyên chỉ cần gán viền đen)
-                                color_style = f"color:#FFFFFF; text-shadow: {SHARP_OUTLINE};"
-                            
-                            # Màu sẽ được áp dụng chính xác nhờ việc loại bỏ !important khỏi .bank-answer-text
+                                # Đáp án khác: Trắng (ĐÃ THÊM FONT-WEIGHT)
+                                color_style = "color:#FFFFFF; font-weight: 700 !important;" 
                             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
                         
                         if is_correct: 
