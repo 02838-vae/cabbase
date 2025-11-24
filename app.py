@@ -13,7 +13,6 @@ st.set_page_config(
 
 # Khởi tạo session state
 if 'video_ended' not in st.session_state:
-    # SỬA LỖI: Đổi st.session_session thành st.session_state
     st.session_state.video_ended = False
 
 # --- CÁC HÀM TIỆN ÍCH ---
@@ -426,7 +425,8 @@ iframe:first-of-type {{
     padding: 0 80px; 
     
     opacity: 0;
-    transition: opacity 2s ease-out 5s; 
+    /* ĐIỀU CHỈNH QUAN TRỌNG: GỠ BỎ ĐỘ TRỄ 5S */
+    transition: opacity 1s ease-out; 
     z-index: 10000;
     pointer-events: none; 
 }}
