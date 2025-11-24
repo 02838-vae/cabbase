@@ -994,7 +994,7 @@ if len(music_files) > 0:
 """, unsafe_allow_html=True)
 
 # --- NAVIGATION BUTTONS (HTML VERSION) ---
-navigation_buttons_html = """
+st.markdown("""
 <div class="nav-buttons-wrapper">
     <a href="partnumber" class="nav-button" onclick="window.parent.location.href='partnumber'; return false;">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
@@ -1010,13 +1010,12 @@ navigation_buttons_html = """
         <span>NGÂN HÀNG TRẮC NGHIỆM</span>
     </a>
 </div>
-"""
-
-st.markdown(navigation_buttons_html, unsafe_allow_html=True)
+""", unsafe_allow_html=True)
 
 # Mark first load as complete
 if st.session_state.first_load:
     st.session_state.first_load = False
+
 
 
 
