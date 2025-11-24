@@ -16,7 +16,7 @@ def clean_text(s: str) -> str:
         return ""
     
     # GIỮ NGUYÊN các pattern điền chỗ trống:
-    # - 2-10 dấu chấm (có thể có space xen kẽ): .... hoặc . . .
+    # - 2-10 dấu chấm (có thể có space xen kẽ): .... hoặc . . . .
     # - 2-10 gạch dưới (có thể có space xen kẽ): ____ hoặc __ __
     # - Ngoặc chứa các ký tự trên: (____) hoặc (__  __) → chuẩn hóa thành (____) 
     
@@ -25,7 +25,7 @@ def clean_text(s: str) -> str:
     counter = 0
     
     # BƯỚC 1: Xử lý ngoặc có nhiều space/ký tự → chuẩn hóa thành 4 spaces
-    # VD: (__          __) → (____)
+    # VD: (__           __) → (____)
     temp_s = re.sub(r'\([\s._-]{2,}\)', '(    )', temp_s)  # Ngoặc đơn
     temp_s = re.sub(r'\[[\s._-]{2,}\]', '[    ]', temp_s)  # Ngoặc vuông
     
@@ -93,7 +93,6 @@ def get_base64_encoded_file(file_path):
             
         with open(path_to_check, "rb") as f:
             return base64.b64encode(f.read()).decode("utf-8")
- 
     except Exception as e:
         print(f"Lỗi đọc file ảnh {file_path}: {e}")
         return fallback_base64
@@ -116,7 +115,7 @@ def parse_cabbank(source):
                 if current["question"] and current["options"]:
                     if not current["answer"] and current["options"]:
                         current["answer"] = current["options"][0]
-                questions.append(current)
+                    questions.append(current)
                 current = {"question": clean_text(p), "options": [], "answer": ""}
             else:
                 if current["question"]: current["question"] += " " + clean_text(p)
@@ -129,7 +128,7 @@ def parse_cabbank(source):
                 if current["question"] and current["options"]:
                     if not current["answer"] and current["options"]:
                         current["answer"] = current["options"][0]
-                questions.append(current)
+                    questions.append(current)
                 current = {"question": clean_text(pre_text), "options": [], "answer": ""}
             else:
                 if current["question"]: current["question"] += " " + clean_text(pre_text)
@@ -240,7 +239,7 @@ def parse_pl1(source):
                 q_dict["answer"] = q_dict["options"][0] 
             q_list.append(q_dict)
         return {"question": "", "options": [], "answer": ""}
-    
+
     for p in paras:
         clean_p = clean_text(p)
         if not clean_p: continue
@@ -306,7 +305,7 @@ def parse_pl1(source):
             # Nếu đã đủ 3 đáp án (hoặc không phải option) nhưng không chuyển câu, thêm vào Question text.
             elif is_question_started:
                  current["question"] += " " + clean_p
-            
+        
             elif not is_question_started and not current["options"]:
                 current["question"] = clean_p
 
@@ -333,8 +332,8 @@ def display_all_questions(questions):
                 # Đáp án đúng: Xanh lá
                 color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
             else:
-                # Đáp án thường: Trắng (ĐÃ THÊM FONT-WEIGHT)
-                color_style = "color:#FFFFFF; font-weight: 700 !important;" 
+                # Đáp án thường: Trắng
+                color_style = "color:#FFFFFF; font-weight:700;"
             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
@@ -406,8 +405,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
                 elif opt_clean == clean_text(selected_opt):
                     color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8);"
                 else:
-                    # Đáp án khác: Trắng (ĐÃ THÊM FONT-WEIGHT)
-                    color_style = "color:#FFFFFF; font-weight: 700 !important;" 
+                    color_style = "color:#FFFFFF; font-weight:700;"
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
 
             if is_correct: score += 1
@@ -568,8 +566,7 @@ a#manual-home-btn:hover {{
 @media (max-width: 768px) {{
     #back-to-home-btn-container {{ top: 5px; left: 5px; }}
     #main-title-container {{ height: 100px; padding-top: 10px; }}
-    #main-title-container h1 {{ font-size: 8vw;
-    line-height: 1.5 !important; }}
+    #main-title-container h1 {{ font-size: 8vw; line-height: 1.5 !important; }}
     .main > div:first-child {{ padding-top: 20px !important; }}
 }}
 
@@ -805,8 +802,7 @@ if bank_choice != "----":
                             elif opt_clean == clean_text(selected_opt):
                                 color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8);"
                             else:
-                                # Đáp án khác: Trắng (ĐÃ THÊM FONT-WEIGHT)
-                                color_style = "color:#FFFFFF; font-weight: 700 !important;" 
+                                color_style = "color:#FFFFFF; font-weight:700;"
                             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
                         
                         if is_correct: 
