@@ -1000,26 +1000,37 @@ if len(music_files) > 0:
 </div>
 """, unsafe_allow_html=True)
 
-# --- NAVIGATION BUTTONS ---
-st.markdown('<div class="nav-buttons-wrapper">', unsafe_allow_html=True)
+# --- NAVIGATION BUTTONS (FIXED HTML VERSION WITH SESSION STATE) ---
+st.markdown("""
+<div class="nav-buttons-wrapper">
+    <a href="#" class="nav-button" id="btn-partnumber" onclick="navigateToPage('/partnumber'); return false;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
+        </svg>
+        <span>TRA CỨU PART NUMBER</span>
+    </a>
+    <a href="#" class="nav-button" id="btn-bank" onclick="navigateToPage('/bank'); return false;">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+        </svg>
+        <span>NGÂN HÀNG TRẮC NGHIỆM</span>
+    </a>
+</div>
 
-col1, col2 = st.columns(2)
-
-with col1:
-    if st.button("🔍 TRA CỨU PART NUMBER", key="nav_partnumber", use_container_width=True):
-        st.session_state.from_home = True
-        st.switch_page("pages/partnumber.py")
-
-with col2:
-    if st.button("✅ NGÂN HÀNG TRẮC NGHIỆM", key="nav_bank", use_container_width=True):
-        st.session_state.from_home = True
-        st.switch_page("pages/bank.py")
-
-st.markdown('</div>', unsafe_allow_html=True)
+<script>
+function navigateToPage(url) {
+    // Set flag trong sessionStorage (vì st.session_state không thể truy cập từ JavaScript)
+    sessionStorage.setItem('from_home', 'true');
+    // Chuyển trang
+    window.parent.location.href = url;
+}
+</script>
+""", unsafe_allow_html=True)
 
 # Mark first load as complete
 if st.session_state.first_load:
     st.session_state.first_load = False
+
 
 
 
