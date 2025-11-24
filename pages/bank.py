@@ -8,26 +8,6 @@ import base64
 import os
 import random 
 
-# --- CẤU HÌNH (PHẢI Ở ĐẦU TIÊN) ---
-st.set_page_config(page_title="Ngân hàng trắc nghiệm", layout="wide")
-
-# --- KIỂM TRA VÀ REDIRECT VỀ TRANG CHỦ ---
-if 'from_home' not in st.query_params:
-    # Nếu không có query param from_home, redirect về trang chủ
-    st.markdown("""
-    <meta http-equiv="refresh" content="0; url=/" />
-    <script>
-        window.location.href = '/';
-    </script>
-    """, unsafe_allow_html=True)
-    st.stop()
-
-# Xóa query param sau khi đã check để URL sạch hơn
-if 'from_home' in st.query_params:
-    if 'bank_cleaned_url' not in st.session_state:
-        st.session_state.bank_cleaned_url = True
-        st.query_params.clear()
-        st.rerun()
 # ====================================================
 # ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
 # ====================================================
@@ -259,7 +239,7 @@ def parse_pl1(source):
                 q_dict["answer"] = q_dict["options"][0] 
             q_list.append(q_dict)
         return {"question": "", "options": [], "answer": ""}
-
+    
     for p in paras:
         clean_p = clean_text(p)
         if not clean_p: continue
@@ -353,7 +333,7 @@ def display_all_questions(questions):
                 color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
             else:
                 # Đáp án thường: Trắng
-                color_style = "color:#FFFFFF; font-weight:700;"
+                color_style = "color:#FFFFFF;"
             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
@@ -425,7 +405,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
                 elif opt_clean == clean_text(selected_opt):
                     color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8);"
                 else:
-                    color_style = "color:#FFFFFF; font-weight:700;"
+                    color_style = "color:#FFFFFF;"
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
 
             if is_correct: score += 1
@@ -822,7 +802,7 @@ if bank_choice != "----":
                             elif opt_clean == clean_text(selected_opt):
                                 color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8);"
                             else:
-                                color_style = "color:#FFFFFF; font-weight:700;"
+                                color_style = "color:#FFFFFF;"
                             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
                         
                         if is_correct: 
