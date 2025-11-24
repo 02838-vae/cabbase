@@ -4,23 +4,6 @@ import os
 import re 
 import time
 
-# --- KIỂM TRA VÀ RESET URL KHI REFRESH (ĐÃ CẬP NHẬT LOGIC BỎ QUA) ---
-# Nếu không có session_state 'initialized', nghĩa là đây là lần đầu load hoặc refresh
-if 'initialized' not in st.session_state:
-    st.session_state.initialized = True
-    
-    # 🎯 NEW LOGIC: Check if we are returning from a sub-page using the 'from_home=1' query parameter
-    is_returning_from_subpage = st.query_params.get("from_home") == "1"
-    
-    if is_returning_from_subpage:
-        # Nếu quay về từ trang phụ, đánh dấu video đã kết thúc/bỏ qua
-        st.session_state.video_ended = True
-        # Xóa query param để URL trở về trang chủ sạch (/)
-        st.query_params.clear()
-    else:
-        # Reset về trang chủ nếu đang ở URL khác (hoặc là lần load đầu tiên)
-        st.query_params.clear()
-
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
     page_title="Tổ Bảo Dưỡng Số 1",
@@ -28,12 +11,23 @@ st.set_page_config(
     initial_sidebar_state="collapsed"
 )
 
-# Khởi tạo session state
+# Khởi tạo session state (Đảm bảo các biến tồn tại)
 if 'video_ended' not in st.session_state:
-    # Set default value nếu chưa được set bởi logic ở trên
     st.session_state.video_ended = False
 if 'first_load' not in st.session_state:
     st.session_state.first_load = True
+if 'initialized' not in st.session_state:
+    st.session_state.initialized = True # Mark initialization (Chỉ chạy 1 lần khi hard refresh)
+
+# 🚀 LOGIC FIX: KIỂM TRA NẾU QUAY VỀ TỪ TRANG PHỤ (CHẠY MỖI KHI LOAD LẠI)
+# 🎯 NEW LOGIC: Check if we are returning from a sub-page using the 'from_home=1' query parameter
+is_returning_from_subpage = st.query_params.get("from_home") == "1"
+
+if is_returning_from_subpage:
+    # Nếu quay về từ trang phụ, đánh dấu video đã kết thúc/bỏ qua
+    st.session_state.video_ended = True
+    # Xóa query param để URL trở về trang chủ sạch (sẽ kích hoạt rerun lần 2)
+    st.query_params.clear()
 
 # --- CÁC HÀM TIỆN ÍCH ---
 
@@ -847,115 +841,6 @@ const chars = introTextContainer.querySelectorAll('.intro-char');
 }});
 </script>
 """
-html_content_modified = f"""
-<!DOCTYPE html>
-<html>
-<head>
-    <style>
-        html, body {{
-            margin: 0;
-padding: 0;
-            overflow: hidden;
-            height: 100vh;
-            width: 100vw;
-            background-color: #000;
-}}
-    #intro-video {{
-        position: absolute;
-        top: 0;
-        left: 0;
-width: 100%;
-        height: 100%;
-        object-fit: cover;
-        z-index: 0;
-        transition: opacity 1s;
-}}
-
-    #intro-text-container {{
-        position: fixed;
-        top: 5vh;
-        width: 100%;
-text-align: center;
-        color: #FFD700;
-        font-size: 3vw;
-        font-family: 'Sacramento', cursive;
-        font-weight: 400;
-        text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.8);
-z-index: 100;
-        pointer-events: none;
-        display: flex;
-        justify-content: center;
-        opacity: 1;
-        transition: opacity 0.5s;
-}}
-    
-    .intro-char {{
-        display: inline-block;
-opacity: 0;
-        transform: translateY(-50px);
-        animation-fill-mode: forwards;
-        animation-duration: 0.8s;
-        animation-timing-function: ease-out;
-}}
-
-    @keyframes charDropIn {{
-        from {{
-            opacity: 0;
-transform: translateY(-50px);
-        }}
-        to {{
-            opacity: 1;
-transform: translateY(0);
-        }}
-    }}
-
-    .intro-char.char-shown {{
-        animation-name: charDropIn;
-}}
-    
-    #click-to-play-overlay {{
-        position: absolute;
-top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        z-index: 200; 
-        cursor: pointer;
-        background: rgba(0, 0, 0, 0.5); 
-        display: flex;
-align-items: center;
-        justify-content: center;
-        font-family: 'Playfair Display', serif;
-        color: #fff;
-        font-size: 2vw;
-        text-shadow: 1px 1px 3px #000;
-        transition: opacity 0.5s;
-}}
-
-    #click-to-play-overlay.hidden {{
-        opacity: 0;
-        pointer-events: none;
-}}
-
-    @media (max-width: 768px) {{
-        #intro-text-container {{
-            font-size: 6vw;
-}}
-         #click-to-play-overlay {{
-            font-size: 4vw;
-}}
-    }}
-</style>
-</head>
-<body>
-    <div id="intro-text-container">KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI</div>
-    <video id="intro-video" muted playsinline></video>
-    <audio id="background-audio"></audio>
-    <div id="click-to-play-overlay">CLICK/TOUCH VÀO ĐÂY ĐỂ BẮT ĐẦU</div>
-    {js_callback_video}
-</body>
-</html>
-"""
 intro_title = "KHÁM PHÁ THẾ GIỚI CÙNG CHÚNG TÔI"
 intro_chars_html = ''.join([
     f'<span class="intro-char">{char}</span>' if char != ' ' else '<span class="intro-char">&nbsp;</span>'
@@ -1069,6 +954,6 @@ st.markdown("""
 if st.session_state.first_load:
     st.session_state.first_load = False
 
-# 🎯 NEW LOGIC: Mark video as ended after initial load (if it ran) to skip on subsequent direct refreshes
+# 🎯 FINAL LOGIC: Mark video as ended after initial load (if it ran) to skip on subsequent direct refreshes
 if not st.session_state.video_ended:
     st.session_state.video_ended = True
