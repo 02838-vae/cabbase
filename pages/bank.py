@@ -25,7 +25,7 @@ def clean_text(s: str) -> str:
     counter = 0
     
     # BƯỚC 1: Xử lý ngoặc có nhiều space/ký tự → chuẩn hóa thành 4 spaces
-    # VD: (__          __) → (____)
+    # VD: (__           __) → (____)
     temp_s = re.sub(r'\([\s._-]{2,}\)', '(    )', temp_s)  # Ngoặc đơn
     temp_s = re.sub(r'\[[\s._-]{2,}\]', '[    ]', temp_s)  # Ngoặc vuông
     
@@ -115,7 +115,7 @@ def parse_cabbank(source):
                 if current["question"] and current["options"]:
                     if not current["answer"] and current["options"]:
                         current["answer"] = current["options"][0]
-                questions.append(current)
+                    questions.append(current)
                 current = {"question": clean_text(p), "options": [], "answer": ""}
             else:
                 if current["question"]: current["question"] += " " + clean_text(p)
@@ -128,7 +128,7 @@ def parse_cabbank(source):
                 if current["question"] and current["options"]:
                     if not current["answer"] and current["options"]:
                         current["answer"] = current["options"][0]
-                questions.append(current)
+                    questions.append(current)
                 current = {"question": clean_text(pre_text), "options": [], "answer": ""}
             else:
                 if current["question"]: current["question"] += " " + clean_text(pre_text)
@@ -305,7 +305,7 @@ def parse_pl1(source):
             # Nếu đã đủ 3 đáp án (hoặc không phải option) nhưng không chuyển câu, thêm vào Question text.
             elif is_question_started:
                  current["question"] += " " + clean_p
-    
+        
             elif not is_question_started and not current["options"]:
                 current["question"] = clean_p
 
@@ -624,8 +624,6 @@ a#manual-home-btn:hover {{
     /* Tăng độ dày chữ */
     font-family: 'Oswald', sans-serif !important; 
     padding: 2px 12px;
-    /* FIX ĐỘ TƯƠNG PHẢN: Thêm text-shadow để chữ nổi bật trên nền */
-    text-shadow: 0 0 5px rgba(0, 0, 0, 0.9);
 }}
 div[data-testid="stMarkdownContainer"] p {{
     font-size: 22px !important; 
