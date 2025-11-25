@@ -8,6 +8,54 @@ import base64
 import os
 import random 
 
+# --- LOGIC VIDEO INTRO (SAO CHÉP TỪ APP.PY) ---
+
+# Khởi tạo session state (Bắt buộc phải có)
+if 'video_ended' not in st.session_state:
+    st.session_state.video_ended = False
+if 'first_load' not in st.session_state:
+    st.session_state.first_load = True
+
+# --- HÀM KIỂM TRA VÀ HIỂN THỊ VIDEO INTRO ---
+def check_and_show_intro():
+    # Kiểm tra và Reset URL khi refresh (Logic của bạn)
+    if 'initialized' not in st.session_state:
+        st.session_state.initialized = True
+        query_params = st.query_params.to_dict()
+        if 'skip_intro' not in query_params:
+            st.query_params.clear()
+
+    # --- VIDEO INTRO LOGIC (Phần hiển thị video) ---
+    if not st.session_state.video_ended:
+        st.subheader("Chào mừng đến với ứng dụng")
+        
+        # Thêm toàn bộ mã HTML/CSS/JS cho video player của bạn ở đây
+        # Ví dụ:
+        # st.markdown("""...""", unsafe_allow_html=True)
+        # st.markdown(get_video_html("videos/intro.mp4"), unsafe_allow_html=True)
+        
+        # Giả lập nút bấm để qua intro (Nếu bạn có nút)
+        # if st.button("Bỏ qua Intro"):
+        #     st.session_state.video_ended = True
+        #     st.rerun()
+
+        # THAY THẾ TOÀN BỘ MÃ HIỂN THỊ VIDEO CỦA BẠN VÀO ĐÂY.
+        # Ví dụ:
+        # st.markdown(
+        #     """<video width="100%" autoplay onended="document.getElementById('video-placeholder').style.display='none'; window.st_rerun_trigger = true;" id="myVideo"><source src="data:video/mp4;base64,..." type="video/mp4"></video>""", 
+        #     unsafe_allow_html=True
+        # )
+        
+        # Rất quan trọng: Dùng st.stop() để ngăn không cho nội dung trang chính render
+        st.stop()
+        # Lưu ý: Hàm này cần phải được gọi trước bất kỳ nội dung nào khác của trang
+        
+    return st.session_state.video_ended
+
+
+# --- CHẠY LOGIC INTRO ---
+# check_and_show_intro()
+
 # ====================================================
 # ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
 # ====================================================
