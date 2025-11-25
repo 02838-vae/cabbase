@@ -662,7 +662,7 @@ st.markdown("""
     <div id="back-to-home-btn-container">
         <a id="manual-home-btn" href="/?skip_intro=1" target="_self">🏠 Về Trang Chủ</a>
     </div>
-    <div id="main-title-container"><h1>TỔ BẢO DƯỠNG SỐ <span class="number-one">1</span></h1></div>
+    <div id="main-title-container"><h1>Tổ Bảo Dưỡng Số <span class="number-one">1</span></h1></div>
 </div>
 """, unsafe_allow_html=True)
 
