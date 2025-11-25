@@ -1000,16 +1000,16 @@ if len(music_files) > 0:
 </div>
 """, unsafe_allow_html=True)
 
-# --- NAVIGATION BUTTONS (RESTORED WITH WORKING NAVIGATION) ---
+# --- NAVIGATION BUTTONS (SỬA LẠI LOGIC NAVIGATION) ---
 st.markdown("""
 <div class="nav-buttons-wrapper">
-    <a href="/partnumber?from_home=1" class="nav-button" target="_self">
+    <a href="/partnumber" class="nav-button" target="_self">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"></path>
         </svg>
         <span>TRA CỨU PART NUMBER</span>
     </a>
-    <a href="/bank?from_home=1" class="nav-button" target="_self">
+    <a href="/bank" class="nav-button" target="_self">
         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
         </svg>
@@ -1021,6 +1021,7 @@ st.markdown("""
 # Mark first load as complete
 if st.session_state.first_load:
     st.session_state.first_load = False
+
 
 
 
