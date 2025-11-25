@@ -5,11 +5,13 @@ import re
 import time
 
 # --- KIỂM TRA VÀ RESET URL KHI REFRESH ---
-# Nếu không có session_state 'initialized', nghĩa là đây là lần đầu load hoặc refresh
 if 'initialized' not in st.session_state:
     st.session_state.initialized = True
-    # Reset về trang chủ nếu đang ở URL khác
-    st.query_params.clear()
+    # Kiểm tra xem có param skip_intro không
+    query_params = st.query_params.to_dict()
+    if 'skip_intro' not in query_params:
+        # Nếu không có skip_intro, xóa tất cả params (refresh thông thường)
+        st.query_params.clear()
 
 # --- CẤU HÌNH BAN ĐẦU ---
 st.set_page_config(
@@ -1021,6 +1023,7 @@ st.markdown("""
 # Mark first load as complete
 if st.session_state.first_load:
     st.session_state.first_load = False
+
 
 
 
