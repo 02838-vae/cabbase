@@ -657,12 +657,15 @@ st.markdown(css_style, unsafe_allow_html=True)
 # ====================================================
 # 🧭 HEADER & BODY
 # ====================================================
+st.link_button(
+    label="🏠 Về Trang Chủ",
+    url="/?skip_intro=1",
+    type="primary",
+    help="Chuyển về Trang Chính và bỏ qua video giới thiệu"
+)
 st.markdown("""
 <div id="header-content-wrapper">
-    <div id="back-to-home-btn-container">
-        <a id="manual-home-btn" href="javascript:void(0);" onclick="window.location.href = '/?skip_intro=1';" target="_self">🏠 Về Trang Chủ</a>
-    </div>
-    <div id="main-title-container"><h1>Tổ Bảo Dưỡng Số <span class="number-one">1</span></h1></div>
+     <div id="main-title-container"><h1>Tổ Bảo Dưỡng Số <span class="number-one">1</span></h1></div>
 </div>
 """, unsafe_allow_html=True)
 
