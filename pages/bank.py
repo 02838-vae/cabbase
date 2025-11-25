@@ -660,7 +660,7 @@ st.markdown(css_style, unsafe_allow_html=True)
 st.markdown("""
 <div id="header-content-wrapper">
     <div id="back-to-home-btn-container">
-        <a id="manual-home-btn" href="/" target="_self">🏠 Về Trang Chủ</a>
+        <a id="manual-home-btn" href="/?skip_intro=1" target="_self">🏠 Về Trang Chủ</a>
     </div>
     <div id="main-title-container"><h1>Tổ Bảo Dưỡng Số <span class="number-one">1</span></h1></div>
 </div>
