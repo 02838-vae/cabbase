@@ -81,7 +81,7 @@ def read_docx_paragraphs(source):
     return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
 
 def get_base64_encoded_file(file_path):
-    fallback_base64 = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+    fallback_base64 = "iVBORw0KGgoAAAANSUhEUAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
     try:
         # Cơ chế tìm kiếm file ảnh: Ưu tiên trong thư mục hiện tại/chứa script
         path_to_check = os.path.join(os.path.dirname(__file__), file_path)
@@ -675,7 +675,7 @@ if "current_group_idx" not in st.session_state: st.session_state.current_group_i
 if "submitted" not in st.session_state: st.session_state.submitted = False
 if "current_mode" not in st.session_state: st.session_state.current_mode = "group"
 if "last_bank_choice" not in st.session_state: st.session_state.last_bank_choice = "----" 
-if "doc_selected" not in st.session_state: st.session_state.doc_selected = "Phụ Lục 1" 
+if "doc_selected" not in st.session_state: st.session_state.doc_selected = "Phụ lục 1 : Ngữ pháp chung" 
 
 # CẬP NHẬT LIST NGÂN HÀNG
 BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật VAECO", "Ngân hàng Docwise"]
@@ -708,9 +708,9 @@ if bank_choice != "----":
         source = "lawbank.docx"
     elif "Docwise" in bank_choice:
         is_docwise = True
-        # Dropdown phụ cho Docwise
-        doc_options = ["Phụ Lục 1"]
-        doc_selected_new = st.selectbox("Chọn Phụ lục:", doc_options, key="docwise_selector")
+        # ĐÃ SỬA: Cập nhật nhãn Phụ lục 2
+        doc_options = ["Phụ lục 1 : Ngữ pháp chung", "Phụ lục 2 : Từ vựng, thuật ngữ"]
+        doc_selected_new = st.selectbox("Chọn Phụ lục:", doc_options, index=doc_options.index(st.session_state.get('doc_selected', doc_options[0])), key="docwise_selector")
         
         # Xử lý khi đổi phụ lục (reset mode)
         if st.session_state.doc_selected != doc_selected_new:
@@ -720,8 +720,11 @@ if bank_choice != "----":
             st.session_state.current_mode = "group"
             st.rerun()
 
-        if st.session_state.doc_selected == "Phụ Lục 1":
+        if st.session_state.doc_selected == "Phụ lục 1 : Ngữ pháp chung":
             source = "PL1.docx" # File PL1.docx
+        # ĐÃ SỬA: Cập nhật điều kiện so sánh cho Phụ lục 2
+        elif st.session_state.doc_selected == "Phụ lục 2 : Từ vựng, thuật ngữ": 
+            source = "PL2.docx" # File PL2.docx
         
     # LOAD CÂU HỎI
     questions = []
