@@ -413,10 +413,10 @@ def display_all_questions(questions):
         for opt in q["options"]:
             # Dùng clean_text để so sánh, bỏ qua khoảng trắng, ký tự ẩn
             if clean_text(opt) == clean_text(q["answer"]):
-                # Đáp án đúng: Xanh lá
-                color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
+                # Đáp án đúng: Xanh lá (Bỏ shadow)
+                color_style = "color:#00ff00;" 
             else:
-                # Đáp án thường: Trắng
+                # Đáp án thường: Trắng (Bỏ shadow)
                 color_style = "color:#FFFFFF;"
             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
         
@@ -445,12 +445,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
     if not st.session_state[f"{test_key_prefix}_started"]:
         st.markdown('<div class="result-title"><h3>📝 LÀM BÀI TEST 50 CÂU</h3></div>', unsafe_allow_html=True)
         
-        # Tinh gọn chú thích giới thiệu
-        test_size = min(TOTAL_QUESTIONS, len(questions))
-        pass_count = int(test_size * PASS_RATE)
-        pass_percent = int(PASS_RATE * 100)
-        
-        st.info(f"Tổng câu hỏi: **{test_size}** (chọn ngẫu nhiên). Tỷ lệ ĐẠT (PASS): **{pass_percent}%** ({pass_count} câu đúng).")
+        # ❌ ĐÃ BỎ BLOCK st.info GIỚI THIỆU BÀI TEST
         
         if st.button("🚀 Bắt đầu Bài Test", key=f"{test_key_prefix}_start_btn"):
             st.session_state[f"{test_key_prefix}_questions"] = get_random_questions(questions, TOTAL_QUESTIONS)
@@ -491,10 +486,13 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             for opt in q["options"]:
                 opt_clean = clean_text(opt)
                 if opt_clean == correct:
-                    color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
+                    # Đáp án đúng: Xanh lá (Bỏ shadow)
+                    color_style = "color:#00ff00;" 
                 elif opt_clean == clean_text(selected_opt):
-                    color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8);"
+                    # Đáp án sai đã chọn: Đỏ (Bỏ shadow)
+                    color_style = "color:#ff3333;" 
                 else:
+                    # Đáp án thường: Trắng (Bỏ shadow)
                     color_style = "color:#FFFFFF;"
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
 
@@ -534,6 +532,7 @@ img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 # === CSS ===
 css_style = f"""
 <style>
+/* Đã thống nhất font nội dung là Oswald, tiêu đề là Playfair Display */
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap');
 @keyframes colorShift {{
@@ -664,61 +663,69 @@ a#manual-home-btn:hover {{
     padding-top: 40px !important; padding-bottom: 2rem !important;
 }}
 
-/* FIX YÊU CẦU 2: TITLE LỚN NHƯNG VẪN 1 HÀNG */
+/* SUB-TITLE & RESULT TITLE */
 #sub-static-title, .result-title {{
     margin-top: 150px;
     margin-bottom: 30px; text-align: center;
 }}
 #sub-static-title h2, .result-title h3 {{
-    font-family: 'Playfair Display', serif;
+    font-family: 'Playfair Display', serif; /* Giữ nguyên font tiêu đề */
     font-size: 2rem;
-    /* Desktop */
     color: #FFEA00;
     text-shadow: 0 0 15px #FFEA00;
 }}
 @media (max-width: 768px) {{
     #sub-static-title h2, .result-title h3 {{
-        /* Tăng lên 4.8vw và giảm spacing để chữ to hơn mà vẫn 1 dòng */
         font-size: 4.8vw !important;
         letter-spacing: -0.5px;
         white-space: nowrap; 
     }}
 }}
 
-/* STYLE CÂU HỎI & ĐÁP ÁN */
+/* STYLE CÂU HỎI & ĐÁP ÁN - ĐÃ THỐNG NHẤT FONT VÀ BỎ SHADOW/EFFECTS */
 .bank-question-text {{
-    color: #FFDD00 !important;
+    color: #FFDD00 !important; /* Giữ màu vàng cho câu hỏi */
     font-weight: 700 !important;
     font-size: 22px !important; 
-    font-family: 'Oswald', sans-serif !important;
-    text-shadow: 0 0 5px rgba(255, 221, 0, 0.5);
+    font-family: 'Oswald', sans-serif !important; /* Thống nhất font content */
+    text-shadow: none; /* ❌ BỎ SHADOW */
     padding: 5px 15px; margin-bottom: 10px; line-height: 1.4 !important;
 }}
 
-/* ĐÃ SỬA: Tăng font-weight để chữ trắng nổi bật hơn */
 .bank-answer-text {{
-    font-family: 'Oswald', sans-serif !important;
+    font-family: 'Oswald', sans-serif !important; /* Thống nhất font content */
     font-weight: 700 !important; 
     font-size: 22px !important; 
     padding: 5px 15px; margin: 2px 0;
     line-height: 1.5 !important; 
     display: block;
+    /* Màu sắc được xử lý bằng inline style */
 }}
 
-/* ĐÃ SỬA: Tăng font-weight để chữ trắng nổi bật hơn */
+/* RADIO BUTTONS (CHỌN ĐÁP ÁN) - ĐÃ THỐNG NHẤT FONT VÀ BỎ SHADOW/EFFECTS */
 .stRadio label {{
     color: #FFFFFF !important;
     font-size: 22px !important; 
     font-weight: 700 !important;
-    font-family: 'Oswald', sans-serif !important; 
+    font-family: 'Oswald', sans-serif !important; /* Thống nhất font content */
     padding: 2px 12px;
-    text-shadow: 0 0 8px rgba(255, 255, 255, 0.9), 
-                 0 0 4px rgba(255, 255, 255, 0.7),
-                 1px 1px 3px rgba(0, 0, 0, 0.8) !important;
+    text-shadow: none !important; /* ❌ BỎ SHADOW */
     background-color: transparent !important;
     border: none !important;
     display: block !important;
     margin: 4px 0 !important;
+    letter-spacing: 0.5px !important;
+}}
+
+.stRadio label:hover {{
+    text-shadow: none !important; /* ❌ BỎ SHADOW KHI HOVER */
+}}
+
+.stRadio label span, 
+.stRadio label p,
+.stRadio label div {{
+    color: #FFFFFF !important;
+    text-shadow: none !important; /* ❌ BỎ SHADOW */
     letter-spacing: 0.5px !important;
 }}
 
@@ -736,18 +743,6 @@ div[data-testid="stMarkdownContainer"] p {{
     border: none !important;
     padding: 10px 20px !important;
     width: 100%; 
-}}
-.stRadio label:hover {{
-    text-shadow: 0 0 12px rgba(255, 255, 255, 1), 
-                 0 0 6px rgba(255, 255, 255, 0.8),
-                 1px 1px 3px rgba(0, 0, 0, 0.9) !important;
-}}
-.stRadio label span, 
-.stRadio label p,
-.stRadio label div {{
-    color: #FFFFFF !important;
-    text-shadow: inherit !important;
-    letter-spacing: 0.5px !important;
 }}
 div.stSelectbox label p {{
     color: #33FF33 !important;
@@ -855,7 +850,7 @@ if bank_choice != "----":
     if st.session_state.current_mode == "group":
         # Cập nhật tiêu đề nhóm câu hỏi
         st.markdown('<div class="result-title" style="margin-top: 0px;"><h3>Luyện tập theo nhóm (20 câu/nhóm)</h3></div>', unsafe_allow_html=True)
-        group_size = 20 # ⬆️ Tăng lên 20 câu/nhóm
+        group_size = 20 # Tăng lên 20 câu/nhóm
         if total > 0:
             groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
             if st.session_state.current_group_idx >= len(groups): st.session_state.current_group_idx = 0
@@ -879,7 +874,7 @@ if bank_choice != "----":
                     st.session_state.current_mode = "all"
                     st.rerun()
             with col_test:
-                # ✏️ Đổi tên nút test
+                # Đổi tên nút test
                 if st.button("Làm bài test", key="btn_start_test"):
                     st.session_state.current_mode = "test"
                     bank_slug_new = bank_choice.split()[-1].lower()
@@ -914,11 +909,11 @@ if bank_choice != "----":
                         for opt in q["options"]:
                             opt_clean = clean_text(opt)
                             if opt_clean == correct:
-                                color_style = "color:#00ff00; text-shadow: 0 0 3px rgba(0, 255, 0, 0.8);"
+                                color_style = "color:#00ff00;" # Xanh lá, bỏ shadow
                             elif opt_clean == clean_text(selected_opt):
-                                color_style = "color:#ff3333; text-shadow: 0 0 3px rgba(255, 0, 0, 0.8);"
+                                color_style = "color:#ff3333;" # Đỏ, bỏ shadow
                             else:
-                                color_style = "color:#FFFFFF;"
+                                color_style = "color:#FFFFFF;" # Trắng chân phương
                             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
                         
                         if is_correct: 
