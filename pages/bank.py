@@ -716,8 +716,8 @@ a#manual-home-btn:hover {{
     text-shadow: 0 0 8px rgba(255, 255, 255, 0.9), 
                  0 0 4px rgba(255, 255, 255, 0.7),
                  1px 1px 3px rgba(0, 0, 0, 0.8) !important;
-    background-color: rgba(0, 0, 0, 0.4) !important;
-    border-radius: 4px;
+    background-color: transparent !important;
+    border: none !important;
     display: block !important;
     margin: 4px 0 !important;
 }}
@@ -738,7 +738,6 @@ div[data-testid="stMarkdownContainer"] p {{
     width: 100%; 
 }}
 .stRadio label:hover {{
-    background-color: rgba(0, 0, 0, 0.6) !important;
     text-shadow: 0 0 12px rgba(255, 255, 255, 1), 
                  0 0 6px rgba(255, 255, 255, 0.8),
                  1px 1px 3px rgba(0, 0, 0, 0.9) !important;
