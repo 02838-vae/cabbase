@@ -84,8 +84,7 @@ def read_docx_paragraphs(source):
         print(f"Lỗi đọc file DOCX (chỉ text): {source}. Chi tiết: {e}")
         return []
 
-# HÀM ĐỌC FILE MỚI: LẤY CẢ THÔNG TIN HIGHLIGHT (DÙNG CHO PL2)
-# ĐÃ SỬA: Loại bỏ logic Highlight, chỉ lấy text
+# HÀM ĐỌC FILE MỚI: DÙNG CHO PL2 (CHỈ LẤY TEXT)
 def read_pl2_data(source):
     """
     Hàm đọc paragraphs chỉ lấy TEXT (tương tự read_docx_paragraphs),
@@ -132,7 +131,6 @@ def get_base64_encoded_file(file_path):
 
 # ====================================================
 # 🧩 PARSER 1: NGÂN HÀNG KỸ THUẬT (CABBANK)
-# ... (parse_cabbank không thay đổi)
 # ====================================================
 def parse_cabbank(source):
     paras = read_docx_paragraphs(source)
@@ -185,7 +183,6 @@ def parse_cabbank(source):
 
 # ====================================================
 # 🧩 PARSER 2: NGÂN HÀNG LUẬT (LAWBANK)
-# ... (parse_lawbank không thay đổi)
 # ====================================================
 def parse_lawbank(source):
     paras = read_docx_paragraphs(source)
@@ -302,6 +299,7 @@ def parse_pl1(source):
                     clean_p = clean_p[match_prefix.end():].strip()
                     
                 idx = len(current["options"])
+                    
                 if idx < len(labels):
                     label = labels[idx]
                     opt_text = f"{label}. {clean_p}"
@@ -321,12 +319,11 @@ def parse_pl1(source):
     return questions
 
 # ====================================================
-# 🧩 PARSER 4: PHỤ LỤC 2 (Dùng Highlight VÀNG -> ĐÃ ĐỔI SANG DÙNG (*))
+# 🧩 PARSER 4: PHỤ LỤC 2 (Dùng dấu (*))
 # ====================================================
 def parse_pl2(source):
     """
-    Parser cho định dạng PL2 (Sử dụng ký hiệu (*) để nhận diện đáp án đúng,
-    thay vì highlight vàng như trước)
+    Parser cho định dạng PL2 (Sử dụng ký hiệu (*) để nhận diện đáp án đúng)
     """
     data = read_pl2_data(source) # SỬ DỤNG HÀM ĐỌC ĐÃ SỬA CHỈ LẤY TEXT
     if not data: return []
@@ -374,7 +371,7 @@ def parse_pl2(source):
             if is_question_started and not is_max_options_reached:
                 is_correct = False
                 
-                # THAY THẾ LOGIC HIGHLIGHT BẰNG LOGIC DẤU (*)
+                # SỬ DỤNG LOGIC DẤU (*)
                 if "(*)" in clean_p:
                     is_correct = True
                     clean_p = clean_p.replace("(*)", "").strip() # Loại bỏ ký hiệu sau khi phát hiện
@@ -403,7 +400,6 @@ def parse_pl2(source):
     return questions
 # ====================================================
 # 🌟 HÀM: XEM TOÀN BỘ CÂU HỎI
-# ... (display_all_questions không thay đổi)
 # ====================================================
 def display_all_questions(questions):
     st.markdown('<div class="result-title"><h3>📚 TOÀN BỘ NGÂN HÀNG CÂU HỎI</h3></div>', unsafe_allow_html=True)
@@ -428,7 +424,6 @@ def display_all_questions(questions):
 
 # ====================================================
 # 🌟 HÀM: TEST MODE
-# ... (get_random_questions, display_test_mode không thay đổi)
 # ====================================================
 def get_random_questions(questions, count=50):
     if len(questions) <= count: return questions
@@ -449,7 +444,13 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
 
     if not st.session_state[f"{test_key_prefix}_started"]:
         st.markdown('<div class="result-title"><h3>📝 LÀM BÀI TEST 50 CÂU</h3></div>', unsafe_allow_html=True)
-        st.info(f"Bài test sẽ gồm **{min(TOTAL_QUESTIONS, len(questions))}** câu hỏi được chọn ngẫu nhiên từ **{bank_name}**. Tỷ lệ đạt (PASS) là **{int(PASS_RATE*100)}%** ({int(TOTAL_QUESTIONS * PASS_RATE)} câu đúng).")
+        
+        # Tinh gọn chú thích giới thiệu
+        test_size = min(TOTAL_QUESTIONS, len(questions))
+        pass_count = int(test_size * PASS_RATE)
+        pass_percent = int(PASS_RATE * 100)
+        
+        st.info(f"Tổng câu hỏi: **{test_size}** (chọn ngẫu nhiên). Tỷ lệ ĐẠT (PASS): **{pass_percent}%** ({pass_count} câu đúng).")
         
         if st.button("🚀 Bắt đầu Bài Test", key=f"{test_key_prefix}_start_btn"):
             st.session_state[f"{test_key_prefix}_questions"] = get_random_questions(questions, TOTAL_QUESTIONS)
@@ -464,7 +465,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         test_batch = st.session_state[f"{test_key_prefix}_questions"]
         for i, q in enumerate(test_batch, start=1):
             st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
-            # SỬA LỖI KEY: THÊM INDEX (i) ĐỂ ĐẢM BẢO TÍNH DUY NHẤT VÀ KHẮC PHỤC StreamlitDuplicateElementKey
+            # SỬA LỖI KEY: THÊM INDEX (i) ĐỂ ĐẢM BẢO TÍNH DUY NHẤT VÀ KHẮC PHỤ StreamlitDuplicateElementKey
             q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}" 
             # Đảm bảo  có giá trị mặc định để tránh lỗi
             default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
@@ -811,7 +812,7 @@ if bank_choice != "----":
         source = "lawbank.docx"
     elif "Docwise" in bank_choice:
         is_docwise = True
-        # ĐÃ SỬA: Cập nhật nhãn Phụ lục 2
+        # Cập nhật nhãn Phụ lục 2
         doc_options = ["Phụ lục 1 : Ngữ pháp chung", "Phụ lục 2 : Từ vựng, thuật ngữ"]
         doc_selected_new = st.selectbox("Chọn Phụ lục:", doc_options, index=doc_options.index(st.session_state.get('doc_selected', doc_options[0])), key="docwise_selector")
         
@@ -847,12 +848,14 @@ if bank_choice != "----":
         st.stop() 
     
     total = len(questions)
-    st.success(f"Đã tải thành công **{total}** câu hỏi từ **{bank_choice}**.")
+    # ❌ Bỏ thông báo "Đã tải thành công..."
+    # st.success(f"Đã tải thành công **{total}** câu hỏi từ **{bank_choice}**.") 
 
     # --- MODE: GROUP ---
     if st.session_state.current_mode == "group":
-        st.markdown('<div class="result-title" style="margin-top: 0px;"><h3>Luyện tập theo nhóm (10 câu/nhóm)</h3></div>', unsafe_allow_html=True)
-        group_size = 10
+        # Cập nhật tiêu đề nhóm câu hỏi
+        st.markdown('<div class="result-title" style="margin-top: 0px;"><h3>Luyện tập theo nhóm (20 câu/nhóm)</h3></div>', unsafe_allow_html=True)
+        group_size = 20 # ⬆️ Tăng lên 20 câu/nhóm
         if total > 0:
             groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
             if st.session_state.current_group_idx >= len(groups): st.session_state.current_group_idx = 0
@@ -876,7 +879,8 @@ if bank_choice != "----":
                     st.session_state.current_mode = "all"
                     st.rerun()
             with col_test:
-                if st.button("Làm bài test 50 câu", key="btn_start_test"):
+                # ✏️ Đổi tên nút test
+                if st.button("Làm bài test", key="btn_start_test"):
                     st.session_state.current_mode = "test"
                     bank_slug_new = bank_choice.split()[-1].lower()
                     test_key_prefix = f"test_{bank_slug_new}"
