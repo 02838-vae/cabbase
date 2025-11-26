@@ -468,7 +468,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
             # SỬA LỖI KEY: THÊM INDEX (i) ĐỂ ĐẢM BẢO TÍNH DUY NHẤT VÀ KHẮC PHỤC StreamlitDuplicateElementKey
             q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}" 
-            # Đảm bảo radio button có giá trị mặc định để tránh lỗi
+            # Đảm bảo  có giá trị mặc định để tránh lỗi
             default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
             st.radio("", q["options"], index=q["options"].index(default_val) if default_val in q["options"] else 0, key=q_key)
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
@@ -709,13 +709,19 @@ a#manual-home-btn:hover {{
 /* ĐÃ SỬA: Tăng font-weight để chữ trắng nổi bật hơn */
 .stRadio label {{
     color: #FFFFFF !important;
-    /* Màu trắng tuyệt đối */
     font-size: 22px !important; 
     font-weight: 700 !important;
-    /* Tăng độ dày chữ */
     font-family: 'Oswald', sans-serif !important; 
     padding: 2px 12px;
+    text-shadow: 0 0 8px rgba(255, 255, 255, 0.9), 
+                 0 0 4px rgba(255, 255, 255, 0.7),
+                 1px 1px 3px rgba(0, 0, 0, 0.8) !important;
+    background-color: rgba(0, 0, 0, 0.4) !important;
+    border-radius: 4px;
+    display: block !important;
+    margin: 4px 0 !important;
 }}
+
 div[data-testid="stMarkdownContainer"] p {{
     font-size: 22px !important; 
 }}
@@ -731,10 +737,18 @@ div[data-testid="stMarkdownContainer"] p {{
     padding: 10px 20px !important;
     width: 100%; 
 }}
-.stButton>button:hover {{ background-color: #a89073 !important; }}
-.question-separator {{
-    margin: 15px 0; height: 1px;
-    background: linear-gradient(to right, transparent, #FFDD00, transparent); opacity: 0.5;
+.stRadio label:hover {{
+    background-color: rgba(0, 0, 0, 0.6) !important;
+    text-shadow: 0 0 12px rgba(255, 255, 255, 1), 
+                 0 0 6px rgba(255, 255, 255, 0.8),
+                 1px 1px 3px rgba(0, 0, 0, 0.9) !important;
+}}
+
+.stRadio label span, 
+.stRadio label p,
+.stRadio label div {{
+    color: #FFFFFF !important;
+    text-shadow: inherit !important;
 }}
 div.stSelectbox label p {{
     color: #33FF33 !important;
