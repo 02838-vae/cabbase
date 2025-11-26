@@ -720,6 +720,7 @@ a#manual-home-btn:hover {{
     border: none !important;
     display: block !important;
     margin: 4px 0 !important;
+    letter-spacing: 0.5px !important;
 }}
 
 div[data-testid="stMarkdownContainer"] p {{
@@ -742,12 +743,12 @@ div[data-testid="stMarkdownContainer"] p {{
                  0 0 6px rgba(255, 255, 255, 0.8),
                  1px 1px 3px rgba(0, 0, 0, 0.9) !important;
 }}
-
 .stRadio label span, 
 .stRadio label p,
 .stRadio label div {{
     color: #FFFFFF !important;
     text-shadow: inherit !important;
+    letter-spacing: 0.5px !important;
 }}
 div.stSelectbox label p {{
     color: #33FF33 !important;
