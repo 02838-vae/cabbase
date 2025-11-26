@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import streamlit as st
 from docx import Document
-# THÊM IMPORT ĐỂ XỬ LÝ ĐỊNH DẠNG (HIGHLIGHT)
+# THÊM IMPORT ĐỂ XỬ LÝ ĐỊNH DẠNG (HIGHLIGHT) -> ĐÃ BỊ LOẠI BỎ LOGIC NHƯNG VẪN GIỮ IMPORT
 from docx.enum.text import WD_COLOR_INDEX 
 import re
 import math
@@ -85,9 +85,11 @@ def read_docx_paragraphs(source):
         return []
 
 # HÀM ĐỌC FILE MỚI: LẤY CẢ THÔNG TIN HIGHLIGHT (DÙNG CHO PL2)
+# ĐÃ SỬA: Loại bỏ logic Highlight, chỉ lấy text
 def read_pl2_data(source):
     """
-    Hàm đọc paragraphs và phát hiện highlight vàng (yellow)
+    Hàm đọc paragraphs chỉ lấy TEXT (tương tự read_docx_paragraphs),
+    để parse_pl2 có thể dùng logic (*).
     """
     path = find_file_path(source)
     if not path:
@@ -95,12 +97,11 @@ def read_pl2_data(source):
         return []
     
     data = []
-    YELLOW_COLOR_INDEX = 6 # WD_COLOR_INDEX.YELLOW value
     
     try:
         doc = Document(path)
     except Exception as e:
-        print(f"Lỗi đọc file DOCX (highlight): {source}. Chi tiết: {e}")
+        print(f"Lỗi đọc file DOCX (chỉ text): {source}. Chi tiết: {e}")
         return []
 
     for p in doc.paragraphs:
@@ -108,18 +109,10 @@ def read_pl2_data(source):
         if not p_text_stripped:
             continue
         
-        has_yellow_highlight = False
-        
-        # Kiểm tra từng 'run' (đoạn văn bản có cùng định dạng) trong paragraph
-        for run in p.runs:
-            # So sánh màu highlight với mã màu vàng (6)
-            if run.font.highlight_color == YELLOW_COLOR_INDEX:
-                has_yellow_highlight = True
-                break
-            
+        # BỎ LOGIC HIGHLIGHT VÀNG, CHỈ LẤY TEXT VÀ ĐẶT CỜ HIGHLIGHT = FALSE
         data.append({
             "full_text": p_text_stripped,
-            "has_yellow_highlight": has_yellow_highlight
+            "has_yellow_highlight": False 
         })
         
     return data
@@ -328,13 +321,14 @@ def parse_pl1(source):
     return questions
 
 # ====================================================
-# 🧩 PARSER 4: PHỤ LỤC 2 (Dùng Highlight VÀNG)
+# 🧩 PARSER 4: PHỤ LỤC 2 (Dùng Highlight VÀNG -> ĐÃ ĐỔI SANG DÙNG (*))
 # ====================================================
 def parse_pl2(source):
     """
-    Parser cho định dạng PL2 (sử dụng highlight VÀNG để nhận diện đáp án đúng)
+    Parser cho định dạng PL2 (Sử dụng ký hiệu (*) để nhận diện đáp án đúng,
+    thay vì highlight vàng như trước)
     """
-    data = read_pl2_data(source) # SỬ DỤNG HÀM ĐỌC CÓ THÔNG TIN HIGHLIGHT
+    data = read_pl2_data(source) # SỬ DỤNG HÀM ĐỌC ĐÃ SỬA CHỈ LẤY TEXT
     if not data: return []
 
     questions = []
@@ -378,8 +372,12 @@ def parse_pl2(source):
             
         else:
             if is_question_started and not is_max_options_reached:
-                # SỬ DỤNG THÔNG TIN HIGHLIGHT
-                is_correct = p_data["has_yellow_highlight"] 
+                is_correct = False
+                
+                # THAY THẾ LOGIC HIGHLIGHT BẰNG LOGIC DẤU (*)
+                if "(*)" in clean_p:
+                    is_correct = True
+                    clean_p = clean_p.replace("(*)", "").strip() # Loại bỏ ký hiệu sau khi phát hiện
                 
                 match_prefix = opt_prefix_pat.match(clean_p)
                 if match_prefix:
@@ -828,7 +826,7 @@ if bank_choice != "----":
         if st.session_state.doc_selected == "Phụ lục 1 : Ngữ pháp chung":
             source = "PL1.docx" # File PL1.docx (Dùng parse_pl1)
         elif st.session_state.doc_selected == "Phụ lục 2 : Từ vựng, thuật ngữ": 
-            source = "PL2.docx" # File PL2.docx (Dùng parse_pl2)
+            source = "PL2.docx" # File PL2.docx (Dùng parse_pl2 đã sửa)
         
     # LOAD CÂU HỎI
     questions = []
@@ -841,10 +839,11 @@ if bank_choice != "----":
             if source == "PL1.docx":
                 questions = parse_pl1(source) # Sử dụng parser cũ (dùng (*))
             elif source == "PL2.docx":
-                questions = parse_pl2(source) # Sử dụng parser mới (dùng highlight)
+                questions = parse_pl2(source) # Sử dụng parser mới (dùng (*))
     
     if not questions:
-        st.error(f"❌ Không đọc được câu hỏi nào từ file **{source}**. Vui lòng kiểm tra file và cấu trúc thư mục (đảm bảo file nằm trong thư mục gốc hoặc thư mục 'pages/'), và kiểm tra lại định dạng đáp án đúng (dấu `(*)` cho PL1, **highlight vàng** cho PL2).")
+        # Cập nhật thông báo lỗi để phù hợp với logic (*) cho cả PL1 và PL2
+        st.error(f"❌ Không đọc được câu hỏi nào từ file **{source}**. Vui lòng kiểm tra file và cấu trúc thư mục (đảm bảo file nằm trong thư mục gốc hoặc thư mục 'pages/'), và kiểm tra lại định dạng đáp án đúng (dùng dấu `(*)`).")
         st.stop() 
     
     total = len(questions)
