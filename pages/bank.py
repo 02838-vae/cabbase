@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 import streamlit as st
 from docx import Document
+# THÊM IMPORT ĐỂ XỬ LÝ ĐỊNH DẠNG (HIGHLIGHT)
+from docx.enum.text import WD_COLOR_INDEX 
 import re
 import math
 import pandas as pd
@@ -54,43 +56,81 @@ def clean_text(s: str) -> str:
     
     return temp_s.strip()
 
+def find_file_path(source):
+    """Hàm tìm đường dẫn file với cơ chế tìm kiếm đa dạng."""
+    paths = [
+        os.path.join(os.path.dirname(__file__), source),
+        source,
+        f"pages/{source}"
+    ]
+    for path in paths:
+        if os.path.exists(path) and os.path.getsize(path) > 0:
+            return path
+    return None
+
 def read_docx_paragraphs(source):
     """
-    Hàm đọc paragraphs từ file .docx với cơ chế tìm kiếm đa dạng:
-    1. Thư mục chứa bank.py
-    2. Thư mục làm việc hiện tại
-    3. Thư mục pages/ (ngang hàng với bank.py)
+    Hàm đọc paragraphs chỉ lấy TEXT (sử dụng cho cabbank, lawbank, PL1)
     """
-    try:
-        # Cơ chế 1: Thư mục chứa file bank.py
-        doc = Document(os.path.join(os.path.dirname(__file__), source))
-    except Exception:
-        try:
-             # Cơ chế 2: Thư mục làm việc hiện tại
-             doc = Document(source)
-        except Exception:
-            try:
-                # Cơ chế 3: Thư mục con 'pages/'
-                doc = Document(f"pages/{source}")
-            except Exception as e:
-                # Nếu tất cả đều thất bại, hiển thị lỗi trong console/log
-                print(f"Lỗi không tìm thấy file DOCX: {source}. Chi tiết: {e}")
-                return []
+    path = find_file_path(source)
+    if not path:
+        print(f"Lỗi không tìm thấy file DOCX: {source}")
+        return []
     
-    # Giữ nguyên p.text.strip() và filtering để loại bỏ các dòng trống không chứa ký tự nào.
-    return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
+    try:
+        doc = Document(path)
+        return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
+    except Exception as e:
+        print(f"Lỗi đọc file DOCX (chỉ text): {source}. Chi tiết: {e}")
+        return []
+
+# HÀM ĐỌC FILE MỚI: LẤY CẢ THÔNG TIN HIGHLIGHT (DÙNG CHO PL2)
+def read_pl2_data(source):
+    """
+    Hàm đọc paragraphs và phát hiện highlight vàng (yellow)
+    """
+    path = find_file_path(source)
+    if not path:
+        print(f"Lỗi không tìm thấy file DOCX: {source}")
+        return []
+    
+    data = []
+    YELLOW_COLOR_INDEX = 6 # WD_COLOR_INDEX.YELLOW value
+    
+    try:
+        doc = Document(path)
+    except Exception as e:
+        print(f"Lỗi đọc file DOCX (highlight): {source}. Chi tiết: {e}")
+        return []
+
+    for p in doc.paragraphs:
+        p_text_stripped = p.text.strip()
+        if not p_text_stripped:
+            continue
+        
+        has_yellow_highlight = False
+        
+        # Kiểm tra từng 'run' (đoạn văn bản có cùng định dạng) trong paragraph
+        for run in p.runs:
+            # So sánh màu highlight với mã màu vàng (6)
+            if run.font.highlight_color == YELLOW_COLOR_INDEX:
+                has_yellow_highlight = True
+                break
+            
+        data.append({
+            "full_text": p_text_stripped,
+            "has_yellow_highlight": has_yellow_highlight
+        })
+        
+    return data
 
 def get_base64_encoded_file(file_path):
     fallback_base64 = "iVBORw0KGgoAAAANSUhEUAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
-    try:
-        # Cơ chế tìm kiếm file ảnh: Ưu tiên trong thư mục hiện tại/chứa script
-        path_to_check = os.path.join(os.path.dirname(__file__), file_path)
-        if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
-            path_to_check = file_path 
+    path_to_check = find_file_path(file_path)
+    if not path_to_check:
+        return fallback_base64
         
-        if not os.path.exists(path_to_check) or os.path.getsize(path_to_check) == 0:
-            return fallback_base64
-            
+    try:
         with open(path_to_check, "rb") as f:
             return base64.b64encode(f.read()).decode("utf-8")
     except Exception as e:
@@ -99,6 +139,7 @@ def get_base64_encoded_file(file_path):
 
 # ====================================================
 # 🧩 PARSER 1: NGÂN HÀNG KỸ THUẬT (CABBANK)
+# ... (parse_cabbank không thay đổi)
 # ====================================================
 def parse_cabbank(source):
     paras = read_docx_paragraphs(source)
@@ -151,6 +192,7 @@ def parse_cabbank(source):
 
 # ====================================================
 # 🧩 PARSER 2: NGÂN HÀNG LUẬT (LAWBANK)
+# ... (parse_lawbank không thay đổi)
 # ====================================================
 def parse_lawbank(source):
     paras = read_docx_paragraphs(source)
@@ -205,14 +247,11 @@ def parse_lawbank(source):
     return questions
 
 # ====================================================
-# 🧩 PARSER 3: PHỤ LỤC 1 (ĐÃ SỬA LỖI LOGIC VÀ GIỚI HẠN 3 ĐÁP ÁN)
+# 🧩 PARSER 3: PHỤ LỤC 1 (Dùng dấu (*))
 # ====================================================
 def parse_pl1(source):
     """
-    Parser cho định dạng PL1 (cải tiến để xử lý câu hỏi không đánh số, giới hạn 3 đáp án)
-    - Chỉ có 3 đáp án (a, b, c) cho mỗi câu hỏi.
-    - Logic chuyển câu mới được siết chặt để xử lý lỗi số trong đáp án (ví dụ: '5 inch...').
-    - Xóa prefix A., B., C. nếu có trong đáp án thô và tự động gán nhãn a., b., c., đồng thời khắc phục lỗi xóa chữ cái đầu tiên của đáp án (Fix 2).
+    Parser cho định dạng PL1 (sử dụng dấu (*) để nhận diện đáp án đúng)
     """
     paras = read_docx_paragraphs(source)
     if not paras: return []
@@ -220,22 +259,15 @@ def parse_pl1(source):
     questions = []
     current = {"question": "", "options": [], "answer": ""}
     
-    # Regex bắt đầu câu hỏi CÓ ĐÁNH SỐ: Số + dấu chấm hoặc dấu đóng ngoặc (ví dụ: 40., 41))
     q_start_pat = re.compile(r'^\s*(\d+)[\.\)]\s*') 
-    # Regex bắt đầu câu hỏi CÓ CỤM TỪ
     phrase_start_pat = re.compile(r'Choose the correct group of words', re.I)
-    
-    # FIX 2: Regex cho prefix đáp án cần loại bỏ. Phải có dấu chấm/ngoặc HOẶC ít nhất một khoảng trắng sau chữ cái.
     opt_prefix_pat = re.compile(r'^\s*[A-Ca-c]([\.\)]|\s+)\s*') 
-    
-    labels = ["a", "b", "c"] # Chỉ có 3 đáp án
-    MAX_OPTIONS = 3 # Giới hạn tối đa 3 đáp án
+    labels = ["a", "b", "c"]
+    MAX_OPTIONS = 3
 
     def finalize_current_question(q_dict, q_list):
-        """Lưu câu hỏi hiện tại và reset dictionary."""
         if q_dict["question"]:
             if not q_dict["answer"] and q_dict["options"]:
-                # Nếu không tìm thấy đáp án (*), mặc định lấy A (tức options[0]) là đúng
                 q_dict["answer"] = q_dict["options"][0] 
             q_list.append(q_dict)
         return {"question": "", "options": [], "answer": ""}
@@ -250,48 +282,32 @@ def parse_pl1(source):
         is_question_started = current["question"]
         is_first_line = not is_question_started and not current["options"]
         
-        # --- NEW QUESTION LOGIC (Fixing the Q40/3.5 issue) ---
         must_switch_q = (
-            is_first_line or                             # Case 1: Start of doc
-            is_q_start_phrased or                        # Case 2: Explicit phrase
-            (is_question_started and is_max_options_reached) # Case 3: Max options reached
+            is_first_line or                            
+            is_q_start_phrased or                       
+            (is_question_started and is_max_options_reached)
         )
-        # Note: Bỏ điều kiện chuyển câu dựa trên is_explicitly_numbered 
-        # khi chưa đủ options để tránh nhầm đáp án (ví dụ: "3.5 INCH...") là câu hỏi mới.
-        # --- APPLY SWITCH DECISION ---
+        
         if must_switch_q:
-            
-            # 1. Lưu câu hỏi cũ (nếu có)
             current = finalize_current_question(current, questions)
-            
-            # 2. Khởi tạo câu hỏi mới
             q_text = clean_p
             if is_explicitly_numbered:
-                # Loại bỏ số thứ tự ở đầu câu hỏi nếu có (VD: "40. ")
                 q_text = q_start_pat.sub('', clean_p).strip()
-            
-            # Reset và set question text
             current["question"] = q_text
             
         else:
-            # --- OPTION LOGIC ---
-            
-            # Nếu đã có câu hỏi VÀ chưa đủ MAX_OPTIONS, thì dòng này là một đáp án/lựa chọn
             if is_question_started and not is_max_options_reached:
                 is_correct = False
                 
-                # Kiểm tra dấu hiệu đáp án đúng (*)
+                # SỬ DỤNG DẤU (*)
                 if "(*)" in clean_p:
                     is_correct = True
-                    # Xóa dấu (*)
                     clean_p = clean_p.replace("(*)", "").strip() 
                 
-                # Loại bỏ prefix A., B., C. (và các biến thể có space/.) - Fix 2
                 match_prefix = opt_prefix_pat.match(clean_p)
                 if match_prefix:
                     clean_p = clean_p[match_prefix.end():].strip()
                     
-                # Tự động gán nhãn a, b, c
                 idx = len(current["options"])
                 if idx < len(labels):
                     label = labels[idx]
@@ -299,23 +315,97 @@ def parse_pl1(source):
                     current["options"].append(opt_text)
                     
                     if is_correct:
-                        # Ghi nhận đây là đáp án đúng
                         current["answer"] = opt_text
             
-            # Nếu đã đủ 3 đáp án (hoặc không phải option) nhưng không chuyển câu, thêm vào Question text.
             elif is_question_started:
                  current["question"] += " " + clean_p
         
             elif not is_question_started and not current["options"]:
                 current["question"] = clean_p
 
-    # Lưu câu cuối cùng
     current = finalize_current_question(current, questions)
         
     return questions
 
 # ====================================================
+# 🧩 PARSER 4: PHỤ LỤC 2 (Dùng Highlight VÀNG)
+# ====================================================
+def parse_pl2(source):
+    """
+    Parser cho định dạng PL2 (sử dụng highlight VÀNG để nhận diện đáp án đúng)
+    """
+    data = read_pl2_data(source) # SỬ DỤNG HÀM ĐỌC CÓ THÔNG TIN HIGHLIGHT
+    if not data: return []
+
+    questions = []
+    current = {"question": "", "options": [], "answer": ""}
+    
+    q_start_pat = re.compile(r'^\s*(\d+)[\.\)]\s*') 
+    phrase_start_pat = re.compile(r'Choose the correct group of words', re.I)
+    opt_prefix_pat = re.compile(r'^\s*[A-Ca-c]([\.\)]|\s+)\s*') 
+    labels = ["a", "b", "c"]
+    MAX_OPTIONS = 3
+
+    def finalize_current_question(q_dict, q_list):
+        if q_dict["question"]:
+            if not q_dict["answer"] and q_dict["options"]:
+                q_dict["answer"] = q_dict["options"][0] 
+            q_list.append(q_dict)
+        return {"question": "", "options": [], "answer": ""}
+    
+    for p_data in data:
+        clean_p = clean_text(p_data["full_text"])
+        if not clean_p: continue
+        
+        is_q_start_phrased = phrase_start_pat.search(clean_p)
+        is_explicitly_numbered = q_start_pat.match(clean_p) 
+        is_max_options_reached = len(current["options"]) >= MAX_OPTIONS
+        is_question_started = current["question"]
+        is_first_line = not is_question_started and not current["options"]
+        
+        must_switch_q = (
+            is_first_line or                            
+            is_q_start_phrased or                       
+            (is_question_started and is_max_options_reached)
+        )
+        
+        if must_switch_q:
+            current = finalize_current_question(current, questions)
+            q_text = clean_p
+            if is_explicitly_numbered:
+                q_text = q_start_pat.sub('', clean_p).strip()
+            current["question"] = q_text
+            
+        else:
+            if is_question_started and not is_max_options_reached:
+                # SỬ DỤNG THÔNG TIN HIGHLIGHT
+                is_correct = p_data["has_yellow_highlight"] 
+                
+                match_prefix = opt_prefix_pat.match(clean_p)
+                if match_prefix:
+                    clean_p = clean_p[match_prefix.end():].strip()
+                    
+                idx = len(current["options"])
+                if idx < len(labels):
+                    label = labels[idx]
+                    opt_text = f"{label}. {clean_p}"
+                    current["options"].append(opt_text)
+                    
+                    if is_correct:
+                        current["answer"] = opt_text
+            
+            elif is_question_started:
+                 current["question"] += " " + clean_p
+        
+            elif not is_question_started and not current["options"]:
+                current["question"] = clean_p
+
+    current = finalize_current_question(current, questions)
+        
+    return questions
+# ====================================================
 # 🌟 HÀM: XEM TOÀN BỘ CÂU HỎI
+# ... (display_all_questions không thay đổi)
 # ====================================================
 def display_all_questions(questions):
     st.markdown('<div class="result-title"><h3>📚 TOÀN BỘ NGÂN HÀNG CÂU HỎI</h3></div>', unsafe_allow_html=True)
@@ -340,6 +430,7 @@ def display_all_questions(questions):
 
 # ====================================================
 # 🌟 HÀM: TEST MODE
+# ... (get_random_questions, display_test_mode không thay đổi)
 # ====================================================
 def get_random_questions(questions, count=50):
     if len(questions) <= count: return questions
@@ -721,10 +812,9 @@ if bank_choice != "----":
             st.rerun()
 
         if st.session_state.doc_selected == "Phụ lục 1 : Ngữ pháp chung":
-            source = "PL1.docx" # File PL1.docx
-        # ĐÃ SỬA: Cập nhật điều kiện so sánh cho Phụ lục 2
+            source = "PL1.docx" # File PL1.docx (Dùng parse_pl1)
         elif st.session_state.doc_selected == "Phụ lục 2 : Từ vựng, thuật ngữ": 
-            source = "PL2.docx" # File PL2.docx
+            source = "PL2.docx" # File PL2.docx (Dùng parse_pl2)
         
     # LOAD CÂU HỎI
     questions = []
@@ -734,10 +824,13 @@ if bank_choice != "----":
         elif "Luật VAECO" in bank_choice:
             questions = parse_lawbank(source)
         elif is_docwise:
-            questions = parse_pl1(source)
+            if source == "PL1.docx":
+                questions = parse_pl1(source) # Sử dụng parser cũ (dùng (*))
+            elif source == "PL2.docx":
+                questions = parse_pl2(source) # Sử dụng parser mới (dùng highlight)
     
     if not questions:
-        st.error(f"❌ Không đọc được câu hỏi nào từ file **{source}**. Vui lòng kiểm tra file và cấu trúc thư mục (đảm bảo file nằm trong thư mục gốc hoặc thư mục 'pages/').")
+        st.error(f"❌ Không đọc được câu hỏi nào từ file **{source}**. Vui lòng kiểm tra file và cấu trúc thư mục (đảm bảo file nằm trong thư mục gốc hoặc thư mục 'pages/'), và kiểm tra lại định dạng đáp án đúng (dấu `(*)` cho PL1, **highlight vàng** cho PL2).")
         st.stop() 
     
     total = len(questions)
