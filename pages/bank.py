@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import streamlit as st
 from docx import Document
-# THÊM IMPORT ĐỂ XỬ LÝ ĐỊNH DẠNG (HIGHLIGHT) -> ĐÃ BỊ LOẠI BỎ LOGIC NHƯNG VẪN GIỮ IMPORT
+# THÊM IMPORT ĐỂ XỬ LÝ ĐỊNH DẠNG (HIGHLIGHT)
 from docx.enum.text import WD_COLOR_INDEX 
 import re
 import math
@@ -153,6 +153,7 @@ def get_translator():
 def translate_text(text):
     """
     Hàm dịch thuật sử dụng Unofficial 'translate' API hoặc fallback về MOCK nếu có lỗi.
+    (ĐÃ XÓA CHUỖI "Unofficial Translate API")
     """
     translator = get_translator()
     
@@ -166,7 +167,7 @@ def translate_text(text):
         options = [opt.strip() for opt in a_content_raw.split(';') if opt.strip()]
         q_translated_text = f"Nội dung: *{q_content}*."
         a_translated_text = "\n".join([f"- {i+1}. Dịch của: {opt}" for i, opt in enumerate(options)])
-        return f"""**[Bản dịch Tiếng Việt (MOCK/PLACEHOLDER)]**\n\n- **Câu hỏi:** {q_translated_text}\n- **Các đáp án:** \n{a_translated_text}"""
+        return f"""**[Bản dịch Tiếng Việt]**\n\n- **Câu hỏi:** {q_translated_text}\n- **Các đáp án:** \n{a_translated_text}"""
 
 
     # ----------------------------------------------------
@@ -211,18 +212,20 @@ def translate_text(text):
         # 5. Định dạng kết quả
         a_translated_text = "\n".join([f"- {opt}" for opt in a_translated_list])
         
-        return f"**[Bản dịch Tiếng Việt (Unofficial Translate API)]**\n\n- **Câu hỏi:** {q_translated}\n- **Các đáp án:** \n{a_translated_text}"
+        return f"**[Bản dịch Tiếng Việt]**\n\n- **Câu hỏi:** {q_translated}\n- **Các đáp án:** \n{a_translated_text}"
 
     except Exception as e:
         # Log lỗi chi tiết ra console
         print(f"LỖI DỊCH THUẬT 'translate': {e}")
-        return f"**[LỖI DỊCH THUẬT 'translate']**\n- Không thể dịch nội dung. Chi tiết lỗi đã được ghi lại (Exception: {type(e).__name__}).\n- Câu hỏi gốc:\n{text}"
+        return f"**[LỖI DỊCH THUẬT]**\n- Không thể dịch nội dung. Chi tiết lỗi đã được ghi lại (Exception: {type(e).__name__}).\n- Câu hỏi gốc:\n{text}"
 
 # ====================================================
 # 🧩 PARSER 1: NGÂN HÀNG KỸ THUẬT (CABBANK)
 # ====================================================
 def parse_cabbank(source):
-    # ... (giữ nguyên)
+    """
+    Parser cho định dạng CABBANK (Dùng dấu * trước option đúng)
+    """
     paras = read_docx_paragraphs(source)
     if not paras: return []
 
@@ -274,7 +277,9 @@ def parse_cabbank(source):
 # 🧩 PARSER 2: NGÂN HÀNG LUẬT (LAWBANK)
 # ====================================================
 def parse_lawbank(source):
-    # ... (giữ nguyên)
+    """
+    Parser cho định dạng LAWBANK (Dùng dấu * trước option đúng)
+    """
     paras = read_docx_paragraphs(source)
     if not paras: return []
 
@@ -330,7 +335,6 @@ def parse_lawbank(source):
 # 🧩 PARSER 3: PHỤ LỤC 1 (Dùng dấu (*))
 # ====================================================
 def parse_pl1(source):
-    # ... (giữ nguyên)
     """
     Parser cho định dạng PL1 (sử dụng dấu (*) để nhận diện đáp án đúng)
     """
@@ -413,7 +417,6 @@ def parse_pl1(source):
 # 🧩 PARSER 4: PHỤ LỤC 2 (Dùng dấu (*))
 # ====================================================
 def parse_pl2(source):
-    # ... (giữ nguyên)
     """
     Parser cho định dạng PL2 (Sử dụng ký hiệu (*) để nhận diện đáp án đúng)
     """
@@ -490,6 +493,28 @@ def parse_pl2(source):
     current = finalize_current_question(current, questions)
         
     return questions
+
+# ====================================================
+# 🌟 HÀM: LOGIC DỊCH ĐỘC QUYỀN (EXCLUSIVE TRANSLATION)
+# ====================================================
+if 'active_translation_key' not in st.session_state: st.session_state.active_translation_key = None
+
+def on_translate_toggle(key_clicked):
+    """Callback function để quản lý chế độ Dịch ĐỘC QUYỀN."""
+    toggle_key = f"toggle_{key_clicked}"
+    # Check the state of the toggle in session state (it is the state *after* the click)
+    is_on_after_click = st.session_state.get(toggle_key, False)
+    
+    if is_on_after_click:
+        # User turned this specific toggle ON -> Make it the active key
+        st.session_state.active_translation_key = key_clicked
+    elif st.session_state.active_translation_key == key_clicked:
+        # User turned this specific toggle OFF -> Clear the active key
+        st.session_state.active_translation_key = None
+    
+    # Force rerun để cập nhật tất cả các toggle khác (tắt chúng nếu cần)
+    st.rerun()
+
 # ====================================================
 # 🌟 HÀM: XEM TOÀN BỘ CÂU HỎI (CẬP NHẬT CHỨC NĂNG DỊCH)
 # ====================================================
@@ -502,6 +527,7 @@ def display_all_questions(questions):
     for i, q in enumerate(questions, start=1):
         q_key = f"all_q_{i}_{hash(q['question'])}" 
         translation_key = f"trans_{q_key}"
+        is_active = (translation_key == st.session_state.active_translation_key)
         
         # Tạo cột cho Câu hỏi và Nút Dịch
         col_q_text, col_translate = st.columns([0.9, 0.1])
@@ -511,19 +537,26 @@ def display_all_questions(questions):
         
         with col_translate:
             # Sử dụng st.toggle để giữ trạng thái dịch thay vì button/double click
-            show_translation = st.toggle("Dịch", value=st.session_state.translations.get(translation_key, False), key=f"toggle_{translation_key}")
-            # Cập nhật trạng thái
-            st.session_state.translations[translation_key] = show_translation
-        
+            st.toggle(
+                "Dịch", 
+                value=is_active, # Chỉ ON nếu key khớp với active key
+                key=f"toggle_{translation_key}",
+                on_change=on_translate_toggle,
+                args=(translation_key,)
+            )
+
         # Hiển thị Bản Dịch
-        if show_translation:
-            # Nếu giá trị là True (mới bật) hoặc chưa được dịch lần nào, thực hiện dịch
-            if st.session_state.translations[translation_key] is True:
+        if is_active:
+            # Check if translated content is already cached
+            translated_content = st.session_state.translations.get(translation_key)
+            
+            # If not cached or is not a string (default True/False state)
+            if not isinstance(translated_content, str):
                 full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
                 st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
-            
-            # Hiển thị bản dịch đã được lưu
-            st.info(st.session_state.translations[translation_key], icon="🌐")
+                translated_content = st.session_state.translations[translation_key]
+
+            st.info(translated_content, icon="🌐")
             
         # Hiển thị Đáp án
         for opt in q["options"]:
@@ -561,8 +594,6 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
     if not st.session_state[f"{test_key_prefix}_started"]:
         st.markdown('<div class="result-title"><h3>📝 LÀM BÀI TEST 50 CÂU</h3></div>', unsafe_allow_html=True)
         
-        # ❌ ĐÃ BỎ BLOCK st.info GIỚI THIỆU BÀI TEST
-        
         if st.button("🚀 Bắt đầu Bài Test", key=f"{test_key_prefix}_start_btn"):
             st.session_state[f"{test_key_prefix}_questions"] = get_random_questions(questions, TOTAL_QUESTIONS)
             st.session_state[f"{test_key_prefix}_started"] = True
@@ -577,6 +608,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         for i, q in enumerate(test_batch, start=1):
             q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}" 
             translation_key = f"trans_{q_key}"
+            is_active = (translation_key == st.session_state.active_translation_key)
             
             # Tạo cột cho Câu hỏi và Nút Dịch
             col_q_text, col_translate = st.columns([0.9, 0.1])
@@ -586,16 +618,26 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
 
             with col_translate:
                 # Sử dụng st.toggle để giữ trạng thái dịch
-                show_translation = st.toggle("Dịch", value=st.session_state.translations.get(translation_key, False), key=f"toggle_{translation_key}")
-                st.session_state.translations[translation_key] = show_translation
+                st.toggle(
+                    "Dịch", 
+                    value=is_active, 
+                    key=f"toggle_{translation_key}",
+                    on_change=on_translate_toggle,
+                    args=(translation_key,)
+                )
 
             # Hiển thị Bản Dịch
-            if show_translation:
-                if st.session_state.translations[translation_key] is True:
+            if is_active:
+                # Check if translated content is already cached
+                translated_content = st.session_state.translations.get(translation_key)
+                
+                # If not cached or is not a string (default True/False state)
+                if not isinstance(translated_content, str):
                     full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
                     st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
-                
-                st.info(st.session_state.translations[translation_key], icon="🌐")
+                    translated_content = st.session_state.translations[translation_key]
+
+                st.info(translated_content, icon="🌐")
 
             # Hiển thị Radio Button
             default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
@@ -616,6 +658,8 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             correct = clean_text(q["answer"])
             is_correct = clean_text(selected_opt) == correct
             translation_key = f"trans_{q_key}"
+            is_active = (translation_key == st.session_state.active_translation_key)
+
 
             # Tạo cột cho Câu hỏi và Nút Dịch
             col_q_text, col_translate = st.columns([0.9, 0.1])
@@ -625,16 +669,26 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
 
             with col_translate:
                 # Sử dụng st.toggle để giữ trạng thái dịch
-                show_translation = st.toggle("Dịch", value=st.session_state.translations.get(translation_key, False), key=f"toggle_{translation_key}")
-                st.session_state.translations[translation_key] = show_translation
+                st.toggle(
+                    "Dịch", 
+                    value=is_active, 
+                    key=f"toggle_{translation_key}",
+                    on_change=on_translate_toggle,
+                    args=(translation_key,)
+                )
 
             # Hiển thị Bản Dịch
-            if show_translation:
-                if st.session_state.translations[translation_key] is True:
+            if is_active:
+                # Check if translated content is already cached
+                translated_content = st.session_state.translations.get(translation_key)
+                
+                # If not cached or is not a string (default True/False state)
+                if not isinstance(translated_content, str):
                     full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
                     st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
-                
-                st.info(st.session_state.translations[translation_key], icon="🌐")
+                    translated_content = st.session_state.translations[translation_key]
+
+                st.info(translated_content, icon="🌐")
             
             for opt in q["options"]:
                 opt_clean = clean_text(opt)
@@ -942,6 +996,7 @@ if "current_mode" not in st.session_state: st.session_state.current_mode = "grou
 if "last_bank_choice" not in st.session_state: st.session_state.last_bank_choice = "----" 
 if "doc_selected" not in st.session_state: st.session_state.doc_selected = "Phụ lục 1 : Ngữ pháp chung" 
 if 'translations' not in st.session_state: st.session_state.translations = {} # KHỞI TẠO STATE DỊCH THUẬT
+if 'active_translation_key' not in st.session_state: st.session_state.active_translation_key = None # KHỞI TẠO KEY DỊCH ĐỘC QUYỀN
 
 # CẬP NHẬT LIST NGÂN HÀNG
 BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật VAECO", "Ngân hàng Docwise"]
@@ -953,6 +1008,8 @@ if st.session_state.get('last_bank_choice') != bank_choice and bank_choice != "-
     st.session_state.current_group_idx = 0
     st.session_state.submitted = False
     st.session_state.current_mode = "group" 
+    # Reset active translation key
+    st.session_state.active_translation_key = None 
     last_bank_name = st.session_state.get('last_bank_choice')
     if not isinstance(last_bank_name, str) or last_bank_name == "----": last_bank_name = "null bank" 
     # Xoá session state của bài test cũ
@@ -1026,6 +1083,7 @@ if bank_choice != "----":
             if st.session_state.current_group_idx != new_idx:
                 st.session_state.current_group_idx = new_idx
                 st.session_state.submitted = False
+                st.session_state.active_translation_key = None # Reset dịch khi chuyển nhóm
                 st.rerun()
 
             idx = st.session_state.current_group_idx
@@ -1037,11 +1095,13 @@ if bank_choice != "----":
             with col_all_bank:
                 if st.button("📖 Hiển thị toàn bộ ngân hàng", key="btn_show_all"):
                     st.session_state.current_mode = "all"
+                    st.session_state.active_translation_key = None # Reset dịch khi chuyển mode
                     st.rerun()
             with col_test:
                 # Đổi tên nút test
                 if st.button("Làm bài test", key="btn_start_test"):
                     st.session_state.current_mode = "test"
+                    st.session_state.active_translation_key = None # Reset dịch khi chuyển mode
                     bank_slug_new = bank_choice.split()[-1].lower()
                     test_key_prefix = f"test_{bank_slug_new}"
                     # Reset session state cho bài test trước khi bắt đầu
@@ -1056,6 +1116,7 @@ if bank_choice != "----":
                     for i, q in enumerate(batch, start=start+1):
                         q_key = f"q_{i}_{hash(q['question'])}" # Dùng hash để tránh trùng key
                         translation_key = f"trans_{q_key}"
+                        is_active = (translation_key == st.session_state.active_translation_key)
                         
                         # Cập nhật: Thêm nút Dịch
                         col_q_text, col_translate = st.columns([0.9, 0.1])
@@ -1063,17 +1124,27 @@ if bank_choice != "----":
                             st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
                         
                         with col_translate:
-                            show_translation = st.toggle("Dịch", value=st.session_state.translations.get(translation_key, False), key=f"toggle_{translation_key}")
-                            st.session_state.translations[translation_key] = show_translation
+                            # Logic Dịch Độc Quyền
+                            st.toggle(
+                                "Dịch", 
+                                value=is_active, 
+                                key=f"toggle_{translation_key}",
+                                on_change=on_translate_toggle,
+                                args=(translation_key,)
+                            )
 
                         # Hiển thị Bản Dịch
-                        if show_translation:
-                            # Nếu giá trị là True (mới bật) hoặc chưa được dịch lần nào, thực hiện dịch
-                            if st.session_state.translations[translation_key] is True:
+                        if is_active:
+                            # Check if translated content is already cached
+                            translated_content = st.session_state.translations.get(translation_key)
+                            
+                            # If not cached or is not a string (default True/False state)
+                            if not isinstance(translated_content, str):
                                 full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
                                 st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
-                            
-                            st.info(st.session_state.translations[translation_key], icon="🌐")
+                                translated_content = st.session_state.translations[translation_key]
+
+                            st.info(translated_content, icon="🌐")
 
                         # Hiển thị Radio Button
                         default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
@@ -1081,6 +1152,7 @@ if bank_choice != "----":
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
                     if st.button("✅ Nộp bài", key="submit_group"):
                         st.session_state.submitted = True
+                        st.session_state.active_translation_key = None # Tắt dịch khi nộp bài
                         st.rerun()
                 else:
                     score = 0
@@ -1090,6 +1162,7 @@ if bank_choice != "----":
                         correct = clean_text(q["answer"])
                         is_correct = clean_text(selected_opt) == correct
                         translation_key = f"trans_{q_key}"
+                        is_active = (translation_key == st.session_state.active_translation_key)
 
                         # Cập nhật: Thêm nút Dịch
                         col_q_text, col_translate = st.columns([0.9, 0.1])
@@ -1097,16 +1170,27 @@ if bank_choice != "----":
                             st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
                         
                         with col_translate:
-                            show_translation = st.toggle("Dịch", value=st.session_state.translations.get(translation_key, False), key=f"toggle_{translation_key}")
-                            st.session_state.translations[translation_key] = show_translation
+                            # Logic Dịch Độc Quyền
+                            st.toggle(
+                                "Dịch", 
+                                value=is_active, 
+                                key=f"toggle_{translation_key}",
+                                on_change=on_translate_toggle,
+                                args=(translation_key,)
+                            )
 
                         # Hiển thị Bản Dịch
-                        if show_translation:
-                            if st.session_state.translations[translation_key] is True:
+                        if is_active:
+                            # Check if translated content is already cached
+                            translated_content = st.session_state.translations.get(translation_key)
+                            
+                            # If not cached or is not a string (default True/False state)
+                            if not isinstance(translated_content, str):
                                 full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
                                 st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
-                            
-                            st.info(st.session_state.translations[translation_key], icon="🌐")
+                                translated_content = st.session_state.translations[translation_key]
+
+                            st.info(translated_content, icon="🌐")
 
                         # Hiển thị Đáp án (KẾT QUẢ)
                         for opt in q["options"]:
@@ -1134,12 +1218,14 @@ if bank_choice != "----":
                             for i, q in enumerate(batch, start=start+1):
                                 st.session_state.pop(f"q_{i}_{hash(q['question'])}", None) 
                             st.session_state.submitted = False
+                            st.session_state.active_translation_key = None # Reset dịch khi làm lại
                             st.rerun()
                     with col_next:
                         if st.session_state.current_group_idx < len(groups) - 1:
                             if st.button("➡️ Tiếp tục nhóm sau", key="next_group"):
                                 st.session_state.current_group_idx += 1
                                 st.session_state.submitted = False
+                                st.session_state.active_translation_key = None # Reset dịch khi chuyển nhóm
                                 st.rerun()
                         else: st.info("🎉 Đã hoàn thành tất cả các nhóm câu hỏi!")
             else: st.warning("Không có câu hỏi trong nhóm này.")
@@ -1148,6 +1234,7 @@ if bank_choice != "----":
     elif st.session_state.current_mode == "all":
         if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
             st.session_state.current_mode = "group"
+            st.session_state.active_translation_key = None # Reset dịch khi chuyển mode
             st.rerun()
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
         display_all_questions(questions)
@@ -1155,6 +1242,7 @@ if bank_choice != "----":
     elif st.session_state.current_mode == "test":
         if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
             st.session_state.current_mode = "group"
+            st.session_state.active_translation_key = None # Reset dịch khi chuyển mode
             st.rerun()
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
         display_test_mode(questions, bank_choice)
