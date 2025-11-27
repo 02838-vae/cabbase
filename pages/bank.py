@@ -777,11 +777,12 @@ div[data-testid="stMarkdownContainer"] p {{
     padding: 10px 20px !important;
     width: 100%; 
 }}
-[data-testid="stToggle"] label {
+/* KHẮC PHỤC LỖI CÚ PHÁP F-STRING BẰNG CÁCH THOÁT NGOẶC NHỌN */
+[data-testid="stToggle"] label {{
     font-size: 1.1em !important;
     width: 100%;
     margin-bottom: 10px;
-}
+}}
 
 div.stSelectbox label p {{
     color: #33FF33 !important;
