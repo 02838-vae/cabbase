@@ -9,6 +9,8 @@ import pandas as pd
 import base64
 import os
 import random 
+# THAY THẾ google.cloud.translate bằng googletrans
+from googletrans import Translator # <-- THAY THẾ THƯ VIỆN
 
 # ====================================================
 # ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
@@ -130,40 +132,95 @@ def get_base64_encoded_file(file_path):
         return fallback_base64
 
 # ====================================================
-# 🌐 HÀM DỊCH THUẬT (ĐÃ CẬP NHẬT DÙNG GOOGLE SEARCH)
+# 🌐 HÀM DỊCH THUẬT (ĐÃ CẬP NHẬT DÙNG googletrans)
 # ====================================================
+
+@st.cache_resource
+def get_translator():
+    """
+    Khởi tạo Unofficial Google Translate Client.
+    Cần try-except vì googletrans không ổn định.
+    """
+    try:
+        # Client sẽ tự động kết nối qua public API
+        translator = Translator() 
+        return translator
+    except Exception as e:
+        print(f"Lỗi khởi tạo googletrans Translator: {e}")
+        # Trả về None nếu không thể khởi tạo
+        return None
+
 def translate_text(text):
     """
-    Hàm dịch thuật sử dụng Google Search để dịch câu hỏi và đáp án sang tiếng Việt.
+    Hàm dịch thuật sử dụng Unofficial Google Translate API hoặc fallback về MOCK nếu có lỗi.
     """
-    # 1. Tách Câu hỏi và Đáp án
-    parts = text.split('\nĐáp án: ')
-    q_content = parts[0].replace('Câu hỏi: ', '').strip()
-    a_content_raw = parts[1].strip() if len(parts) > 1 else ""
+    translator = get_translator()
     
-    # 2. Sử dụng Google Search để dịch Question và Options
-    
-    # Dịch Câu hỏi (Question)
+    # ----------------------------------------------------
+    # FALLBACK VỀ MOCK/PLACEHOLDER (Nếu Client không hợp lệ)
+    # ----------------------------------------------------
+    if translator is None:
+        parts = text.split('\nĐáp án: ')
+        q_content = parts[0].replace('Câu hỏi: ', '').strip()
+        a_content_raw = parts[1].strip() if len(parts) > 1 else ""
+        options = [opt.strip() for opt in a_content_raw.split(';') if opt.strip()]
+        q_translated_text = f"Nội dung: *{q_content}*."
+        a_translated_text = "\n".join([f"- {i+1}. Dịch của: {opt}" for i, opt in enumerate(options)])
+        return f"""**[Bản dịch Tiếng Việt (MOCK/PLACEHOLDER)]**\n\n- **Câu hỏi:** {q_translated_text}\n- **Các đáp án:** \n{a_translated_text}"""
+
+
+    # ----------------------------------------------------
+    # LOGIC DỊCH googletrans THỰC TẾ
+    # ----------------------------------------------------
     try:
-        google_result_q = st.session_state.google.search(queries=[f"dịch sang tiếng Việt: {q_content}"])
-        # Lấy nội dung dịch từ kết quả search, thường là snippet đầu tiên
-        q_translated_snippet = google_result_q['result'].split('\n')[0].strip()
-        q_translated = q_translated_snippet if q_translated_snippet else q_content
-    except Exception:
-        q_translated = f"[Lỗi dịch câu hỏi: {q_content}]"
+        # 1. Tách Câu hỏi và Đáp án
+        parts = text.split('\nĐáp án: ')
+        q_content = parts[0].replace('Câu hỏi: ', '').strip()
+        a_content_raw = parts[1].strip() if len(parts) > 1 else ""
+        
+        # Lấy tất cả nội dung cần dịch: Câu hỏi + các đáp án
+        options = [opt.strip() for opt in a_content_raw.split(';') if opt.strip()]
+        
+        # Chuẩn bị danh sách nội dung cần dịch:
+        contents_to_translate = [q_content] + options
+        
+        # 2. Dịch toàn bộ nội dung trong một lần gọi API (batch translate)
+        # Lưu ý: googletrans không hỗ trợ batch translate chính thức, 
+        # nên ta phải gọi từng câu nhưng logic code sẽ tối ưu hóa như sau:
+        
+        translations = []
+        for content in contents_to_translate:
+            if not content:
+                translations.append("")
+                continue
+            # Gọi API dịch
+            res = translator.translate(content, src='en', dest='vi')
+            translations.append(res.text)
 
-    # Dịch Đáp án (Options)
-    try:
-        google_result_a = st.session_state.google.search(queries=[f"dịch sang tiếng Việt: {a_content_raw}"])
-        # Lấy nội dung dịch từ kết quả search
-        a_translated_snippet = google_result_a['result'].split('\n')[0].strip()
-        a_translated = a_translated_snippet if a_translated_snippet else a_content_raw
-    except Exception:
-        a_translated = f"[Lỗi dịch đáp án: {a_content_raw}]"
+        # 3. Phân tách kết quả
+        q_translated = translations[0]
+        a_translated_texts = translations[1:]
+        
+        # 4. Ghép lại Đáp án với prefix
+        a_translated_list = []
+        for i, translated_text in enumerate(a_translated_texts):
+            # Tách phần tiền tố (a., b., c.) từ option gốc
+            original_prefix_match = re.match(r'^([a-d]\.|\s*)\s*', options[i], re.IGNORECASE)
+            original_prefix = original_prefix_match.group(0).strip() if original_prefix_match and original_prefix_match.group(0).strip() else f"{i+1}."
+            
+            # Giữ prefix gốc và lấy phần dịch:
+            a_translated_list.append(f"{original_prefix} {translated_text}")
 
-    # 3. Định dạng kết quả
-    return f"**[Bản dịch Tiếng Việt]**\n\n- **Câu hỏi:** {q_translated}\n- **Các đáp án:** {a_translated}"
 
+        # 5. Định dạng kết quả
+        a_translated_text = "\n".join([f"- {opt}" for opt in a_translated_list])
+        
+        return f"**[Bản dịch Tiếng Việt (Unofficial Google Translate)]**\n\n- **Câu hỏi:** {q_translated}\n- **Các đáp án:** \n{a_translated_text}"
+
+    except Exception as e:
+        # Log lỗi chi tiết ra console
+        print(f"LỖI DỊCH THUẬT GOOGLE TRANS: {e}")
+        return f"**[LỖI DỊCH THUẬT GOOGLE TRANS]**\n- Không thể dịch nội dung. Chi tiết lỗi đã được ghi lại (Exception: {type(e).__name__}).\n- Câu hỏi gốc:\n{text}"
 
 # ====================================================
 # 🧩 PARSER 1: NGÂN HÀNG KỸ THUẬT (CABBANK)
@@ -464,7 +521,7 @@ def display_all_questions(questions):
         
         # Hiển thị Bản Dịch
         if show_translation:
-            # Nếu chưa có bản dịch (giá trị là True - tức là mới bật) hoặc trạng thái bị reset, thực hiện dịch
+            # Nếu giá trị là True (mới bật) hoặc chưa được dịch lần nào, thực hiện dịch
             if st.session_state.translations[translation_key] is True:
                 full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
                 st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
@@ -1015,6 +1072,7 @@ if bank_choice != "----":
 
                         # Hiển thị Bản Dịch
                         if show_translation:
+                            # Nếu giá trị là True (mới bật) hoặc chưa được dịch lần nào, thực hiện dịch
                             if st.session_state.translations[translation_key] is True:
                                 full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
                                 st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
