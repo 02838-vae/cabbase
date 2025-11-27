@@ -493,10 +493,10 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             for opt in q["options"]:
                 opt_clean = clean_text(opt)
                 if opt_clean == correct:
-                    # Đáp án đúng: Xanh lá (BỎ text-shadow)
+                    # Đáp án đúng: Xanh lá 
                     color_style = "color:#00ff00;" 
                 elif opt_clean == clean_text(selected_opt):
-                    # Đáp án người dùng chọn (sai): Đỏ (BỎ text-shadow)
+                    # Đáp án người dùng chọn (sai): Đỏ
                     color_style = "color:#ff3333;" 
                 else:
                     # Đáp án thường: BỎ inline color để dùng CSS (PC=Đen, Mobile=Trắng)
@@ -541,6 +541,8 @@ css_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700;900&display=swap'); /* ĐÃ THÊM: Font Roboto */
+
 @keyframes colorShift {{
     0% {{ background-position: 0% 50%; }}
     50% {{ background-position: 100% 50%; }}
@@ -690,43 +692,52 @@ a#manual-home-btn:hover {{
     }}
 }}
 
-/* STYLE CÂU HỎI & ĐÁP ÁN */
+/* ĐÃ SỬA: YÊU CẦU 2 - Màu chữ câu hỏi */
 .bank-question-text {{
-    color: #FFDD00 !important;
+    color: #FFFFFF !important; /* PC: TRẮNG */
     font-weight: 700 !important;
     font-size: 22px !important; 
     font-family: 'Oswald', sans-serif !important;
-    text-shadow: 0 0 5px rgba(255, 221, 0, 0.5);
+    text-shadow: 0 0 5px rgba(255, 255, 255, 0.3); 
     padding: 5px 15px; margin-bottom: 10px; line-height: 1.4 !important;
 }}
+@media (max-width: 767px) {{
+    .bank-question-text {{
+        color: #000000 !important; /* MOBILE: ĐEN */
+        text-shadow: none !important;
+    }}
+}}
 
-/* ĐÃ SỬA: YÊU CẦU 1 - Màu chữ đáp án PC/Mobile và BỎ hiệu ứng chữ */
+/* ĐÃ SỬA: YÊU CẦU 3 - Font, Màu, Background Blur cho PC */
 .bank-answer-text {{
-    font-family: 'Oswald', sans-serif !important;
-    font-weight: 700 !important; 
+    font-family: 'Roboto', sans-serif !important; /* ĐÃ SỬA: Đổi font */
+    font-weight: 900 !important; /* ĐÃ SỬA: Đậm hơn */
     font-size: 25px !important; 
     padding: 5px 15px; margin: 2px 0;
     line-height: 1.5 !important; 
     display: block;
-    color: #000000; /* MẶC ĐỊNH PC: ĐEN */
-    text-shadow: none !important; /* BỎ SHADOW */
+    color: #000000; /* PC: ĐEN */
+    text-shadow: none !important; 
+    background-color: rgba(255, 255, 255, 0.7); /* ĐÃ SỬA: Background mờ trắng cho PC */
+    border-radius: 4px;
 }}
 @media (max-width: 767px) {{
     .bank-answer-text {{
         color: #FFFFFF !important; /* MOBILE: TRẮNG */
+        background-color: rgba(0, 0, 0, 0.5); /* MOBILE: Background mờ đen */
     }}
 }}
 
-/* ĐÃ SỬA: YÊU CẦU 1 - Màu chữ đáp án Radio PC/Mobile và BỎ hiệu ứng chữ */
+/* ĐÃ SỬA: YÊU CẦU 3 - Font, Màu, Background Blur cho Radio */
 .stRadio label {{
-    color: #000000 !important; /* MẶC ĐỊNH PC: ĐEN */
+    color: #000000 !important; /* PC: ĐEN */
     font-size: 25px !important; 
-    font-weight: 700 !important;
-    font-family: 'Oswald', sans-serif !important; 
+    font-weight: 900 !important; /* ĐÃ SỬA: Đậm hơn */
+    font-family: 'Roboto', sans-serif !important; /* ĐÃ SỬA: Đổi font */
     padding: 2px 12px;
-    text-shadow: none !important; /* BỎ SHADOW */
-    background-color: transparent !important;
-    border: none !important;
+    text-shadow: none !important; 
+    background-color: rgba(255, 255, 255, 0.7); /* ĐÃ SỬA: Background mờ trắng cho PC */
+    border-radius: 4px;
     display: block !important;
     margin: 4px 0 !important;
     letter-spacing: 0.5px !important;
@@ -734,17 +745,18 @@ a#manual-home-btn:hover {{
 @media (max-width: 767px) {{
     .stRadio label {{
         color: #FFFFFF !important; /* MOBILE: TRẮNG */
+        background-color: rgba(0, 0, 0, 0.5); /* MOBILE: Background mờ đen */
     }}
 }}
 
 .stRadio label:hover {{
-    text-shadow: none !important; /* BỎ SHADOW HOVER */
+    text-shadow: none !important; 
 }}
 .stRadio label span, 
 .stRadio label p,
 .stRadio label div {{
     color: inherit !important; /* Kế thừa màu từ label */
-    text-shadow: none !important; /* Bỏ text-shadow */
+    text-shadow: none !important; 
     letter-spacing: 0.5px !important;
 }}
 
@@ -753,7 +765,8 @@ div[data-testid="stMarkdownContainer"] p {{
     font-size: 25px !important; 
 }}
 
-.stButton>button {{
+.stButton>button,
+[data-testid="stToggle"] label {{
     background-color: #b7a187 !important;
     color: #ffffff !important;
     border-radius: 8px;
@@ -764,6 +777,11 @@ div[data-testid="stMarkdownContainer"] p {{
     padding: 10px 20px !important;
     width: 100%; 
 }}
+[data-testid="stToggle"] label {
+    font-size: 1.1em !important;
+    width: 100%;
+    margin-bottom: 10px;
+}
 
 div.stSelectbox label p {{
     color: #33FF33 !important;
@@ -809,6 +827,7 @@ if "submitted" not in st.session_state: st.session_state.submitted = False
 if "current_mode" not in st.session_state: st.session_state.current_mode = "group"
 if "last_bank_choice" not in st.session_state: st.session_state.last_bank_choice = "----" 
 if "doc_selected" not in st.session_state: st.session_state.doc_selected = "Phụ lục 1 : Ngữ pháp chung" 
+if "show_hints_group" not in st.session_state: st.session_state.show_hints_group = False # ĐÃ THÊM: State cho toggle gợi ý
 
 # CẬP NHẬT LIST NGÂN HÀNG
 BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật VAECO", "Ngân hàng Docwise"]
@@ -820,6 +839,7 @@ if st.session_state.get('last_bank_choice') != bank_choice and bank_choice != "-
     st.session_state.current_group_idx = 0
     st.session_state.submitted = False
     st.session_state.current_mode = "group" 
+    st.session_state.show_hints_group = False # Reset hint toggle
     last_bank_name = st.session_state.get('last_bank_choice')
     if not isinstance(last_bank_name, str) or last_bank_name == "----": last_bank_name = "null bank" 
     # Xoá session state của bài test cũ
@@ -851,6 +871,7 @@ if bank_choice != "----":
             st.session_state.current_group_idx = 0
             st.session_state.submitted = False
             st.session_state.current_mode = "group"
+            st.session_state.show_hints_group = False # Reset hint toggle
             st.rerun()
 
         if st.session_state.doc_selected == "Phụ lục 1 : Ngữ pháp chung":
@@ -892,6 +913,7 @@ if bank_choice != "----":
             if st.session_state.current_group_idx != new_idx:
                 st.session_state.current_group_idx = new_idx
                 st.session_state.submitted = False
+                st.session_state.show_hints_group = False # Reset hint toggle
                 st.rerun()
 
             idx = st.session_state.current_group_idx
@@ -916,6 +938,10 @@ if bank_choice != "----":
                     st.rerun()
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
             
+            # ĐÃ THÊM: Nút toggle hiển thị đáp án (Thay thế cho yêu cầu Nút Dịch)
+            st.session_state.show_hints_group = st.toggle("💡 Hiển thị Đáp án (Chế độ Học)", value=st.session_state.show_hints_group, key="group_hint_toggle")
+            st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+
             if batch:
                 if not st.session_state.submitted:
                     for i, q in enumerate(batch, start=start+1):
@@ -924,7 +950,13 @@ if bank_choice != "----":
                         # Đảm bảo radio button có giá trị mặc định để tránh lỗi
                         default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
                         st.radio("", q["options"], index=q["options"].index(default_val) if default_val in q["options"] else 0, key=q_key)
+                        
+                        # HIỂN THỊ HINT KHI TOGGLE BẬT
+                        if st.session_state.show_hints_group:
+                            st.info(f"Đáp án đúng: **{q['answer']}**", icon="💡")
+                            
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+                        
                     if st.button("✅ Nộp bài", key="submit_group"):
                         st.session_state.submitted = True
                         st.rerun()
@@ -939,10 +971,10 @@ if bank_choice != "----":
                         for opt in q["options"]:
                             opt_clean = clean_text(opt)
                             if opt_clean == correct:
-                                # Đáp án đúng: Xanh lá (BỎ text-shadow)
+                                # Đáp án đúng: Xanh lá 
                                 color_style = "color:#00ff00;" 
                             elif opt_clean == clean_text(selected_opt):
-                                # Đáp án người dùng chọn (sai): Đỏ (BỎ text-shadow)
+                                # Đáp án người dùng chọn (sai): Đỏ
                                 color_style = "color:#ff3333;" 
                             else:
                                 # Đáp án thường: BỎ inline color để dùng CSS (PC=Đen, Mobile=Trắng)
