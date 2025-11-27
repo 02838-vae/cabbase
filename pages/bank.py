@@ -421,10 +421,10 @@ def display_all_questions(questions):
         for opt in q["options"]:
             # Dùng clean_text để so sánh, bỏ qua khoảng trắng, ký tự ẩn
             if clean_text(opt) == clean_text(q["answer"]):
-                # Đáp án đúng: Xanh lá (BỎ text-shadow)
-                color_style = "color:#00ff00;" 
+                # Đáp án đúng: Xanh ngọc (Cyan) - Yêu cầu 4
+                color_style = "color:#00FFFF;" 
             else:
-                # Đáp án thường: BỎ inline color để dùng CSS (PC=Đen, Mobile=Trắng)
+                # Đáp án thường: BỎ inline color để dùng CSS
                 color_style = ""
             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
         
@@ -493,13 +493,13 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             for opt in q["options"]:
                 opt_clean = clean_text(opt)
                 if opt_clean == correct:
-                    # Đáp án đúng: Xanh lá 
-                    color_style = "color:#00ff00;" 
+                    # Đáp án đúng: Xanh ngọc (Cyan) - Yêu cầu 4
+                    color_style = "color:#00FFFF;" 
                 elif opt_clean == clean_text(selected_opt):
                     # Đáp án người dùng chọn (sai): Đỏ
                     color_style = "color:#ff3333;" 
                 else:
-                    # Đáp án thường: BỎ inline color để dùng CSS (PC=Đen, Mobile=Trắng)
+                    # Đáp án thường: BỎ inline color để dùng CSS
                     color_style = ""
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
 
@@ -703,40 +703,40 @@ a#manual-home-btn:hover {{
 }}
 @media (max-width: 767px) {{
     .bank-question-text {{
-        color: #000000 !important; /* MOBILE: ĐEN */
+        color: #FFFFB3 !important; /* MOBILE: VÀNG NHẠT (Request 3) */
         text-shadow: none !important;
     }}
 }}
 
-/* ĐÃ SỬA: YÊU CẦU 3 - Font, Màu, Background Blur cho PC */
+/* ĐÃ SỬA: YÊU CẦU 3 - Bỏ background, Màu chữ đáp án thường trên PC/Mobile */
 .bank-answer-text {{
-    font-family: 'Roboto', sans-serif !important; /* ĐÃ SỬA: Đổi font */
-    font-weight: 900 !important; /* ĐÃ SỬA: Đậm hơn */
+    font-family: 'Roboto', sans-serif !important; 
+    font-weight: 900 !important; 
     font-size: 25px !important; 
     padding: 5px 15px; margin: 2px 0;
     line-height: 1.5 !important; 
     display: block;
-    color: #000000; /* PC: ĐEN */
-    text-shadow: none !important; 
-    background-color: rgba(255, 255, 255, 0.7); /* ĐÃ SỬA: Background mờ trắng cho PC */
+    color: #CCCCCC; /* PC: XÁM NHẠT */
+    text-shadow: 0 0 5px rgba(0,0,0,0.5); 
+    background-color: transparent; /* BỎ BACKGROUND (Request 1) */
     border-radius: 4px;
 }}
 @media (max-width: 767px) {{
     .bank-answer-text {{
         color: #FFFFFF !important; /* MOBILE: TRẮNG */
-        background-color: rgba(0, 0, 0, 0.5); /* MOBILE: Background mờ đen */
+        background-color: transparent; /* BỎ BACKGROUND (Request 1) */
     }}
 }}
 
-/* ĐÃ SỬA: YÊU CẦU 3 - Font, Màu, Background Blur cho Radio */
+/* ĐÃ SỬA: YÊU CẦU 3 - Bỏ background, Màu chữ Radio */
 .stRadio label {{
-    color: #000000 !important; /* PC: ĐEN */
+    color: #CCCCCC !important; /* PC: XÁM NHẠT */
     font-size: 25px !important; 
-    font-weight: 900 !important; /* ĐÃ SỬA: Đậm hơn */
-    font-family: 'Roboto', sans-serif !important; /* ĐÃ SỬA: Đổi font */
+    font-weight: 900 !important; 
+    font-family: 'Roboto', sans-serif !important; 
     padding: 2px 12px;
-    text-shadow: none !important; 
-    background-color: rgba(255, 255, 255, 0.7); /* ĐÃ SỬA: Background mờ trắng cho PC */
+    text-shadow: 0 0 5px rgba(0,0,0,0.5); 
+    background-color: transparent; /* BỎ BACKGROUND (Request 1) */
     border-radius: 4px;
     display: block !important;
     margin: 4px 0 !important;
@@ -745,7 +745,7 @@ a#manual-home-btn:hover {{
 @media (max-width: 767px) {{
     .stRadio label {{
         color: #FFFFFF !important; /* MOBILE: TRẮNG */
-        background-color: rgba(0, 0, 0, 0.5); /* MOBILE: Background mờ đen */
+        background-color: transparent; /* BỎ BACKGROUND (Request 1) */
     }}
 }}
 
@@ -765,8 +765,7 @@ div[data-testid="stMarkdownContainer"] p {{
     font-size: 25px !important; 
 }}
 
-.stButton>button,
-[data-testid="stToggle"] label {{
+.stButton>button {{
     background-color: #b7a187 !important;
     color: #ffffff !important;
     border-radius: 8px;
@@ -777,12 +776,7 @@ div[data-testid="stMarkdownContainer"] p {{
     padding: 10px 20px !important;
     width: 100%; 
 }}
-/* KHẮC PHỤC LỖI CÚ PHÁP F-STRING BẰNG CÁCH THOÁT NGOẶC NHỌN */
-[data-testid="stToggle"] label {{
-    font-size: 1.1em !important;
-    width: 100%;
-    margin-bottom: 10px;
-}}
+/* BỎ CSS CHO stToggle vì đã bỏ toggle */
 
 div.stSelectbox label p {{
     color: #33FF33 !important;
@@ -828,7 +822,7 @@ if "submitted" not in st.session_state: st.session_state.submitted = False
 if "current_mode" not in st.session_state: st.session_state.current_mode = "group"
 if "last_bank_choice" not in st.session_state: st.session_state.last_bank_choice = "----" 
 if "doc_selected" not in st.session_state: st.session_state.doc_selected = "Phụ lục 1 : Ngữ pháp chung" 
-if "show_hints_group" not in st.session_state: st.session_state.show_hints_group = False # ĐÃ THÊM: State cho toggle gợi ý
+# BỎ state show_hints_group
 
 # CẬP NHẬT LIST NGÂN HÀNG
 BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật VAECO", "Ngân hàng Docwise"]
@@ -840,7 +834,7 @@ if st.session_state.get('last_bank_choice') != bank_choice and bank_choice != "-
     st.session_state.current_group_idx = 0
     st.session_state.submitted = False
     st.session_state.current_mode = "group" 
-    st.session_state.show_hints_group = False # Reset hint toggle
+    # BỎ reset hint toggle
     last_bank_name = st.session_state.get('last_bank_choice')
     if not isinstance(last_bank_name, str) or last_bank_name == "----": last_bank_name = "null bank" 
     # Xoá session state của bài test cũ
@@ -872,7 +866,7 @@ if bank_choice != "----":
             st.session_state.current_group_idx = 0
             st.session_state.submitted = False
             st.session_state.current_mode = "group"
-            st.session_state.show_hints_group = False # Reset hint toggle
+            # BỎ reset hint toggle
             st.rerun()
 
         if st.session_state.doc_selected == "Phụ lục 1 : Ngữ pháp chung":
@@ -914,7 +908,7 @@ if bank_choice != "----":
             if st.session_state.current_group_idx != new_idx:
                 st.session_state.current_group_idx = new_idx
                 st.session_state.submitted = False
-                st.session_state.show_hints_group = False # Reset hint toggle
+                # BỎ reset hint toggle
                 st.rerun()
 
             idx = st.session_state.current_group_idx
@@ -939,26 +933,41 @@ if bank_choice != "----":
                     st.rerun()
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
             
-            # ĐÃ THÊM: Nút toggle hiển thị đáp án (Thay thế cho yêu cầu Nút Dịch)
-            st.session_state.show_hints_group = st.toggle("💡 Hiển thị Đáp án (Chế độ Học)", value=st.session_state.show_hints_group, key="group_hint_toggle")
-            st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
-
+            # ĐÃ BỎ: Nút toggle hiển thị đáp án
+            
             if batch:
                 if not st.session_state.submitted:
                     for i, q in enumerate(batch, start=start+1):
                         q_key = f"q_{i}_{hash(q['question'])}" # Dùng hash để tránh trùng key
+                        
+                        # State key cho việc dịch/gợi ý của câu hỏi này (Request 2)
+                        translate_key = f"show_translate_{q_key}"
+                        if translate_key not in st.session_state:
+                            st.session_state[translate_key] = False
+
                         st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
                         # Đảm bảo radio button có giá trị mặc định để tránh lỗi
                         default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
                         st.radio("", q["options"], index=q["options"].index(default_val) if default_val in q["options"] else 0, key=q_key)
                         
-                        # HIỂN THỊ HINT KHI TOGGLE BẬT
-                        if st.session_state.show_hints_group:
-                            st.info(f"Đáp án đúng: **{q['answer']}**", icon="💡")
+                        # Thêm nút Dịch/Gợi ý (Request 2)
+                        if st.button("🌐 Dịch/Gợi ý (Đáp án)", key=f"translate_btn_{q_key}", help="Hiển thị gợi ý học tập"):
+                            # Toggle trạng thái dịch/gợi ý
+                            st.session_state[translate_key] = not st.session_state[translate_key]
+                            st.rerun()
+
+                        # HIỂN THỊ HINT KHI NÚT BẬT
+                        if st.session_state[translate_key]:
+                            # Giả lập chức năng "Dịch" bằng cách hiển thị Đáp án Đúng (Gợi ý học tập)
+                            st.info(f"**Gợi ý Học tập:** Đáp án đúng là **{q['answer']}**", icon="💡")
                             
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
                         
                     if st.button("✅ Nộp bài", key="submit_group"):
+                        # Xoá trạng thái gợi ý của tất cả các câu trước khi nộp
+                        for i, q in enumerate(batch, start=start+1):
+                            q_key_to_delete = f"q_{i}_{hash(q['question'])}"
+                            st.session_state.pop(f"show_translate_{q_key_to_delete}", None)
                         st.session_state.submitted = True
                         st.rerun()
                 else:
@@ -972,13 +981,13 @@ if bank_choice != "----":
                         for opt in q["options"]:
                             opt_clean = clean_text(opt)
                             if opt_clean == correct:
-                                # Đáp án đúng: Xanh lá 
-                                color_style = "color:#00ff00;" 
+                                # Đáp án đúng: Xanh ngọc (Cyan) - Yêu cầu 4
+                                color_style = "color:#00FFFF;" 
                             elif opt_clean == clean_text(selected_opt):
                                 # Đáp án người dùng chọn (sai): Đỏ
                                 color_style = "color:#ff3333;" 
                             else:
-                                # Đáp án thường: BỎ inline color để dùng CSS (PC=Đen, Mobile=Trắng)
+                                # Đáp án thường: BỎ inline color để dùng CSS
                                 color_style = ""
                             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
                         
