@@ -494,14 +494,15 @@ def parse_pl2(source):
     return questions
 
 # ====================================================
-# 🌟 HÀM: LOGIC DỊCH ĐỘC QUYỀN (EXCLUSIVE TRANSLATION) - ĐÃ SỬA
+# 🌟 HÀM: LOGIC DỊCH ĐỘC QUYỀN (EXCLUSIVE TRANSLATION) - ĐÃ SỬA LỖI st.rerun
 # ====================================================
 if 'active_translation_key' not in st.session_state: st.session_state.active_translation_key = None
 
 def on_translate_toggle(key_clicked):
     """
     Callback function để quản lý chế độ Dịch ĐỘC QUYỀN.
-    Đã sửa lỗi "Calling st.rerun() within a callback is a no-op" bằng cách sử dụng st.rerun()
+    Đã loại bỏ st.rerun() để tránh thông báo "no-op" vì việc thay đổi
+    giá trị toggle đã tự động kích hoạt rerun.
     """
     toggle_key = f"toggle_{key_clicked}"
     is_on_after_click = st.session_state.get(toggle_key, False)
@@ -525,11 +526,10 @@ def on_translate_toggle(key_clicked):
         # Case 2: Người dùng TẮT nút Dịch đang hoạt động
         st.session_state.active_translation_key = None
         
-    # Force rerun để cập nhật giao diện (cả nút và bản dịch)
-    st.rerun() # Dùng st.rerun() ở cuối hàm callback để đảm bảo refresh
+    # ĐÃ LOẠI BỎ st.rerun()
 
 # ====================================================
-# 🌟 HÀM: XEM TOÀN BỘ CÂU HỎI (CẬP NHẬT VỊ TRÍ NÚT DỊCH)
+# 🌟 HÀM: XEM TOÀN BỘ CÂU HỎI (ĐÃ CHUYỂN MÀU ĐÁP ÁN SANG ĐEN)
 # ====================================================
 def display_all_questions(questions):
     st.markdown('<div class="result-title"><h3>📚 TOÀN BỘ NGÂN HÀNG CÂU HỎI</h3></div>', unsafe_allow_html=True)
@@ -537,6 +537,10 @@ def display_all_questions(questions):
         st.warning("Không có câu hỏi nào để hiển thị.")
         return
     
+    # Style đáp án
+    # Đáp án: BLACK + WHITE SHADOW
+    BLACK_STYLE = "color:#000000; text-shadow: 0 0 3px #FFFFFF;" 
+
     for i, q in enumerate(questions, start=1):
         q_key = f"all_q_{i}_{hash(q['question'])}" 
         translation_key = f"trans_{q_key}"
@@ -570,18 +574,13 @@ def display_all_questions(questions):
         # Hiển thị Đáp án
         for opt in q["options"]:
             # Dùng clean_text để so sánh, bỏ qua khoảng trắng, ký tự ẩn
-            if clean_text(opt) == clean_text(q["answer"]):
-                # Đáp án đúng: Xanh lá (Bỏ shadow)
-                color_style = "color:#00ff00;" 
-            else:
-                # Đáp án thường: Trắng (Bỏ shadow)
-                color_style = "color:#FFFFFF;"
-            st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
+            # Áp dụng màu ĐEN cho tất cả các đáp án trong chế độ này
+            st.markdown(f'<div class="bank-answer-text" style="{BLACK_STYLE}">{opt}</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
 
 # ====================================================
-# 🌟 HÀM: TEST MODE (CẬP NHẬT VỊ TRÍ NÚT DỊCH)
+# 🌟 HÀM: TEST MODE (ĐÃ CHUYỂN MÀU ĐÁP ÁN SANG ĐEN)
 # ====================================================
 def get_random_questions(questions, count=50):
     if len(questions) <= count: return questions
@@ -608,7 +607,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             st.session_state[f"{test_key_prefix}_started"] = True
             st.session_state[f"{test_key_prefix}_submitted"] = False
             st.session_state.current_mode = "test" 
-            st.rerun()
+            # Không cần st.rerun() ở đây vì nút bấm đã tự rerun
         return
 
     if not st.session_state[f"{test_key_prefix}_submitted"]:
@@ -658,6 +657,11 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         test_batch = st.session_state[f"{test_key_prefix}_questions"]
         score = 0
         
+        # Style đáp án
+        BLACK_CORRECT_STYLE = "color:#000000; text-shadow: 0 0 3px #00ff00;" # Black text, Green shadow
+        BLACK_WRONG_STYLE = "color:#000000; text-shadow: 0 0 3px #ff3333;" # Black text, Red shadow
+        BLACK_UNSELECTED_STYLE = "color:#000000; text-shadow: 0 0 3px #FFFFFF;" # Black text, White shadow
+
         for i, q in enumerate(test_batch, start=1):
             q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}" 
             selected_opt = st.session_state.get(q_key)
@@ -695,14 +699,14 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             for opt in q["options"]:
                 opt_clean = clean_text(opt)
                 if opt_clean == correct:
-                    # Đáp án đúng: Xanh lá (Bỏ shadow)
-                    color_style = "color:#00ff00;" 
+                    # Đáp án đúng: Black text, Green shadow
+                    color_style = BLACK_CORRECT_STYLE 
                 elif opt_clean == clean_text(selected_opt):
-                    # Đáp án sai đã chọn: Đỏ (Bỏ shadow)
-                    color_style = "color:#ff3333;" 
+                    # Đáp án sai đã chọn: Black text, Red shadow
+                    color_style = BLACK_WRONG_STYLE 
                 else:
-                    # Đáp án thường: Trắng (Bỏ shadow)
-                    color_style = "color:#FFFFFF;"
+                    # Đáp án thường: Black text, White shadow
+                    color_style = BLACK_UNSELECTED_STYLE
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
 
             if is_correct: score += 1
@@ -800,6 +804,11 @@ html, body, .stApp {{
 /* Ẩn UI */
 #MainMenu, footer, header {{visibility: hidden; height: 0;}}
 [data-testid="stHeader"] {{display: none;}}
+/* ẨN CỘT DỌC (SIDEBAR) */
+[data-testid="stSidebar"] {{
+    display: none !important;
+}}
+
 
 /* BUTTON HOME */
 #back-to-home-btn-container {{
@@ -909,17 +918,18 @@ a#manual-home-btn:hover {{
     padding: 5px 15px; margin: 2px 0;
     line-height: 1.5 !important; 
     display: block;
-    /* Màu sắc được xử lý bằng inline style */
+    /* Màu sắc được xử lý bằng inline style (ĐÃ CHUYỂN SANG ĐEN + SHADOW) */
 }}
 
-/* RADIO BUTTONS (CHỌN ĐÁP ÁN) - ĐÃ THỐNG NHẤT FONT VÀ BỎ SHADOW/EFFECTS */
+/* RADIO BUTTONS (CHỌN ĐÁP ÁN) - ĐÃ CHUYỂN MÀU ĐÁP ÁN SANG ĐEN */
 .stRadio label {{
-    color: #FFFFFF !important;
+    /* Đã bị override bởi selector bên dưới */
+    color: #FFFFFF !important; 
     font-size: 22px !important; 
     font-weight: 700 !important;
     font-family: 'Oswald', sans-serif !important; /* Thống nhất font content */
     padding: 2px 12px;
-    text-shadow: none !important; /* ❌ BỎ SHADOW */
+    text-shadow: none !important; 
     background-color: transparent !important;
     border: none !important;
     display: block !important;
@@ -928,14 +938,14 @@ a#manual-home-btn:hover {{
 }}
 
 .stRadio label:hover {{
-    text-shadow: none !important; /* ❌ BỎ SHADOW KHI HOVER */
+    text-shadow: none !important; 
 }}
 
 .stRadio label span, 
 .stRadio label p,
 .stRadio label div {{
-    color: #FFFFFF !important;
-    text-shadow: none !important; /* ❌ BỎ SHADOW */
+    color: #000000 !important; /* CHUYỂN SANG MÀU ĐEN */
+    text-shadow: 0 0 3px #FFFFFF !important; /* THÊM SHADOW TRẮNG CHO DỄ ĐỌC */
     letter-spacing: 0.5px !important;
 }}
 
@@ -1156,6 +1166,11 @@ if bank_choice != "----":
                         st.rerun()
                 else:
                     score = 0
+                    # Style đáp án
+                    BLACK_CORRECT_STYLE = "color:#000000; text-shadow: 0 0 3px #00ff00;" # Black text, Green shadow
+                    BLACK_WRONG_STYLE = "color:#000000; text-shadow: 0 0 3px #ff3333;" # Black text, Red shadow
+                    BLACK_UNSELECTED_STYLE = "color:#000000; text-shadow: 0 0 3px #FFFFFF;" # Black text, White shadow
+
                     for i, q in enumerate(batch, start=start+1):
                         q_key = f"q_{i}_{hash(q['question'])}" 
                         selected_opt = st.session_state.get(q_key)
@@ -1193,11 +1208,11 @@ if bank_choice != "----":
                         for opt in q["options"]:
                             opt_clean = clean_text(opt)
                             if opt_clean == correct:
-                                color_style = "color:#00ff00;" # Xanh lá, bỏ shadow
+                                color_style = BLACK_CORRECT_STYLE # Black text, Green shadow
                             elif opt_clean == clean_text(selected_opt):
-                                color_style = "color:#ff3333;" # Đỏ, bỏ shadow
+                                color_style = BLACK_WRONG_STYLE # Black text, Red shadow
                             else:
-                                color_style = "color:#FFFFFF;" # Trắng chân phương
+                                color_style = BLACK_UNSELECTED_STYLE # Black text, White shadow
                             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
                         
                         if is_correct: 
