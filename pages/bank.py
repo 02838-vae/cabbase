@@ -102,7 +102,8 @@ def read_pl2_data(source):
     try:
         doc = Document(path)
     except Exception as e:
-        print(f"Lỗi đọc file DOCX (chỉ text): {source). Chi tiết: {e}")
+        # ĐÃ SỬA LỖI CÚ PHÁP TẠI ĐÂY: {source). → {source}.
+        print(f"Lỗi đọc file DOCX (chỉ text): {source}. Chi tiết: {e}")
         return []
 
     for p in doc.paragraphs:
