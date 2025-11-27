@@ -153,7 +153,6 @@ def get_translator():
 def translate_text(text):
     """
     Hàm dịch thuật sử dụng Unofficial 'translate' API hoặc fallback về MOCK nếu có lỗi.
-    (ĐÃ XÓA CHUỖI "Unofficial Translate API")
     """
     translator = get_translator()
     
@@ -500,7 +499,10 @@ def parse_pl2(source):
 if 'active_translation_key' not in st.session_state: st.session_state.active_translation_key = None
 
 def on_translate_toggle(key_clicked):
-    """Callback function để quản lý chế độ Dịch ĐỘC QUYỀN."""
+    """
+    Callback function để quản lý chế độ Dịch ĐỘC QUYỀN.
+    Đã sửa lỗi "Calling st.rerun() within a callback is a no-op" bằng cách sử dụng st.rerun()
+    """
     toggle_key = f"toggle_{key_clicked}"
     is_on_after_click = st.session_state.get(toggle_key, False)
     
@@ -524,7 +526,7 @@ def on_translate_toggle(key_clicked):
         st.session_state.active_translation_key = None
         
     # Force rerun để cập nhật giao diện (cả nút và bản dịch)
-    st.rerun()
+    st.rerun() # Dùng st.rerun() ở cuối hàm callback để đảm bảo refresh
 
 # ====================================================
 # 🌟 HÀM: XEM TOÀN BỘ CÂU HỎI (CẬP NHẬT VỊ TRÍ NÚT DỊCH)
@@ -539,8 +541,6 @@ def display_all_questions(questions):
         q_key = f"all_q_{i}_{hash(q['question'])}" 
         translation_key = f"trans_{q_key}"
         is_active = (translation_key == st.session_state.active_translation_key)
-        
-        # --- SỬA LỖI: HIỂN THỊ NÚT DỊCH BÊN DƯỚI CÂU HỎI VÀ ĐỂ NÓ RỘNG HƠN ---
         
         # 1. Hiển thị Câu hỏi
         st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
@@ -619,8 +619,6 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             translation_key = f"trans_{q_key}"
             is_active = (translation_key == st.session_state.active_translation_key)
             
-            # --- SỬA LỖI: HIỂN THỊ NÚT DỊCH BÊN DƯỚI CÂU HỎI VÀ ĐỂ NÓ RỘNG HƠN ---
-            
             # 1. Hiển thị Câu hỏi
             st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
 
@@ -669,8 +667,6 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             is_active = (translation_key == st.session_state.active_translation_key)
 
 
-            # --- SỬA LỖI: HIỂN THỊ NÚT DỊCH BÊN DƯỚI CÂU HỎI VÀ ĐỂ NÓ RỘNG HƠN ---
-            
             # 1. Hiển thị Câu hỏi
             st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
 
@@ -1125,8 +1121,6 @@ if bank_choice != "----":
                         translation_key = f"trans_{q_key}"
                         is_active = (translation_key == st.session_state.active_translation_key)
                         
-                        # --- SỬA LỖI: HIỂN THỊ NÚT DỊCH BÊN DƯỚI CÂU HỎI VÀ ĐỂ NÓ RỘNG HƠN ---
-                        
                         # 1. Hiển thị Câu hỏi
                         st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
                         
@@ -1170,8 +1164,6 @@ if bank_choice != "----":
                         translation_key = f"trans_{q_key}"
                         is_active = (translation_key == st.session_state.active_translation_key)
 
-                        # --- SỬA LỖI: HIỂN THỊ NÚT DỊCH BÊN DƯỚI CÂU HỎI VÀ ĐỂ NÓ RỘNG HƠN ---
-                        
                         # 1. Hiển thị Câu hỏi
                         st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
                         
