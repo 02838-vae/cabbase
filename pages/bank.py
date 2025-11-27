@@ -130,44 +130,43 @@ def get_base64_encoded_file(file_path):
         return fallback_base64
 
 # ====================================================
-# 🌐 HÀM MÔ PHỎNG DỊCH THUẬT (MỚI)
+# 🌐 HÀM DỊCH THUẬT (ĐÃ CẬP NHẬT DÙNG GOOGLE SEARCH)
 # ====================================================
 def translate_text(text):
     """
-    Hàm mô phỏng dịch thuật. Trong môi trường thực, hàm này sẽ tích hợp API dịch
-    như Google Translate API hoặc một dịch vụ dịch thuật khác để dịch câu hỏi 
-    và các đáp án sang tiếng Việt.
+    Hàm dịch thuật sử dụng Google Search để dịch câu hỏi và đáp án sang tiếng Việt.
     """
-    # Tách Câu hỏi và Đáp án (input có dạng: "Câu hỏi: [Nội dung Q]\nĐáp án: [Nội dung A]")
+    # 1. Tách Câu hỏi và Đáp án
     parts = text.split('\nĐáp án: ')
     q_content = parts[0].replace('Câu hỏi: ', '').strip()
-    a_content = parts[1].strip() if len(parts) > 1 else ""
+    a_content_raw = parts[1].strip() if len(parts) > 1 else ""
     
-    # *Sử dụng khả năng dịch nội tại của mô hình để mô phỏng kết quả dịch*
-    # (Trong code thực tế cần thay thế bằng API)
+    # 2. Sử dụng Google Search để dịch Question và Options
+    
+    # Dịch Câu hỏi (Question)
+    try:
+        google_result_q = st.session_state.google.search(queries=[f"dịch sang tiếng Việt: {q_content}"])
+        # Lấy nội dung dịch từ kết quả search, thường là snippet đầu tiên
+        q_translated_snippet = google_result_q['result'].split('\n')[0].strip()
+        q_translated = q_translated_snippet if q_translated_snippet else q_content
+    except Exception:
+        q_translated = f"[Lỗi dịch câu hỏi: {q_content}]"
 
-    # Ví dụ mô phỏng kết quả dịch một câu cụ thể để minh họa cấu trúc output
-    if "capital of France" in q_content:
-        q_translated = "Thủ đô của nước Pháp là gì?"
-        a_translated = "a. Pa-ri; b. Luân Đôn; c. Béc-lin"
-    else:
-        # Nếu không có ví dụ cụ thể, trả về một chuỗi có cấu trúc để minh họa tính năng
-        # Nếu nội dung gốc là tiếng Anh, đây sẽ là bản dịch thực.
-        # Nếu nội dung gốc đã là tiếng Việt, bản dịch sẽ gần giống.
-        q_translated = f"Câu hỏi: {q_content}"
-        a_translated = f"Các đáp án: {a_content}"
-        
-        # Do nội dung ngân hàng thường là tiếng Anh, ta giả định dịch thành công
-        q_translated = "[Câu hỏi đã được dịch: " + q_content + "]"
-        a_translated = "[Đáp án đã được dịch: " + a_content + "]"
+    # Dịch Đáp án (Options)
+    try:
+        google_result_a = st.session_state.google.search(queries=[f"dịch sang tiếng Việt: {a_content_raw}"])
+        # Lấy nội dung dịch từ kết quả search
+        a_translated_snippet = google_result_a['result'].split('\n')[0].strip()
+        a_translated = a_translated_snippet if a_translated_snippet else a_content_raw
+    except Exception:
+        a_translated = f"[Lỗi dịch đáp án: {a_content_raw}]"
 
-
+    # 3. Định dạng kết quả
     return f"**[Bản dịch Tiếng Việt]**\n\n- **Câu hỏi:** {q_translated}\n- **Các đáp án:** {a_translated}"
 
 
 # ====================================================
 # 🧩 PARSER 1: NGÂN HÀNG KỸ THUẬT (CABBANK)
-# ... (Giữ nguyên các hàm Parser)
 # ====================================================
 def parse_cabbank(source):
     # ... (giữ nguyên)
@@ -465,8 +464,8 @@ def display_all_questions(questions):
         
         # Hiển thị Bản Dịch
         if show_translation:
-            # Nếu chưa có bản dịch hoặc trạng thái bị reset, thực hiện dịch
-            if translation_key not in st.session_state.translations or st.session_state.translations[translation_key] is True:
+            # Nếu chưa có bản dịch (giá trị là True - tức là mới bật) hoặc trạng thái bị reset, thực hiện dịch
+            if st.session_state.translations[translation_key] is True:
                 full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
                 st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
             
@@ -539,7 +538,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
 
             # Hiển thị Bản Dịch
             if show_translation:
-                if translation_key not in st.session_state.translations or st.session_state.translations[translation_key] is True:
+                if st.session_state.translations[translation_key] is True:
                     full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
                     st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
                 
@@ -578,7 +577,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
 
             # Hiển thị Bản Dịch
             if show_translation:
-                if translation_key not in st.session_state.translations or st.session_state.translations[translation_key] is True:
+                if st.session_state.translations[translation_key] is True:
                     full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
                     st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
                 
@@ -1016,7 +1015,7 @@ if bank_choice != "----":
 
                         # Hiển thị Bản Dịch
                         if show_translation:
-                            if translation_key not in st.session_state.translations or st.session_state.translations[translation_key] is True:
+                            if st.session_state.translations[translation_key] is True:
                                 full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
                                 st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
                             
@@ -1049,7 +1048,7 @@ if bank_choice != "----":
 
                         # Hiển thị Bản Dịch
                         if show_translation:
-                            if translation_key not in st.session_state.translations or st.session_state.translations[translation_key] is True:
+                            if st.session_state.translations[translation_key] is True:
                                 full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
                                 st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
                             
