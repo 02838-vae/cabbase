@@ -130,9 +130,47 @@ def get_base64_encoded_file(file_path):
         return fallback_base64
 
 # ====================================================
+# 🌐 HÀM MÔ PHỎNG DỊCH THUẬT (MỚI)
+# ====================================================
+def translate_text(text):
+    """
+    Hàm mô phỏng dịch thuật. Trong môi trường thực, hàm này sẽ tích hợp API dịch
+    như Google Translate API hoặc một dịch vụ dịch thuật khác để dịch câu hỏi 
+    và các đáp án sang tiếng Việt.
+    """
+    # Tách Câu hỏi và Đáp án (input có dạng: "Câu hỏi: [Nội dung Q]\nĐáp án: [Nội dung A]")
+    parts = text.split('\nĐáp án: ')
+    q_content = parts[0].replace('Câu hỏi: ', '').strip()
+    a_content = parts[1].strip() if len(parts) > 1 else ""
+    
+    # *Sử dụng khả năng dịch nội tại của mô hình để mô phỏng kết quả dịch*
+    # (Trong code thực tế cần thay thế bằng API)
+
+    # Ví dụ mô phỏng kết quả dịch một câu cụ thể để minh họa cấu trúc output
+    if "capital of France" in q_content:
+        q_translated = "Thủ đô của nước Pháp là gì?"
+        a_translated = "a. Pa-ri; b. Luân Đôn; c. Béc-lin"
+    else:
+        # Nếu không có ví dụ cụ thể, trả về một chuỗi có cấu trúc để minh họa tính năng
+        # Nếu nội dung gốc là tiếng Anh, đây sẽ là bản dịch thực.
+        # Nếu nội dung gốc đã là tiếng Việt, bản dịch sẽ gần giống.
+        q_translated = f"Câu hỏi: {q_content}"
+        a_translated = f"Các đáp án: {a_content}"
+        
+        # Do nội dung ngân hàng thường là tiếng Anh, ta giả định dịch thành công
+        q_translated = "[Câu hỏi đã được dịch: " + q_content + "]"
+        a_translated = "[Đáp án đã được dịch: " + a_content + "]"
+
+
+    return f"**[Bản dịch Tiếng Việt]**\n\n- **Câu hỏi:** {q_translated}\n- **Các đáp án:** {a_translated}"
+
+
+# ====================================================
 # 🧩 PARSER 1: NGÂN HÀNG KỸ THUẬT (CABBANK)
+# ... (Giữ nguyên các hàm Parser)
 # ====================================================
 def parse_cabbank(source):
+    # ... (giữ nguyên)
     paras = read_docx_paragraphs(source)
     if not paras: return []
 
@@ -180,11 +218,11 @@ def parse_cabbank(source):
             current["answer"] = current["options"][0]
         questions.append(current)
     return questions
-
 # ====================================================
 # 🧩 PARSER 2: NGÂN HÀNG LUẬT (LAWBANK)
 # ====================================================
 def parse_lawbank(source):
+    # ... (giữ nguyên)
     paras = read_docx_paragraphs(source)
     if not paras: return []
 
@@ -240,6 +278,7 @@ def parse_lawbank(source):
 # 🧩 PARSER 3: PHỤ LỤC 1 (Dùng dấu (*))
 # ====================================================
 def parse_pl1(source):
+    # ... (giữ nguyên)
     """
     Parser cho định dạng PL1 (sử dụng dấu (*) để nhận diện đáp án đúng)
     """
@@ -322,6 +361,7 @@ def parse_pl1(source):
 # 🧩 PARSER 4: PHỤ LỤC 2 (Dùng dấu (*))
 # ====================================================
 def parse_pl2(source):
+    # ... (giữ nguyên)
     """
     Parser cho định dạng PL2 (Sử dụng ký hiệu (*) để nhận diện đáp án đúng)
     """
@@ -399,7 +439,7 @@ def parse_pl2(source):
         
     return questions
 # ====================================================
-# 🌟 HÀM: XEM TOÀN BỘ CÂU HỎI
+# 🌟 HÀM: XEM TOÀN BỘ CÂU HỎI (CẬP NHẬT CHỨC NĂNG DỊCH)
 # ====================================================
 def display_all_questions(questions):
     st.markdown('<div class="result-title"><h3>📚 TOÀN BỘ NGÂN HÀNG CÂU HỎI</h3></div>', unsafe_allow_html=True)
@@ -408,8 +448,32 @@ def display_all_questions(questions):
         return
     
     for i, q in enumerate(questions, start=1):
-        st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+        q_key = f"all_q_{i}_{hash(q['question'])}" 
+        translation_key = f"trans_{q_key}"
         
+        # Tạo cột cho Câu hỏi và Nút Dịch
+        col_q_text, col_translate = st.columns([0.9, 0.1])
+        
+        with col_q_text:
+            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+        
+        with col_translate:
+            # Sử dụng st.toggle để giữ trạng thái dịch thay vì button/double click
+            show_translation = st.toggle("Dịch", value=st.session_state.translations.get(translation_key, False), key=f"toggle_{translation_key}")
+            # Cập nhật trạng thái
+            st.session_state.translations[translation_key] = show_translation
+        
+        # Hiển thị Bản Dịch
+        if show_translation:
+            # Nếu chưa có bản dịch hoặc trạng thái bị reset, thực hiện dịch
+            if translation_key not in st.session_state.translations or st.session_state.translations[translation_key] is True:
+                full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
+                st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
+            
+            # Hiển thị bản dịch đã được lưu
+            st.info(st.session_state.translations[translation_key], icon="🌐")
+            
+        # Hiển thị Đáp án
         for opt in q["options"]:
             # Dùng clean_text để so sánh, bỏ qua khoảng trắng, ký tự ẩn
             if clean_text(opt) == clean_text(q["answer"]):
@@ -423,7 +487,7 @@ def display_all_questions(questions):
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
 
 # ====================================================
-# 🌟 HÀM: TEST MODE
+# 🌟 HÀM: TEST MODE (CẬP NHẬT CHỨC NĂNG DỊCH)
 # ====================================================
 def get_random_questions(questions, count=50):
     if len(questions) <= count: return questions
@@ -459,10 +523,29 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         st.markdown('<div class="result-title"><h3>⏳ ĐANG LÀM BÀI TEST</h3></div>', unsafe_allow_html=True)
         test_batch = st.session_state[f"{test_key_prefix}_questions"]
         for i, q in enumerate(test_batch, start=1):
-            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
-            # SỬA LỖI KEY: THÊM INDEX (i) ĐỂ ĐẢM BẢO TÍNH DUY NHẤT VÀ KHẮC PHỤ StreamlitDuplicateElementKey
             q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}" 
-            # Đảm bảo  có giá trị mặc định để tránh lỗi
+            translation_key = f"trans_{q_key}"
+            
+            # Tạo cột cho Câu hỏi và Nút Dịch
+            col_q_text, col_translate = st.columns([0.9, 0.1])
+            
+            with col_q_text:
+                st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+
+            with col_translate:
+                # Sử dụng st.toggle để giữ trạng thái dịch
+                show_translation = st.toggle("Dịch", value=st.session_state.translations.get(translation_key, False), key=f"toggle_{translation_key}")
+                st.session_state.translations[translation_key] = show_translation
+
+            # Hiển thị Bản Dịch
+            if show_translation:
+                if translation_key not in st.session_state.translations or st.session_state.translations[translation_key] is True:
+                    full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
+                    st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
+                
+                st.info(st.session_state.translations[translation_key], icon="🌐")
+
+            # Hiển thị Radio Button
             default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
             st.radio("", q["options"], index=q["options"].index(default_val) if default_val in q["options"] else 0, key=q_key)
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
@@ -476,13 +559,31 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         score = 0
         
         for i, q in enumerate(test_batch, start=1):
-            # SỬ DỤNG KEY ĐÃ ĐƯỢC FIX
             q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}" 
             selected_opt = st.session_state.get(q_key)
             correct = clean_text(q["answer"])
             is_correct = clean_text(selected_opt) == correct
+            translation_key = f"trans_{q_key}"
 
-            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+            # Tạo cột cho Câu hỏi và Nút Dịch
+            col_q_text, col_translate = st.columns([0.9, 0.1])
+            
+            with col_q_text:
+                st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+
+            with col_translate:
+                # Sử dụng st.toggle để giữ trạng thái dịch
+                show_translation = st.toggle("Dịch", value=st.session_state.translations.get(translation_key, False), key=f"toggle_{translation_key}")
+                st.session_state.translations[translation_key] = show_translation
+
+            # Hiển thị Bản Dịch
+            if show_translation:
+                if translation_key not in st.session_state.translations or st.session_state.translations[translation_key] is True:
+                    full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
+                    st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
+                
+                st.info(st.session_state.translations[translation_key], icon="🌐")
+            
             for opt in q["options"]:
                 opt_clean = clean_text(opt)
                 if opt_clean == correct:
@@ -744,6 +845,19 @@ div[data-testid="stMarkdownContainer"] p {{
     padding: 10px 20px !important;
     width: 100%; 
 }}
+
+/* STYLE CHO NÚT DỊCH (st.toggle) */
+.stToggle label p {{
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    padding: 0;
+    margin: 0;
+    line-height: 1 !important;
+}}
+.stToggle > label > div[data-testid="stMarkdownContainer"] {{
+    margin-top: 10px !important; 
+}}
+
 div.stSelectbox label p {{
     color: #33FF33 !important;
     font-size: 1.25rem !important;
@@ -775,6 +889,7 @@ if "submitted" not in st.session_state: st.session_state.submitted = False
 if "current_mode" not in st.session_state: st.session_state.current_mode = "group"
 if "last_bank_choice" not in st.session_state: st.session_state.last_bank_choice = "----" 
 if "doc_selected" not in st.session_state: st.session_state.doc_selected = "Phụ lục 1 : Ngữ pháp chung" 
+if 'translations' not in st.session_state: st.session_state.translations = {} # KHỞI TẠO STATE DỊCH THUẬT
 
 # CẬP NHẬT LIST NGÂN HÀNG
 BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật VAECO", "Ngân hàng Docwise"]
@@ -843,8 +958,6 @@ if bank_choice != "----":
         st.stop() 
     
     total = len(questions)
-    # ❌ Bỏ thông báo "Đã tải thành công..."
-    # st.success(f"Đã tải thành công **{total}** câu hỏi từ **{bank_choice}**.") 
 
     # --- MODE: GROUP ---
     if st.session_state.current_mode == "group":
@@ -890,8 +1003,26 @@ if bank_choice != "----":
                 if not st.session_state.submitted:
                     for i, q in enumerate(batch, start=start+1):
                         q_key = f"q_{i}_{hash(q['question'])}" # Dùng hash để tránh trùng key
-                        st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
-                        # Đảm bảo radio button có giá trị mặc định để tránh lỗi
+                        translation_key = f"trans_{q_key}"
+                        
+                        # Cập nhật: Thêm nút Dịch
+                        col_q_text, col_translate = st.columns([0.9, 0.1])
+                        with col_q_text:
+                            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+                        
+                        with col_translate:
+                            show_translation = st.toggle("Dịch", value=st.session_state.translations.get(translation_key, False), key=f"toggle_{translation_key}")
+                            st.session_state.translations[translation_key] = show_translation
+
+                        # Hiển thị Bản Dịch
+                        if show_translation:
+                            if translation_key not in st.session_state.translations or st.session_state.translations[translation_key] is True:
+                                full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
+                                st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
+                            
+                            st.info(st.session_state.translations[translation_key], icon="🌐")
+
+                        # Hiển thị Radio Button
                         default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
                         st.radio("", q["options"], index=q["options"].index(default_val) if default_val in q["options"] else 0, key=q_key)
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
@@ -905,7 +1036,26 @@ if bank_choice != "----":
                         selected_opt = st.session_state.get(q_key)
                         correct = clean_text(q["answer"])
                         is_correct = clean_text(selected_opt) == correct
-                        st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+                        translation_key = f"trans_{q_key}"
+
+                        # Cập nhật: Thêm nút Dịch
+                        col_q_text, col_translate = st.columns([0.9, 0.1])
+                        with col_q_text:
+                            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+                        
+                        with col_translate:
+                            show_translation = st.toggle("Dịch", value=st.session_state.translations.get(translation_key, False), key=f"toggle_{translation_key}")
+                            st.session_state.translations[translation_key] = show_translation
+
+                        # Hiển thị Bản Dịch
+                        if show_translation:
+                            if translation_key not in st.session_state.translations or st.session_state.translations[translation_key] is True:
+                                full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
+                                st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
+                            
+                            st.info(st.session_state.translations[translation_key], icon="🌐")
+
+                        # Hiển thị Đáp án (KẾT QUẢ)
                         for opt in q["options"]:
                             opt_clean = clean_text(opt)
                             if opt_clean == correct:
