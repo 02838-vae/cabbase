@@ -9,8 +9,8 @@ import pandas as pd
 import base64
 import os
 import random 
-# THAY THẾ google.cloud.translate bằng googletrans
-from googletrans import Translator # <-- THAY THẾ THƯ VIỆN
+# THAY THẾ googletrans bằng translate
+from translate import Translator # <-- THAY THẾ THƯ VIỆN
 
 # ====================================================
 # ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
@@ -132,27 +132,27 @@ def get_base64_encoded_file(file_path):
         return fallback_base64
 
 # ====================================================
-# 🌐 HÀM DỊCH THUẬT (ĐÃ CẬP NHẬT DÙNG googletrans)
+# 🌐 HÀM DỊCH THUẬT (ĐÃ CẬP NHẬT DÙNG translate)
 # ====================================================
 
 @st.cache_resource
 def get_translator():
     """
-    Khởi tạo Unofficial Google Translate Client.
-    Cần try-except vì googletrans không ổn định.
+    Khởi tạo Translator Client.
     """
     try:
-        # Client sẽ tự động kết nối qua public API
-        translator = Translator() 
+        # Khởi tạo Translator, target language là 'vi'
+        # Thư viện này không yêu cầu API Key cho bản miễn phí.
+        translator = Translator(to_lang="vi") 
         return translator
     except Exception as e:
-        print(f"Lỗi khởi tạo googletrans Translator: {e}")
+        print(f"Lỗi khởi tạo translate.Translator: {e}")
         # Trả về None nếu không thể khởi tạo
         return None
 
 def translate_text(text):
     """
-    Hàm dịch thuật sử dụng Unofficial Google Translate API hoặc fallback về MOCK nếu có lỗi.
+    Hàm dịch thuật sử dụng Unofficial 'translate' API hoặc fallback về MOCK nếu có lỗi.
     """
     translator = get_translator()
     
@@ -170,7 +170,7 @@ def translate_text(text):
 
 
     # ----------------------------------------------------
-    # LOGIC DỊCH googletrans THỰC TẾ
+    # LOGIC DỊCH translate THỰC TẾ
     # ----------------------------------------------------
     try:
         # 1. Tách Câu hỏi và Đáp án
@@ -181,46 +181,42 @@ def translate_text(text):
         # Lấy tất cả nội dung cần dịch: Câu hỏi + các đáp án
         options = [opt.strip() for opt in a_content_raw.split(';') if opt.strip()]
         
-        # Chuẩn bị danh sách nội dung cần dịch:
-        contents_to_translate = [q_content] + options
-        
-        # 2. Dịch toàn bộ nội dung trong một lần gọi API (batch translate)
-        # Lưu ý: googletrans không hỗ trợ batch translate chính thức, 
-        # nên ta phải gọi từng câu nhưng logic code sẽ tối ưu hóa như sau:
-        
-        translations = []
-        for content in contents_to_translate:
-            if not content:
-                translations.append("")
-                continue
-            # Gọi API dịch
-            res = translator.translate(content, src='en', dest='vi')
-            translations.append(res.text)
+        # 2. Dịch từng phần: Câu hỏi
+        # Dịch câu hỏi
+        q_translated = translator.translate(q_content)
 
-        # 3. Phân tách kết quả
-        q_translated = translations[0]
-        a_translated_texts = translations[1:]
-        
-        # 4. Ghép lại Đáp án với prefix
+        # 3. Dịch các đáp án
         a_translated_list = []
-        for i, translated_text in enumerate(a_translated_texts):
+        for i, option_content in enumerate(options):
+            if not option_content:
+                a_translated_list.append("")
+                continue
+            
             # Tách phần tiền tố (a., b., c.) từ option gốc
-            original_prefix_match = re.match(r'^([a-d]\.|\s*)\s*', options[i], re.IGNORECASE)
+            original_prefix_match = re.match(r'^([a-d]\.|\s*)\s*', option_content, re.IGNORECASE)
+            # Dùng prefix gốc (vd: a. ) hoặc f"{i+1}." nếu không tìm thấy
             original_prefix = original_prefix_match.group(0).strip() if original_prefix_match and original_prefix_match.group(0).strip() else f"{i+1}."
             
-            # Giữ prefix gốc và lấy phần dịch:
-            a_translated_list.append(f"{original_prefix} {translated_text}")
-
+            # Dịch phần nội dung chính
+            translated_text = translator.translate(option_content)
+            
+            # 4. Ghép lại Đáp án với prefix
+            # Cố gắng loại bỏ prefix nếu bị dịch đúp, sau đó ghép lại prefix gốc.
+            stripped_translated_text = translated_text.lstrip(original_prefix).strip()
+            if not stripped_translated_text:
+                 stripped_translated_text = translated_text
+            
+            a_translated_list.append(f"{original_prefix} {stripped_translated_text}")
 
         # 5. Định dạng kết quả
         a_translated_text = "\n".join([f"- {opt}" for opt in a_translated_list])
         
-        return f"**[Bản dịch Tiếng Việt (Unofficial Google Translate)]**\n\n- **Câu hỏi:** {q_translated}\n- **Các đáp án:** \n{a_translated_text}"
+        return f"**[Bản dịch Tiếng Việt (Unofficial Translate API)]**\n\n- **Câu hỏi:** {q_translated}\n- **Các đáp án:** \n{a_translated_text}"
 
     except Exception as e:
         # Log lỗi chi tiết ra console
-        print(f"LỖI DỊCH THUẬT GOOGLE TRANS: {e}")
-        return f"**[LỖI DỊCH THUẬT GOOGLE TRANS]**\n- Không thể dịch nội dung. Chi tiết lỗi đã được ghi lại (Exception: {type(e).__name__}).\n- Câu hỏi gốc:\n{text}"
+        print(f"LỖI DỊCH THUẬT 'translate': {e}")
+        return f"**[LỖI DỊCH THUẬT 'translate']**\n- Không thể dịch nội dung. Chi tiết lỗi đã được ghi lại (Exception: {type(e).__name__}).\n- Câu hỏi gốc:\n{text}"
 
 # ====================================================
 # 🧩 PARSER 1: NGÂN HÀNG KỸ THUẬT (CABBANK)
