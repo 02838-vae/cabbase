@@ -70,7 +70,7 @@ def read_docx_paragraphs(source):
         doc = Document(path)
         return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
     except Exception as e:
-        print(f"Lỗi đọc file DOCX (chỉ text): {source). Chi tiết: {e}")
+        print(f"Lỗi đọc file DOCX (chỉ text): {source}. Chi tiết: {e}")
         return []
 
 def read_pl2_data(source):
@@ -82,7 +82,7 @@ def read_pl2_data(source):
     try:
         doc = Document(path)
     except Exception as e:
-        print(f"Lỗi đọc file DOCX (chỉ text): {source). Chi tiết: {e}")
+        print(f"Lỗi đọc file DOCX (chỉ text): {source}. Chi tiết: {e}")
         return []
     
     for p in doc.paragraphs:
@@ -604,46 +604,50 @@ MOBILE_IMAGE_FILE = "bank_mobile.jpg"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
-# --- CUSTOM CSS: ĐÃ SỬ DỤNG f'''...''' (TRIPLE SINGLE QUOTES) VÀ THÊM BACKGROUND-COLOR FALLBACK ---
-css = f'''
+# --- CUSTOM CSS: SỬ DỤNG CHUỖI THÔNG THƯỜNG VÀ NỐI CHUỖI ĐỂ TRÁNH SYNTAX ERROR VỚI F-STRING ---
+css = """
 <style>
-#MainMenu, footer, header, [data-testid="stHeader"] {{visibility: hidden; height: 0; display: none;}}
-#back-to-home-btn-container {{position: fixed; top: 10px; left: 10px; width: auto !important; z-index: 1500; display: inline-block;}}
-a#manual-home-btn {{background-color: rgba(0, 0, 0, 0.85); color: #FFEA00; border: 2px solid #FFEA00; padding: 5px 10px; border-radius: 8px; font-weight: bold; font-size: 14px; transition: all 0.3s; font-family: 'Oswald', sans-serif; text-decoration: none; display: inline-block; white-space: nowrap; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);}}
-a#manual-home-btn:hover {{background-color: #FFEA00; color: black; transform: scale(1.05);}}
-#main-title-container {{position: relative; left: 0; top: 0; width: 100%; height: 120px; overflow: hidden; pointer-events: none; background-color: transparent; padding-top: 20px; z-index: 1200;}}
-#main-title-container h1 {{visibility: visible !important; height: auto !important; font-family: 'Playfair Display', serif; font-size: 5vh; margin: 0; padding: 10px 0; font-weight: 900; letter-spacing: 5px; white-space: nowrap; display: inline-block; background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3); background-size: 400% 400%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent; animation: scrollRight 15s linear infinite, colorShift 8s ease infinite; text-shadow: 2px 2px 8px rgba(255, 255, 255, 0.3); position: absolute; left: 0;}}
-[data-testid="stAppViewBlockContainer"] {{
+#MainMenu, footer, header, [data-testid="stHeader"] {visibility: hidden; height: 0; display: none;}
+#back-to-home-btn-container {position: fixed; top: 10px; left: 10px; width: auto !important; z-index: 1500; display: inline-block;}
+a#manual-home-btn {background-color: rgba(0, 0, 0, 0.85); color: #FFEA00; border: 2px solid #FFEA00; padding: 5px 10px; border-radius: 8px; font-weight: bold; font-size: 14px; transition: all 0.3s; font-family: 'Oswald', sans-serif; text-decoration: none; display: inline-block; white-space: nowrap; box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);}
+a#manual-home-btn:hover {background-color: #FFEA00; color: black; transform: scale(1.05);}
+#main-title-container {position: relative; left: 0; top: 0; width: 100%; height: 120px; overflow: hidden; pointer-events: none; background-color: transparent; padding-top: 20px; z-index: 1200;}
+#main-title-container h1 {visibility: visible !important; height: auto !important; font-family: 'Playfair Display', serif; font-size: 5vh; margin: 0; padding: 10px 0; font-weight: 900; letter-spacing: 5px; white-space: nowrap; display: inline-block; background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3); background-size: 400% 400%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent; animation: scrollRight 15s linear infinite, colorShift 8s ease infinite; text-shadow: 2px 2px 8px rgba(255, 255, 255, 0.3); position: absolute; left: 0;}
+[data-testid="stAppViewBlockContainer"] {
     background-color: #0b1115; /* FALLBACK BACKGROUND COLOR */
-    background-image: url('data:image/jpeg;base64,{img_pc_base64}'); 
+    background-image: url('data:image/jpeg;base64,
+""" + img_pc_base64 + """
+'); 
     background-size: cover; 
     background-attachment: fixed; 
     background-position: center center; 
     padding-top: 1rem;
-}}
-@media (max-width: 600px) {{
-    [data-testid="stAppViewBlockContainer"] {{
-        background-image: url('data:image/jpeg;base64,{img_mobile_base64}'); 
+}
+@media (max-width: 600px) {
+    [data-testid="stAppViewBlockContainer"] {
+        background-image: url('data:image/jpeg;base64,
+""" + img_mobile_base64 + """
+'); 
         background-size: cover;
-    }}
-}}
-@keyframes scrollRight {{0% {{ transform: translateX(-50%); }} 50% {{ transform: translateX(50%); }} 100% {{ transform: translateX(-50%); }}}}
-@keyframes colorShift {{0%, 100% {{ background-position: 0% 50%; }} 50% {{ background-position: 100% 50%; }}}}
-.result-title h3 {{font-family: 'Playfair Display', serif; font-size: 2.5em !important; color: #FFEA00; text-align: center; margin: 20px 0; font-weight: 800; text-shadow: 0 0 10px rgba(255, 234, 0, 0.5);}}
-.bank-question-text {{color: #b7a187 !important; font-family: 'Oswald', sans-serif !important; font-weight: 700 !important; font-size: 22px !important; text-shadow: none; padding: 5px 15px; margin-bottom: 10px; line-height: 1.4 !important;}}
-.bank-answer-text {{font-family: 'Oswald', sans-serif !important; font-weight: 700 !important; font-size: 22px !important; padding: 5px 15px; margin: 2px 0; line-height: 1.5 !important; display: block;}}
-.stRadio label {{color: #FFFFFF !important; font-size: 22px !important; font-weight: 700 !important; font-family: 'Oswald', sans-serif !important; padding: 2px 12px; text-shadow: none !important; background-color: transparent !important; border: none !important; display: block !important; margin: 4px 0 !important; letter-spacing: 0.5px !important;}}
-.stRadio label:hover {{text-shadow: none !important;}}
-.stRadio label span, .stRadio label p, .stRadio label div {{color: #FFFFFF !important; text-shadow: none !important; letter-spacing: 0.5px !important;}}
-div[data-testid="stMarkdownContainer"] p {{font-size: 22px !important;}}
-.stButton>button {{background-color: #b7a187 !important; color: #ffffff !important; border-radius: 8px; font-size: 1.1em !important; font-weight: 600 !important; font-family: 'Oswald', sans-serif !important; border: none !important; padding: 10px 20px !important; width: 100%;}}
-.stToggle label p {{font-size: 14px !important; font-weight: 800 !important; color: #FFEA00 !important;}}
-.translation-box {{background-color: #FFFACD; color: #000000 !important; border-left: 5px solid #FFEA00; padding: 15px; border-radius: 8px; margin: 10px 0; font-size: 22px; font-family: 'Oswald', sans-serif !important; white-space: pre-wrap;}}
-.translation-box p, .translation-box strong, .translation-box li {{color: #000000 !important;}}
-.question-separator {{border-bottom: 2px dashed #b7a187; margin: 25px 0; width: 100%;}}
-.stAlert > div {{background-color: #0b1115 !important; color: #FFFFFF !important; border: 1px solid #FFEA00 !important;}}
+    }
+}
+@keyframes scrollRight {0% { transform: translateX(-50%); } 50% { transform: translateX(50%); }}
+@keyframes colorShift {0%, 100% { background-position: 0% 50%; } 50% { background-position: 100% 50%; }}
+.result-title h3 {font-family: 'Playfair Display', serif; font-size: 2.5em !important; color: #FFEA00; text-align: center; margin: 20px 0; font-weight: 800; text-shadow: 0 0 10px rgba(255, 234, 0, 0.5);}
+.bank-question-text {color: #b7a187 !important; font-family: 'Oswald', sans-serif !important; font-weight: 700 !important; font-size: 22px !important; text-shadow: none; padding: 5px 15px; margin-bottom: 10px; line-height: 1.4 !important;}
+.bank-answer-text {font-family: 'Oswald', sans-serif !important; font-weight: 700 !important; font-size: 22px !important; padding: 5px 15px; margin: 2px 0; line-height: 1.5 !important; display: block;}
+.stRadio label {color: #FFFFFF !important; font-size: 22px !important; font-weight: 700 !important; font-family: 'Oswald', sans-serif !important; padding: 2px 12px; text-shadow: none !important; background-color: transparent !important; border: none !important; display: block !important; margin: 4px 0 !important; letter-spacing: 0.5px !important;}
+.stRadio label:hover {text-shadow: none !important;}
+.stRadio label span, .stRadio label p, .stRadio label div {color: #FFFFFF !important; text-shadow: none !important; letter-spacing: 0.5px !important;}
+div[data-testid="stMarkdownContainer"] p {font-size: 22px !important;}
+.stButton>button {background-color: #b7a187 !important; color: #ffffff !important; border-radius: 8px; font-size: 1.1em !important; font-weight: 600 !important; font-family: 'Oswald', sans-serif !important; border: none !important; padding: 10px 20px !important; width: 100%;}
+.stToggle label p {font-size: 14px !important; font-weight: 800 !important; color: #FFEA00 !important;}
+.translation-box {background-color: #FFFACD; color: #000000 !important; border-left: 5px solid #FFEA00; padding: 15px; border-radius: 8px; margin: 10px 0; font-size: 22px; font-family: 'Oswald', sans-serif !important; white-space: pre-wrap;}
+.translation-box p, .translation-box strong, .translation-box li {color: #000000 !important;}
+.question-separator {border-bottom: 2px dashed #b7a187; margin: 25px 0; width: 100%;}
+.stAlert > div {background-color: #0b1115 !important; color: #FFFFFF !important; border: 1px solid #FFEA00 !important;}
 </style>
-'''
+"""
 
 st.markdown(css, unsafe_allow_html=True)
 
