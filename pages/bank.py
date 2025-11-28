@@ -348,7 +348,8 @@ def parse_pl1(source):
     current = {"question": "", "options": [], "answer": ""}
     
     q_start_pat = re.compile(r'^\s*(\d+)[\.\)]\s*') 
-    phrase_start_pat = re.compile(r'Choose the correct group of words', re.I) # FIX: Đã sửa lỗi ngắt dòng
+    # Đã sửa lỗi cú pháp: đảm bảo regex trên một dòng.
+    phrase_start_pat = re.compile(r'Choose the correct group of words', re.I) 
     opt_prefix_pat = re.compile(r'^\s*[A-Ca-c]([\.\)]|\s+)\s*') 
     labels = ["a", "b", "c"]
     MAX_OPTIONS = 3
@@ -436,7 +437,7 @@ def parse_pl2(source):
     current = {"question": "", "options": [], "answer": ""}
     
     q_start_pat = re.compile(r'^\s*(\d+)[\.\)]\s*') 
-    # FIX: Đã sửa lỗi ngắt dòng
+    # Đã sửa lỗi cú pháp: đảm bảo regex trên một dòng.
     phrase_start_pat = re.compile(r'Choose the correct group of words', re.I) 
     opt_prefix_pat = re.compile(r'^\s*[A-Ca-c]([\.\)]|\s+)\s*') 
     labels = ["a", "b", "c"]
