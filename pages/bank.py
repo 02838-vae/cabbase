@@ -87,8 +87,8 @@ def read_docx_paragraphs(source):
        
         return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
     except Exception as e:
-        print(f"Lỗi đọc file DOCX (chỉ text): {source}.
-        Chi tiết: {e}")
+        # FIX: Loại bỏ ngắt dòng trong f-string
+        print(f"Lỗi đọc file DOCX (chỉ text): {source}. Chi tiết: {e}")
         return []
 # HÀM ĐỌC FILE MỚI: DÙNG CHO PL2 (CHỈ LẤY TEXT)
 def read_pl2_data(source):
@@ -106,6 +106,7 @@ def read_pl2_data(source):
     try:
         doc = Document(path)
     except Exception as e:
+        # FIX: Loại bỏ ngắt dòng trong f-string
         print(f"Lỗi đọc file DOCX (chỉ text): {source}. Chi tiết: {e}")
         return []
     
@@ -268,8 +269,8 @@ def parse_cabbank(source):
             e = matches[i + 1].start() if i + 1 < len(matches) else len(p)
             opt_body = clean_text(p[s:e])
             letter = m.group('letter').lower()
-            opt = f"{letter}.
-            {opt_body}"
+            # FIX: Loại bỏ ngắt dòng trong f-string
+            opt = f"{letter}. {opt_body}"
             current["options"].append(opt)
             if m.group("star"): current["answer"] = opt
     if current["question"] and current["options"]:
@@ -327,8 +328,8 @@ def parse_lawbank(source):
             e = matches[i+1].start() if i+1 < len(matches) else len(p)
             opt_body = clean_text(p[s:e])
             letter = m.group("letter").lower()
-            option = f"{letter}.
-            {opt_body}"
+            # FIX: Loại bỏ ngắt dòng trong f-string
+            option = f"{letter}. {opt_body}"
             current["options"].append(option)
             if m.group("star"): current["answer"] = option
     if current["question"] and current["options"]:
@@ -409,8 +410,8 @@ def parse_pl1(source):
                 if idx < len(labels):
                     label = labels[idx]
   
-                    opt_text = f"{label}.
-                    {clean_p}"
+                    # FIX: Loại bỏ ngắt dòng trong f-string
+                    opt_text = f"{label}. {clean_p}"
                     current["options"].append(opt_text)
                     
                     if is_correct:
@@ -497,8 +498,8 @@ def parse_pl2(source):
                 if idx < len(labels):
  
                     label = labels[idx]
-                    opt_text = f"{label}.
-                    {clean_p}"
+                    # FIX: Loại bỏ ngắt dòng trong f-string
+                    opt_text = f"{label}. {clean_p}"
                     current["options"].append(opt_text)
                     
                     if is_correct:
@@ -554,8 +555,7 @@ def display_all_questions(questions):
         col_q_text, col_translate = st.columns([0.9, 0.1])
         
         with col_q_text:
-            st.markdown(f'<div class="bank-question-text">{i}.
-            {q["question"]}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
         
         with col_translate:
             # Sử dụng st.toggle để giữ trạng thái dịch thay vì button/double click
@@ -639,8 +639,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
  
             
             with col_q_text:
-                st.markdown(f'<div class="bank-question-text">{i}.
-                {q["question"]}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
             with col_translate:
                 # Sử dụng st.toggle để giữ trạng thái dịch
                 st.toggle(
@@ -693,8 +692,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             col_q_text, col_translate = st.columns([0.9, 0.1])
             
             with col_q_text:
-                st.markdown(f'<div class="bank-question-text">{i}.
-                {q["question"]}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
             with col_translate:
                 # Sử dụng st.toggle để giữ trạng thái dịch
                 st.toggle(
@@ -1064,7 +1062,7 @@ if bank_choice != "----":
     if st.session_state.current_mode == "group":
         # Cập nhật tiêu đề nhóm câu hỏi
         st.markdown('<div class="result-title" style="margin-top: 0px;"><h3>Luyện tập theo nhóm (30 câu/nhóm)</h3></div>', unsafe_allow_html=True)
-        group_size = 30 # Tăng lên 30 câu/nhóm
+        group_size = 30 # Kích thước nhóm đã được đổi thành 30
         
         if total > 0:
             groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
