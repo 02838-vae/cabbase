@@ -604,8 +604,8 @@ MOBILE_IMAGE_FILE = "bank_mobile.jpg"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
-# --- CUSTOM CSS: ĐÃ NÉN THÀNH MỘT CHUỖI DUY NHẤT ---
-css = f"""
+# --- CUSTOM CSS: ĐÃ SỬ DỤNG f'''...''' (TRIPLE SINGLE QUOTES) ---
+css = f'''
 <style>
 #MainMenu, footer, header, [data-testid="stHeader"] {{visibility: hidden; height: 0; display: none;}}
 #back-to-home-btn-container {{position: fixed; top: 10px; left: 10px; width: auto !important; z-index: 1500; display: inline-block;}}
@@ -626,12 +626,12 @@ a#manual-home-btn:hover {{background-color: #FFEA00; color: black; transform: sc
 div[data-testid="stMarkdownContainer"] p {{font-size: 22px !important;}}
 .stButton>button {{background-color: #b7a187 !important; color: #ffffff !important; border-radius: 8px; font-size: 1.1em !important; font-weight: 600 !important; font-family: 'Oswald', sans-serif !important; border: none !important; padding: 10px 20px !important; width: 100%;}}
 .stToggle label p {{font-size: 14px !important; font-weight: 800 !important; color: #FFEA00 !important;}}
-.translation-box {background-color: #FFFACD; color: #000000 !important; border-left: 5px solid #FFEA00; padding: 15px; border-radius: 8px; margin: 10px 0; font-size: 22px; font-family: 'Oswald', sans-serif !important; white-space: pre-wrap;}
-.translation-box p, .translation-box strong, .translation-box li {color: #000000 !important;}
+.translation-box {{background-color: #FFFACD; color: #000000 !important; border-left: 5px solid #FFEA00; padding: 15px; border-radius: 8px; margin: 10px 0; font-size: 22px; font-family: 'Oswald', sans-serif !important; white-space: pre-wrap;}}
+.translation-box p, .translation-box strong, .translation-box li {{color: #000000 !important;}}
 .question-separator {{border-bottom: 2px dashed #b7a187; margin: 25px 0; width: 100%;}}
 .stAlert > div {{background-color: #0b1115 !important; color: #FFFFFF !important; border: 1px solid #FFEA00 !important;}}
 </style>
-"""
+'''
 
 st.markdown(css, unsafe_allow_html=True)
 
