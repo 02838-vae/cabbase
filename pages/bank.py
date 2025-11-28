@@ -87,7 +87,6 @@ def read_docx_paragraphs(source):
        
         return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
     except Exception as e:
-        # FIX: Loại bỏ ngắt dòng trong f-string
         print(f"Lỗi đọc file DOCX (chỉ text): {source}. Chi tiết: {e}")
         return []
 # HÀM ĐỌC FILE MỚI: DÙNG CHO PL2 (CHỈ LẤY TEXT)
@@ -106,7 +105,6 @@ def read_pl2_data(source):
     try:
         doc = Document(path)
     except Exception as e:
-        # FIX: Loại bỏ ngắt dòng trong f-string
         print(f"Lỗi đọc file DOCX (chỉ text): {source}. Chi tiết: {e}")
         return []
     
@@ -269,7 +267,6 @@ def parse_cabbank(source):
             e = matches[i + 1].start() if i + 1 < len(matches) else len(p)
             opt_body = clean_text(p[s:e])
             letter = m.group('letter').lower()
-            # FIX: Loại bỏ ngắt dòng trong f-string
             opt = f"{letter}. {opt_body}"
             current["options"].append(opt)
             if m.group("star"): current["answer"] = opt
@@ -301,6 +298,7 @@ def parse_lawbank(source):
                 if current["question"] and current["options"]:
                     if not current["answer"] and current["options"]:
                         current["answer"] = current["options"][0]
+      
                     questions.append(current)
       
                 current = {"question": clean_text(p), "options": [], "answer": ""}
@@ -328,7 +326,6 @@ def parse_lawbank(source):
             e = matches[i+1].start() if i+1 < len(matches) else len(p)
             opt_body = clean_text(p[s:e])
             letter = m.group("letter").lower()
-            # FIX: Loại bỏ ngắt dòng trong f-string
             option = f"{letter}. {opt_body}"
             current["options"].append(option)
             if m.group("star"): current["answer"] = option
@@ -351,7 +348,7 @@ def parse_pl1(source):
     current = {"question": "", "options": [], "answer": ""}
     
     q_start_pat = re.compile(r'^\s*(\d+)[\.\)]\s*') 
-    phrase_start_pat = re.compile(r'Choose the correct group of words', re.I)
+    phrase_start_pat = re.compile(r'Choose the correct group of words', re.I) # FIX: Đã sửa lỗi ngắt dòng
     opt_prefix_pat = re.compile(r'^\s*[A-Ca-c]([\.\)]|\s+)\s*') 
     labels = ["a", "b", "c"]
     MAX_OPTIONS = 3
@@ -410,7 +407,6 @@ def parse_pl1(source):
                 if idx < len(labels):
                     label = labels[idx]
   
-                    # FIX: Loại bỏ ngắt dòng trong f-string
                     opt_text = f"{label}. {clean_p}"
                     current["options"].append(opt_text)
                     
@@ -440,8 +436,8 @@ def parse_pl2(source):
     current = {"question": "", "options": [], "answer": ""}
     
     q_start_pat = re.compile(r'^\s*(\d+)[\.\)]\s*') 
-    phrase_start_pat = re.compile(r'Choose the correct group 
-    of words', re.I)
+    # FIX: Đã sửa lỗi ngắt dòng
+    phrase_start_pat = re.compile(r'Choose the correct group of words', re.I) 
     opt_prefix_pat = re.compile(r'^\s*[A-Ca-c]([\.\)]|\s+)\s*') 
     labels = ["a", "b", "c"]
     MAX_OPTIONS = 3
@@ -498,7 +494,6 @@ def parse_pl2(source):
                 if idx < len(labels):
  
                     label = labels[idx]
-                    # FIX: Loại bỏ ngắt dòng trong f-string
                     opt_text = f"{label}. {clean_p}"
                     current["options"].append(opt_text)
                     
@@ -515,8 +510,7 @@ def parse_pl2(source):
         
     return questions
 # ====================================================
-#  
-# 🌟  HÀM: LOGIC DỊCH ĐỘC QUYỀN (EXCLUSIVE TRANSLATION)
+#  🌟  HÀM: LOGIC DỊCH ĐỘC QUYỀN (EXCLUSIVE TRANSLATION)
 # ====================================================
 if 'active_translation_key' not in st.session_state: st.session_state.active_translation_key = None
 def on_translate_toggle(key_clicked):
@@ -770,8 +764,7 @@ img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 css = f"""
 <style>
 /* Ẩn UI */
-#MainMenu, footer, header {{visibility: hidden; height: 0;}}
-[data-testid="stHeader"] {{display: none;}}
+#MainMenu, footer, header, [data-testid="stHeader"] {{visibility: hidden; height: 0; display: none;}}
 
 /* BUTTON HOME */
 #back-to-home-btn-container {{
