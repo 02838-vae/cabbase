@@ -70,7 +70,7 @@ def read_docx_paragraphs(source):
         doc = Document(path)
         return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
     except Exception as e:
-        print(f"Lỗi đọc file DOCX (chỉ text): {source}. Chi tiết: {e}")
+        print(f"Lỗi đọc file DOCX (chỉ text): {source). Chi tiết: {e}")
         return []
 
 def read_pl2_data(source):
@@ -82,7 +82,7 @@ def read_pl2_data(source):
     try:
         doc = Document(path)
     except Exception as e:
-        print(f"Lỗi đọc file DOCX (chỉ text): {source}. Chi tiết: {e}")
+        print(f"Lỗi đọc file DOCX (chỉ text): {source). Chi tiết: {e}")
         return []
     
     for p in doc.paragraphs:
@@ -604,7 +604,7 @@ MOBILE_IMAGE_FILE = "bank_mobile.jpg"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
-# --- CUSTOM CSS: ĐÃ SỬ DỤNG f'''...''' (TRIPLE SINGLE QUOTES) ---
+# --- CUSTOM CSS: ĐÃ SỬ DỤNG f'''...''' (TRIPLE SINGLE QUOTES) VÀ THÊM BACKGROUND-COLOR FALLBACK ---
 css = f'''
 <style>
 #MainMenu, footer, header, [data-testid="stHeader"] {{visibility: hidden; height: 0; display: none;}}
@@ -613,8 +613,20 @@ a#manual-home-btn {{background-color: rgba(0, 0, 0, 0.85); color: #FFEA00; borde
 a#manual-home-btn:hover {{background-color: #FFEA00; color: black; transform: scale(1.05);}}
 #main-title-container {{position: relative; left: 0; top: 0; width: 100%; height: 120px; overflow: hidden; pointer-events: none; background-color: transparent; padding-top: 20px; z-index: 1200;}}
 #main-title-container h1 {{visibility: visible !important; height: auto !important; font-family: 'Playfair Display', serif; font-size: 5vh; margin: 0; padding: 10px 0; font-weight: 900; letter-spacing: 5px; white-space: nowrap; display: inline-block; background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3); background-size: 400% 400%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent; animation: scrollRight 15s linear infinite, colorShift 8s ease infinite; text-shadow: 2px 2px 8px rgba(255, 255, 255, 0.3); position: absolute; left: 0;}}
-[data-testid="stAppViewBlockContainer"] {{background-color: #0b1115; background-image: url('data:image/jpeg;base64,{img_pc_base64}'); background-size: cover; background-attachment: fixed; background-position: center center; padding-top: 1rem;}}
-@media (max-width: 600px) {{[data-testid="stAppViewBlockContainer"] {{background-image: url('data:image/jpeg;base64,{img_mobile_base64}'); background-size: cover;}}}}
+[data-testid="stAppViewBlockContainer"] {{
+    background-color: #0b1115; /* FALLBACK BACKGROUND COLOR */
+    background-image: url('data:image/jpeg;base64,{img_pc_base64}'); 
+    background-size: cover; 
+    background-attachment: fixed; 
+    background-position: center center; 
+    padding-top: 1rem;
+}}
+@media (max-width: 600px) {{
+    [data-testid="stAppViewBlockContainer"] {{
+        background-image: url('data:image/jpeg;base64,{img_mobile_base64}'); 
+        background-size: cover;
+    }}
+}}
 @keyframes scrollRight {{0% {{ transform: translateX(-50%); }} 50% {{ transform: translateX(50%); }} 100% {{ transform: translateX(-50%); }}}}
 @keyframes colorShift {{0%, 100% {{ background-position: 0% 50%; }} 50% {{ background-position: 100% 50%; }}}}
 .result-title h3 {{font-family: 'Playfair Display', serif; font-size: 2.5em !important; color: #FFEA00; text-align: center; margin: 20px 0; font-weight: 800; text-shadow: 0 0 10px rgba(255, 234, 0, 0.5);}}
@@ -675,7 +687,17 @@ if bank_choice != "----":
     elif "Docwise" in bank_choice:
         is_docwise = True
         doc_options = ["Phụ lục 1 : Ngữ pháp chung", "Phụ lục 2 : Từ vựng, thuật ngữ"]
-        doc_selected_new = st.selectbox("Chọn Phụ lục:", doc_options, index=doc_options.index(st.session_state.get('doc_selected', doc_options[0])), key="docwise_selector")
+        
+        # FIX cho AttributeError: Khởi tạo doc_selected nếu chưa tồn tại
+        if 'doc_selected' not in st.session_state:
+            st.session_state.doc_selected = doc_options[0]
+            
+        doc_selected_new = st.selectbox(
+            "Chọn Phụ lục:", 
+            doc_options, 
+            index=doc_options.index(st.session_state.doc_selected), 
+            key="docwise_selector"
+        )
         
         if st.session_state.doc_selected != doc_selected_new:
             st.session_state.doc_selected = doc_selected_new
