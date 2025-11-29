@@ -529,21 +529,17 @@ def display_all_questions(questions):
         translation_key = f"trans_{q_key}"
         is_active = (translation_key == st.session_state.active_translation_key)
         
-        # Tạo cột cho Câu hỏi và Nút Dịch
-        col_q_text, col_translate = st.columns([0.9, 0.1])
-        
-        with col_q_text:
-            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
-        
-        with col_translate:
-            # Sử dụng st.toggle để giữ trạng thái dịch thay vì button/double click
-            st.toggle(
-                "Dịch", 
-                value=is_active, # Chỉ ON nếu key khớp với active key
-                key=f"toggle_{translation_key}",
-                on_change=on_translate_toggle,
-                args=(translation_key,)
-            )
+        # CHỈNH SỬA: BỎ COLUMNS, HIỂN THỊ CÂU HỎI VÀ NÚT DỊCH NẰM DƯỚI
+        st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+
+        # Nút Dịch nằm ngay dưới câu hỏi
+        st.toggle(
+            "🌐 Dịch sang Tiếng Việt", 
+            value=is_active, # Chỉ ON nếu key khớp với active key
+            key=f"toggle_{translation_key}",
+            on_change=on_translate_toggle,
+            args=(translation_key,)
+        )
 
         # Hiển thị Bản Dịch
         if is_active:
@@ -610,21 +606,17 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             translation_key = f"trans_{q_key}"
             is_active = (translation_key == st.session_state.active_translation_key)
             
-            # Tạo cột cho Câu hỏi và Nút Dịch
-            col_q_text, col_translate = st.columns([0.9, 0.1])
-            
-            with col_q_text:
-                st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+            # CHỈNH SỬA: BỎ COLUMNS, HIỂN THỊ CÂU HỎI VÀ NÚT DỊCH NẰM DƯỚI
+            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
 
-            with col_translate:
-                # Sử dụng st.toggle để giữ trạng thái dịch
-                st.toggle(
-                    "Dịch", 
-                    value=is_active, 
-                    key=f"toggle_{translation_key}",
-                    on_change=on_translate_toggle,
-                    args=(translation_key,)
-                )
+            # Nút Dịch nằm ngay dưới câu hỏi
+            st.toggle(
+                "🌐 Dịch sang Tiếng Việt", 
+                value=is_active, 
+                key=f"toggle_{translation_key}",
+                on_change=on_translate_toggle,
+                args=(translation_key,)
+            )
 
             # Hiển thị Bản Dịch
             if is_active:
@@ -661,21 +653,17 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             is_active = (translation_key == st.session_state.active_translation_key)
 
 
-            # Tạo cột cho Câu hỏi và Nút Dịch
-            col_q_text, col_translate = st.columns([0.9, 0.1])
-            
-            with col_q_text:
-                st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+            # CHỈNH SỬA: BỎ COLUMNS, HIỂN THỊ CÂU HỎI VÀ NÚT DỊCH NẰM DƯỚI
+            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
 
-            with col_translate:
-                # Sử dụng st.toggle để giữ trạng thái dịch
-                st.toggle(
-                    "Dịch", 
-                    value=is_active, 
-                    key=f"toggle_{translation_key}",
-                    on_change=on_translate_toggle,
-                    args=(translation_key,)
-                )
+            # Nút Dịch nằm ngay dưới câu hỏi
+            st.toggle(
+                "🌐 Dịch sang Tiếng Việt", 
+                value=is_active, 
+                key=f"toggle_{translation_key}",
+                on_change=on_translate_toggle,
+                args=(translation_key,)
+            )
 
             # Hiển thị Bản Dịch
             if is_active:
@@ -890,14 +878,14 @@ a#manual-home-btn:hover {{
 
 /* STYLE CÂU HỎI & ĐÁP ÁN - ĐÃ THỐNG NHẤT FONT VÀ BỎ SHADOW/EFFECTS */
 .bank-question-text {{
-    color: #000000 !important; /* MÃ u Ä'en cho cÃ¢u há»i trÃªn PC */
+    color: #FFFFFF !important; /* ĐỔI MÀU TRẮNG CHO CHỮ CÂU HỎI */
     font-weight: 700 !important;
     font-size: 22px !important; 
     font-family: 'Oswald', sans-serif !important; /* Thá»'ng nháº¥t font content */
     text-shadow: none; /* âŒ Bá»Ž SHADOW */
     padding: 5px 15px; margin-bottom: 10px; line-height: 1.4 !important;
-    background-color: rgba(255, 255, 255, 0.9); /* Ná»n tráº¯ng Ä'á»ƒ chá»¯ Ä'en dá»… Ä'á»c */
-    border-radius: 5px;
+    background-color: transparent !important; /* CHỈNH SỬA: XÓA KHUNG TRẮNG */
+    border-radius: 0px; /* CHỈNH SỬA: XÓA BO GÓC */
 }}
 
 .bank-answer-text {{
@@ -941,6 +929,11 @@ div[data-testid="stMarkdownContainer"] p {{
     font-size: 22px !important; 
 }}
 
+/* CHỈNH SỬA: Màu chữ trong khung dịch (st.info) thành màu trắng */
+[data-testid="stInfo"] div[data-testid="stMarkdownContainer"] * {{
+    color: white !important;
+}}
+
 .stButton>button {{
     background-color: #b7a187 !important;
     color: #ffffff !important;
@@ -955,14 +948,16 @@ div[data-testid="stMarkdownContainer"] p {{
 
 /* STYLE CHO NÚT DỊCH (st.toggle) */
 .stToggle label p {{
-    font-size: 14px !important;
+    font-size: 16px !important; /* Tăng kích thước font cho nút dịch */
     font-weight: 700 !important;
     padding: 0;
     margin: 0;
     line-height: 1 !important;
+    color: #FFFF00 !important; /* Đổi màu nút dịch nổi bật */
 }}
 .stToggle > label > div[data-testid="stMarkdownContainer"] {{
     margin-top: 10px !important; 
+    margin-bottom: 5px !important;
 }}
 
 div.stSelectbox label p {{
@@ -1119,20 +1114,17 @@ if bank_choice != "----":
                         translation_key = f"trans_{q_key}"
                         is_active = (translation_key == st.session_state.active_translation_key)
                         
-                        # Cập nhật: Thêm nút Dịch
-                        col_q_text, col_translate = st.columns([0.9, 0.1])
-                        with col_q_text:
-                            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+                        # CHỈNH SỬA: BỎ COLUMNS, HIỂN THỊ CÂU HỎI VÀ NÚT DỊCH NẰM DƯỚI
+                        st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
                         
-                        with col_translate:
-                            # Logic Dịch Độc Quyền
-                            st.toggle(
-                                "Dịch", 
-                                value=is_active, 
-                                key=f"toggle_{translation_key}",
-                                on_change=on_translate_toggle,
-                                args=(translation_key,)
-                            )
+                        # Nút Dịch nằm ngay dưới câu hỏi
+                        st.toggle(
+                            "🌐 Dịch sang Tiếng Việt", 
+                            value=is_active, 
+                            key=f"toggle_{translation_key}",
+                            on_change=on_translate_toggle,
+                            args=(translation_key,)
+                        )
 
                         # Hiển thị Bản Dịch
                         if is_active:
@@ -1165,20 +1157,17 @@ if bank_choice != "----":
                         translation_key = f"trans_{q_key}"
                         is_active = (translation_key == st.session_state.active_translation_key)
 
-                        # Cập nhật: Thêm nút Dịch
-                        col_q_text, col_translate = st.columns([0.9, 0.1])
-                        with col_q_text:
-                            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+                        # CHỈNH SỬA: BỎ COLUMNS, HIỂN THỊ CÂU HỎI VÀ NÚT DỊCH NẰM DƯỚI
+                        st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
                         
-                        with col_translate:
-                            # Logic Dịch Độc Quyền
-                            st.toggle(
-                                "Dịch", 
-                                value=is_active, 
-                                key=f"toggle_{translation_key}",
-                                on_change=on_translate_toggle,
-                                args=(translation_key,)
-                            )
+                        # Nút Dịch nằm ngay dưới câu hỏi
+                        st.toggle(
+                            "🌐 Dịch sang Tiếng Việt", 
+                            value=is_active, 
+                            key=f"toggle_{translation_key}",
+                            on_change=on_translate_toggle,
+                            args=(translation_key,)
+                        )
 
                         # Hiển thị Bản Dịch
                         if is_active:
