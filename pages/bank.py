@@ -1013,13 +1013,13 @@ div[data-testid="stAlert"] strong {{
         display: inline-block !important; /* BAO VỪA CHỮ */
     }}
     
-    /* Nút trên mobile (ĐÃ CẬP NHẬT ĐỂ CĂN GIỮA) */
+    /* Nút trên mobile */
     .stButton>button {{
         font-size: 1em !important;
         padding: 10px 18px !important;
         display: block !important; 
-        margin: 10px auto !important; /* CĂN GIỮA */
-        width: 90% !important; /* GIẢM CHIỀU RỘNG ĐỂ CĂN GIỮA CÓ Ý NGHĨA */
+        margin: 10px auto !important; 
+        width: 90% !important; 
     }}
     
     /* CĂN GIỮA CONTAINER STREAMLIT BUTTON TRÊN MOBILE */
@@ -1039,6 +1039,9 @@ div[data-testid="stAlert"] strong {{
     [data-testid="stHorizontalBlock"] > div {{
         width: 100% !important; 
         margin-bottom: 5px; 
+        /* BỔ SUNG: Biến column container thành flex và căn giữa nội dung */
+        display: flex; 
+        justify-content: center;
     }}
 }}
 </style>
