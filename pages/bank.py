@@ -907,21 +907,21 @@ a#manual-home-btn:hover {{
 
 /* STYLE CHO KHUNG DỊCH (st.info) */
 
-/* STYLE CÂU HỎI & ĐÁP ÁN - ĐÃ THỐNG NHẤT FONT VÀ BỎ SHADOW/EFFECTS */
+/* STYLE CÂU HỎI & ĐÁP ÁN - PC */
 .bank-question-text {{
-    color: #000000 !important; /* MÃ u Ä'en cho cÃ¢u há»i trÃªn PC */
-    font-weight: 700 !important;
+    color: #FFFFFF !important; /* Màu trắng đậm cho câu hỏi trên PC */
+    font-weight: 900 !important; /* Đậm hơn */
     font-size: 22px !important; 
-    font-family: 'Oswald', sans-serif !important; /* Thá»'ng nháº¥t font content */
-    text-shadow: none; /* âŒ Bá»Ž SHADOW */
+    font-family: 'Oswald', sans-serif !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); /* Shadow để nổi bật */
     padding: 5px 15px; margin-bottom: 10px; line-height: 1.4 !important;
-    background-color: rgba(255, 255, 255, 0.9); /* Ná»n tráº¯ng Ä'á»ƒ chá»¯ Ä'en dá»… Ä'á»c */
+    background-color: rgba(0, 0, 0, 0.6); /* Nền đen mờ */
     border-radius: 5px;
 }}
 
 .bank-answer-text {{
-    font-family: 'Oswald', sans-serif !important; /* Thống nhất font content */
-    font-weight: 700 !important; 
+    font-family: 'Oswald', sans-serif !important;
+    font-weight: 900 !important; /* Đậm hơn */
     font-size: 22px !important; 
     padding: 5px 15px; margin: 2px 0;
     line-height: 1.5 !important; 
@@ -990,17 +990,20 @@ div.stSelectbox label p {{
     font-family: 'Oswald', sans-serif !important;
 }}
 /* ============================================ */
-/* STYLE CHO KHUNG DỊCH (st.info)              */
+/* STYLE CHO KHUNG DỊCH - ÁP DỤNG CHO CẢ PC & MOBILE */
 /* ============================================ */
 div[data-testid="stAlert"] {{
     background-color: rgba(30, 30, 30, 0.95) !important;
     border-left: 4px solid #00d4ff !important;
 }}
 
+div[data-testid="stAlert"] *,
 div[data-testid="stAlert"] p,
 div[data-testid="stAlert"] strong,
 div[data-testid="stAlert"] em,
-div[data-testid="stAlert"] li {{
+div[data-testid="stAlert"] li,
+div[data-testid="stAlert"] span,
+div[data-testid="stAlert"] div {{
     color: #FFFFFF !important;
     font-size: 18px !important;
     line-height: 1.6 !important;
@@ -1008,6 +1011,7 @@ div[data-testid="stAlert"] li {{
 
 div[data-testid="stAlert"] strong {{
     color: #FFD700 !important;
+    font-weight: 900 !important;
 }}
 </style>
 """
