@@ -42,7 +42,7 @@ def clean_text(s: str) -> str:
     ]
     
     for pattern in standalone_patterns:
-        for match in re.finditer(pattern, temp_s): # CORRECTED: Changed finditer to re.finditer
+        for match in re.finditer(pattern, temp_s): # Đã sửa: finditer thành re.finditer (Fix NameError cũ)
             matched_text = match.group()
             placeholder = f"__PLACEHOLDER_{counter}__"
             placeholders[placeholder] = matched_text
@@ -512,8 +512,7 @@ def on_translate_toggle(key_clicked):
         # User turned this specific toggle OFF -> Clear the active key
         st.session_state.active_translation_key = None
     
-    # Force rerun để cập nhật tất cả các toggle khác (tắt chúng nếu cần)
-    st.rerun()
+    # Bỏ st.rerun() để tránh warning "Calling st.rerun() within a callback is a no-op."
 
 # ====================================================
 # 🌟 HÀM: XEM TOÀN BỘ CÂU HỎI (CẬP NHẬT CHỨC NĂNG DỊCH)
@@ -864,6 +863,16 @@ a#manual-home-btn:hover {{
     #main-title-container {{ height: 100px; padding-top: 10px; }}
     #main-title-container h1 {{ font-size: 8vw; line-height: 1.5 !important; }}
     .main > div:first-child {{ padding-top: 20px !important; }}
+    
+    /* FIX 3: Chỉnh kích thước tiêu đề trên mobile */
+    #sub-static-title h2, 
+    .result-title h3 {
+        font-size: 1.25rem !important; /* Kích thước nhỏ hơn để vừa 1 hàng */
+        white-space: nowrap; /* Ngăn xuống dòng */
+        overflow: hidden;
+        text-overflow: ellipsis;
+        padding: 0 5px; /* Thêm padding nhẹ để tránh sát lề */
+    }
 }}
 
 .main > div:first-child {{
@@ -882,8 +891,9 @@ a#manual-home-btn:hover {{
     text-shadow: 0 0 15px #FFEA00;
 }}
 @media (max-width: 768px) {{
+    /* FIX 2: Màu câu hỏi trên mobile */
     .bank-question-text {{
-        color: #FFDD00 !important;
+        color: #FFFFAA !important; /* Light yellow for better mobile visibility */
         background-color: transparent !important;
     }}
 }}
