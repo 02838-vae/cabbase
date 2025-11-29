@@ -866,13 +866,13 @@ a#manual-home-btn:hover {{
     
     /* FIX 3: Chỉnh kích thước tiêu đề trên mobile */
     #sub-static-title h2, 
-    .result-title h3 {
-        font-size: 1.25rem !important; /* Kích thước nhỏ hơn để vừa 1 hàng */
-        white-space: nowrap; /* Ngăn xuống dòng */
+    .result-title h3 {{
+        font-size: 1.25rem !important;
+        white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        padding: 0 5px; /* Thêm padding nhẹ để tránh sát lề */
-    }
+        padding: 0 5px;
+    }}
 }}
 
 .main > div:first-child {{
