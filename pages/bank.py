@@ -485,7 +485,7 @@ def main():
     img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
     img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
-    # === CSS ===
+    # === CSS (ĐÃ CHỈNH SỬA) ===
     css_style = f"""
     <style>
     /* Đã thống nhất font nội dung là Oswald, tiêu đề là Playfair Display */
