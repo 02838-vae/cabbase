@@ -838,7 +838,7 @@ a#manual-home-btn:hover {{
     line-height: 1.5 !important;
 }}
 
-/* SỐ 1 */
+/* Số 1 */
 .number-one {{
     font-family: 'Oswald', sans-serif !important;
     font-size: 1em !important; 
@@ -846,14 +846,135 @@ a#manual-home-btn:hover {{
     display: inline-block;
 }}
 
-@media (max-width: 768px) {{
+.main > div:first-child {{
+    padding-top: 40px !important; padding-bottom: 2rem !important;
+}}
+
+/* SUB-TITLE & RESULT TITLE */
+#sub-static-title, .result-title {{
+    margin-top: 150px;
+    margin-bottom: 30px; text-align: center;
+}}
+#sub-static-title h2, .result-title h3 {{
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    color: #FFEA00;
+    text-shadow: 0 0 15px #FFEA00;
+}}
+
+/* STYLE CÂU HỎI & ĐÁP ÁN - PC */
+.bank-question-text {{
+    color: #FFFFFF !important;
+    font-weight: 900 !important;
+    font-size: 22px !important; 
+    font-family: 'Oswald', sans-serif !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    padding: 5px 15px; margin-bottom: 10px; line-height: 1.4 !important;
+    background-color: rgba(0, 0, 0, 0.6);
+    border-radius: 5px;
+}}
+
+.bank-answer-text {{
+    font-family: 'Oswald', sans-serif !important;
+    font-weight: 900 !important;
+    font-size: 22px !important; 
+    padding: 5px 15px; margin: 2px 0;
+    line-height: 1.5 !important; 
+    display: block;
+}}
+
+/* RADIO BUTTONS (CHỌN ĐÁP ÁN) */
+.stRadio label {{
+    color: #FFFFFF !important;
+    font-size: 22px !important; 
+    font-weight: 700 !important;
+    font-family: 'Oswald', sans-serif !important;
+    padding: 2px 12px;
+    text-shadow: none !important;
+    background-color: transparent !important;
+    border: none !important;
+    display: block !important;
+    margin: 4px 0 !important;
+    letter-spacing: 0.5px !important;
+}}
+
+.stRadio label:hover {{
+    text-shadow: none !important;
+}}
+
+.stRadio label span, 
+.stRadio label p,
+.stRadio label div {{
+    color: #FFFFFF !important;
+    text-shadow: none !important;
+    letter-spacing: 0.5px !important;
+}}
+
+div[data-testid="stMarkdownContainer"] p {{
+    font-size: 22px !important; 
+}}
+
+.stButton>button {{
+    background-color: #b7a187 !important;
+    color: #ffffff !important;
+    border-radius: 8px;
+    font-size: 1.1em !important;
+    font-weight: 600 !important;
+    font-family: 'Oswald', sans-serif !important; 
+    border: none !important;
+    padding: 10px 20px !important;
+    width: 100%; 
+}}
+
+/* STYLE CHO NÚT DỊCH (st.toggle) */
+.stToggle label p {{
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    padding: 0;
+    margin: 0;
+    line-height: 1 !important;
+}}
+.stToggle > label > div[data-testid="stMarkdownContainer"] {{
+    margin-top: 10px !important; 
+}}
+
+div.stSelectbox label p {{
+    color: #33FF33 !important;
+    font-size: 1.25rem !important;
+    font-family: 'Oswald', sans-serif !important;
+}}
+
+/* STYLE CHO KHUNG DỊCH - ÁP DỤNG CHO CẢ PC & MOBILE */
+div[data-testid="stAlert"] {{
+    background-color: rgba(30, 30, 30, 0.95) !important;
+    border-left: 4px solid #00d4ff !important;
+}}
+
+div[data-testid="stAlert"] *,
+div[data-testid="stAlert"] p,
+div[data-testid="stAlert"] strong,
+div[data-testid="stAlert"] em,
+div[data-testid="stAlert"] li,
+div[data-testid="stAlert"] span,
+div[data-testid="stAlert"] div {{
+    color: #FFFFFF !important;
+    font-size: 18px !important;
+    line-height: 1.6 !important;
+}}
+
+div[data-testid="stAlert"] strong {{
+    color: #FFD700 !important;
+    font-weight: 900 !important;
+}}
+
+/* MOBILE RESPONSIVE */
 @media (max-width: 768px) {{
     #back-to-home-btn-container {{ top: 5px; left: 5px; }}
     #main-title-container {{ height: 100px; padding-top: 10px; }}
     #main-title-container h1 {{ font-size: 8vw; line-height: 1.5 !important; }}
     .main > div:first-child {{ padding-top: 20px !important; }}
     
-    /* FIX 3: Chỉnh kích thước tiêu đề trên mobile */
+    /* Chỉnh kích thước tiêu đề trên mobile */
     #sub-static-title h2, 
     .result-title h3 {{
         font-size: 1.25rem !important;
@@ -863,7 +984,7 @@ a#manual-home-btn:hover {{
         padding: 0 5px;
     }}
     
-    /* FIX 4: Màu vàng cho câu hỏi trên mobile */
+    /* Màu vàng cho câu hỏi trên mobile */
     .bank-question-text {{
         color: #FFFF00 !important;
         background-color: rgba(0, 0, 0, 0.7) !important;
