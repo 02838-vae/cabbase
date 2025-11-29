@@ -1022,137 +1022,6 @@ div[data-testid="stAlert"] strong {{
 </style>
 """
 
-.main > div:first-child {{
-    padding-top: 40px !important; padding-bottom: 2rem !important;
-}}
-
-/* SUB-TITLE & RESULT TITLE */
-#sub-static-title, .result-title {{
-    margin-top: 150px;
-    margin-bottom: 30px; text-align: center;
-}}
-#sub-static-title h2, .result-title h3 {{
-    font-family: 'Playfair Display', serif; /* Giữ nguyên font tiêu đề */
-    font-size: 2rem;
-    color: #FFEA00;
-    text-shadow: 0 0 15px #FFEA00;
-}}
-@media (max-width: 768px) {{
-    /* FIX 2: Màu câu hỏi trên mobile */
-    .bank-question-text {{
-        color: #FFFFAA !important; /* Light yellow for better mobile visibility */
-        background-color: transparent !important;
-    }}
-}}
-
-/* STYLE CHO KHUNG DỊCH (st.info) */
-
-/* STYLE CÂU HỎI & ĐÁP ÁN - PC */
-.bank-question-text {{
-    color: #FFFFFF !important;
-    font-weight: 900 !important;
-    font-size: 22px !important; 
-    font-family: 'Oswald', sans-serif !important;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-    padding: 5px 15px; margin-bottom: 10px; line-height: 1.4 !important;
-    background-color: rgba(0, 0, 0, 0.6);
-    border-radius: 5px;
-}}
-
-.bank-answer-text {{
-    font-family: 'Oswald', sans-serif !important;
-    font-weight: 900 !important;
-    font-size: 22px !important; 
-    padding: 5px 15px; margin: 2px 0;
-    line-height: 1.5 !important; 
-    display: block;
-}}
-
-/* RADIO BUTTONS (CHỌN ĐÁP ÁN) */
-.stRadio label {{
-    color: #FFFFFF !important;
-    font-size: 22px !important; 
-    font-weight: 700 !important;
-    font-family: 'Oswald', sans-serif !important;
-    padding: 2px 12px;
-    text-shadow: none !important;
-    background-color: transparent !important;
-    border: none !important;
-    display: block !important;
-    margin: 4px 0 !important;
-    letter-spacing: 0.5px !important;
-}}
-
-.stRadio label:hover {{
-    text-shadow: none !important;
-}}
-
-.stRadio label span, 
-.stRadio label p,
-.stRadio label div {{
-    color: #FFFFFF !important;
-    text-shadow: none !important;
-    letter-spacing: 0.5px !important;
-}}
-
-div[data-testid="stMarkdownContainer"] p {{
-    font-size: 22px !important; 
-}}
-
-.stButton>button {{
-    background-color: #b7a187 !important;
-    color: #ffffff !important;
-    border-radius: 8px;
-    font-size: 1.1em !important;
-    font-weight: 600 !important;
-    font-family: 'Oswald', sans-serif !important; 
-    border: none !important;
-    padding: 10px 20px !important;
-    width: 100%; 
-}}
-
-/* STYLE CHO NÚT DỊCH (st.toggle) */
-.stToggle label p {{
-    font-size: 14px !important;
-    font-weight: 700 !important;
-    padding: 0;
-    margin: 0;
-    line-height: 1 !important;
-}}
-.stToggle > label > div[data-testid="stMarkdownContainer"] {{
-    margin-top: 10px !important; 
-}}
-
-div.stSelectbox label p {{
-    color: #33FF33 !important;
-    font-size: 1.25rem !important;
-    font-family: 'Oswald', sans-serif !important;
-}}
-
-/* STYLE CHO KHUNG DỊCH - ÁP DỤNG CHO CẢ PC & MOBILE */
-div[data-testid="stAlert"] {{
-    background-color: rgba(30, 30, 30, 0.95) !important;
-    border-left: 4px solid #00d4ff !important;
-}}
-
-div[data-testid="stAlert"] *,
-div[data-testid="stAlert"] p,
-div[data-testid="stAlert"] strong,
-div[data-testid="stAlert"] em,
-div[data-testid="stAlert"] li,
-div[data-testid="stAlert"] span,
-div[data-testid="stAlert"] div {{
-    color: #FFFFFF !important;
-    font-size: 18px !important;
-    line-height: 1.6 !important;
-}}
-
-div[data-testid="stAlert"] strong {{
-    color: #FFD700 !important;
-    font-weight: 900 !important;
-}}
-</style>
-"""
 st.markdown(css_style, unsafe_allow_html=True)
 
 # ====================================================
@@ -1253,7 +1122,7 @@ if bank_choice != "----":
     # --- MODE: GROUP ---
     if st.session_state.current_mode == "group":
         # Cập nhật tiêu đề nhóm câu hỏi
-        st.markdown('<div class="result-title" style="margin-top: 0px;"><h3>Luyện tập theo nhóm (20 câu/nhóm)</h3></div>', unsafe_allow_html=True)
+        st.markdown('<div class="result-title" style="margin-top: 0px;"><h3>Luyện tập theo nhóm (30 câu/nhóm)</h3></div>', unsafe_allow_html=True)
         group_size = 30 # Tăng lên 30 câu/nhóm
         if total > 0:
             groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
