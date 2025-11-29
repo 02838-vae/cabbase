@@ -906,24 +906,7 @@ a#manual-home-btn:hover {{
 }}
 
 /* STYLE CHO KHUNG DỊCH (st.info) */
-div[data-testid="stAlert"] {{
-    background-color: rgba(30, 30, 30, 0.95) !important;
-    border-left: 4px solid #00d4ff !important;
-}}
 
-div[data-testid="stAlert"] p,
-div[data-testid="stAlert"] strong,
-div[data-testid="stAlert"] em,
-div[data-testid="stAlert"] li {{
-    color: #FFFFFF !important;
-    font-size: 18px !important;
-    line-height: 1.6 !important;
-}}
-
-div[data-testid="stAlert"] strong {{
-    color: #FFD700 !important;
-}}
-</style>
 /* STYLE CÂU HỎI & ĐÁP ÁN - ĐÃ THỐNG NHẤT FONT VÀ BỎ SHADOW/EFFECTS */
 .bank-question-text {{
     color: #000000 !important; /* MÃ u Ä'en cho cÃ¢u há»i trÃªn PC */
