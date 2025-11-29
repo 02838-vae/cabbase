@@ -1022,18 +1022,21 @@ div[data-testid="stAlert"] strong {{
         width: 90% !important; /* GIẢM CHIỀU RỘNG ĐỂ CĂN GIỮA CÓ Ý NGHĨA */
     }}
     
-    /* Căn giữa cho container của nút khi ở chế độ GROUP */
-    [data-testid="stHorizontalBlock"] > div {{
+    /* CĂN GIỮA CONTAINER STREAMLIT BUTTON TRÊN MOBILE */
+    .stButton {{
         width: 100% !important;
+        display: flex;
+        justify-content: center; /* SỬ DỤNG FLEXBOX ĐỂ CĂN GIỮA NÚT CON */
     }}
+    
+    /* Căn giữa cho container của nút khi ở chế độ GROUP */
     [data-testid="stHorizontalBlock"] {{
         display: flex;
         flex-direction: column;
         align-items: center; /* Căn giữa các cột */
     }}
-    /* Điều chỉnh để các nút chiếm hết chiều rộng của cột trên mobile */
-    [data-testid="stHorizontalBlock"] > div:first-child,
-    [data-testid="stHorizontalBlock"] > div:last-child {{
+    /* Điều chỉnh để các cột chiếm hết chiều rộng của cột trên mobile */
+    [data-testid="stHorizontalBlock"] > div {{
         width: 100% !important; 
         margin-bottom: 5px; 
     }}
