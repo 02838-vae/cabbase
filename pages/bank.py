@@ -882,21 +882,22 @@ a#manual-home-btn:hover {{
     text-shadow: 0 0 15px #FFEA00;
 }}
 @media (max-width: 768px) {{
-    #sub-static-title h2, .result-title h3 {{
-        font-size: 4.8vw !important;
-        letter-spacing: -0.5px;
-        white-space: nowrap; 
+    .bank-question-text {{
+        color: #FFDD00 !important;
+        background-color: transparent !important;
     }}
 }}
 
 /* STYLE CÂU HỎI & ĐÁP ÁN - ĐÃ THỐNG NHẤT FONT VÀ BỎ SHADOW/EFFECTS */
 .bank-question-text {{
-    color: #FFDD00 !important; /* Giữ màu vàng cho câu hỏi */
+    color: #000000 !important; /* MÃ u Ä'en cho cÃ¢u há»i trÃªn PC */
     font-weight: 700 !important;
     font-size: 22px !important; 
-    font-family: 'Oswald', sans-serif !important; /* Thống nhất font content */
-    text-shadow: none; /* ❌ BỎ SHADOW */
+    font-family: 'Oswald', sans-serif !important; /* Thá»'ng nháº¥t font content */
+    text-shadow: none; /* âŒ Bá»Ž SHADOW */
     padding: 5px 15px; margin-bottom: 10px; line-height: 1.4 !important;
+    background-color: rgba(255, 255, 255, 0.9); /* Ná»n tráº¯ng Ä'á»ƒ chá»¯ Ä'en dá»… Ä'á»c */
+    border-radius: 5px;
 }}
 
 .bank-answer-text {{
