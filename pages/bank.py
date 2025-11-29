@@ -897,34 +897,33 @@ a#manual-home-btn:hover {{
 
 /* STYLE CÂU HỎI & ĐÁP ÁN - PC */
 .bank-question-text {{
-    color: #FFFFFF !important; /* Màu trắng đậm cho câu hỏi trên PC */
-    font-weight: 900 !important; /* Đậm hơn */
+    color: #FFFFFF !important;
+    font-weight: 900 !important;
     font-size: 22px !important; 
     font-family: 'Oswald', sans-serif !important;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8); /* Shadow để nổi bật */
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
     padding: 5px 15px; margin-bottom: 10px; line-height: 1.4 !important;
-    background-color: rgba(0, 0, 0, 0.6); /* Nền đen mờ */
+    background-color: rgba(0, 0, 0, 0.6);
     border-radius: 5px;
 }}
 
 .bank-answer-text {{
     font-family: 'Oswald', sans-serif !important;
-    font-weight: 900 !important; /* Đậm hơn */
+    font-weight: 900 !important;
     font-size: 22px !important; 
     padding: 5px 15px; margin: 2px 0;
     line-height: 1.5 !important; 
     display: block;
-    /* Màu sắc được xử lý bằng inline style */
 }}
 
-/* RADIO BUTTONS (CHỌN ĐÁP ÁN) - ĐÃ THỐNG NHẤT FONT VÀ BỎ SHADOW/EFFECTS */
+/* RADIO BUTTONS (CHỌN ĐÁP ÁN) */
 .stRadio label {{
     color: #FFFFFF !important;
     font-size: 22px !important; 
     font-weight: 700 !important;
-    font-family: 'Oswald', sans-serif !important; /* Thống nhất font content */
+    font-family: 'Oswald', sans-serif !important;
     padding: 2px 12px;
-    text-shadow: none !important; /* ❌ BỎ SHADOW */
+    text-shadow: none !important;
     background-color: transparent !important;
     border: none !important;
     display: block !important;
@@ -933,14 +932,14 @@ a#manual-home-btn:hover {{
 }}
 
 .stRadio label:hover {{
-    text-shadow: none !important; /* ❌ BỎ SHADOW KHI HOVER */
+    text-shadow: none !important;
 }}
 
 .stRadio label span, 
 .stRadio label p,
 .stRadio label div {{
     color: #FFFFFF !important;
-    text-shadow: none !important; /* ❌ BỎ SHADOW */
+    text-shadow: none !important;
     letter-spacing: 0.5px !important;
 }}
 
@@ -977,9 +976,8 @@ div.stSelectbox label p {{
     font-size: 1.25rem !important;
     font-family: 'Oswald', sans-serif !important;
 }}
-/* ============================================ */
+
 /* STYLE CHO KHUNG DỊCH - ÁP DỤNG CHO CẢ PC & MOBILE */
-/* ============================================ */
 div[data-testid="stAlert"] {{
     background-color: rgba(30, 30, 30, 0.95) !important;
     border-left: 4px solid #00d4ff !important;
