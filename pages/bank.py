@@ -42,7 +42,7 @@ def clean_text(s: str) -> str:
     ]
     
     for pattern in standalone_patterns:
-        for match in re.finditer(pattern, temp_s):
+        for match in finditer(pattern, temp_s):
             matched_text = match.group()
             placeholder = f"__PLACEHOLDER_{counter}__"
             placeholders[placeholder] = matched_text
@@ -852,6 +852,11 @@ a#manual-home-btn:hover {{
     #main-title-container {{ height: 100px; padding-top: 10px; }}
     #main-title-container h1 {{ font-size: 8vw; line-height: 1.5 !important; }}
     .main > div:first-child {{ padding-top: 20px !important; }}
+    /* Màu chữ câu hỏi trên mobile */
+    .bank-question-text {{
+        color: #FFDD00 !important; 
+        background-color: transparent !important;
+    }}
 }}
 
 .main > div:first-child {{
@@ -869,23 +874,18 @@ a#manual-home-btn:hover {{
     color: #FFEA00;
     text-shadow: 0 0 15px #FFEA00;
 }}
-@media (max-width: 768px) {{
-    .bank-question-text {{
-        color: #FFDD00 !important;
-        background-color: transparent !important;
-    }}
-}}
+
 
 /* STYLE CÂU HỎI & ĐÁP ÁN - ĐÃ THỐNG NHẤT FONT VÀ BỎ SHADOW/EFFECTS */
 .bank-question-text {{
-    color: #FFFFFF !important; /* ĐỔI MÀU TRẮNG CHO CHỮ CÂU HỎI */
+    color: #000000 !important; /* CHỈNH SỬA: Đổi lại màu chữ câu hỏi thành màu đen theo yêu cầu */
     font-weight: 700 !important;
     font-size: 22px !important; 
-    font-family: 'Oswald', sans-serif !important; /* Thá»'ng nháº¥t font content */
-    text-shadow: none; /* âŒ Bá»Ž SHADOW */
+    font-family: 'Oswald', sans-serif !important; /* Thống nhất font content */
+    text-shadow: none; /* ❌ BỎ SHADOW */
     padding: 5px 15px; margin-bottom: 10px; line-height: 1.4 !important;
-    background-color: transparent !important; /* CHỈNH SỬA: XÓA KHUNG TRẮNG */
-    border-radius: 0px; /* CHỈNH SỬA: XÓA BO GÓC */
+    background-color: transparent !important; /* XÓA KHUNG TRẮNG */
+    border-radius: 0px; /* XÓA BO GÓC */
 }}
 
 .bank-answer-text {{
