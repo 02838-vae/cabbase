@@ -859,6 +859,7 @@ a#manual-home-btn:hover {{
 }}
 
 @media (max-width: 768px) {{
+@media (max-width: 768px) {{
     #back-to-home-btn-container {{ top: 5px; left: 5px; }}
     #main-title-container {{ height: 100px; padding-top: 10px; }}
     #main-title-container h1 {{ font-size: 8vw; line-height: 1.5 !important; }}
@@ -872,6 +873,12 @@ a#manual-home-btn:hover {{
         overflow: hidden;
         text-overflow: ellipsis;
         padding: 0 5px;
+    }}
+    
+    /* FIX 4: Màu vàng cho câu hỏi trên mobile */
+    .bank-question-text {{
+        color: #FFFF00 !important;
+        background-color: rgba(0, 0, 0, 0.7) !important;
     }}
 }}
 
@@ -979,6 +986,25 @@ div.stSelectbox label p {{
     color: #33FF33 !important;
     font-size: 1.25rem !important;
     font-family: 'Oswald', sans-serif !important;
+}}
+</style>
+/* STYLE CHO KHUNG DỊCH (st.info) */
+div[data-testid="stAlert"] {{
+    background-color: rgba(30, 30, 30, 0.95) !important;
+    border-left: 4px solid #00d4ff !important;
+}}
+
+div[data-testid="stAlert"] p,
+div[data-testid="stAlert"] strong,
+div[data-testid="stAlert"] em,
+div[data-testid="stAlert"] li {{
+    color: #FFFFFF !important;
+    font-size: 18px !important;
+    line-height: 1.6 !important;
+}}
+
+div[data-testid="stAlert"] strong {{
+    color: #FFD700 !important;
 }}
 </style>
 """
