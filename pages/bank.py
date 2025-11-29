@@ -30,973 +30,1264 @@ def clean_text(s: str) -> str:
     
     # BƯỚC 1: Xử lý ngoặc có nhiều space/ký tự → chuẩn hóa thành 4 spaces
     # VD: (__           __) → (____)
-    temp_s = re.sub(r'\([\\s._-]{2,}\\)', '(    )', temp_s)  # Ngoặc đơn
-    temp_s = re.sub(r'\\[[\\s._-]{2,}\\]', '[    ]', temp_s)  # Ngoặc vuông
-    temp_s = re.sub(r'\\{[\\s._-]{2,}\\}', '{    }', temp_s)  # Ngoặc nhọn
+    temp_s = re.sub(r'\([\s._-]{2,}\)', '(    )', temp_s)  # Ngoặc đơn
+    temp_s = re.sub(r'\[[\s._-]{2,}\]', '[    ]', temp_s)  # Ngoặc vuông
     
-    # BƯỚC 2: Tạm thay thế các placeholder (chỗ trống) để không bị xóa trong bước 3
-    # 1. Chỗ trống (4 spaces trong ngoặc)
-    temp_s = re.sub(r'\\([\\s._-]{4})\\)|\\{[\\s._-]{4}\\}|\\[\\s._-]{4}\\]', 
-                    lambda m: f"__PLACEHOLDER_{counter}__", temp_s)
+    # BƯỚC 2: Lưu các pattern điền chỗ trống còn lại
+    standalone_patterns = [
+        r'(?<!\S)([._])(?:\s*\1){1,9}(?!\S)',  # 2-10 dấu . hoặc _ liên tiếp (có thể có space)
+        r'-{2,10}',  # 2-10 gạch ngang liên tiếp
+        r'\([\s]{2,}\)',  # Ngoặc đơn có spaces (đã chuẩn hóa ở bước 1)
+        r'\[[\s]{2,}\]',  # Ngoặc vuông có spaces
+    ]
     
-    # 2. Dấu ba chấm hoặc gạch dưới không có ngoặc 
-    # (chỉ giữ lại 4 ký tự liên tiếp để đơn giản hóa)
-    temp_s = re.sub(r'[._-]{4,}', 
-                    lambda m: f"__PLACEHOLDER_{counter}__", temp_s)
+    for pattern in standalone_patterns:
+        for match in re.finditer(pattern, temp_s): # Đã sửa: finditer thành re.finditer (Fix NameError cũ)
+            matched_text = match.group()
+            placeholder = f"__PLACEHOLDER_{counter}__"
+            placeholders[placeholder] = matched_text
+            temp_s = temp_s.replace(matched_text, placeholder, 1)
+            counter += 1
+    
+    # BƯỚC 3: Xóa khoảng trắng thừa (2+ spaces → 1 space)
+    temp_s = re.sub(r'\s{2,}', ' ', temp_s)
+    
+    # BƯỚC 4: Khôi phục các pattern đã lưu
+    for placeholder, original in placeholders.items():
+        temp_s = temp_s.replace(placeholder, original)
+    
+    return temp_s.strip()
 
-    # BƯỚC 3: Loại bỏ các ký tự đặc biệt không mong muốn (giữ lại tiếng Việt, số, cơ bản)
-    # Loại bỏ ký tự đặc biệt, giữ lại: chữ cái (kể cả tiếng Việt), số, khoảng trắng, và các dấu cơ bản .,:;?!()[]{}'"-_/&
-    # CŨ: s = re.sub(r'[^\\w\\s\\.,:;?!()\'"\\-]', '', s)
-    # LÀM SẠCH VỚI TEMP_S
-    cleaned_s = re.sub(r'[^a-zA-Z0-9áàảãạăắằẳẵặâấầẩẫậéèẻẽẹêếềểễệíìỉĩịóòỏõọôốồổỗộơớờởỡợúùủũụưứừửữựýỳỷỹỵĐđ\\s\\.,:;?!()\'"\\[\\]\\{\\}\\-\\+\\*/=]', '', temp_s)
-    
-    # BƯỚC 4: Khôi phục placeholder
-    for i in range(counter):
-        cleaned_s = cleaned_s.replace(f"__PLACEHOLDER_{i}__", '____')
-        
-    # Chuẩn hóa khoảng trắng
-    cleaned_s = re.sub(r'\\s+', ' ', cleaned_s).strip()
-    
-    return cleaned_s
+def find_file_path(source):
+    """Hàm tìm đường dẫn file với cơ chế tìm kiếm đa dạng."""
+    paths = [
+        os.path.join(os.path.dirname(__file__), source),
+        source,
+        f"pages/{source}"
+    ]
+    for path in paths:
+        if os.path.exists(path) and os.path.getsize(path) > 0:
+            return path
+    return None
 
-def read_and_parse_docx(file_path):
-    doc = Document(file_path)
-    questions = []
-    current_question = None
-    group_name = "Chưa phân nhóm"
+def read_docx_paragraphs(source):
+    """
+    Hàm đọc paragraphs chỉ lấy TEXT (sử dụng cho cabbank, lawbank, PL1)
+    """
+    path = find_file_path(source)
+    if not path:
+        print(f"Lỗi không tìm thấy file DOCX: {source}")
+        return []
     
-    # Hàm để kiểm tra xem một run có được highlight không (màu khác "none")
-    def is_highlighted(run):
-        # Kiểm tra màu highlight (WD_COLOR_INDEX)
-        # 0: None, 1: Black, 2: Blue, 3: Cyan, 4: Green, 5: Magenta, 6: Red, 7: Yellow
-        # 8: White, 9: Dark Blue, 10: Teal, 11: Gray-50, 12: Light Blue, 13: Violet, 14: Dark Red
-        # 15: Pink, 16: Yellow-Green, 17: Dark Yellow, 18: Light Gray, 19: Dark Gray, 20: Gold
-        # Đáp án thường được highlight màu Vàng (YELLOW)
-        return run.highlight_color is not None and run.highlight_color != WD_COLOR_INDEX.NONE
+    try:
+        doc = Document(path)
+        return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
+    except Exception as e:
+        print(f"Lỗi đọc file DOCX (chỉ text): {source}. Chi tiết: {e}")
+        return []
 
-    # Hàm trích xuất văn bản từ paragraph
-    def get_paragraph_text(p):
-        text = ""
-        for run in p.runs:
-            run_text = run.text
-            # Kiểm tra và thêm ký hiệu đáp án đúng (S)
-            if is_highlighted(run):
-                run_text += " (S)"
-            text += run_text
-        return text
+# HÀM ĐỌC FILE MỚI: DÙNG CHO PL2 (CHỈ LẤY TEXT)
+def read_pl2_data(source):
+    """
+    Hàm đọc paragraphs chỉ lấy TEXT (tương tự read_docx_paragraphs),
+    để parse_pl2 có thể dùng logic (*).
+    """
+    path = find_file_path(source)
+    if not path:
+        print(f"Lỗi không tìm thấy file DOCX: {source}")
+        return []
+    
+    data = []
+    
+    try:
+        doc = Document(path)
+    except Exception as e:
+        print(f"Lỗi đọc file DOCX (chỉ text): {source}. Chi tiết: {e}")
+        return []
 
     for p in doc.paragraphs:
-        # Kiểm tra tiêu đề nhóm:
-        # Nếu có style Title/Heading hoặc BOLD, và bắt đầu bằng "Nhóm", "Chủ đề", "Phần"
-        if p.style.name.startswith('Heading') or ('Nhóm' in p.text and p.text.istitle() or p.text.isupper()):
-             # Nếu không phải là câu hỏi (Q:), thì đây là tên nhóm mới
-            if not re.match(r'^[qQ][\\.:]\\s*', p.text.strip()):
-                group_name = clean_text(p.text).replace(' (S)', '').strip()
+        p_text_stripped = p.text.strip()
+        if not p_text_stripped:
+            continue
+        
+        # BỎ LOGIC HIGHLIGHT VÀNG, CHỈ LẤY TEXT VÀ ĐẶT CỜ HIGHLIGHT = FALSE
+        data.append({
+            "full_text": p_text_stripped,
+            "has_yellow_highlight": False 
+        })
+        
+    return data
+
+def get_base64_encoded_file(file_path):
+    fallback_base64 = "iVBORw0KGgoAAAANSUhEUAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
+    path_to_check = find_file_path(file_path)
+    if not path_to_check:
+        return fallback_base64
+        
+    try:
+        with open(path_to_check, "rb") as f:
+            return base64.b64encode(f.read()).decode("utf-8")
+    except Exception as e:
+        print(f"Lỗi đọc file ảnh {file_path}: {e}")
+        return fallback_base64
+
+# ====================================================
+# 🌐 HÀM DỊCH THUẬT (ĐÃ CẬP NHẬT DÙNG translate)
+# ====================================================
+
+@st.cache_resource
+def get_translator():
+    """
+    Khởi tạo Translator Client.
+    """
+    try:
+        # Khởi tạo Translator, target language là 'vi'
+        # Thư viện này không yêu cầu API Key cho bản miễn phí.
+        translator = Translator(to_lang="vi") 
+        return translator
+    except Exception as e:
+        print(f"Lỗi khởi tạo translate.Translator: {e}")
+        # Trả về None nếu không thể khởi tạo
+        return None
+
+def translate_text(text):
+    """
+    Hàm dịch thuật sử dụng Unofficial 'translate' API hoặc fallback về MOCK nếu có lỗi.
+    (ĐÃ XÓA CHUỖI "Unofficial Translate API")
+    """
+    translator = get_translator()
+    
+    # ----------------------------------------------------
+    # FALLBACK VỀ MOCK/PLACEHOLDER (Nếu Client không hợp lệ)
+    # ----------------------------------------------------
+    if translator is None:
+        parts = text.split('\nĐáp án: ')
+        q_content = parts[0].replace('Câu hỏi: ', '').strip()
+        a_content_raw = parts[1].strip() if len(parts) > 1 else ""
+        options = [opt.strip() for opt in a_content_raw.split(';') if opt.strip()]
+        q_translated_text = f"Nội dung: *{q_content}*."
+        a_translated_text = "\n".join([f"- {i+1}. Dịch của: {opt}" for i, opt in enumerate(options)])
+        return f"""**[Bản dịch Tiếng Việt]**\n\n- **Câu hỏi:** {q_translated_text}\n- **Các đáp án:** \n{a_translated_text}"""
+
+
+    # ----------------------------------------------------
+    # LOGIC DỊCH translate THỰC TẾ
+    # ----------------------------------------------------
+    try:
+        # 1. Tách Câu hỏi và Đáp án
+        parts = text.split('\nĐáp án: ')
+        q_content = parts[0].replace('Câu hỏi: ', '').strip()
+        a_content_raw = parts[1].strip() if len(parts) > 1 else ""
+        
+        # Lấy tất cả nội dung cần dịch: Câu hỏi + các đáp án
+        options = [opt.strip() for opt in a_content_raw.split(';') if opt.strip()]
+        
+        # 2. Dịch từng phần: Câu hỏi
+        # Dịch câu hỏi
+        q_translated = translator.translate(q_content)
+
+        # 3. Dịch các đáp án
+        a_translated_list = []
+        for i, option_content in enumerate(options):
+            if not option_content:
+                a_translated_list.append("")
                 continue
             
-        text = clean_text(get_paragraph_text(p))
-        
-        # 1. Bắt đầu câu hỏi mới: Bắt đầu bằng Q: hoặc Câu: (Không phân biệt hoa thường)
-        q_match = re.match(r'^[qQ][\\.:]\\s*(.*)', text)
-        if q_match:
-            # Nếu có câu hỏi đang dang dở, lưu lại trước
-            if current_question:
-                questions.append(current_question)
+            # Tách phần tiền tố (a., b., c.) từ option gốc
+            original_prefix_match = re.match(r'^([a-d]\.|\s*)\s*', option_content, re.IGNORECASE)
+            # Dùng prefix gốc (vd: a. ) hoặc f"{i+1}." nếu không tìm thấy
+            original_prefix = original_prefix_match.group(0).strip() if original_prefix_match and original_prefix_match.group(0).strip() else f"{i+1}."
             
-            # Bắt đầu câu hỏi mới
-            current_question = {
-                'id': len(questions) + 1,
-                'group': group_name,
-                'question_text': q_match.group(1).replace('(S)', '').strip(),
-                'answers': [],
-                'correct_answer': None,
-                'explanation': None
-            }
-            continue
+            # Dịch phần nội dung chính
+            translated_text = translator.translate(option_content)
             
-        # 2. Bắt đầu đáp án
-        a_match = re.match(r'^([A-Za-z0-9])\\.[\\s\\t]*(.*)', text)
-        if a_match and current_question:
-            choice_label = a_match.group(1)
-            answer_text = a_match.group(2).strip()
+            # 4. Ghép lại Đáp án với prefix
+            # Cố gắng loại bỏ prefix nếu bị dịch đúp, sau đó ghép lại prefix gốc.
+            stripped_translated_text = translated_text.lstrip(original_prefix).strip()
+            if not stripped_translated_text:
+                 stripped_translated_text = translated_text
             
-            is_correct = False
-            # Kiểm tra nếu đáp án có chứa ký hiệu (S) được thêm vào từ highlight
-            if answer_text.endswith('(S)'):
-                is_correct = True
-                answer_text = answer_text[:-3].strip() # Xóa (S)
-            
-            # Thêm vào danh sách đáp án
-            current_question['answers'].append({
-                'label': choice_label,
-                'text': answer_text
-            })
-            
-            # Cập nhật đáp án đúng
-            if is_correct:
-                if current_question['correct_answer'] is None:
-                    current_question['correct_answer'] = choice_label
-                else:
-                    # Xử lý trường hợp đa đáp án đúng nếu cần (hiện tại chỉ lấy đáp án đầu tiên được highlight)
-                    pass 
-            continue
+            a_translated_list.append(f"{original_prefix} {stripped_translated_text}")
 
-        # 3. Bắt đầu phần giải thích
-        if re.match(r'^(Giải thích|GT|Explain|Hint|Gợi ý)[\\.:]?\\s*', text):
-            # Nếu là phần Giải thích, thêm vào câu hỏi hiện tại
-            if current_question:
-                current_question['explanation'] = text.replace('(S)', '').strip()
-            continue
-            
-        # 4. Văn bản khác (thường là phần tiếp theo của câu hỏi, đáp án, hoặc giải thích)
-        if current_question:
-            if current_question['answers']:
-                # Nếu câu trước là đáp án, thì đây là phần nối tiếp của đáp án đó
-                last_answer = current_question['answers'][-1]
-                if not last_answer['text'].endswith('.'): # Nếu không kết thúc bằng dấu chấm (giả định)
-                    last_answer['text'] += " " + text.replace('(S)', '').strip()
-            elif current_question['explanation']:
-                # Nếu câu trước là giải thích, thì đây là phần nối tiếp của giải thích đó
-                current_question['explanation'] += " " + text.replace('(S)', '').strip()
+        # 5. Định dạng kết quả
+        a_translated_text = "\n".join([f"- {opt}" for opt in a_translated_list])
+        
+        return f"**[Bản dịch Tiếng Việt]**\n\n- **Câu hỏi:** {q_translated}\n- **Các đáp án:** \n{a_translated_text}"
+
+    except Exception as e:
+        # Log lỗi chi tiết ra console
+        print(f"LỖI DỊCH THUẬT 'translate': {e}")
+        return f"**[LỖI DỊCH THUẬT]**\n- Không thể dịch nội dung. Chi tiết lỗi đã được ghi lại (Exception: {type(e).__name__}).\n- Câu hỏi gốc:\n{text}"
+
+# ====================================================
+# 🧩 PARSER 1: NGÂN HÀNG KỸ THUẬT (CABBANK)
+# ====================================================
+def parse_cabbank(source):
+    """
+    Parser cho định dạng CABBANK (Dùng dấu * trước option đúng)
+    """
+    paras = read_docx_paragraphs(source)
+    if not paras: return []
+
+    questions = []
+    current = {"question": "", "options": [], "answer": ""}
+    opt_pat = re.compile(r'(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s+')
+
+    for p in paras:
+        matches = list(opt_pat.finditer(p))
+        if not matches:
+            if current["options"]:
+                if current["question"] and current["options"]:
+                    if not current["answer"] and current["options"]:
+                        current["answer"] = current["options"][0]
+                    questions.append(current)
+                current = {"question": clean_text(p), "options": [], "answer": ""}
             else:
-                # Nếu câu trước là câu hỏi, thì đây là phần nối tiếp của câu hỏi đó
-                current_question['question_text'] += " " + text.replace('(S)', '').strip()
+                if current["question"]: current["question"] += " " + clean_text(p)
+                else: current["question"] = clean_text(p)
+            continue
 
+        pre_text = p[:matches[0].start()].strip()
+        if pre_text:
+            if current["options"]:
+                if current["question"] and current["options"]:
+                    if not current["answer"] and current["options"]:
+                        current["answer"] = current["options"][0]
+                    questions.append(current)
+                current = {"question": clean_text(pre_text), "options": [], "answer": ""}
+            else:
+                if current["question"]: current["question"] += " " + clean_text(pre_text)
+                else: current["question"] = clean_text(pre_text)
 
-    # Lưu lại câu hỏi cuối cùng
-    if current_question:
-        questions.append(current_question)
+        for i, m in enumerate(matches):
+            s = m.end()
+            e = matches[i + 1].start() if i + 1 < len(matches) else len(p)
+            opt_body = clean_text(p[s:e])
+            letter = m.group('letter').lower()
+            opt = f"{letter}. {opt_body}"
+            current["options"].append(opt)
+            if m.group("star"): current["answer"] = opt
+
+    if current["question"] and current["options"]:
+        if not current["answer"] and current["options"]:
+            current["answer"] = current["options"][0]
+        questions.append(current)
+    return questions
+# ====================================================
+# 🧩 PARSER 2: NGÂN HÀNG LUẬT (LAWBANK)
+# ====================================================
+def parse_lawbank(source):
+    """
+    Parser cho định dạng LAWBANK (Dùng dấu * trước option đúng)
+    """
+    paras = read_docx_paragraphs(source)
+    if not paras: return []
+
+    questions = []
+    current = {"question": "", "options": [], "answer": ""}
+    opt_pat = re.compile(r'(?<![A-Za-z0-9/])(?P<star>\*)?\s*(?P<letter>[A-Da-d])[\.\)]\s+')
+
+    for p in paras:
+        if re.match(r'^\s*Ref', p, re.I): continue
+        matches = list(opt_pat.finditer(p))
         
-    # Xử lý: Nếu không có đáp án đúng được highlight, chọn đáp án A làm mặc định
-    for q in questions:
-        if q['correct_answer'] is None and q['answers']:
-            q['correct_answer'] = q['answers'][0]['label']
-            
-    # Lọc câu hỏi không có đáp án hoặc không có nội dung
-    questions = [q for q in questions if q['answers'] and q['question_text']]
-    
+        if not matches:
+            if current["options"]:
+                if current["question"] and current["options"]:
+                    if not current["answer"] and current["options"]:
+                        current["answer"] = current["options"][0]
+                    questions.append(current)
+                current = {"question": clean_text(p), "options": [], "answer": ""}
+            else:
+                if current["question"]: current["question"] += " " + clean_text(p)
+                else: current["question"] = clean_text(p)
+            continue
+
+        first_match = matches[0]
+        pre_text = p[:first_match.start()].strip()
+        if pre_text:
+            if current["options"]:
+                if current["question"] and current["options"]:
+                    if not current["answer"] and current["options"]:
+                        current["answer"] = current["options"][0]
+                    questions.append(current)
+                current = {"question": clean_text(pre_text), "options": [], "answer": ""}
+            else:
+                if current["question"]: current["question"] += " " + clean_text(pre_text)
+                else: current["question"] = clean_text(pre_text)
+
+        for i, m in enumerate(matches):
+            s = m.end()
+            e = matches[i+1].start() if i+1 < len(matches) else len(p)
+            opt_body = clean_text(p[s:e])
+            letter = m.group("letter").lower()
+            option = f"{letter}. {opt_body}"
+            current["options"].append(option)
+            if m.group("star"): current["answer"] = option
+
+    if current["question"] and current["options"]:
+        if not current["answer"] and current["options"]:
+            current["answer"] = current["options"][0]
+        questions.append(current)
     return questions
 
-def group_questions(questions):
-    groups = {}
-    for q in questions:
-        group_name = q.get('group', 'Chưa phân nhóm')
-        if group_name not in groups:
-            groups[group_name] = []
-        groups[group_name].append(q)
-    return groups
-
-# Hàm mã hóa file ảnh thành base64
-def get_base64_encoded_file(image_path):
-    try:
-        with open(image_path, "rb") as image_file:
-            return base64.b64encode(image_file.read()).decode()
-    except FileNotFoundError:
-        st.error(f"Lỗi: Không tìm thấy file ảnh {image_path}. Vui lòng kiểm tra lại.")
-        return ""
-
-def translate_text(text, target_language='en'):
-    # Hạn chế dịch những đoạn quá dài hoặc quá ngắn
-    if not text or len(text) < 5 or len(text) > 5000:
-        return ""
-    
-    try:
-        # Sử dụng thư viện 'translate'
-        translator = Translator(to_lang=target_language, from_lang='vi')
-        translation = translator.translate(text)
-        return translation
-    except Exception as e:
-        #st.warning(f"Lỗi dịch: {e}")
-        return f"[Lỗi dịch: {e}]"
-
-
 # ====================================================
-# 🎨 GIAO DIỆN HIỂN THỊ
+# 🧩 PARSER 3: PHỤ LỤC 1 (Dùng dấu (*))
 # ====================================================
-def display_question(q, mode, q_index=None, submitted=False, is_test_mode=False, user_answer=None, key_prefix="q"):
-    q_key = f"{key_prefix}-{q['id']}"
-    
-    # 1. HIỂN THỊ CÂU HỎI
-    question_title = f"<span class='number-one'>Câu {q_index or q['id']}:</span> {q['question_text']}"
-    st.markdown(f"<div class='bank-question-text'>{question_title}</div>", unsafe_allow_html=True)
+def parse_pl1(source):
+    """
+    Parser cho định dạng PL1 (sử dụng dấu (*) để nhận diện đáp án đúng)
+    """
+    paras = read_docx_paragraphs(source)
+    if not paras: return []
 
-    # 2. KHỐI DỊCH THUẬT (Translate)
-    # Tên key duy nhất cho nút toggle của câu hỏi này
-    translation_toggle_key = f"translate_toggle_{q_key}"
+    questions = []
+    current = {"question": "", "options": [], "answer": ""}
     
-    # Lấy trạng thái dịch từ session state
-    is_translated = st.session_state.get('active_translation_key') == q_key
+    q_start_pat = re.compile(r'^\s*(\d+)[\.\)]\s*') 
+    phrase_start_pat = re.compile(r'Choose the correct group of words', re.I)
+    opt_prefix_pat = re.compile(r'^\s*[A-Ca-c]([\.\)]|\s+)\s*') 
+    labels = ["a", "b", "c"]
+    MAX_OPTIONS = 3
+
+    def finalize_current_question(q_dict, q_list):
+        if q_dict["question"]:
+            if not q_dict["answer"] and q_dict["options"]:
+                q_dict["answer"] = q_dict["options"][0] 
+            q_list.append(q_dict)
+        return {"question": "", "options": [], "answer": ""}
     
-    # Nút bật/tắt dịch
-    if st.toggle("Bật dịch sang Tiếng Anh", value=is_translated, key=translation_toggle_key):
-        # Nếu bật, lưu key câu hỏi này vào session state
-        st.session_state.active_translation_key = q_key
-    else:
-        # Nếu tắt, và đây là câu hỏi đang được dịch, xóa key
-        if st.session_state.get('active_translation_key') == q_key:
-            st.session_state.active_translation_key = None
+    for p in paras:
+        clean_p = clean_text(p)
+        if not clean_p: continue
+        
+        is_q_start_phrased = phrase_start_pat.search(clean_p)
+        is_explicitly_numbered = q_start_pat.match(clean_p) 
+        is_max_options_reached = len(current["options"]) >= MAX_OPTIONS
+        is_question_started = current["question"]
+        is_first_line = not is_question_started and not current["options"]
+        
+        must_switch_q = (
+            is_first_line or                            
+            is_q_start_phrased or                       
+            (is_question_started and is_max_options_reached)
+        )
+        
+        if must_switch_q:
+            current = finalize_current_question(current, questions)
+            q_text = clean_p
+            if is_explicitly_numbered:
+                q_text = q_start_pat.sub('', clean_p).strip()
+            current["question"] = q_text
             
-    # HIỂN THỊ KHỐI DỊCH
-    if st.session_state.get('active_translation_key') == q_key:
-        with st.spinner("Đang dịch..."):
-            # Dịch câu hỏi
-            translated_q_text = translate_text(q['question_text'])
-            st.warning(f"**Câu hỏi (EN):** {translated_q_text}")
-            
-            # Dịch các đáp án
-            translated_answers = []
-            for ans in q['answers']:
-                translated_ans_text = translate_text(ans['text'])
-                translated_answers.append(f"**{ans['label']}**: {translated_ans_text}")
+        else:
+            if is_question_started and not is_max_options_reached:
+                is_correct = False
                 
-            st.info("**Đáp án (EN):** " + " | ".join(translated_answers))
+                # SỬ DỤNG DẤU (*)
+                if "(*)" in clean_p:
+                    is_correct = True
+                    clean_p = clean_p.replace("(*)", "").strip() 
+                
+                match_prefix = opt_prefix_pat.match(clean_p)
+                if match_prefix:
+                    clean_p = clean_p[match_prefix.end():].strip()
+                    
+                idx = len(current["options"])
+                    
+                if idx < len(labels):
+                    label = labels[idx]
+                    opt_text = f"{label}. {clean_p}"
+                    current["options"].append(opt_text)
+                    
+                    if is_correct:
+                        current["answer"] = opt_text
             
-            # Dịch giải thích nếu có
-            if q.get('explanation'):
-                translated_explanation = translate_text(q['explanation'])
-                st.success(f"**Giải thích (EN):** {translated_explanation}")
+            elif is_question_started:
+                 current["question"] += " " + clean_p
+        
+            elif not is_question_started and not current["options"]:
+                current["question"] = clean_p
 
-    # 3. KHỐI ĐÁP ÁN VÀ TRẢ LỜI
-    # Xây dựng dictionary đáp án
-    options = {ans['label']: ans['text'] for ans in q['answers']}
+    current = finalize_current_question(current, questions)
+        
+    return questions
+
+# ====================================================
+# 🧩 PARSER 4: PHỤ LỤC 2 (Dùng dấu (*))
+# ====================================================
+def parse_pl2(source):
+    """
+    Parser cho định dạng PL2 (Sử dụng ký hiệu (*) để nhận diện đáp án đúng)
+    """
+    data = read_pl2_data(source) # SỬ DỤNG HÀM ĐỌC ĐÃ SỬA CHỈ LẤY TEXT
+    if not data: return []
+
+    questions = []
+    current = {"question": "", "options": [], "answer": ""}
     
-    # Trong chế độ Test, dùng Radio button
-    if is_test_mode:
-        
-        # Nếu đã có câu trả lời từ trước, dùng nó
-        default_index = None
-        if user_answer in options:
-            default_index = list(options.keys()).index(user_answer)
-        
-        # Lấy nhãn đáp án đã chọn
-        selected_label = st.radio(
-            "Chọn đáp án:",
-            options=list(options.keys()),
-            format_func=lambda x: f"{x}. {options[x]}",
-            index=default_index, # Chọn đáp án nếu có
-            key=f"radio_{q_key}"
-        )
-        
-        # Trả về đáp án người dùng đã chọn
-        return selected_label
-        
-    # Trong chế độ Luyện tập (Group/All), chỉ hiển thị đáp án và kết quả
-    else:
-        # Tạo key duy nhất cho radio button
-        radio_key = f"radio_{q_key}"
-        
-        # Lấy nhãn đáp án đã chọn từ radio
-        selected_label = st.radio(
-            "Chọn đáp án:",
-            options=list(options.keys()),
-            format_func=lambda x: f"{x}. {options[x]}",
-            key=radio_key
-        )
-        
-        # 4. HIỂN THỊ KẾT QUẢ/GIẢI THÍCH
-        if submitted:
-            is_correct = selected_label == q['correct_answer']
-            
-            # Ẩn Radio và chỉ hiển thị kết quả
-            if is_correct:
-                st.success(f"✔️ **Đúng rồi!** Đáp án **{selected_label}** là chính xác.")
-            else:
-                st.error(f"❌ **Sai rồi.** Đáp án của bạn là **{selected_label}**. Đáp án đúng là **{q['correct_answer']}**.")
-            
-            # Hiển thị giải thích
-            if q.get('explanation'):
-                st.info(f"💡 **Giải thích:** {q['explanation']}")
-            
-            # 5. Đánh dấu đáp án đúng
-            correct_index = list(options.keys()).index(q['correct_answer'])
-            
-            # Tạo lại radio với index của đáp án đúng, và disable
-            st.radio(
-                "Đáp án:",
-                options=list(options.keys()),
-                format_func=lambda x: f"{x}. {options[x]}",
-                index=correct_index,
-                disabled=True, # Tắt để chỉ hiển thị
-                key=f"radio_result_{q_key}",
-                label_visibility="collapsed"
-            )
-            
-        return selected_label # Trả về đáp án đã chọn (cho mode Group/All)
+    q_start_pat = re.compile(r'^\s*(\d+)[\.\)]\s*') 
+    phrase_start_pat = re.compile(r'Choose the correct group of words', re.I)
+    opt_prefix_pat = re.compile(r'^\s*[A-Ca-c]([\.\)]|\s+)\s*') 
+    labels = ["a", "b", "c"]
+    MAX_OPTIONS = 3
 
+    def finalize_current_question(q_dict, q_list):
+        if q_dict["question"]:
+            if not q_dict["answer"] and q_dict["options"]:
+                q_dict["answer"] = q_dict["options"][0] 
+            q_list.append(q_dict)
+        return {"question": "", "options": [], "answer": ""}
+    
+    for p_data in data:
+        clean_p = clean_text(p_data["full_text"])
+        if not clean_p: continue
+        
+        is_q_start_phrased = phrase_start_pat.search(clean_p)
+        is_explicitly_numbered = q_start_pat.match(clean_p) 
+        is_max_options_reached = len(current["options"]) >= MAX_OPTIONS
+        is_question_started = current["question"]
+        is_first_line = not is_question_started and not current["options"]
+        
+        must_switch_q = (
+            is_first_line or                            
+            is_q_start_phrased or                       
+            (is_question_started and is_max_options_reached)
+        )
+        
+        if must_switch_q:
+            current = finalize_current_question(current, questions)
+            q_text = clean_p
+            if is_explicitly_numbered:
+                q_text = q_start_pat.sub('', clean_p).strip()
+            current["question"] = q_text
+            
+        else:
+            if is_question_started and not is_max_options_reached:
+                is_correct = False
+                
+                # SỬ DỤNG LOGIC DẤU (*)
+                if "(*)" in clean_p:
+                    is_correct = True
+                    clean_p = clean_p.replace("(*)", "").strip() # Loại bỏ ký hiệu sau khi phát hiện
+                
+                match_prefix = opt_prefix_pat.match(clean_p)
+                if match_prefix:
+                    clean_p = clean_p[match_prefix.end():].strip()
+                    
+                idx = len(current["options"])
+                if idx < len(labels):
+                    label = labels[idx]
+                    opt_text = f"{label}. {clean_p}"
+                    current["options"].append(opt_text)
+                    
+                    if is_correct:
+                        current["answer"] = opt_text
+            
+            elif is_question_started:
+                 current["question"] += " " + clean_p
+        
+            elif not is_question_started and not current["options"]:
+                current["question"] = clean_p
+
+    current = finalize_current_question(current, questions)
+        
+    return questions
+
+# ====================================================
+# 🌟 HÀM: LOGIC DỊCH ĐỘC QUYỀN (EXCLUSIVE TRANSLATION)
+# ====================================================
+if 'active_translation_key' not in st.session_state: st.session_state.active_translation_key = None
+
+def on_translate_toggle(key_clicked):
+    """Callback function để quản lý chế độ Dịch ĐỘC QUYỀN."""
+    toggle_key = f"toggle_{key_clicked}"
+    # Check the state of the toggle in session state (it is the state *after* the click)
+    is_on_after_click = st.session_state.get(toggle_key, False)
+    
+    if is_on_after_click:
+        # User turned this specific toggle ON -> Make it the active key
+        st.session_state.active_translation_key = key_clicked
+    elif st.session_state.active_translation_key == key_clicked:
+        # User turned this specific toggle OFF -> Clear the active key
+        st.session_state.active_translation_key = None
+    
+    # Bỏ st.rerun() để tránh warning "Calling st.rerun() within a callback is a no-op."
+
+# ====================================================
+# 🌟 HÀM: XEM TOÀN BỘ CÂU HỎI (CẬP NHẬT CHỨC NĂNG DỊCH)
+# ====================================================
 def display_all_questions(questions):
-    st.subheader("📋 Tất cả Câu hỏi", divider="blue")
+    st.markdown('<div class="result-title"><h3>📚 TOÀN BỘ NGÂN HÀNG CÂU HỎI</h3></div>', unsafe_allow_html=True)
+    if not questions:
+        st.warning("Không có câu hỏi nào để hiển thị.")
+        return
     
-    # 1. Nút Submit
-    submit_col, empty_col = st.columns([1, 4])
-    with submit_col:
-        # Tạo nút "Xem đáp án"
-        if st.button("👁️ Xem đáp án", key="submit_all_qs"):
-            st.session_state.submitted = True
+    for i, q in enumerate(questions, start=1):
+        q_key = f"all_q_{i}_{hash(q['question'])}" 
+        translation_key = f"trans_{q_key}"
+        is_active = (translation_key == st.session_state.active_translation_key)
         
-    st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
-    
-    # 2. Hiển thị từng câu hỏi
-    for i, q in enumerate(questions):
-        q_index = i + 1
-        display_question(q, mode="all", q_index=q_index, 
-                         submitted=st.session_state.submitted, 
-                         key_prefix="all")
-        
-        # Phân cách câu hỏi
-        st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+        # Hiển thị câu hỏi
+        st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
 
-def display_test_mode(questions, bank_choice):
-    st.subheader("⏱️ Chế độ Làm bài Test", divider="red")
-    
-    # Khởi tạo kết quả bài làm nếu chưa có
-    if 'test_answers' not in st.session_state:
-        st.session_state.test_answers = {}
-    
-    # 1. Hiển thị từng câu hỏi và thu thập đáp án
-    user_answers = {}
-    st.markdown(f"**Tổng số câu hỏi:** {len(questions)}")
-    st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
-
-    for i, q in enumerate(questions):
-        q_index = i + 1
-        
-        # Lấy câu trả lời đã lưu nếu có
-        current_answer = st.session_state.test_answers.get(str(q['id']))
-        
-        # Hiển thị và lấy đáp án người dùng chọn
-        selected_label = display_question(
-            q, 
-            mode="test", 
-            q_index=q_index,
-            is_test_mode=True, 
-            user_answer=current_answer,
-            key_prefix="test"
+        # Nút Dịch ở dưới
+        st.toggle(
+            "🌐 Dịch sang Tiếng Việt", 
+            value=is_active, 
+            key=f"toggle_{translation_key}",
+            on_change=on_translate_toggle,
+            args=(translation_key,)
         )
-        
-        # Lưu đáp án vào session state ngay lập tức
-        st.session_state.test_answers[str(q['id'])] = selected_label
-        user_answers[q['id']] = selected_label
-        
-        st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
-        
-    # 2. Nút Submit và chấm điểm
-    submit_col, empty_col = st.columns([1, 4])
-    with submit_col:
-        if st.button("✅ Nộp bài & Xem kết quả", key="submit_test"):
-            st.session_state.test_submitted = True
+
+        # Hiển thị Bản Dịch
+        if is_active:
+            # Check if translated content is already cached
+            translated_content = st.session_state.translations.get(translation_key)
             
-    if st.session_state.test_submitted:
-        
-        # 3. Chấm điểm
-        score = 0
-        total_questions = len(questions)
-        
-        for q in questions:
-            user_ans = st.session_state.test_answers.get(str(q['id']))
-            if user_ans == q['correct_answer']:
-                score += 1
+            # If not cached or is not a string (default True/False state)
+            if not isinstance(translated_content, str):
+                full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
+                st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
+                translated_content = st.session_state.translations[translation_key]
+
+            st.info(translated_content, icon="🌐")
+            
+        # Hiển thị Đáp án
+        for opt in q["options"]:
+            # Dùng clean_text để so sánh, bỏ qua khoảng trắng, ký tự ẩn
+            if clean_text(opt) == clean_text(q["answer"]):
+                # Đáp án đúng: Xanh lá (Bỏ shadow)
+                color_style = "color:#00ff00;" 
+            else:
+                # Đáp án thường: Trắng (Bỏ shadow)
+                color_style = "color:#FFFFFF;"
+            st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+
+# ====================================================
+# 🌟 HÀM: TEST MODE (CẬP NHẬT CHỨC NĂNG DỊCH)
+# ====================================================
+def get_random_questions(questions, count=50):
+    if len(questions) <= count: return questions
+    return random.sample(questions, count)
+
+def display_test_mode(questions, bank_name, key_prefix="test"):
+    TOTAL_QUESTIONS = 50
+    PASS_RATE = 0.75
+    bank_slug = bank_name.split()[-1].lower()
+    test_key_prefix = f"{key_prefix}_{bank_slug}"
+    
+    if f"{test_key_prefix}_started" not in st.session_state:
+        st.session_state[f"{test_key_prefix}_started"] = False
+    if f"{test_key_prefix}_submitted" not in st.session_state:
+        st.session_state[f"{test_key_prefix}_submitted"] = False
+    if f"{test_key_prefix}_questions" not in st.session_state:
+        st.session_state[f"{test_key_prefix}_questions"] = []
+
+    if not st.session_state[f"{test_key_prefix}_started"]:
+        st.markdown('<div class="result-title"><h3>📝 LÀM BÀI TEST 50 CÂU</h3></div>', unsafe_allow_html=True)
         
-        # 4. HIỂN THỊ KẾT QUẢ CHUNG
-        st.markdown("<div class='result-title'><h3>🎉 KẾT QUẢ BÀI TEST CỦA BẠN</h3></div>", unsafe_allow_html=True)
-        
-        st.info(f"**Tên ngân hàng:** {bank_choice}")
-        st.info(f"**Tổng số câu hỏi:** {total_questions}")
-        
-        # Dùng st.metric để làm nổi bật điểm số
-        st.metric(label="Điểm số:", 
-                  value=f"{score}/{total_questions}", 
-                  delta=f"{score/total_questions:.1%}", 
-                  delta_color="normal")
-        
-        # 5. Hiển thị đáp án chi tiết
-        st.markdown("#### Xem lại Đáp án Chi tiết:", unsafe_allow_html=True)
-        
-        for i, q in enumerate(questions):
-            q_index = i + 1
-            user_ans = st.session_state.test_answers.get(str(q['id']))
-            is_correct = user_ans == q['correct_answer']
+        if st.button("🚀 Bắt đầu Bài Test", key=f"{test_key_prefix}_start_btn"):
+            st.session_state[f"{test_key_prefix}_questions"] = get_random_questions(questions, TOTAL_QUESTIONS)
+            st.session_state[f"{test_key_prefix}_started"] = True
+            st.session_state[f"{test_key_prefix}_submitted"] = False
+            st.session_state.current_mode = "test" 
+            st.rerun()
+        return
+
+    if not st.session_state[f"{test_key_prefix}_submitted"]:
+        st.markdown('<div class="result-title"><h3>⏳ ĐANG LÀM BÀI TEST</h3></div>', unsafe_allow_html=True)
+        test_batch = st.session_state[f"{test_key_prefix}_questions"]
+        for i, q in enumerate(test_batch, start=1):
+            q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}" 
+            translation_key = f"trans_{q_key}"
+            is_active = (translation_key == st.session_state.active_translation_key)
             
             # Hiển thị câu hỏi
-            question_title = f"<span class='number-one'>Câu {q_index}:</span> {q['question_text']}"
-            st.markdown(f"<div class='bank-question-text'>{question_title}</div>", unsafe_allow_html=True)
-            
-            # Hiển thị trạng thái
-            if is_correct:
-                st.success(f"✔️ **Đúng.** Đáp án bạn chọn: **{user_ans}**")
-            else:
-                st.error(f"❌ **Sai.** Đáp án bạn chọn: **{user_ans}**. Đáp án đúng: **{q['correct_answer']}**")
-            
-            # Hiển thị giải thích
-            if q.get('explanation'):
-                st.markdown(f"**Giải thích:** {q['explanation']}")
-            
-            st.markdown("---") # Phân cách
+            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
 
-# ====================================================
-# 🚀 HÀM CHÍNH (MAIN FUNCTION)
-# ====================================================
-def main():
-    
-    # Khởi tạo Session State
-    if 'uploaded_file' not in st.session_state:
-        st.session_state.uploaded_file = None
-    if 'questions' not in st.session_state:
-        st.session_state.questions = []
-    if 'groups' not in st.session_state:
-        st.session_state.groups = {}
-    if 'current_group_idx' not in st.session_state:
-        st.session_state.current_group_idx = 0
-    if 'submitted' not in st.session_state:
-        st.session_state.submitted = False # Cho chế độ Group/All
-    if 'test_submitted' not in st.session_state:
-        st.session_state.test_submitted = False # Cho chế độ Test
-    if 'current_mode' not in st.session_state:
-        st.session_state.current_mode = "group" # group, all, test
-    if 'test_answers' not in st.session_state:
-        st.session_state.test_answers = {}
-    if 'active_translation_key' not in st.session_state:
-        st.session_state.active_translation_key = None # Dùng để quản lý khối dịch thuật
-
-
-    # ====================================================
-    # 🖥️ THIẾT LẬP GIAO DIỆN VÀ CSS
-    # ====================================================
-    st.set_page_config(page_title="Ngân hàng trắc nghiệm", layout="wide")
-
-    # Tên file ảnh giả định (cần đặt trong cùng thư mục)
-    PC_IMAGE_FILE = "bank_PC.jpg"
-    MOBILE_IMAGE_FILE = "bank_mobile.jpg"
-    
-    # Kiểm tra và tạo file giả định nếu không tồn tại (để tránh lỗi khi chạy lần đầu)
-    if not os.path.exists(PC_IMAGE_FILE):
-        # Tạo file ảnh đen giả định (20x20 pixel)
-        import numpy as np
-        from PIL import Image
-        img = Image.fromarray(np.zeros((20, 20, 3), dtype=np.uint8))
-        img.save(PC_IMAGE_FILE)
-    if not os.path.exists(MOBILE_IMAGE_FILE):
-        import numpy as np
-        from PIL import Image
-        img = Image.fromarray(np.zeros((20, 20, 3), dtype=np.uint8))
-        img.save(MOBILE_IMAGE_FILE)
-        
-    img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
-    img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
-
-    # === CSS (ĐÃ CHỈNH SỬA) ===
-    css_style = f"""
-    <style>
-    /* Đã thống nhất font nội dung là Oswald, tiêu đề là Playfair Display */
-    @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
-    @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap');
-    @keyframes colorShift {{
-        0% {{ background-position: 0% 50%; }}
-        50% {{ background-position: 100% 50%; }}
-        100% {{ background-position: 0% 50%; }}
-    }}
-    @keyframes scrollRight {{
-        0% {{ transform: translateX(100%); }}
-        100% {{ transform: translateX(-100%); }}
-    }}
-
-    html, body, .stApp {{
-        height: 100% !important;
-        min-height: 100vh !important;
-        margin: 0 !important;
-        padding: 0 !important;
-        overflow: auto;
-        position: relative;
-    }}
-
-    /* ------------------------------------ */
-    /* SCROLLBAR TÙY CHỈNH (YÊU CẦU 2)        */
-    /* ------------------------------------ */
-
-    /* Áp dụng cho khối cuộn chính (toàn trang) */
-    .stApp, html, body {{
-        scrollbar-width: thin; /* Firefox */
-        scrollbar-color: #764ba2 #0a0a0a; /* Thumb color / Track color - Firefox */
-    }}
-
-    /* Các thuộc tính cho Webkit (Chrome, Safari, Edge) */
-    .stApp::-webkit-scrollbar, 
-    html::-webkit-scrollbar, 
-    body::-webkit-scrollbar {{
-        width: 15px !important; /* Độ rộng của thanh cuộn */
-        height: 15px !important; /* Chiều cao của thanh cuộn ngang */
-    }}
-
-    /* TRACK - Nền của thanh cuộn */
-    .stApp::-webkit-scrollbar-track, 
-    html::-webkit-scrollbar-track, 
-    body::-webkit-scrollbar-track {{
-        background: #0a0a0a !important; /* Nền tối */
-        border-radius: 10px !important;
-    }}
-
-    /* THUMB - Phần cuộn được kéo */
-    .stApp::-webkit-scrollbar-thumb, 
-    html::-webkit-scrollbar-thumb, 
-    body::-webkit-scrollbar-thumb {{
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important; /* Gradient màu hiện đại */
-        border-radius: 10px !important;
-        border: 3px solid #0a0a0a !important; /* Đường viền để tách khỏi track */
-        box-shadow: 0 0 10px rgba(102, 126, 234, 0.5); /* Tạo hiệu ứng bóng */
-        transition: all 0.3s ease;
-    }}
-
-    /* THUMB: Hover State */
-    .stApp::-webkit-scrollbar-thumb:hover, 
-    html::-webkit-scrollbar-thumb:hover, 
-    body::-webkit-scrollbar-thumb:hover {{
-        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
-    }}
-
-    /* CORNER (góc giao nhau giữa thanh dọc và ngang) */
-    .stApp::-webkit-scrollbar-corner, 
-    html::-webkit-scrollbar-corner, 
-    body::-webkit-scrollbar-corner {{
-        background: #0a0a0a !important;
-    }}
-
-    /* BACKGROUND */
-    .stApp {{
-        background: none !important;
-    }}
-
-    .stApp::before {{
-        content: "";
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed;
-        background-size: cover;
-        filter: sepia(0.5) brightness(0.9) blur(0px);
-        z-index: -1; 
-        pointer-events: none;
-    }}
-
-    @media (max-width: 767px) {{
-        .stApp::before {{
-            background: url("data:image/jpeg;base64,{img_mobile_base64}") no-repeat center top scroll;
-            background-size: cover;
-        }}
-    }}
-
-    /* Nội dung nổi lên trên nền */
-    [data-testid="stAppViewContainer"],
-    [data-testid="stMainBlock"],
-    .main {{
-        background-color: transparent !important;
-    }}
-
-    /* Ẩn UI */
-    #MainMenu, footer, header {{visibility: hidden; height: 0;}}
-    [data-testid="stHeader"] {{display: none;}}
-
-    /* BUTTON HOME */
-    #back-to-home-btn-container {{
-        position: fixed;
-        top: 10px; left: 10px; 
-        width: auto !important; z-index: 1500; 
-        display: inline-block;
-    }}
-    a#manual-home-btn {{
-        background-color: rgba(0, 0, 0, 0.85);
-        color: #FFEA00;
-        border: 2px solid #FFEA00;
-        padding: 5px 10px;
-        border-radius: 8px; 
-        font-weight: bold;
-        font-size: 14px; 
-        transition: all 0.3s;
-        font-family: 'Oswald', sans-serif;
-        text-decoration: none;
-        display: inline-block; 
-        white-space: nowrap;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-    }}
-    a#manual-home-btn:hover {{
-        background-color: #FFEA00;
-        color: black;
-        transform: scale(1.05);
-    }}
-
-    /* TITLE CHÍNH */
-    #main-title-container {{
-        position: relative; left: 0; top: 0; width: 100%;
-        height: 120px; overflow: hidden;
-        pointer-events: none;
-        background-color: transparent; padding-top: 20px; z-index: 1200; 
-    }}
-    #main-title-container h1 {{
-        visibility: visible !important;
-        height: auto !important;
-        font-family: 'Playfair Display', serif;
-        font-size: 5vh; 
-        margin: 0; padding: 10px 0;
-        font-weight: 900; letter-spacing: 5px; white-space: nowrap;
-        display: inline-block;
-        background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
-        background-size: 400% 400%;
-        -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
-        animation: scrollRight 15s linear infinite, colorShift 8s ease infinite;
-        text-shadow: 2px 2px 8px rgba(255, 255, 255, 0.3);
-        position: absolute;
-        left: 0; top: 5px; 
-        line-height: 1.5 !important;
-    }}
-
-    /* Số 1 */
-    .number-one {{
-        font-family: 'Oswald', sans-serif !important;
-        font-size: 1em !important; 
-        font-weight: 700;
-        display: inline-block;
-    }}
-
-    .main > div:first-child {{
-        padding-top: 40px !important; padding-bottom: 2rem !important;
-    }}
-
-    /* SUB-TITLE & RESULT TITLE */
-    #sub-static-title, .result-title {{
-        margin-top: 150px;
-        margin-bottom: 30px; text-align: center;
-    }}
-    #sub-static-title h2, .result-title h3 {{
-        font-family: 'Playfair Display', serif;
-        font-size: 2rem;
-        color: #FFEA00;
-        text-shadow: 0 0 15px #FFEA00;
-    }}
-
-    /* STYLE CÂU HỎI - PC (NỀN ĐEN BAO VỪA CHỮ) */
-    .bank-question-text {{
-        color: #FFFFFF !important;
-        font-weight: 900 !important;
-        font-size: 22px !important; 
-        font-family: 'Oswald', sans-serif !important;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-        padding: 8px 15px;
-        margin-bottom: 10px;
-        line-height: 1.4 !important;
-        background-color: rgba(0, 0, 0, 0.75);
-        border-radius: 8px;
-        display: inline-block; /* BAO VỪA CHỮ */
-        max-width: 100%;
-        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-    }}
-
-    /* STYLE ĐÁP ÁN - PC (TRẮNG ĐẬM HƠN) */
-    .bank-answer-text {{
-        font-family: 'Oswald', sans-serif !important;
-        font-weight: 900 !important;
-        font-size: 22px !important; 
-        padding: 5px 15px;
-        margin: 2px 0;
-        line-height: 1.5 !important; 
-        display: block;
-        color: #FFFFFF !important;
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9); /* SHADOW ĐẬM HƠN */
-    }}
-
-    /* RADIO BUTTONS (CHỌN ĐÁP ÁN) */
-    .stRadio label {{
-        color: #FFFFFF !important;
-        font-size: 22px !important; 
-        font-weight: 900 !important; /* ĐẬM HƠN */
-        font-family: 'Oswald', sans-serif !important;
-        padding: 2px 12px;
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9) !important; /* SHADOW ĐẬM HƠN */
-        background-color: transparent !important;
-        border: none !important;
-        display: block !important;
-        margin: 4px 0 !important;
-        letter-spacing: 0.5px !important;
-    }}
-
-    .stRadio label:hover {{
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9) !important;
-    }}
-
-    .stRadio label span, 
-    .stRadio label p,
-    .stRadio label div {{
-        color: #FFFFFF !important;
-        text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9) !important;
-        letter-spacing: 0.5px !important;
-    }}
-
-    div[data-testid="stMarkdownContainer"] p {{
-        font-size: 22px !important; 
-    }}
-
-    /* STYLE NÚT ACTION (ĐẸP VÀ BÓNG BẨY) */
-    .stButton>button {{
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-        color: #ffffff !important;
-        border-radius: 12px !important;
-        font-size: 1.2em !important;
-        font-weight: 700 !important;
-        font-family: 'Oswald', sans-serif !important; 
-        border: 2px solid rgba(255, 255, 255, 0.3) !important;
-        padding: 12px 24px !important;
-        width: 100% !important;
-        box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
-        transition: all 0.3s ease !important;
-        text-transform: uppercase !important;
-        letter-spacing: 1px !important;
-    }}
-
-    .stButton>button:hover {{
-        background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
-        box-shadow: 0 8px 25px rgba(118, 75, 162, 0.6) !important;
-        transform: translateY(-2px) !important;
-        border-color: rgba(255, 255, 255, 0.5) !important;
-    }}
-
-    .stButton>button:active {{
-        transform: translateY(0) !important;
-        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
-    }}
-
-    /* STYLE CHO NÚT DỊCH (st.toggle) */
-    .stToggle label p {{
-        font-size: 14px !important;
-        font-weight: 700 !important;
-        padding: 0;
-        margin: 0;
-        line-height: 1 !important;
-    }}
-    .stToggle > label > div[data-testid="stMarkdownContainer"] {{
-        margin-top: 10px !important; 
-    }}
-
-    div.stSelectbox label p {{
-        color: #33FF33 !important;
-        font-size: 1.25rem !important;
-        font-family: 'Oswald', sans-serif !important;
-    }}
-
-    /* STYLE CHO KHUNG DỊCH - ÁP DỤNG CHO CẢ PC & MOBILE */
-    div[data-testid="stAlert"] {{
-        background-color: rgba(30, 30, 30, 0.95) !important;
-        border-left: 4px solid #00d4ff !important;
-        border-radius: 8px !important;
-        box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3) !important;
-    }}
-
-    div[data-testid="stAlert"] *,
-    div[data-testid="stAlert"] p,
-    div[data-testid="stAlert"] strong,
-    div[data-testid="stAlert"] em,
-    div[data-testid="stAlert"] li,
-    div[data-testid="stAlert"] span,
-    div[data-testid="stAlert"] div {{
-        color: #FFFFFF !important;
-        font-size: 18px !important;
-        line-height: 1.6 !important;
-    }}
-
-    div[data-testid="stAlert"] strong {{
-        color: #FFD700 !important;
-        font-weight: 900 !important;
-    }}
-
-    /* MOBILE RESPONSIVE */
-    @media (max-width: 768px) {{
-        #back-to-home-btn-container {{ top: 5px; left: 5px; }}
-        #main-title-container {{ height: 100px; padding-top: 10px; }}
-        #main-title-container h1 {{ font-size: 8vw; line-height: 1.5 !important; }}
-        .main > div:first-child {{ padding-top: 20px !important; }}
-        
-        /* Chỉnh kích thước tiêu đề trên mobile - FIX HIỂN THỊ ĐẦY ĐỦ */
-        #sub-static-title h2, 
-        .result-title h3 {{
-            font-size: 1.1rem !important; /* NHỎ HƠN ĐỂ VỪA 1 HÀNG */
-            white-space: normal !important; /* CHO PHÉP XUỐNG DÒNG */
-            overflow: visible !important;
-            text-overflow: clip !important;
-            padding: 0 10px !important;
-            line-height: 1.3 !important;
-        }}
-        
-        /* Màu vàng cho câu hỏi trên mobile */
-        .bank-question-text {{
-            color: #FFFF00 !important;
-            background-color: rgba(0, 0, 0, 0.75) !important;
-            display: inline-block !important; /* BAO VỪA CHỮ */
-        }}
-        
-        /* Nút trên mobile (YÊU CẦU 1: CĂN GIỮA) */
-        .stButton>button {{
-            font-size: 1em !important;
-            padding: 10px 18px !important;
-            width: 80% !important; /* ĐIỀU CHỈNH: Giảm width để căn giữa chuẩn hơn */
-            margin: 10px auto !important; /* ĐIỀU CHỈNH: Thêm margin auto để căn giữa */
-            display: block !important; /* ĐIỀU CHỈNH: Cần block để margin auto hoạt động */
-        }}
-        
-        /* ĐIỀU CHỈNH: Căn giữa nội dung cột (nút) trên mobile */
-        /* Áp dụng cho cột bao quanh nút */
-        div[data-testid^="stColumn"] {{
-            text-align: center !important; 
-        }}
-    }}
-    </style>
-    """
-
-    st.markdown(css_style, unsafe_allow_html=True)
-    
-    # ----------------------------------------------------
-    # 📤 UPLOAD FILE VÀ XỬ LÝ
-    # ----------------------------------------------------
-    if not st.session_state.questions:
-        st.markdown("<div id='main-title-container'><h1>BANK TRẮC NGHIỆM ONLINE</h1></div>", unsafe_allow_html=True)
-        st.markdown("<div id='sub-static-title'><h2>Vui lòng upload file Ngân hàng câu hỏi (.docx)</h2></div>", unsafe_allow_html=True)
-        
-        uploaded_file = st.file_uploader("Chọn file .docx", type="docx")
-        
-        if uploaded_file is not None:
-            # Lưu file vào session state
-            st.session_state.uploaded_file = uploaded_file.name
-            
-            # Xử lý file
-            with st.spinner(f"Đang đọc và phân tích file **{uploaded_file.name}**..."):
-                try:
-                    # Lưu file tạm thời
-                    temp_file_path = f"temp_{uploaded_file.name}"
-                    with open(temp_file_path, "wb") as f:
-                        f.write(uploaded_file.getbuffer())
-                        
-                    # Phân tích
-                    questions = read_and_parse_docx(temp_file_path)
-                    st.session_state.questions = questions
-                    st.session_state.groups = group_questions(questions)
-                    st.session_state.current_group_idx = 0 # Reset về nhóm đầu tiên
-                    st.session_state.submitted = False
-                    st.session_state.test_submitted = False
-                    st.session_state.test_answers = {}
-                    st.session_state.current_mode = "group"
-                    
-                    # Xóa file tạm
-                    os.remove(temp_file_path)
-                    
-                    st.success(f"✅ Đã tải thành công **{len(questions)}** câu hỏi, được chia thành **{len(st.session_state.groups)}** nhóm.")
-                    st.rerun()
-                except Exception as e:
-                    st.error(f"Lỗi khi xử lý file: {e}")
-                    st.session_state.questions = []
-                    st.session_state.uploaded_file = None
-                    
-    # ----------------------------------------------------
-    # 💻 HIỂN THỊ NỘI DUNG CHÍNH
-    # ----------------------------------------------------
-    if st.session_state.questions:
-        questions = st.session_state.questions
-        groups = st.session_state.groups
-        group_names = list(groups.keys())
-        bank_choice = st.session_state.uploaded_file
-        
-        # Tiêu đề
-        st.markdown("<div id='main-title-container'><h1>BANK TRẮC NGHIỆM ONLINE</h1></div>", unsafe_allow_html=True)
-        st.markdown(f"<div id='sub-static-title'><h2>📂 Ngân hàng: {bank_choice}</h2></div>", unsafe_allow_html=True)
-
-        # Thanh chuyển đổi chế độ
-        mode_cols = st.columns(3)
-        with mode_cols[0]:
-            if st.button("📚 Luyện tập theo nhóm", disabled=(st.session_state.current_mode == "group")):
-                st.session_state.current_mode = "group"
-                st.session_state.submitted = False
-                st.session_state.active_translation_key = None
-                st.rerun()
-        with mode_cols[1]:
-            if st.button("📋 Xem tất cả", disabled=(st.session_state.current_mode == "all")):
-                st.session_state.current_mode = "all"
-                st.session_state.submitted = False
-                st.session_state.active_translation_key = None
-                st.rerun()
-        with mode_cols[2]:
-            if st.button("📝 Làm bài TEST", disabled=(st.session_state.current_mode == "test")):
-                st.session_state.current_mode = "test"
-                st.session_state.submitted = False
-                st.session_state.test_submitted = False
-                st.session_state.test_answers = {} # Reset câu trả lời
-                st.session_state.active_translation_key = None
-                st.rerun()
-
-        # ----------------------------------------------------
-        # HIỂN THỊ THEO CHẾ ĐỘ
-        # ----------------------------------------------------
-        if st.session_state.current_mode == "group":
-            
-            # Chọn nhóm
-            st.subheader("📚 Luyện tập theo nhóm", divider="blue")
-            
-            # Dùng selectbox để chọn nhóm
-            st.session_state.current_group_idx = st.selectbox(
-                "Chọn nhóm câu hỏi:",
-                options=range(len(group_names)),
-                format_func=lambda i: f"Nhóm {i+1}: {group_names[i]} ({len(groups[group_names[i]])} câu)",
-                index=st.session_state.current_group_idx,
-                key="group_selectbox"
+            # Nút Dịch ở dưới
+            st.toggle(
+                "🌐 Dịch sang Tiếng Việt", 
+                value=is_active, 
+                key=f"toggle_{translation_key}",
+                on_change=on_translate_toggle,
+                args=(translation_key,)
             )
-            
-            current_group_name = group_names[st.session_state.current_group_idx]
-            current_questions = groups[current_group_name]
-            
-            st.info(f"Đang luyện tập nhóm: **{current_group_name}** ({len(current_questions)} câu)")
-            
-            if current_questions:
-                
-                # 1. Nút Submit
-                submit_col, empty_col = st.columns([1, 4])
-                with submit_col:
-                    if st.button("👁️ Xem đáp án", key="submit_group_qs"):
-                        st.session_state.submitted = True
-                    
-                st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
 
-                # 2. Hiển thị câu hỏi trong nhóm
-                for i, q in enumerate(current_questions):
-                    q_index = i + 1
-                    display_question(q, mode="group", q_index=q_index, 
-                                     submitted=st.session_state.submitted, 
-                                     key_prefix=f"group_{st.session_state.current_group_idx}")
-                    
-                    st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
-                    
-                # 3. Nút chuyển nhóm
-                col_prev, col_next = st.columns(2)
-                with col_prev:
-                    if st.session_state.current_group_idx > 0:
-                        if st.button("⬅️ Quay lại nhóm trước", key="prev_group"):
-                            st.session_state.current_group_idx -= 1
-                            st.session_state.submitted = False
-                            st.session_state.active_translation_key = None
-                            st.rerun()
-                with col_next:
-                    if st.session_state.current_group_idx < len(groups) - 1:
-                        if st.button("➡️ Tiếp tục nhóm sau", key="next_group"):
-                            st.session_state.current_group_idx += 1
-                            st.session_state.submitted = False
-                            st.session_state.active_translation_key = None
-                            st.rerun()
-                    else: st.info("🎉 Đã hoàn thành tất cả các nhóm câu hỏi!")
-            else: st.warning("Không có câu hỏi trong nhóm này.")
-        
-        elif st.session_state.current_mode == "all":
+            # Hiển thị Bản Dịch
+            if is_active:
+                translated_content = st.session_state.translations.get(translation_key)
+                
+                if not isinstance(translated_content, str):
+                    full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
+                    st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
+                    translated_content = st.session_state.translations[translation_key]
+
+                st.info(translated_content, icon="🌐")
+
+            # Hiển thị Radio Button
+            default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
+            st.radio("", q["options"], index=q["options"].index(default_val) if default_val in q["options"] else 0, key=q_key)
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
-            display_all_questions(questions)
             
-        elif st.session_state.current_mode == "test":
-            st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
-            display_test_mode(questions, bank_choice)
+        if st.button("✅ Nộp bài Test", key=f"{test_key_prefix}_submit_btn"):
+            st.session_state[f"{test_key_prefix}_submitted"] = True
+            st.rerun()
+            
+    else:
+        st.markdown('<div class="result-title"><h3>🎉 KẾT QUẢ BÀI TEST</h3></div>', unsafe_allow_html=True)
+        test_batch = st.session_state[f"{test_key_prefix}_questions"]
+        score = 0
         
-if __name__ == "__main__":
-    main()
+        for i, q in enumerate(test_batch, start=1):
+            q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}" 
+            selected_opt = st.session_state.get(q_key)
+            correct = clean_text(q["answer"])
+            is_correct = clean_text(selected_opt) == correct
+            translation_key = f"trans_{q_key}"
+            is_active = (translation_key == st.session_state.active_translation_key)
+
+            # Hiển thị câu hỏi
+            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+
+            # Nút Dịch ở dưới
+            st.toggle(
+                "🌐 Dịch sang Tiếng Việt", 
+                value=is_active, 
+                key=f"toggle_{translation_key}",
+                on_change=on_translate_toggle,
+                args=(translation_key,)
+            )
+
+            # Hiển thị Bản Dịch
+            if is_active:
+                translated_content = st.session_state.translations.get(translation_key)
+                
+                if not isinstance(translated_content, str):
+                    full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
+                    st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
+                    translated_content = st.session_state.translations[translation_key]
+
+                st.info(translated_content, icon="🌐")
+            
+            # Hiển thị Đáp án (KẾT QUẢ)
+            for opt in q["options"]:
+                opt_clean = clean_text(opt)
+                if opt_clean == correct:
+                    color_style = "color:#00ff00;"
+                elif opt_clean == clean_text(selected_opt):
+                    color_style = "color:#ff3333;"
+                else:
+                    color_style = "color:#FFFFFF;"
+                st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
+
+            if is_correct: score += 1
+            st.info(f"Đáp án đúng: **{q['answer']}**", icon="💡")
+            st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+        
+        total_q = len(test_batch)
+        pass_threshold = total_q * PASS_RATE
+        st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{total_q}</h3></div>', unsafe_allow_html=True)
+
+        if score >= pass_threshold:
+            st.balloons()
+            st.success(f"🎊 **CHÚC MỪNG!** Bạn đã ĐẠT (PASS).")
+        else:
+            st.error(f"😢 **KHÔNG ĐẠT (FAIL)**. Cần {math.ceil(pass_threshold)} câu đúng để Đạt.")
+
+        if st.button("🔄 Làm lại Bài Test", key=f"{test_key_prefix}_restart_btn"):
+            for i, q in enumerate(test_batch, start=1):
+                st.session_state.pop(f"{test_key_prefix}_q_{i}_{hash(q['question'])}", None)
+            st.session_state.pop(f"{test_key_prefix}_questions", None)
+            st.session_state[f"{test_key_prefix}_started"] = False
+            st.session_state[f"{test_key_prefix}_submitted"] = False
+            st.rerun()
+
+# ====================================================
+# 🖥️ GIAO DIỆN STREAMLIT
+# ====================================================
+st.set_page_config(page_title="Ngân hàng trắc nghiệm", layout="wide")
+
+PC_IMAGE_FILE = "bank_PC.jpg"
+MOBILE_IMAGE_FILE = "bank_mobile.jpg"
+img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
+img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
+
+# === CSS ===
+css_style = f"""
+<style>
+/* Đã thống nhất font nội dung là Oswald, tiêu đề là Playfair Display */
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap');
+@keyframes colorShift {{
+    0% {{ background-position: 0% 50%; }}
+    50% {{ background-position: 100% 50%; }}
+    100% {{ background-position: 0% 50%; }}
+}}
+@keyframes scrollRight {{
+    0% {{ transform: translateX(100%); }}
+    100% {{ transform: translateX(-100%); }}
+}}
+
+html, body, .stApp {{
+    height: 100% !important;
+    min-height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: auto;
+    position: relative;
+}}
+
+/* BACKGROUND */
+.stApp {{
+    background: none !important;
+}}
+
+.stApp::before {{
+    content: "";
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed;
+    background-size: cover;
+    filter: sepia(0.5) brightness(0.9) blur(0px);
+    z-index: -1; 
+    pointer-events: none;
+}}
+
+@media (max-width: 767px) {{
+    .stApp::before {{
+        background: url("data:image/jpeg;base64,{img_mobile_base64}") no-repeat center top scroll;
+        background-size: cover;
+    }}
+}}
+
+/* Nội dung nổi lên trên nền */
+[data-testid="stAppViewContainer"],
+[data-testid="stMainBlock"],
+.main {{
+    background-color: transparent !important;
+}}
+
+/* Ẩn UI */
+#MainMenu, footer, header {{visibility: hidden; height: 0;}}
+[data-testid="stHeader"] {{display: none;}}
+
+/* BUTTON HOME */
+#back-to-home-btn-container {{
+    position: fixed;
+    top: 10px; left: 10px; 
+    width: auto !important; z-index: 1500; 
+    display: inline-block;
+}}
+a#manual-home-btn {{
+    background-color: rgba(0, 0, 0, 0.85);
+    color: #FFEA00;
+    border: 2px solid #FFEA00;
+    padding: 5px 10px;
+    border-radius: 8px; 
+    font-weight: bold;
+    font-size: 14px; 
+    transition: all 0.3s;
+    font-family: 'Oswald', sans-serif;
+    text-decoration: none;
+    display: inline-block; 
+    white-space: nowrap;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}}
+a#manual-home-btn:hover {{
+    background-color: #FFEA00;
+    color: black;
+    transform: scale(1.05);
+}}
+
+/* TITLE CHÍNH */
+#main-title-container {{
+    position: relative; left: 0; top: 0; width: 100%;
+    height: 120px; overflow: hidden;
+    pointer-events: none;
+    background-color: transparent; padding-top: 20px; z-index: 1200; 
+}}
+#main-title-container h1 {{
+    visibility: visible !important;
+    height: auto !important;
+    font-family: 'Playfair Display', serif;
+    font-size: 5vh; 
+    margin: 0; padding: 10px 0;
+    font-weight: 900; letter-spacing: 5px; white-space: nowrap;
+    display: inline-block;
+    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
+    background-size: 400% 400%;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
+    animation: scrollRight 15s linear infinite, colorShift 8s ease infinite;
+    text-shadow: 2px 2px 8px rgba(255, 255, 255, 0.3);
+    position: absolute;
+    left: 0; top: 5px; 
+    line-height: 1.5 !important;
+}}
+
+/* Số 1 */
+.number-one {{
+    font-family: 'Oswald', sans-serif !important;
+    font-size: 1em !important; 
+    font-weight: 700;
+    display: inline-block;
+}}
+
+.main > div:first-child {{
+    padding-top: 40px !important; padding-bottom: 2rem !important;
+}}
+
+/* SUB-TITLE & RESULT TITLE */
+#sub-static-title, .result-title {{
+    margin-top: 150px;
+    margin-bottom: 30px; text-align: center;
+}}
+#sub-static-title h2, .result-title h3 {{
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    color: #FFEA00;
+    text-shadow: 0 0 15px #FFEA00;
+}}
+
+/* STYLE CÂU HỎI - PC (NỀN ĐEN BAO VỪA CHỮ) */
+.bank-question-text {{
+    color: #FFFFFF !important;
+    font-weight: 900 !important;
+    font-size: 22px !important; 
+    font-family: 'Oswald', sans-serif !important;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+    padding: 8px 15px;
+    margin-bottom: 10px;
+    line-height: 1.4 !important;
+    background-color: rgba(0, 0, 0, 0.75);
+    border-radius: 8px;
+    display: inline-block; /* BAO VỪA CHỮ */
+    max-width: 100%;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+}}
+
+/* STYLE ĐÁP ÁN - PC (TRẮNG ĐẬM HƠN) */
+.bank-answer-text {{
+    font-family: 'Oswald', sans-serif !important;
+    font-weight: 900 !important;
+    font-size: 22px !important; 
+    padding: 5px 15px;
+    margin: 2px 0;
+    line-height: 1.5 !important; 
+    display: block;
+    color: #FFFFFF !important;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9); /* SHADOW ĐẬM HƠN */
+}}
+
+/* RADIO BUTTONS (CHỌN ĐÁP ÁN) */
+.stRadio label {{
+    color: #FFFFFF !important;
+    font-size: 22px !important; 
+    font-weight: 900 !important; /* ĐẬM HƠN */
+    font-family: 'Oswald', sans-serif !important;
+    padding: 2px 12px;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9) !important; /* SHADOW ĐẬM HƠN */
+    background-color: transparent !important;
+    border: none !important;
+    display: block !important;
+    margin: 4px 0 !important;
+    letter-spacing: 0.5px !important;
+}}
+
+.stRadio label:hover {{
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9) !important;
+}}
+
+.stRadio label span, 
+.stRadio label p,
+.stRadio label div {{
+    color: #FFFFFF !important;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9) !important;
+    letter-spacing: 0.5px !important;
+}}
+
+div[data-testid="stMarkdownContainer"] p {{
+    font-size: 22px !important; 
+}}
+
+/* STYLE NÚT ACTION (ĐẸP VÀ BÓNG BẨY) */
+.stButton>button {{
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    color: #ffffff !important;
+    border-radius: 12px !important;
+    font-size: 1.2em !important;
+    font-weight: 700 !important;
+    font-family: 'Oswald', sans-serif !important; 
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    padding: 12px 24px !important;
+    width: 100% !important;
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
+    transition: all 0.3s ease !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+}}
+
+.stButton>button:hover {{
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
+    box-shadow: 0 8px 25px rgba(118, 75, 162, 0.6) !important;
+    transform: translateY(-2px) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+}}
+
+.stButton>button:active {{
+    transform: translateY(0) !important;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+}}
+
+/* STYLE CHO NÚT DỊCH (st.toggle) */
+.stToggle label p {{
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    padding: 0;
+    margin: 0;
+    line-height: 1 !important;
+}}
+.stToggle > label > div[data-testid="stMarkdownContainer"] {{
+    margin-top: 10px !important; 
+}}
+
+div.stSelectbox label p {{
+    color: #33FF33 !important;
+    font-size: 1.25rem !important;
+    font-family: 'Oswald', sans-serif !important;
+}}
+
+/* STYLE CHO KHUNG DỊCH - ÁP DỤNG CHO CẢ PC & MOBILE */
+div[data-testid="stAlert"] {{
+    background-color: rgba(30, 30, 30, 0.95) !important;
+    border-left: 4px solid #00d4ff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3) !important;
+}}
+
+div[data-testid="stAlert"] *,
+div[data-testid="stAlert"] p,
+div[data-testid="stAlert"] strong,
+div[data-testid="stAlert"] em,
+div[data-testid="stAlert"] li,
+div[data-testid="stAlert"] span,
+div[data-testid="stAlert"] div {{
+    color: #FFFFFF !important;
+    font-size: 18px !important;
+    line-height: 1.6 !important;
+}}
+
+div[data-testid="stAlert"] strong {{
+    color: #FFD700 !important;
+    font-weight: 900 !important;
+}}
+
+/* MOBILE RESPONSIVE */
+@media (max-width: 768px) {{
+    #back-to-home-btn-container {{ top: 5px; left: 5px; }}
+    #main-title-container {{ height: 100px; padding-top: 10px; }}
+    #main-title-container h1 {{ font-size: 8vw; line-height: 1.5 !important; }}
+    .main > div:first-child {{ padding-top: 20px !important; }}
+    
+    /* Chỉnh kích thước tiêu đề trên mobile - FIX HIỂN THỊ ĐẦY ĐỦ */
+    #sub-static-title h2, 
+    .result-title h3 {{
+        font-size: 1.1rem !important; /* NHỎ HƠN ĐỂ VỪA 1 HÀNG */
+        white-space: normal !important; /* CHO PHÉP XUỐNG DÒNG */
+        overflow: visible !important;
+        text-overflow: clip !important;
+        padding: 0 10px !important;
+        line-height: 1.3 !important;
+    }}
+    
+    /* Màu vàng cho câu hỏi trên mobile */
+    .bank-question-text {{
+        color: #FFFF00 !important;
+        background-color: rgba(0, 0, 0, 0.75) !important;
+        display: inline-block !important; /* BAO VỪA CHỮ */
+    }}
+    
+    /* Nút trên mobile */
+    .stButton>button {{
+        font-size: 1em !important;
+        padding: 10px 18px !important;
+    }}
+}}
+</style>
+"""
+
+st.markdown(css_style, unsafe_allow_html=True)
+
+# ====================================================
+# 🧭 HEADER & BODY
+# ====================================================
+st.markdown("""
+<div id="header-content-wrapper">
+    <div id="back-to-home-btn-container">
+        <a id="manual-home-btn" 
+           href="/?skip_intro=1" 
+           onclick="window.location.href = this.href; return false;" 
+           target="_self">🏠 Về Trang Chủ</a>
+    </div>
+    <div id="main-title-container"><h1>Tổ Bảo Dưỡng Số <span class="number-one">1</span></h1></div>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown('<div id="sub-static-title"><h2>NGÂN HÀNG TRẮC NGHIỆM</h2></div>', unsafe_allow_html=True)
+
+if "current_group_idx" not in st.session_state: st.session_state.current_group_idx = 0
+if "submitted" not in st.session_state: st.session_state.submitted = False
+if "current_mode" not in st.session_state: st.session_state.current_mode = "group"
+if "last_bank_choice" not in st.session_state: st.session_state.last_bank_choice = "----" 
+if "doc_selected" not in st.session_state: st.session_state.doc_selected = "Phụ lục 1 : Ngữ pháp chung" 
+if 'translations' not in st.session_state: st.session_state.translations = {} # KHỞI TẠO STATE DỊCH THUẬT
+if 'active_translation_key' not in st.session_state: st.session_state.active_translation_key = None # KHỞI TẠO KEY DỊCH ĐỘC QUYỀN
+
+# CẬP NHẬT LIST NGÂN HÀNG
+BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật VAECO", "Ngân hàng Docwise"]
+bank_choice = st.selectbox("Chọn ngân hàng:", BANK_OPTIONS, index=BANK_OPTIONS.index(st.session_state.get('bank_choice_val', '----')), key="bank_selector_master")
+st.session_state.bank_choice_val = bank_choice
+
+# Xử lý khi đổi ngân hàng (reset mode)
+if st.session_state.get('last_bank_choice') != bank_choice and bank_choice != "----":
+    st.session_state.current_group_idx = 0
+    st.session_state.submitted = False
+    st.session_state.current_mode = "group" 
+    # Reset active translation key
+    st.session_state.active_translation_key = None 
+    last_bank_name = st.session_state.get('last_bank_choice')
+    if not isinstance(last_bank_name, str) or last_bank_name == "----": last_bank_name = "null bank" 
+    # Xoá session state của bài test cũ
+    bank_slug_old = last_bank_name.split()[-1].lower()
+    st.session_state.pop(f"test_{bank_slug_old}_started", None)
+    st.session_state.pop(f"test_{bank_slug_old}_submitted", None)
+    st.session_state.pop(f"test_{bank_slug_old}_questions", None)
+    st.session_state.last_bank_choice = bank_choice
+    st.rerun()
+
+if bank_choice != "----":
+    # XỬ LÝ LOGIC NGUỒN DỮ LIỆU
+    source = ""
+    is_docwise = False
+    
+    if "Kỹ thuật" in bank_choice:
+        source = "cabbank.docx"
+    elif "Luật VAECO" in bank_choice:
+        source = "lawbank.docx"
+    elif "Docwise" in bank_choice:
+        is_docwise = True
+        # Cập nhật nhãn Phụ lục 2
+        doc_options = ["Phụ lục 1 : Ngữ pháp chung", "Phụ lục 2 : Từ vựng, thuật ngữ"]
+        doc_selected_new = st.selectbox("Chọn Phụ lục:", doc_options, index=doc_options.index(st.session_state.get('doc_selected', doc_options[0])), key="docwise_selector")
+        
+        # Xử lý khi đổi phụ lục (reset mode)
+        if st.session_state.doc_selected != doc_selected_new:
+            st.session_state.doc_selected = doc_selected_new
+            st.session_state.current_group_idx = 0
+            st.session_state.submitted = False
+            st.session_state.current_mode = "group"
+            st.rerun()
+
+        if st.session_state.doc_selected == "Phụ lục 1 : Ngữ pháp chung":
+            source = "PL1.docx" # File PL1.docx (Dùng parse_pl1)
+        elif st.session_state.doc_selected == "Phụ lục 2 : Từ vựng, thuật ngữ": 
+            source = "PL2.docx" # File PL2.docx (Dùng parse_pl2 đã sửa)
+        
+    # LOAD CÂU HỎI
+    questions = []
+    if source:
+        if "Kỹ thuật" in bank_choice:
+            questions = parse_cabbank(source)
+        elif "Luật VAECO" in bank_choice:
+            questions = parse_lawbank(source)
+        elif is_docwise:
+            if source == "PL1.docx":
+                questions = parse_pl1(source) # Sử dụng parser cũ (dùng (*))
+            elif source == "PL2.docx":
+                questions = parse_pl2(source) # Sử dụng parser mới (dùng (*))
+    
+    if not questions:
+        # Cập nhật thông báo lỗi để phù hợp với logic (*) cho cả PL1 và PL2
+        st.error(f"❌ Không đọc được câu hỏi nào từ file **{source}**. Vui lòng kiểm tra file và cấu trúc thư mục (đảm bảo file nằm trong thư mục gốc hoặc thư mục 'pages/'), và kiểm tra lại định dạng đáp án đúng (dùng dấu `(*)`).")
+        st.stop() 
+    
+    total = len(questions)
+
+    # --- MODE: GROUP ---
+    if st.session_state.current_mode == "group":
+        # Cập nhật tiêu đề nhóm câu hỏi
+        st.markdown('<div class="result-title" style="margin-top: 0px;"><h3>Luyện tập theo nhóm (30 câu/nhóm)</h3></div>', unsafe_allow_html=True)
+        group_size = 30 # Tăng lên 30 câu/nhóm
+        if total > 0:
+            groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
+            if st.session_state.current_group_idx >= len(groups): st.session_state.current_group_idx = 0
+            selected = st.selectbox("Chọn nhóm câu:", groups, index=st.session_state.current_group_idx, key="group_selector")
+            
+            # Xử lý khi chuyển nhóm câu
+            new_idx = groups.index(selected)
+            if st.session_state.current_group_idx != new_idx:
+                st.session_state.current_group_idx = new_idx
+                st.session_state.submitted = False
+                st.session_state.active_translation_key = None # Reset dịch khi chuyển nhóm
+                st.rerun()
+
+            idx = st.session_state.current_group_idx
+            start, end = idx * group_size, min((idx+1) * group_size, total)
+            batch = questions[start:end]
+            
+            st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
+            col_all_bank, col_test = st.columns(2)
+            with col_all_bank:
+                if st.button("📖 Hiển thị toàn bộ ngân hàng", key="btn_show_all"):
+                    st.session_state.current_mode = "all"
+                    st.session_state.active_translation_key = None # Reset dịch khi chuyển mode
+                    st.rerun()
+            with col_test:
+                # Đổi tên nút test
+                if st.button("Làm bài test", key="btn_start_test"):
+                    st.session_state.current_mode = "test"
+                    st.session_state.active_translation_key = None # Reset dịch khi chuyển mode
+                    bank_slug_new = bank_choice.split()[-1].lower()
+                    test_key_prefix = f"test_{bank_slug_new}"
+                    # Reset session state cho bài test trước khi bắt đầu
+                    st.session_state.pop(f"{test_key_prefix}_started", None)
+                    st.session_state.pop(f"{test_key_prefix}_submitted", None)
+                    st.session_state.pop(f"{test_key_prefix}_questions", None)
+                    st.rerun()
+            st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+            
+            if batch:
+                if not st.session_state.submitted:
+                    for i, q in enumerate(batch, start=start+1):
+                        q_key = f"q_{i}_{hash(q['question'])}" # Dùng hash để tránh trùng key
+                        translation_key = f"trans_{q_key}"
+                        is_active = (translation_key == st.session_state.active_translation_key)
+                        
+                        # Hiển thị câu hỏi
+                        st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+
+                        # Nút Dịch ở dưới
+                        st.toggle(
+                            "🌐 Dịch sang Tiếng Việt", 
+                            value=is_active, 
+                            key=f"toggle_{translation_key}",
+                            on_change=on_translate_toggle,
+                            args=(translation_key,)
+                        )
+
+                        # Hiển thị Bản Dịch
+                        if is_active:
+                            # Check if translated content is already cached
+                            translated_content = st.session_state.translations.get(translation_key)
+                            
+                            # If not cached or is not a string (default True/False state)
+                            if not isinstance(translated_content, str):
+                                full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
+                                st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
+                                translated_content = st.session_state.translations[translation_key]
+
+                            st.info(translated_content, icon="🌐")
+
+                        # Hiển thị Radio Button
+                        default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
+                        st.radio("", q["options"], index=q["options"].index(default_val) if default_val in q["options"] else 0, key=q_key)
+                        st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+                    if st.button("✅ Nộp bài", key="submit_group"):
+                        st.session_state.submitted = True
+                        st.session_state.active_translation_key = None # Tắt dịch khi nộp bài
+                        st.rerun()
+                else:
+                    score = 0
+                    for i, q in enumerate(batch, start=start+1):
+                        q_key = f"q_{i}_{hash(q['question'])}" 
+                        selected_opt = st.session_state.get(q_key)
+                        correct = clean_text(q["answer"])
+                        is_correct = clean_text(selected_opt) == correct
+                        translation_key = f"trans_{q_key}"
+                        is_active = (translation_key == st.session_state.active_translation_key)
+
+                      # Hiển thị câu hỏi
+                        st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+
+                        # Nút Dịch ở dưới
+                        st.toggle(
+                            "🌐 Dịch sang Tiếng Việt", 
+                            value=is_active, 
+                            key=f"toggle_{translation_key}",
+                            on_change=on_translate_toggle,
+                            args=(translation_key,)
+                        )
+
+                        # Hiển thị Bản Dịch
+                        if is_active:
+                            # Check if translated content is already cached
+                            translated_content = st.session_state.translations.get(translation_key)
+                            
+                            # If not cached or is not a string (default True/False state)
+                            if not isinstance(translated_content, str):
+                                full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
+                                st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
+                                translated_content = st.session_state.translations[translation_key]
+
+                            st.info(translated_content, icon="🌐")
+
+                        # Hiển thị Đáp án (KẾT QUẢ)
+                        for opt in q["options"]:
+                            opt_clean = clean_text(opt)
+                            if opt_clean == correct:
+                                color_style = "color:#00ff00;" # Xanh lá, bỏ shadow
+                            elif opt_clean == clean_text(selected_opt):
+                                color_style = "color:#ff3333;" # Đỏ, bỏ shadow
+                            else:
+                                color_style = "color:#FFFFFF;" # Trắng chân phương
+                            st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
+                        
+                        if is_correct: 
+                            st.success(f"✅ Đúng – Đáp án: {q['answer']}")
+                            score += 1
+                        else: 
+                            st.error(f"❌ Sai – Đáp án đúng: {q['answer']}")
+                        st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
+
+                    st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{len(batch)}</h3></div>', unsafe_allow_html=True)
+                    col_reset, col_next = st.columns(2)
+                    with col_reset:
+                        if st.button("🔄 Làm lại nhóm này", key="reset_group"):
+                            # Xoá session state của các radio button trong nhóm
+                            for i, q in enumerate(batch, start=start+1):
+                                st.session_state.pop(f"q_{i}_{hash(q['question'])}", None) 
+                            st.session_state.submitted = False
+                            st.session_state.active_translation_key = None # Reset dịch khi làm lại
+                            st.rerun()
+                    with col_next:
+                        if st.session_state.current_group_idx < len(groups) - 1:
+                            if st.button("➡️ Tiếp tục nhóm sau", key="next_group"):
+                                st.session_state.current_group_idx += 1
+                                st.session_state.submitted = False
+                                st.session_state.active_translation_key = None # Reset dịch khi chuyển nhóm
+                                st.rerun()
+                        else: st.info("🎉 Đã hoàn thành tất cả các nhóm câu hỏi!")
+            else: st.warning("Không có câu hỏi trong nhóm này.")
+        else: st.warning("Không có câu hỏi nào trong ngân hàng này.")
+
+    elif st.session_state.current_mode == "all":
+        if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
+            st.session_state.current_mode = "group"
+            st.session_state.active_translation_key = None # Reset dịch khi chuyển mode
+            st.rerun()
+        st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+        display_all_questions(questions)
+        
+    elif st.session_state.current_mode == "test":
+        if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
+            st.session_state.current_mode = "group"
+            st.session_state.active_translation_key = None # Reset dịch khi chuyển mode
+            st.rerun()
+        st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+        display_test_mode(questions, bank_choice)
