@@ -989,6 +989,26 @@ div.stSelectbox label p {{
     font-size: 1.25rem !important;
     font-family: 'Oswald', sans-serif !important;
 }}
+/* ============================================ */
+/* STYLE CHO KHUNG DỊCH (st.info)              */
+/* ============================================ */
+div[data-testid="stAlert"] {{
+    background-color: rgba(30, 30, 30, 0.95) !important;
+    border-left: 4px solid #00d4ff !important;
+}}
+
+div[data-testid="stAlert"] p,
+div[data-testid="stAlert"] strong,
+div[data-testid="stAlert"] em,
+div[data-testid="stAlert"] li {{
+    color: #FFFFFF !important;
+    font-size: 18px !important;
+    line-height: 1.6 !important;
+}}
+
+div[data-testid="stAlert"] strong {{
+    color: #FFD700 !important;
+}}
 </style>
 """
 st.markdown(css_style, unsafe_allow_html=True)
