@@ -855,35 +855,44 @@ a#manual-home-btn:hover {{
     text-shadow: 0 0 15px #FFEA00;
 }}
 
-/* STYLE CÂU HỎI & ĐÁP ÁN - PC */
+/* STYLE CÂU HỎI - PC (NỀN ĐEN BAO VỪA CHỮ) */
 .bank-question-text {{
     color: #FFFFFF !important;
     font-weight: 900 !important;
     font-size: 22px !important; 
     font-family: 'Oswald', sans-serif !important;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-    padding: 5px 15px; margin-bottom: 10px; line-height: 1.4 !important;
-    background-color: rgba(0, 0, 0, 0.6);
-    border-radius: 5px;
+    padding: 8px 15px;
+    margin-bottom: 10px;
+    line-height: 1.4 !important;
+    background-color: rgba(0, 0, 0, 0.75);
+    border-radius: 8px;
+    display: inline-block; /* BAO VỪA CHỮ */
+    max-width: 100%;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
 }}
 
+/* STYLE ĐÁP ÁN - PC (TRẮNG ĐẬM HƠN) */
 .bank-answer-text {{
     font-family: 'Oswald', sans-serif !important;
     font-weight: 900 !important;
     font-size: 22px !important; 
-    padding: 5px 15px; margin: 2px 0;
+    padding: 5px 15px;
+    margin: 2px 0;
     line-height: 1.5 !important; 
     display: block;
+    color: #FFFFFF !important;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9); /* SHADOW ĐẬM HƠN */
 }}
 
 /* RADIO BUTTONS (CHỌN ĐÁP ÁN) */
 .stRadio label {{
     color: #FFFFFF !important;
     font-size: 22px !important; 
-    font-weight: 700 !important;
+    font-weight: 900 !important; /* ĐẬM HƠN */
     font-family: 'Oswald', sans-serif !important;
     padding: 2px 12px;
-    text-shadow: none !important;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9) !important; /* SHADOW ĐẬM HƠN */
     background-color: transparent !important;
     border: none !important;
     display: block !important;
@@ -892,14 +901,14 @@ a#manual-home-btn:hover {{
 }}
 
 .stRadio label:hover {{
-    text-shadow: none !important;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9) !important;
 }}
 
 .stRadio label span, 
 .stRadio label p,
 .stRadio label div {{
     color: #FFFFFF !important;
-    text-shadow: none !important;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9) !important;
     letter-spacing: 0.5px !important;
 }}
 
@@ -907,16 +916,33 @@ div[data-testid="stMarkdownContainer"] p {{
     font-size: 22px !important; 
 }}
 
+/* STYLE NÚT ACTION (ĐẸP VÀ BÓNG BẨY) */
 .stButton>button {{
-    background-color: #b7a187 !important;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
     color: #ffffff !important;
-    border-radius: 8px;
-    font-size: 1.1em !important;
-    font-weight: 600 !important;
+    border-radius: 12px !important;
+    font-size: 1.2em !important;
+    font-weight: 700 !important;
     font-family: 'Oswald', sans-serif !important; 
-    border: none !important;
-    padding: 10px 20px !important;
-    width: 100%; 
+    border: 2px solid rgba(255, 255, 255, 0.3) !important;
+    padding: 12px 24px !important;
+    width: 100% !important;
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
+    transition: all 0.3s ease !important;
+    text-transform: uppercase !important;
+    letter-spacing: 1px !important;
+}}
+
+.stButton>button:hover {{
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
+    box-shadow: 0 8px 25px rgba(118, 75, 162, 0.6) !important;
+    transform: translateY(-2px) !important;
+    border-color: rgba(255, 255, 255, 0.5) !important;
+}}
+
+.stButton>button:active {{
+    transform: translateY(0) !important;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
 }}
 
 /* STYLE CHO NÚT DỊCH (st.toggle) */
@@ -941,6 +967,8 @@ div.stSelectbox label p {{
 div[data-testid="stAlert"] {{
     background-color: rgba(30, 30, 30, 0.95) !important;
     border-left: 4px solid #00d4ff !important;
+    border-radius: 8px !important;
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3) !important;
 }}
 
 div[data-testid="stAlert"] *,
@@ -967,22 +995,32 @@ div[data-testid="stAlert"] strong {{
     #main-title-container h1 {{ font-size: 8vw; line-height: 1.5 !important; }}
     .main > div:first-child {{ padding-top: 20px !important; }}
     
-    /* Chỉnh kích thước tiêu đề trên mobile */
+    /* Chỉnh kích thước tiêu đề trên mobile - FIX HIỂN THỊ ĐẦY ĐỦ */
     #sub-static-title h2, 
     .result-title h3 {{
-        font-size: 1.25rem !important;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        padding: 0 5px;
+        font-size: 1.1rem !important; /* NHỎ HƠN ĐỂ VỪA 1 HÀNG */
+        white-space: normal !important; /* CHO PHÉP XUỐNG DÒNG */
+        overflow: visible !important;
+        text-overflow: clip !important;
+        padding: 0 10px !important;
+        line-height: 1.3 !important;
     }}
     
     /* Màu vàng cho câu hỏi trên mobile */
     .bank-question-text {{
         color: #FFFF00 !important;
-        background-color: rgba(0, 0, 0, 0.7) !important;
+        background-color: rgba(0, 0, 0, 0.75) !important;
+        display: inline-block !important; /* BAO VỪA CHỮ */
+    }}
+    
+    /* Nút trên mobile */
+    .stButton>button {{
+        font-size: 1em !important;
+        padding: 10px 18px !important;
     }}
 }}
+</style>
+"""
 
 .main > div:first-child {{
     padding-top: 40px !important; padding-bottom: 2rem !important;
@@ -1216,7 +1254,7 @@ if bank_choice != "----":
     if st.session_state.current_mode == "group":
         # Cập nhật tiêu đề nhóm câu hỏi
         st.markdown('<div class="result-title" style="margin-top: 0px;"><h3>Luyện tập theo nhóm (20 câu/nhóm)</h3></div>', unsafe_allow_html=True)
-        group_size = 20 # Tăng lên 20 câu/nhóm
+        group_size = 30 # Tăng lên 30 câu/nhóm
         if total > 0:
             groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
             if st.session_state.current_group_idx >= len(groups): st.session_state.current_group_idx = 0
