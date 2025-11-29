@@ -1013,10 +1013,29 @@ div[data-testid="stAlert"] strong {{
         display: inline-block !important; /* BAO VỪA CHỮ */
     }}
     
-    /* Nút trên mobile */
+    /* Nút trên mobile (ĐÃ CẬP NHẬT ĐỂ CĂN GIỮA) */
     .stButton>button {{
         font-size: 1em !important;
         padding: 10px 18px !important;
+        display: block !important; 
+        margin: 10px auto !important; /* CĂN GIỮA */
+        width: 90% !important; /* GIẢM CHIỀU RỘNG ĐỂ CĂN GIỮA CÓ Ý NGHĨA */
+    }}
+    
+    /* Căn giữa cho container của nút khi ở chế độ GROUP */
+    [data-testid="stHorizontalBlock"] > div {{
+        width: 100% !important;
+    }}
+    [data-testid="stHorizontalBlock"] {{
+        display: flex;
+        flex-direction: column;
+        align-items: center; /* Căn giữa các cột */
+    }}
+    /* Điều chỉnh để các nút chiếm hết chiều rộng của cột trên mobile */
+    [data-testid="stHorizontalBlock"] > div:first-child,
+    [data-testid="stHorizontalBlock"] > div:last-child {{
+        width: 100% !important; 
+        margin-bottom: 5px; 
     }}
 }}
 </style>
