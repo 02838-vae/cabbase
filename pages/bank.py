@@ -1016,6 +1016,44 @@ div[data-testid="stAlert"] strong {{
     scrollbar-color: #667eea rgba(0, 0, 0, 0.3);
 }}
 
+/* THANH CUỘN TÙY CHỈNH - HIỆN ĐẠI VÀ ĐẸP */
+/* Cho toàn bộ trang */
+::-webkit-scrollbar {{
+    width: 18px;  /* To hơn cho PC */
+    height: 18px; /* To hơn cho thanh ngang */
+}}
+
+::-webkit-scrollbar-track {{
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 10px;
+    margin: 5px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}}
+
+::-webkit-scrollbar-thumb {{
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+    border: 3px solid rgba(0, 0, 0, 0.3);
+    box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
+    transition: all 0.3s ease;
+}}
+
+::-webkit-scrollbar-thumb:hover {{
+    background: linear-gradient(180deg, #764ba2 0%, #667eea 100%);
+    border-color: rgba(255, 255, 255, 0.3);
+    box-shadow: 0 0 15px rgba(118, 75, 162, 0.8);
+}}
+
+::-webkit-scrollbar-thumb:active {{
+    background: linear-gradient(180deg, #5a67d8 0%, #6b46a1 100%);
+}}
+
+/* Firefox scrollbar */
+* {{
+    scrollbar-width: auto;  /* Dày hơn */
+    scrollbar-color: #667eea rgba(0, 0, 0, 0.4);
+}}
+
 /* MOBILE RESPONSIVE */
 @media (max-width: 768px) {{
     #back-to-home-btn-container {{ top: 5px; left: 5px; }}
@@ -1026,8 +1064,8 @@ div[data-testid="stAlert"] strong {{
     /* Chỉnh kích thước tiêu đề trên mobile - FIX HIỂN THỊ ĐẦY ĐỦ */
     #sub-static-title h2, 
     .result-title h3 {{
-        font-size: 1.1rem !important;
-        white-space: normal !important;
+        font-size: 1.1rem !important; /* NHỎ HƠN ĐỂ VỪA 1 HÀNG */
+        white-space: normal !important; /* CHO PHÉP XUỐNG DÒNG */
         overflow: visible !important;
         text-overflow: clip !important;
         padding: 0 10px !important;
@@ -1038,30 +1076,43 @@ div[data-testid="stAlert"] strong {{
     .bank-question-text {{
         color: #FFFF00 !important;
         background-color: rgba(0, 0, 0, 0.75) !important;
-        display: inline-block !important;
+        display: inline-block !important; /* BAO VỪA CHỮ */
     }}
     
     /* Nút trên mobile */
     .stButton>button {{
         font-size: 1em !important;
         padding: 10px 18px !important;
+        margin: 0 auto !important;
+        display: block !important;
     }}
     
-    /* CANH GIỮA NÚT LÀM BÀI TEST TRÊN MOBILE */
-    div[data-testid="column"]:has(.stButton) {{
+    /* CANH GIỮA NÚT LÀM BÀI TEST TRÊN MOBILE - PHƯƠNG PHÁP MỚI */
+    div[data-testid="column"] {{
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
+        width: 100% !important;
     }}
     
-    /* Thanh cuộn to hơn trên mobile */
+    div[data-testid="column"] > div {{
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+    }}
+    
+    /* Thanh cuộn TO HƠN NHIỀU trên mobile */
     ::-webkit-scrollbar {{
-        width: 12px;
-        height: 12px;
+        width: 16px;  /* To hơn cho dễ kéo */
+        height: 16px; /* To hơn cho thanh ngang */
     }}
     
     ::-webkit-scrollbar-thumb {{
-        border: 1px solid rgba(0, 0, 0, 0.3);
+        border: 2px solid rgba(0, 0, 0, 0.3);
+    }}
+    
+    ::-webkit-scrollbar-track {{
+        border: 2px solid rgba(255, 255, 255, 0.15);
     }}
 }}
 </style>
