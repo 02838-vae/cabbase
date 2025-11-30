@@ -1105,34 +1105,38 @@ html, body, .main, [data-testid="stAppViewContainer"], * {{
 }}
 
 /* THANH CUỘN CỰC TO - WEBKIT */
-::-webkit-scrollbar {{
-    width: 22px !important;
+::-webkit-scrollbar {
+    /* Đã được đặt là 22px, một giá trị rất lớn để dễ thao tác */
+    width: 22px !important; 
     height: 22px !important;
-}}
+}
 
-::-webkit-scrollbar-track {{
+::-webkit-scrollbar-track {
     background: rgba(0, 0, 0, 0.6) !important;
     border-radius: 10px !important;
     border: 3px solid rgba(255, 255, 255, 0.2) !important;
-}}
+}
 
-::-webkit-scrollbar-thumb {{
+::-webkit-scrollbar-thumb {
+    /* Màu Gradient và Shadow để nổi bật */
     background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
     border-radius: 10px !important;
-    border: 4px solid rgba(0, 0, 0, 0.4) !important;
+    /* Độ dày border lớn, tăng kích thước trực quan của thumb */
+    border: 4px solid rgba(0, 0, 0, 0.4) !important; 
     box-shadow: 0 0 20px rgba(102, 126, 234, 0.7) !important;
-}}
+}
 
-::-webkit-scrollbar-thumb:hover {{
-    background: linear-gradient(180deg, #764ba2 0%, #667eea 100%) !important;
+::-webkit-scrollbar-thumb:hover {
     box-shadow: 0 0 30px rgba(118, 75, 162, 1) !important;
-}}
+}
 
 /* Firefox */
-* {{
-    scrollbar-width: auto !important;
+* {
+    /* Đặt auto để Firefox tự điều chỉnh dựa trên độ dày, 
+       và tùy chỉnh màu để đồng bộ */
+    scrollbar-width: auto !important; 
     scrollbar-color: #667eea rgba(0, 0, 0, 0.6) !important;
-}}
+}
 
 /* THANH CUỘN CỰC TO - WEBKIT */
 ::-webkit-scrollbar {{
