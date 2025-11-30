@@ -754,7 +754,7 @@ html, body, .stApp {{
 
 @media (max-width: 767px) {{
     .stApp::before {{
-        background: url("data:image/jpeg;base64,{img_mobile_base64}") no-repeat center top scroll;
+        background: url("data:image/jpeg;base64,{img__base64}") no-repeat center top scroll;
         background-size: cover;
     }}
 }}
@@ -955,7 +955,7 @@ div.stSelectbox label p {{
     font-family: 'Oswald', sans-serif !important;
 }}
 
-/* STYLE CHO KHUNG DỊCH - ÁP DỤNG CHO CẢ PC & MOBILE */
+/* STYLE CHO KHUNG DỊCH - ÁP DỤNG CHO CẢ PC &  */
 div[data-testid="stAlert"] {{
     background-color: rgba(30, 30, 30, 0.95) !important;
     border-left: 4px solid #00d4ff !important;
@@ -1104,6 +1104,36 @@ html, body, .main, [data-testid="stAppViewContainer"], * {{
     scrollbar-color: #667eea rgba(0, 0, 0, 0.5) !important;
 }}
 
+/* THANH CUỘN CỰC TO - WEBKIT */
+::-webkit-scrollbar {{
+    width: 22px !important;
+    height: 22px !important;
+}}
+
+::-webkit-scrollbar-track {{
+    background: rgba(0, 0, 0, 0.6) !important;
+    border-radius: 10px !important;
+    border: 3px solid rgba(255, 255, 255, 0.2) !important;
+}}
+
+::-webkit-scrollbar-thumb {{
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
+    border-radius: 10px !important;
+    border: 4px solid rgba(0, 0, 0, 0.4) !important;
+    box-shadow: 0 0 20px rgba(102, 126, 234, 0.7) !important;
+}}
+
+::-webkit-scrollbar-thumb:hover {{
+    background: linear-gradient(180deg, #764ba2 0%, #667eea 100%) !important;
+    box-shadow: 0 0 30px rgba(118, 75, 162, 1) !important;
+}}
+
+/* Firefox */
+* {{
+    scrollbar-width: auto !important;
+    scrollbar-color: #667eea rgba(0, 0, 0, 0.6) !important;
+}}
+
 /* MOBILE RESPONSIVE */
 @media (max-width: 768px) {{
     #back-to-home-btn-container {{ top: 5px; left: 5px; }}
@@ -1111,90 +1141,36 @@ html, body, .main, [data-testid="stAppViewContainer"], * {{
     #main-title-container h1 {{ font-size: 8vw; line-height: 1.5 !important; }}
     .main > div:first-child {{ padding-top: 20px !important; }}
     
-    /* Chỉnh kích thước tiêu đề trên mobile - FIX HIỂN THỊ ĐẦY ĐỦ */
     #sub-static-title h2, 
     .result-title h3 {{
-        font-size: 1.1rem !important; /* NHỎ HƠN ĐỂ VỪA 1 HÀNG */
-        white-space: normal !important; /* CHO PHÉP XUỐNG DÒNG */
+        font-size: 1.1rem !important;
+        white-space: normal !important;
         overflow: visible !important;
         text-overflow: clip !important;
         padding: 0 10px !important;
         line-height: 1.3 !important;
     }}
     
-    /* Màu vàng cho câu hỏi trên mobile */
     .bank-question-text {{
         color: #FFFF00 !important;
         background-color: rgba(0, 0, 0, 0.75) !important;
-        display: inline-block !important; /* BAO VỪA CHỮ */
+        display: inline-block !important;
     }}
     
-    /* Nút trên mobile */
     .stButton>button {{
         font-size: 1em !important;
         padding: 10px 18px !important;
-        margin-left: auto !important;
-        margin-right: auto !important;
-        display: block !important;
-        width: auto !important;
     }}
     
-    /* CANH GIỮA NÚT - FORCE OVERRIDE STREAMLIT */
-    .row-widget.stButton,
-    div.stButton,
-    .stButton {{
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        text-align: center !important;
-        width: 100% !important;
+    /* THANH CUỘN CỰC TO TRÊN MOBILE */
+    ::-webkit-scrollbar {{
+        width: 20px !important;
+        height: 20px !important;
     }}
     
-    [data-testid="column"] {{
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        text-align: center !important;
-    }}
-    
-    [data-testid="column"] .stButton {{
-        width: 100% !important;
-        display: flex !important;
-        justify-content: center !important;
-    }}
-    
-    [data-testid="column"] > div {{
-        width: 100% !important;
-        display: flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-    }}
-    
-    /* Thanh cuộn CỰC TO trên mobile - FORCE */
-    html::-webkit-scrollbar,
-    body::-webkit-scrollbar,
-    .main::-webkit-scrollbar,
-    [data-testid="stAppViewContainer"]::-webkit-scrollbar,
-    *::-webkit-scrollbar {{
-        width: 18px !important;
-        height: 18px !important;
-    }}
-    
-    html::-webkit-scrollbar-thumb,
-    body::-webkit-scrollbar-thumb,
-    .main::-webkit-scrollbar-thumb,
-    [data-testid="stAppViewContainer"]::-webkit-scrollbar-thumb,
-    *::-webkit-scrollbar-thumb {{
-        border: 2px solid rgba(0, 0, 0, 0.4) !important;
-        min-height: 50px !important;
-    }}
-    
-    html::-webkit-scrollbar-track,
-    body::-webkit-scrollbar-track,
-    .main::-webkit-scrollbar-track,
-    [data-testid="stAppViewContainer"]::-webkit-scrollbar-track,
-    *::-webkit-scrollbar-track {{
-        border: 2px solid rgba(255, 255, 255, 0.25) !important;
+    ::-webkit-scrollbar-thumb {{
+        min-height: 60px !important;
+        border: 3px solid rgba(0, 0, 0, 0.5) !important;
     }}
 }}
 </style>
