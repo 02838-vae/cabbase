@@ -36,7 +36,8 @@ def clean_text(s: str) -> str:
         r'\[[\s]{2,}\]',
     ]
     
-    for pattern in standalone.patterns:
+    # SỬA LỖI NAMEERROR: THAY standalone.patterns THÀNH standalone_patterns
+    for pattern in standalone_patterns:
         for match in re.finditer(pattern, temp_s):
             matched_text = match.group()
             placeholder = f"__PLACEHOLDER_{counter}__"
@@ -1535,3 +1536,4 @@ if bank_choice != "----":
             st.rerun()
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
         display_test_mode(questions, bank_choice)
+
