@@ -754,7 +754,7 @@ html, body, .stApp {{
 
 @media (max-width: 767px) {{
     .stApp::before {{
-        background: url("data:image/jpeg;base64,{img__base64}") no-repeat center top scroll;
+        background: url("data:image/jpeg;base64,{img_mobile_base64}") no-repeat center top scroll;
         background-size: cover;
     }}
 }}
