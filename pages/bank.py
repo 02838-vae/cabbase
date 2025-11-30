@@ -1054,6 +1054,56 @@ div[data-testid="stAlert"] strong {{
     scrollbar-color: #667eea rgba(0, 0, 0, 0.4);
 }}
 
+/* THANH CUỘN TÙY CHỈNH - HIỆN ĐẠI VÀ ĐẸP */
+/* Cho toàn bộ trang - FORCE OVERRIDE */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+.main::-webkit-scrollbar,
+[data-testid="stAppViewContainer"]::-webkit-scrollbar,
+*::-webkit-scrollbar {{
+    width: 20px !important;  /* RẤT TO cho PC */
+    height: 20px !important; /* RẤT TO cho thanh ngang */
+}}
+
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track,
+.main::-webkit-scrollbar-track,
+[data-testid="stAppViewContainer"]::-webkit-scrollbar-track,
+*::-webkit-scrollbar-track {{
+    background: rgba(0, 0, 0, 0.5) !important;
+    border-radius: 10px !important;
+    margin: 5px !important;
+    border: 2px solid rgba(255, 255, 255, 0.2) !important;
+}}
+
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb,
+.main::-webkit-scrollbar-thumb,
+[data-testid="stAppViewContainer"]::-webkit-scrollbar-thumb,
+*::-webkit-scrollbar-thumb {{
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
+    border-radius: 10px !important;
+    border: 3px solid rgba(0, 0, 0, 0.4) !important;
+    box-shadow: 0 0 15px rgba(102, 126, 234, 0.6) !important;
+    transition: all 0.3s ease !important;
+}}
+
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover,
+.main::-webkit-scrollbar-thumb:hover,
+[data-testid="stAppViewContainer"]::-webkit-scrollbar-thumb:hover,
+*::-webkit-scrollbar-thumb:hover {{
+    background: linear-gradient(180deg, #764ba2 0%, #667eea 100%) !important;
+    border-color: rgba(255, 255, 255, 0.4) !important;
+    box-shadow: 0 0 20px rgba(118, 75, 162, 0.9) !important;
+}}
+
+/* Firefox scrollbar - FORCE */
+html, body, .main, [data-testid="stAppViewContainer"], * {{
+    scrollbar-width: auto !important;
+    scrollbar-color: #667eea rgba(0, 0, 0, 0.5) !important;
+}}
+
 /* MOBILE RESPONSIVE */
 @media (max-width: 768px) {{
     #back-to-home-btn-container {{ top: 5px; left: 5px; }}
@@ -1083,36 +1133,68 @@ div[data-testid="stAlert"] strong {{
     .stButton>button {{
         font-size: 1em !important;
         padding: 10px 18px !important;
-        margin: 0 auto !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
         display: block !important;
+        width: auto !important;
     }}
     
-    /* CANH GIỮA NÚT LÀM BÀI TEST TRÊN MOBILE - PHƯƠNG PHÁP MỚI */
-    div[data-testid="column"] {{
+    /* CANH GIỮA NÚT - FORCE OVERRIDE STREAMLIT */
+    .row-widget.stButton,
+    div.stButton,
+    .stButton {{
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
+        text-align: center !important;
         width: 100% !important;
     }}
     
-    div[data-testid="column"] > div {{
+    [data-testid="column"] {{
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        text-align: center !important;
+    }}
+    
+    [data-testid="column"] .stButton {{
         width: 100% !important;
         display: flex !important;
         justify-content: center !important;
     }}
     
-    /* Thanh cuộn TO HƠN NHIỀU trên mobile */
-    ::-webkit-scrollbar {{
-        width: 16px;  /* To hơn cho dễ kéo */
-        height: 16px; /* To hơn cho thanh ngang */
+    [data-testid="column"] > div {{
+        width: 100% !important;
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
     }}
     
-    ::-webkit-scrollbar-thumb {{
-        border: 2px solid rgba(0, 0, 0, 0.3);
+    /* Thanh cuộn CỰC TO trên mobile - FORCE */
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar,
+    .main::-webkit-scrollbar,
+    [data-testid="stAppViewContainer"]::-webkit-scrollbar,
+    *::-webkit-scrollbar {{
+        width: 18px !important;
+        height: 18px !important;
     }}
     
-    ::-webkit-scrollbar-track {{
-        border: 2px solid rgba(255, 255, 255, 0.15);
+    html::-webkit-scrollbar-thumb,
+    body::-webkit-scrollbar-thumb,
+    .main::-webkit-scrollbar-thumb,
+    [data-testid="stAppViewContainer"]::-webkit-scrollbar-thumb,
+    *::-webkit-scrollbar-thumb {{
+        border: 2px solid rgba(0, 0, 0, 0.4) !important;
+        min-height: 50px !important;
+    }}
+    
+    html::-webkit-scrollbar-track,
+    body::-webkit-scrollbar-track,
+    .main::-webkit-scrollbar-track,
+    [data-testid="stAppViewContainer"]::-webkit-scrollbar-track,
+    *::-webkit-scrollbar-track {{
+        border: 2px solid rgba(255, 255, 255, 0.25) !important;
     }}
 }}
 </style>
