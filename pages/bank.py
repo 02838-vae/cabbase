@@ -980,6 +980,42 @@ div[data-testid="stAlert"] strong {{
     font-weight: 900 !important;
 }}
 
+/* THANH CUỘN TÙY CHỈNH - HIỆN ĐẠI VÀ ĐẸP */
+/* Cho toàn bộ trang */
+::-webkit-scrollbar {{
+    width: 14px;
+    height: 14px;
+}}
+
+::-webkit-scrollbar-track {{
+    background: rgba(0, 0, 0, 0.3);
+    border-radius: 10px;
+    margin: 5px;
+}}
+
+::-webkit-scrollbar-thumb {{
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+    border-radius: 10px;
+    border: 2px solid rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}}
+
+::-webkit-scrollbar-thumb:hover {{
+    background: linear-gradient(180deg, #764ba2 0%, #667eea 100%);
+    border-color: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
+}}
+
+::-webkit-scrollbar-thumb:active {{
+    background: linear-gradient(180deg, #5a67d8 0%, #6b46a1 100%);
+}}
+
+/* Firefox scrollbar */
+* {{
+    scrollbar-width: thin;
+    scrollbar-color: #667eea rgba(0, 0, 0, 0.3);
+}}
+
 /* MOBILE RESPONSIVE */
 @media (max-width: 768px) {{
     #back-to-home-btn-container {{ top: 5px; left: 5px; }}
@@ -990,8 +1026,8 @@ div[data-testid="stAlert"] strong {{
     /* Chỉnh kích thước tiêu đề trên mobile - FIX HIỂN THỊ ĐẦY ĐỦ */
     #sub-static-title h2, 
     .result-title h3 {{
-        font-size: 1.1rem !important; /* NHỎ HƠN ĐỂ VỪA 1 HÀNG */
-        white-space: normal !important; /* CHO PHÉP XUỐNG DÒNG */
+        font-size: 1.1rem !important;
+        white-space: normal !important;
         overflow: visible !important;
         text-overflow: clip !important;
         padding: 0 10px !important;
@@ -1002,35 +1038,30 @@ div[data-testid="stAlert"] strong {{
     .bank-question-text {{
         color: #FFFF00 !important;
         background-color: rgba(0, 0, 0, 0.75) !important;
-        display: inline-block !important; /* BAO VỪA CHỮ */
+        display: inline-block !important;
     }}
     
     /* Nút trên mobile */
     .stButton>button {{
         font-size: 1em !important;
         padding: 10px 18px !important;
-        display: block !important; 
-        margin: 10px 0 !important; /* CHỈ CẦN MARGIN TRÊN/DƯỚI */
-        width: 100% !important; /* LẤY HẾT CHIỀU RỘNG CỦA CỘT ĐÃ CĂN GIỮA */
     }}
     
-    /* CĂN GIỮA CONTAINER STREAMLIT BUTTON TRÊN MOBILE */
-    .stButton {{
-        width: 100% !important;
-        /* KHÔNG CẦN DÙNG FLEXBOX CĂN GIỮA Ở ĐÂY NỮA */
+    /* CANH GIỮA NÚT LÀM BÀI TEST TRÊN MOBILE */
+    div[data-testid="column"]:has(.stButton) {{
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
     }}
     
-    /* CĂN GIỮA CỘT (COLUMN CONTAINER) TRONG st.columns(2) TRÊN MOBILE */
-    [data-testid="stHorizontalBlock"] {{
-        display: flex;
-        flex-direction: column;
-        align-items: center; /* Căn giữa các cột 95% */
+    /* Thanh cuộn to hơn trên mobile */
+    ::-webkit-scrollbar {{
+        width: 12px;
+        height: 12px;
     }}
-    /* Điều chỉnh để các cột chiếm 95% chiều rộng và được căn giữa */
-    [data-testid="stHorizontalBlock"] > div {{
-        width: 95% !important; /* GIẢM CHIỀU RỘNG ĐỂ align-items: center CÓ HIỆU LỰC */
-        margin-bottom: 5px; 
-        /* BỎ FLEX VÀ JUSTIFY-CONTENT CŨ */
+    
+    ::-webkit-scrollbar-thumb {{
+        border: 1px solid rgba(0, 0, 0, 0.3);
     }}
 }}
 </style>
