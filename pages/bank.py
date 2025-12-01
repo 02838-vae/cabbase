@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import streamlit as st
 from docx import Document
+# THÊM IMPORT ĐỂ XỬ LÝ ĐỊNH DẠNG (HIGHLIGHT)
 from docx.enum.text import WD_COLOR_INDEX 
 import re
 import math
@@ -8,7 +9,8 @@ import pandas as pd
 import base64
 import os
 import random 
-from translate import Translator 
+# THAY THẾ googletrans bằng translate
+from translate import Translator # <-- THAY THẾ THƯ VIỆN
 
 # ====================================================
 # ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
@@ -17,7 +19,10 @@ def clean_text(s: str) -> str:
     if s is None:
         return ""
     
-    # Giữ nguyên các pattern điền chỗ trống.
+    # GIỮ NGUYÊN các pattern điền chỗ trống:
+    # - 2-10 dấu chấm (có thể có space xen kẽ): .... hoặc . . . .
+    # - 2-10 gạch dưới (có thể có space xen kẽ): ____ hoặc __ __
+    # - Ngoặc chứa các ký tự trên: (____) hoặc (__  __) → chuẩn hóa thành (____) 
     
     temp_s = s
     placeholders = {}
@@ -25,19 +30,19 @@ def clean_text(s: str) -> str:
     
     # BƯỚC 1: Xử lý ngoặc có nhiều space/ký tự → chuẩn hóa thành 4 spaces
     # VD: (__           __) → (____)
-    temp_s = re.sub(r'\([\s._-]{2,}\)', '(    )', temp_s)
-    temp_s = re.sub(r'\[[\s._-]{2,}\]', '[    ]', temp_s)
+    temp_s = re.sub(r'\([\s._-]{2,}\)', '(    )', temp_s)  # Ngoặc đơn
+    temp_s = re.sub(r'\[[\s._-]{2,}\]', '[    ]', temp_s)  # Ngoặc vuông
     
     # BƯỚC 2: Lưu các pattern điền chỗ trống còn lại
     standalone_patterns = [
-        r'(?<!\S)([._])(?:\s*\1){1,9}(?!\S)',
-        r'-{2,10}',
-        r'\([\s]{2,}\)',
-        r'\[[\s]{2,}\]',
+        r'(?<!\S)([._])(?:\s*\1){1,9}(?!\S)',  # 2-10 dấu . hoặc _ liên tiếp (có thể có space)
+        r'-{2,10}',  # 2-10 gạch ngang liên tiếp
+        r'\([\s]{2,}\)',  # Ngoặc đơn có spaces (đã chuẩn hóa ở bước 1)
+        r'\[[\s]{2,}\]',  # Ngoặc vuông có spaces
     ]
     
     for pattern in standalone_patterns:
-        for match in re.finditer(pattern, temp_s):
+        for match in re.finditer(pattern, temp_s): # Đã sửa: finditer thành re.finditer (Fix NameError cũ)
             matched_text = match.group()
             placeholder = f"__PLACEHOLDER_{counter}__"
             placeholders[placeholder] = matched_text
@@ -137,6 +142,7 @@ def get_translator():
     """
     try:
         # Khởi tạo Translator, target language là 'vi'
+        # Thư viện này không yêu cầu API Key cho bản miễn phí.
         translator = Translator(to_lang="vi") 
         return translator
     except Exception as e:
@@ -147,6 +153,7 @@ def get_translator():
 def translate_text(text):
     """
     Hàm dịch thuật sử dụng Unofficial 'translate' API hoặc fallback về MOCK nếu có lỗi.
+    (ĐÃ XÓA CHUỖI "Unofficial Translate API")
     """
     translator = get_translator()
     
@@ -210,7 +217,7 @@ def translate_text(text):
     except Exception as e:
         # Log lỗi chi tiết ra console
         print(f"LỖI DỊCH THUẬT 'translate': {e}")
-        return f"**[LỖỖI DỊCH THUẬT]**\n- Không thể dịch nội dung. Chi tiết lỗi đã được ghi lại (Exception: {type(e).__name__}).\n- Câu hỏi gốc:\n{text}"
+        return f"**[LỖI DỊCH THUẬT]**\n- Không thể dịch nội dung. Chi tiết lỗi đã được ghi lại (Exception: {type(e).__name__}).\n- Câu hỏi gốc:\n{text}"
 
 # ====================================================
 # 🧩 PARSER 1: NGÂN HÀNG KỸ THUẬT (CABBANK)
@@ -413,7 +420,7 @@ def parse_pl2(source):
     """
     Parser cho định dạng PL2 (Sử dụng ký hiệu (*) để nhận diện đáp án đúng)
     """
-    data = read_pl2_data(source)
+    data = read_pl2_data(source) # SỬ DỤNG HÀM ĐỌC ĐÃ SỬA CHỈ LẤY TEXT
     if not data: return []
 
     questions = []
@@ -504,6 +511,8 @@ def on_translate_toggle(key_clicked):
     elif st.session_state.active_translation_key == key_clicked:
         # User turned this specific toggle OFF -> Clear the active key
         st.session_state.active_translation_key = None
+    
+    # Bỏ st.rerun() để tránh warning "Calling st.rerun() within a callback is a no-op."
 
 # ====================================================
 # 🌟 HÀM: XEM TOÀN BỘ CÂU HỎI (CẬP NHẬT CHỨC NĂNG DỊCH)
@@ -707,9 +716,8 @@ MOBILE_IMAGE_FILE = "bank_mobile.jpg"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
-# === CSS (DÙNG .format() THAY CHO F-STRING ĐỂ TRÁNH LỖI PARSING KHI CÓ KÝ TỰ ĐẶC BIỆT) ===
-# ĐÃ SỬA: Thoát tất cả các ký tự ngoặc nhọn CSS {} thành {{}} để tránh lỗi ValueError.
-css_style = """
+# === CSS ===
+css_style = f"""
 <style>
 /* Đã thống nhất font nội dung là Oswald, tiêu đề là Playfair Display */
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
@@ -737,6 +745,41 @@ html, body, .stApp {{
 .stApp {{
     background: none !important;
 }}
+
+/* CUSTOM SCROLLBAR: WIDER AND DARKER - Dựa theo yêu cầu người dùng */
+/* Target the main scrollable element (body/html/stApp) */
+html, body, .stApp {{
+    scrollbar-width: thin; /* Firefox */
+    scrollbar-color: #764ba2 #1e1e1e; /* thumb track */
+}}
+
+/* Webkit-based browsers (Chrome, Safari, Edge) */
+html::-webkit-scrollbar,
+.stApp::-webkit-scrollbar {{
+    width: 12px; /* Chiều rộng thanh cuộn dọc (dễ thao tác) */
+    height: 12px; /* Chiều rộng thanh cuộn ngang (nếu có) */
+}}
+
+html::-webkit-scrollbar-track,
+.stApp::-webkit-scrollbar-track {{
+    background: rgba(30, 30, 30, 0.9); /* Màu nền (track) tối */
+    border-radius: 10px;
+    border: 1px solid rgba(0, 0, 0, 0.7);
+}}
+
+html::-webkit-scrollbar-thumb,
+.stApp::-webkit-scrollbar-thumb {{
+    background-color: #667eea; /* Màu thumb (phần kéo) */
+    border-radius: 10px; /* Bo góc */
+    border: 3px solid rgba(30, 30, 30, 0); /* Tạo khoảng cách mờ xung quanh thumb */
+    transition: background-color 0.3s;
+}}
+
+html::-webkit-scrollbar-thumb:hover,
+.stApp::-webkit-scrollbar-thumb:hover {{
+    background-color: #764ba2; /* Màu hover */
+}}
+/* END CUSTOM SCROLLBAR */
 
 .stApp::before {{
     content: "";
@@ -955,7 +998,7 @@ div.stSelectbox label p {{
     font-family: 'Oswald', sans-serif !important;
 }}
 
-/* STYLE CHO KHUNG DỊCH - ÁP DỤNG CHO CẢ PC &  */
+/* STYLE CHO KHUNG DỊCH - ÁP DỤNG CHO CẢ PC & MOBILE */
 div[data-testid="stAlert"] {{
     background-color: rgba(30, 30, 30, 0.95) !important;
     border-left: 4px solid #00d4ff !important;
@@ -980,250 +1023,6 @@ div[data-testid="stAlert"] strong {{
     font-weight: 900 !important;
 }}
 
-/* THANH CUỘN TÙY CHỈNH - HIỆN ĐẠI VÀ ĐẸP */
-/* Cho toàn bộ trang */
-::-webkit-scrollbar {{
-    width: 14px;
-    height: 14px;
-}}
-
-::-webkit-scrollbar-track {{
-    background: rgba(0, 0, 0, 0.3);
-    border-radius: 10px;
-    margin: 5px;
-}}
-
-::-webkit-scrollbar-thumb {{
-    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-    border-radius: 10px;
-    border: 2px solid rgba(0, 0, 0, 0.3);
-    transition: all 0.3s ease;
-}}
-
-::-webkit-scrollbar-thumb:hover {{
-    background: linear-gradient(180deg, #764ba2 0%, #667eea 100%);
-    border-color: rgba(255, 255, 255, 0.2);
-    transform: scale(1.05);
-}}
-
-::-webkit-scrollbar-thumb:active {{
-    background: linear-gradient(180deg, #5a67d8 0%, #6b46a1 100%);
-}}
-
-/* Firefox scrollbar */
-* {{
-    scrollbar-width: thin;
-    scrollbar-color: #667eea rgba(0, 0, 0, 0.3);
-}}
-
-/* THANH CUỘN TÙY CHỈNH - HIỆN ĐẠI VÀ ĐẸP */
-/* Cho toàn bộ trang */
-::-webkit-scrollbar {{
-    width: 18px;  /* To hơn cho PC */
-    height: 18px; /* To hơn cho thanh ngang */
-}}
-
-::-webkit-scrollbar-track {{
-    background: rgba(0, 0, 0, 0.4);
-    border-radius: 10px;
-    margin: 5px;
-    border: 1px solid rgba(255, 255, 255, 0.1);
-}}
-
-::-webkit-scrollbar-thumb {{
-    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-    border-radius: 10px;
-    border: 3px solid rgba(0, 0, 0, 0.3);
-    box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
-    transition: all 0.3s ease;
-}}
-
-::-webkit-scrollbar-thumb:hover {{
-    background: linear-gradient(180deg, #764ba2 0%, #667eea 100%);
-    border-color: rgba(255, 255, 255, 0.3);
-    box-shadow: 0 0 15px rgba(118, 75, 162, 0.8);
-}}
-
-::-webkit-scrollbar-thumb:active {{
-    background: linear-gradient(180deg, #5a67d8 0%, #6b46a1 100%);
-}}
-
-/* Firefox scrollbar */
-* {{
-    scrollbar-width: auto;  /* Dày hơn */
-    scrollbar-color: #667eea rgba(0, 0, 0, 0.4);
-}}
-
-/* THANH CUỘN TÙY CHỈNH - HIỆN ĐẠI VÀ ĐẸP - FORCE OVERRIDE */
-/* Cho toàn bộ trang - FORCE OVERRIDE */
-html::-webkit-scrollbar,
-body::-webkit-scrollbar,
-.main::-webkit-scrollbar,
-[data-testid="stAppViewContainer"]::-webkit-scrollbar,
-*::-webkit-scrollbar {{
-    width: 20px !important;  /* RẤT TO cho PC */
-    height: 20px !important; /* RẤT TO cho thanh ngang */
-}}
-
-html::-webkit-scrollbar-track,
-body::-webkit-scrollbar-track,
-.main::-webkit-scrollbar-track,
-[data-testid="stAppViewContainer"]::-webkit-scrollbar-track,
-*::-webkit-scrollbar-track {{
-    background: rgba(0, 0, 0, 0.5) !important;
-    border-radius: 10px !important;
-    margin: 5px !important;
-    border: 2px solid rgba(255, 255, 255, 0.2) !important;
-}}
-
-html::-webkit-scrollbar-thumb,
-body::-webkit-scrollbar-thumb,
-.main::-webkit-scrollbar-thumb,
-[data-testid="stAppViewContainer"]::-webkit-scrollbar-thumb,
-*::-webkit-scrollbar-thumb {{
-    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
-    border-radius: 10px !important;
-    border: 3px solid rgba(0, 0, 0, 0.4) !important;
-    box-shadow: 0 0 15px rgba(102, 126, 234, 0.6) !important;
-    transition: all 0.3s ease !important;
-}}
-
-html::-webkit-scrollbar-thumb:hover,
-body::-webkit-scrollbar-thumb:hover,
-.main::-webkit-scrollbar-thumb:hover,
-[data-testid="stAppViewContainer"]::-webkit-scrollbar-thumb:hover,
-*::-webkit-scrollbar-thumb:hover {{
-    background: linear-gradient(180deg, #764ba2 0%, #667eea 100%) !important;
-    border-color: rgba(255, 255, 255, 0.4) !important;
-    box-shadow: 0 0 20px rgba(118, 75, 162, 0.9) !important;
-}}
-
-/* Firefox scrollbar - FORCE */
-html, body, .main, [data-testid="stAppViewContainer"], * {{
-    scrollbar-width: auto !important;
-    scrollbar-color: #667eea rgba(0, 0, 0, 0.5) !important;
-}}
-
-/* THANH CUỘN CỰC TO - WEBKIT */
-::-webkit-scrollbar {{
-    width: 30px !important;  /* TĂNG BỀ RỘNG */
-    height: 30px !important; /* TĂNG BỀ RỘNG */
-}}
-
-::-webkit-scrollbar-track {{
-    background: rgba(0, 0, 0, 0.6) !important;
-    border-radius: 10px !important;
-    border: 3px solid rgba(255, 255, 255, 0.2) !important;
-}}
-
-::-webkit-scrollbar-thumb {{
-    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
-    border-radius: 10px !important;
-    border: 8px solid rgba(0, 0, 0, 0.8) !important; /* TĂNG ĐỘ DÀY BORDER */
-    box-shadow: 0 0 30px rgba(102, 126, 234, 0.9) !important;
-}}
-
-::-webkit-scrollbar-thumb:hover {{
-    background: linear-gradient(180deg, #764ba2 0%, #667eea 100%) !important;
-    box-shadow: 0 0 40px rgba(118, 75, 162, 1.2) !important;
-}}
-
-/* Firefox */
-* {{
-    scrollbar-width: auto !important;
-    scrollbar-color: #667eea rgba(0, 0, 0, 0.6) !important;
-}}
-
-/* THANH CUỘN CỰC TO - WEBKIT */
-::-webkit-scrollbar {{
-    width: 30px !important;  /* TĂNG BỀ RỘNG */
-    height: 30px !important; /* TĂNG BỀ RỘNG */
-}}
-
-::-webkit-scrollbar-track {{
-    background: rgba(0, 0, 0, 0.6) !important;
-    border-radius: 10px !important;
-    border: 3px solid rgba(255, 255, 255, 0.2) !important;
-}}
-
-::-webkit-scrollbar-thumb {{
-    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
-    border-radius: 10px !important;
-    border: 8px solid rgba(0, 0, 0, 0.8) !important; /* TĂNG ĐỘ DÀY BORDER */
-    box-shadow: 0 0 30px rgba(102, 126, 234, 0.9) !important;
-}}
-
-::-webkit-scrollbar-thumb:hover {{
-    background: linear-gradient(180deg, #764ba2 0%, #667eea 100%) !important;
-    box-shadow: 0 0 40px rgba(118, 75, 162, 1.2) !important;
-}}
-
-/* Firefox */
-* {{
-    scrollbar-width: auto !important;
-    scrollbar-color: #667eea rgba(0, 0, 0, 0.6) !important;
-}}
-
-/* THANH CUỘN CỰC TO - WEBKIT */
-::-webkit-scrollbar {{
-    width: 30px !important;  /* TĂNG BỀ RỘNG */
-    height: 30px !important; /* TĂNG BỀ RỘNG */
-}}
-
-::-webkit-scrollbar-track {{
-    background: rgba(0, 0, 0, 0.6) !important;
-    border-radius: 10px !important;
-    border: 3px solid rgba(255, 255, 255, 0.2) !important;
-}}
-
-::-webkit-scrollbar-thumb {{
-    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
-    border-radius: 10px !important;
-    border: 8px solid rgba(0, 0, 0, 0.8) !important; /* TĂNG ĐỘ DÀY BORDER */
-    box-shadow: 0 0 30px rgba(102, 126, 234, 0.9) !important;
-}}
-
-::-webkit-scrollbar-thumb:hover {{
-    background: linear-gradient(180deg, #764ba2 0%, #667eea 100%) !important;
-    box-shadow: 0 0 40px rgba(118, 75, 162, 1.2) !important;
-}}
-
-/* Firefox */
-* {{
-    scrollbar-width: auto !important;
-    scrollbar-color: #667eea rgba(0, 0, 0, 0.6) !important;
-}}
-
-/* THANH CUỘN CỰC TO - WEBKIT */
-::-webkit-scrollbar {{
-    width: 30px !important;  /* TĂNG BỀ RỘNG */
-    height: 30px !important; /* TĂNG BỀ RỘNG */
-}}
-
-::-webkit-scrollbar-track {{
-    background: rgba(0, 0, 0, 0.6) !important;
-    border-radius: 10px !important;
-    border: 3px solid rgba(255, 255, 255, 0.2) !important;
-}}
-
-::-webkit-scrollbar-thumb {{
-    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
-    border-radius: 10px !important;
-    border: 8px solid rgba(0, 0, 0, 0.8) !important; /* TĂNG ĐỘ DÀY BORDER */
-    box-shadow: 0 0 30px rgba(102, 126, 234, 0.9) !important;
-}}
-
-::-webkit-scrollbar-thumb:hover {{
-    background: linear-gradient(180deg, #764ba2 0%, #667eea 100%) !important;
-    box-shadow: 0 0 40px rgba(118, 75, 162, 1.2) !important;
-}}
-
-/* Firefox */
-* {{
-    scrollbar-width: auto !important;
-    scrollbar-color: #667eea rgba(0, 0, 0, 0.6) !important;
-}}
-
 /* MOBILE RESPONSIVE */
 @media (max-width: 768px) {{
     #back-to-home-btn-container {{ top: 5px; left: 5px; }}
@@ -1231,40 +1030,32 @@ html, body, .main, [data-testid="stAppViewContainer"], * {{
     #main-title-container h1 {{ font-size: 8vw; line-height: 1.5 !important; }}
     .main > div:first-child {{ padding-top: 20px !important; }}
     
+    /* Chỉnh kích thước tiêu đề trên mobile - FIX HIỂN THỊ ĐẦY ĐỦ */
     #sub-static-title h2, 
     .result-title h3 {{
-        font-size: 1.1rem !important;
-        white-space: normal !important;
+        font-size: 1.1rem !important; /* NHỎ HƠN ĐỂ VỪA 1 HÀNG */
+        white-space: normal !important; /* CHO PHÉP XUỐNG DÒNG */
         overflow: visible !important;
         text-overflow: clip !important;
         padding: 0 10px !important;
         line-height: 1.3 !important;
     }}
     
+    /* Màu vàng cho câu hỏi trên mobile */
     .bank-question-text {{
         color: #FFFF00 !important;
         background-color: rgba(0, 0, 0, 0.75) !important;
-        display: inline-block !important;
+        display: inline-block !important; /* BAO VỪA CHỮ */
     }}
     
+    /* Nút trên mobile */
     .stButton>button {{
         font-size: 1em !important;
         padding: 10px 18px !important;
     }}
-    
-    /* THANH CUỘN CỰC TO TRÊN MOBILE */
-    ::-webkit-scrollbar {{
-        width: 25px !important; /* TĂNG BỀ RỘNG MOBILE */
-        height: 25px !important; /* TĂNG BỀ RỘNG MOBILE */
-    }}
-    
-    ::-webkit-scrollbar-thumb {{
-        min-height: 60px !important;
-        border: 6px solid rgba(0, 0, 0, 0.8) !important; /* Tăng độ dày */
-    }}
 }}
 </style>
-""".format(img_pc_base64=img_pc_base64, img_mobile_base64=img_mobile_base64)
+"""
 
 st.markdown(css_style, unsafe_allow_html=True)
 
@@ -1290,8 +1081,8 @@ if "submitted" not in st.session_state: st.session_state.submitted = False
 if "current_mode" not in st.session_state: st.session_state.current_mode = "group"
 if "last_bank_choice" not in st.session_state: st.session_state.last_bank_choice = "----" 
 if "doc_selected" not in st.session_state: st.session_state.doc_selected = "Phụ lục 1 : Ngữ pháp chung" 
-if 'translations' not in st.session_state: st.session_state.translations = {}
-if 'active_translation_key' not in st.session_state: st.session_state.active_translation_key = None
+if 'translations' not in st.session_state: st.session_state.translations = {} # KHỞI TẠO STATE DỊCH THUẬT
+if 'active_translation_key' not in st.session_state: st.session_state.active_translation_key = None # KHỞI TẠO KEY DỊCH ĐỘC QUYỀN
 
 # CẬP NHẬT LIST NGÂN HÀNG
 BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật VAECO", "Ngân hàng Docwise"]
@@ -1339,9 +1130,9 @@ if bank_choice != "----":
             st.rerun()
 
         if st.session_state.doc_selected == "Phụ lục 1 : Ngữ pháp chung":
-            source = "PL1.docx"
+            source = "PL1.docx" # File PL1.docx (Dùng parse_pl1)
         elif st.session_state.doc_selected == "Phụ lục 2 : Từ vựng, thuật ngữ": 
-            source = "PL2.docx"
+            source = "PL2.docx" # File PL2.docx (Dùng parse_pl2 đã sửa)
         
     # LOAD CÂU HỎI
     questions = []
@@ -1352,9 +1143,9 @@ if bank_choice != "----":
             questions = parse_lawbank(source)
         elif is_docwise:
             if source == "PL1.docx":
-                questions = parse_pl1(source)
+                questions = parse_pl1(source) # Sử dụng parser cũ (dùng (*))
             elif source == "PL2.docx":
-                questions = parse_pl2(source)
+                questions = parse_pl2(source) # Sử dụng parser mới (dùng (*))
     
     if not questions:
         # Cập nhật thông báo lỗi để phù hợp với logic (*) cho cả PL1 và PL2
@@ -1367,7 +1158,7 @@ if bank_choice != "----":
     if st.session_state.current_mode == "group":
         # Cập nhật tiêu đề nhóm câu hỏi
         st.markdown('<div class="result-title" style="margin-top: 0px;"><h3>Luyện tập theo nhóm (30 câu/nhóm)</h3></div>', unsafe_allow_html=True)
-        group_size = 30
+        group_size = 30 # Tăng lên 30 câu/nhóm
         if total > 0:
             groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
             if st.session_state.current_group_idx >= len(groups): st.session_state.current_group_idx = 0
@@ -1378,7 +1169,7 @@ if bank_choice != "----":
             if st.session_state.current_group_idx != new_idx:
                 st.session_state.current_group_idx = new_idx
                 st.session_state.submitted = False
-                st.session_state.active_translation_key = None
+                st.session_state.active_translation_key = None # Reset dịch khi chuyển nhóm
                 st.rerun()
 
             idx = st.session_state.current_group_idx
@@ -1390,13 +1181,13 @@ if bank_choice != "----":
             with col_all_bank:
                 if st.button("📖 Hiển thị toàn bộ ngân hàng", key="btn_show_all"):
                     st.session_state.current_mode = "all"
-                    st.session_state.active_translation_key = None
+                    st.session_state.active_translation_key = None # Reset dịch khi chuyển mode
                     st.rerun()
             with col_test:
                 # Đổi tên nút test
                 if st.button("Làm bài test", key="btn_start_test"):
                     st.session_state.current_mode = "test"
-                    st.session_state.active_translation_key = None
+                    st.session_state.active_translation_key = None # Reset dịch khi chuyển mode
                     bank_slug_new = bank_choice.split()[-1].lower()
                     test_key_prefix = f"test_{bank_slug_new}"
                     # Reset session state cho bài test trước khi bắt đầu
@@ -1409,7 +1200,7 @@ if bank_choice != "----":
             if batch:
                 if not st.session_state.submitted:
                     for i, q in enumerate(batch, start=start+1):
-                        q_key = f"q_{i}_{hash(q['question'])}"
+                        q_key = f"q_{i}_{hash(q['question'])}" # Dùng hash để tránh trùng key
                         translation_key = f"trans_{q_key}"
                         is_active = (translation_key == st.session_state.active_translation_key)
                         
@@ -1444,7 +1235,7 @@ if bank_choice != "----":
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
                     if st.button("✅ Nộp bài", key="submit_group"):
                         st.session_state.submitted = True
-                        st.session_state.active_translation_key = None
+                        st.session_state.active_translation_key = None # Tắt dịch khi nộp bài
                         st.rerun()
                 else:
                     score = 0
@@ -1485,11 +1276,11 @@ if bank_choice != "----":
                         for opt in q["options"]:
                             opt_clean = clean_text(opt)
                             if opt_clean == correct:
-                                color_style = "color:#00ff00;"
+                                color_style = "color:#00ff00;" # Xanh lá, bỏ shadow
                             elif opt_clean == clean_text(selected_opt):
-                                color_style = "color:#ff3333;"
+                                color_style = "color:#ff3333;" # Đỏ, bỏ shadow
                             else:
-                                color_style = "color:#FFFFFF;"
+                                color_style = "color:#FFFFFF;" # Trắng chân phương
                             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
                         
                         if is_correct: 
@@ -1507,14 +1298,14 @@ if bank_choice != "----":
                             for i, q in enumerate(batch, start=start+1):
                                 st.session_state.pop(f"q_{i}_{hash(q['question'])}", None) 
                             st.session_state.submitted = False
-                            st.session_state.active_translation_key = None
+                            st.session_state.active_translation_key = None # Reset dịch khi làm lại
                             st.rerun()
                     with col_next:
                         if st.session_state.current_group_idx < len(groups) - 1:
                             if st.button("➡️ Tiếp tục nhóm sau", key="next_group"):
                                 st.session_state.current_group_idx += 1
                                 st.session_state.submitted = False
-                                st.session_state.active_translation_key = None
+                                st.session_state.active_translation_key = None # Reset dịch khi chuyển nhóm
                                 st.rerun()
                         else: st.info("🎉 Đã hoàn thành tất cả các nhóm câu hỏi!")
             else: st.warning("Không có câu hỏi trong nhóm này.")
@@ -1523,7 +1314,7 @@ if bank_choice != "----":
     elif st.session_state.current_mode == "all":
         if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
             st.session_state.current_mode = "group"
-            st.session_state.active_translation_key = None
+            st.session_state.active_translation_key = None # Reset dịch khi chuyển mode
             st.rerun()
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
         display_all_questions(questions)
@@ -1531,7 +1322,7 @@ if bank_choice != "----":
     elif st.session_state.current_mode == "test":
         if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
             st.session_state.current_mode = "group"
-            st.session_state.active_translation_key = None
+            st.session_state.active_translation_key = None # Reset dịch khi chuyển mode
             st.rerun()
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
         display_test_mode(questions, bank_choice)
