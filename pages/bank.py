@@ -719,7 +719,7 @@ img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 # === CSS ===
 css_style = f"""
 <style>
-/* ĐÃ thống nhất font nội dung là Oswald, tiêu đề là Playfair Display */
+/* Đã thống nhất font nội dung là Oswald, tiêu đề là Playfair Display */
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap');
 @keyframes colorShift {{
@@ -730,57 +730,6 @@ css_style = f"""
 @keyframes scrollRight {{
     0% {{ transform: translateX(100%); }}
     100% {{ transform: translateX(-100%); }}
-}}
-
-/* ====================================================
-   CUSTOM SCROLLBAR - VERTICAL (DỄ THAO TÁC)
-   ==================================================== */
-
-/* Webkit Browsers (Chrome, Safari, Edge, Opera) */
-* {{
-    scrollbar-width: auto;
-    scrollbar-color: #667eea rgba(0, 0, 0, 0.4);
-}}
-
-*::-webkit-scrollbar {{
-    width: 20px;
-    height: 20px;
-}}
-
-*::-webkit-scrollbar-track {{
-    background: rgba(0, 0, 0, 0.4);
-    border-radius: 10px;
-}}
-
-*::-webkit-scrollbar-thumb {{
-    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
-    border-radius: 10px;
-    border: 3px solid rgba(0, 0, 0, 0.4);
-}}
-
-*::-webkit-scrollbar-thumb:hover {{
-    background: linear-gradient(180deg, #764ba2 0%, #667eea 100%);
-    box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
-}}
-
-html, body {{
-    overflow-y: scroll !important;
-    height: auto !important;
-    min-height: 100vh !important;
-}}
-</style>
-
-<script>
-// Force scrollbar to appear
-document.addEventListener('DOMContentLoaded', function() {{
-    document.documentElement.style.overflowY = 'scroll';
-    document.body.style.overflowY = 'scroll';
-}});
-</script>
-
-.stApp {{
-    overflow-y: auto !important;
-    overflow-x: hidden !important;
 }}
 
 html, body, .stApp {{
