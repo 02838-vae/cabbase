@@ -746,40 +746,64 @@ html, body, .stApp {{
     background: none !important;
 }}
 
-/* CUSTOM SCROLLBAR: WIDER AND DARKER - Dựa theo yêu cầu người dùng */
-/* Target the main scrollable element (body/html/stApp) */
-html, body, .stApp {{
-    scrollbar-width: thin; /* Firefox */
+/* BẮT ĐẦU: CUSTOM SCROLLBAR MỚI (ƯU TIÊN HƠN) */
+
+/* TARGET CHUNG cho Firefox và các container của Streamlit */
+html, body, .stApp, 
+[data-testid="stAppViewContainer"],
+[data-testid="stAppViewContainer"] > .main
+{{
+    scrollbar-width: thin; /* Firefox: thin/auto */
     scrollbar-color: #764ba2 #1e1e1e; /* thumb track */
+    overflow: auto !important; /* Đảm bảo scrollable */
 }}
 
-/* Webkit-based browsers (Chrome, Safari, Edge) */
+/* TARGET CHUNG cho Webkit-based browsers (Chrome, Safari, Edge) */
 html::-webkit-scrollbar,
-.stApp::-webkit-scrollbar {{
+.stApp::-webkit-scrollbar,
+[data-testid="stAppViewContainer"]::-webkit-scrollbar,
+[data-testid="stAppViewContainer"] > .main::-webkit-scrollbar
+{{
     width: 12px; /* Chiều rộng thanh cuộn dọc (dễ thao tác) */
     height: 12px; /* Chiều rộng thanh cuộn ngang (nếu có) */
 }}
 
+/* TRACK (Phần rãnh) */
 html::-webkit-scrollbar-track,
-.stApp::-webkit-scrollbar-track {{
+.stApp::-webkit-scrollbar-track,
+[data-testid="stAppViewContainer"]::-webkit-scrollbar-track,
+[data-testid="stAppViewContainer"] > .main::-webkit-scrollbar-track
+{{
     background: rgba(30, 30, 30, 0.9); /* Màu nền (track) tối */
     border-radius: 10px;
     border: 1px solid rgba(0, 0, 0, 0.7);
 }}
 
+/* THUMB (Phần kéo) */
 html::-webkit-scrollbar-thumb,
-.stApp::-webkit-scrollbar-thumb {{
+.stApp::-webkit-scrollbar-thumb,
+[data-testid="stAppViewContainer"]::-webkit-scrollbar-thumb,
+[data-testid="stAppViewContainer"] > .main::-webkit-scrollbar-thumb
+{{
     background-color: #667eea; /* Màu thumb (phần kéo) */
+    background: linear-gradient(45deg, #667eea, #764ba2); /* Gradient màu */
     border-radius: 10px; /* Bo góc */
     border: 3px solid rgba(30, 30, 30, 0); /* Tạo khoảng cách mờ xung quanh thumb */
-    transition: background-color 0.3s;
+    transition: all 0.3s;
 }}
 
+/* THUMB HOVER */
 html::-webkit-scrollbar-thumb:hover,
-.stApp::-webkit-scrollbar-thumb:hover {{
+.stApp::-webkit-scrollbar-thumb:hover,
+[data-testid="stAppViewContainer"]::-webkit-scrollbar-thumb:hover,
+[data-testid="stAppViewContainer"] > .main::-webkit-scrollbar-thumb:hover
+{{
     background-color: #764ba2; /* Màu hover */
+    background: linear-gradient(45deg, #764ba2, #667eea); /* Đổi gradient khi hover */
+    border: 3px solid rgba(255, 255, 255, 0.2); /* Thêm viền sáng khi hover */
 }}
-/* END CUSTOM SCROLLBAR */
+/* KẾT THÚC: CUSTOM SCROLLBAR MỚI */
+
 
 .stApp::before {{
     content: "";
