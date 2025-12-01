@@ -353,6 +353,31 @@ def set_custom_css():
                 border-top: 2px dashed #ddd;
                 margin: 30px 0;
             }
+            
+            /* === BỔ SUNG: CUSTOM SCROLLBAR === */
+            /* WebKit (Chrome, Edge, Safari) */
+            .stApp ::-webkit-scrollbar {
+                width: 12px; /* Tăng bề rộng thanh cuộn */
+                height: 12px; /* Tăng chiều cao thanh cuộn ngang (nếu có) */
+            }
+            .stApp ::-webkit-scrollbar-track {
+                background: #111111; /* Màu nền tối hơn */
+            }
+            .stApp ::-webkit-scrollbar-thumb {
+                background-color: #FFEA00; /* Màu vàng nổi bật */
+                border-radius: 6px;
+                border: 3px solid #111111;
+            }
+            .stApp ::-webkit-scrollbar-thumb:hover {
+                background-color: #FFF066;
+            }
+
+            /* Firefox */
+            .stApp {
+                scrollbar-width: thin; /* 'auto' hoặc 'thin' */
+                scrollbar-color: #FFEA00 #111111; /* thumb color track color */
+            }
+            /* === HẾT BỔ SUNG === */
         </style>
     """, unsafe_allow_html=True)
 
@@ -457,20 +482,6 @@ def display_question(q, index, mode="group_practice", show_answer=False, user_se
                 else:
                     css_class = "option-default"
                     
-                # Sử dụng form để nhóm các radio lại (tùy chọn) hoặc dùng st.radio (đơn giản hơn)
-                
-                # Dùng st.radio trong một form hoặc container để đảm bảo key và logic
-                
-                # Thay vì st.radio, dùng st.button hoặc st.toggle cho mỗi đáp án để tạo hiệu ứng click
-                # và quản lý lựa chọn qua session_state (phức tạp hơn nhưng linh hoạt hơn)
-                
-                # Cách đơn giản: Dùng st.radio và quản lý lựa chọn trong session_state.
-                # Do phải render lại nhiều lần, cách dùng radio group trong Streamlit hoạt động tốt nhất.
-                
-                # Hiển thị đáp án dưới dạng một div có thể click được (sử dụng CSS)
-                # Dùng một widget ẩn để lưu giá trị (ví dụ: st.selectbox với visibility="hidden") 
-                # hoặc st.radio ngoài để quản lý lựa chọn.
-                
                 # Logic lựa chọn (Chỉ áp dụng trong group_practice mode)
                 if mode == "group_practice":
                     
@@ -483,11 +494,8 @@ def display_question(q, index, mode="group_practice", show_answer=False, user_se
                         st.session_state.current_group_selections[q["number"]] = option_key
                         st.rerun() # Rerun để cập nhật UI
                     
-                    # Thêm CSS class cho cái đã chọn (lưu ý: st.button không cho phép truyền class trực tiếp)
-                    # Phải dùng div để mô phỏng, nhưng nó phức tạp vì cần xử lý trạng thái click.
                     # Tạm thời chấp nhận st.button mặc định hoặc dùng st.radio.
                     
-                    # Dùng st.radio cho mỗi câu hỏi là đơn giản nhất
                     pass # Logic lựa chọn được xử lý bằng st.radio trong hàm gọi
 
         # Nếu là mode luyện tập, dùng radio để chọn
