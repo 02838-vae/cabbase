@@ -737,45 +737,84 @@ css_style = f"""
    ==================================================== */
 
 /* Webkit Browsers (Chrome, Safari, Edge, Opera) */
-::-webkit-scrollbar {{
-    width: 48px; /* Bề rộng scrollbar - to hơn để dễ thao tác */
+/* Target chính xác các container của Streamlit */
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
+.stApp::-webkit-scrollbar,
+[data-testid="stAppViewContainer"]::-webkit-scrollbar,
+[data-testid="stMainBlock"]::-webkit-scrollbar,
+.main::-webkit-scrollbar,
+section[data-testid="stAppViewContainer"] > div::-webkit-scrollbar {{
+    width: 48px !important; /* Bề rộng scrollbar - CỰC TO để dễ thao tác */
 }}
 
-::-webkit-scrollbar-track {{
-    background: rgba(0, 0, 0, 0.3); /* Nền track tối */
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track,
+.stApp::-webkit-scrollbar-track,
+[data-testid="stAppViewContainer"]::-webkit-scrollbar-track,
+[data-testid="stMainBlock"]::-webkit-scrollbar-track,
+.main::-webkit-scrollbar-track,
+section[data-testid="stAppViewContainer"] > div::-webkit-scrollbar-track {{
+    background: rgba(0, 0, 0, 0.5) !important; /* Nền track tối */
     border-radius: 10px;
-    margin: 5px 0; /* Khoảng cách trên dưới */
+    margin: 5px 0;
 }}
 
-::-webkit-scrollbar-thumb {{
-    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%); /* Gradient đẹp */
-    border-radius: 10px;
-    border: 3px solid rgba(0, 0, 0, 0.3); /* Viền để tạo khoảng cách */
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb,
+.stApp::-webkit-scrollbar-thumb,
+[data-testid="stAppViewContainer"]::-webkit-scrollbar-thumb,
+[data-testid="stMainBlock"]::-webkit-scrollbar-thumb,
+.main::-webkit-scrollbar-thumb,
+section[data-testid="stAppViewContainer"] > div::-webkit-scrollbar-thumb {{
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
+    border-radius: 24px; /* Bo góc to hơn cho scrollbar to */
+    border: 6px solid rgba(0, 0, 0, 0.3); /* Viền dày hơn */
     transition: all 0.3s ease;
+    min-height: 50px; /* Đảm bảo thumb không quá nhỏ */
 }}
 
-::-webkit-scrollbar-thumb:hover {{
-    background: linear-gradient(180deg, #764ba2 0%, #667eea 100%); /* Đảo gradient khi hover */
+html::-webkit-scrollbar-thumb:hover,
+body::-webkit-scrollbar-thumb:hover,
+.stApp::-webkit-scrollbar-thumb:hover,
+[data-testid="stAppViewContainer"]::-webkit-scrollbar-thumb:hover,
+[data-testid="stMainBlock"]::-webkit-scrollbar-thumb:hover,
+.main::-webkit-scrollbar-thumb:hover,
+section[data-testid="stAppViewContainer"] > div::-webkit-scrollbar-thumb:hover {{
+    background: linear-gradient(180deg, #764ba2 0%, #667eea 100%) !important;
     border-color: rgba(255, 255, 255, 0.2);
-    box-shadow: 0 0 10px rgba(102, 126, 234, 0.5); /* Hiệu ứng phát sáng */
+    box-shadow: 0 0 15px rgba(102, 126, 234, 0.6);
 }}
 
-::-webkit-scrollbar-thumb:active {{
-    background: linear-gradient(180deg, #5a67d8 0%, #6b46a0 100%); /* Màu đậm hơn khi click */
+html::-webkit-scrollbar-thumb:active,
+body::-webkit-scrollbar-thumb:active,
+.stApp::-webkit-scrollbar-thumb:active,
+[data-testid="stAppViewContainer"]::-webkit-scrollbar-thumb:active,
+[data-testid="stMainBlock"]::-webkit-scrollbar-thumb:active,
+.main::-webkit-scrollbar-thumb:active,
+section[data-testid="stAppViewContainer"] > div::-webkit-scrollbar-thumb:active {{
+    background: linear-gradient(180deg, #5a67d8 0%, #6b46a0 100%) !important;
 }}
 
-/* Firefox */
-* {{
-    scrollbar-width: auto; /* 'auto' hoặc 'thin' - dùng auto để to hơn */
-    scrollbar-color: #667eea rgba(0, 0, 0, 0.3); /* thumb color | track color */
-}}
-
-/* Đảm bảo scrollbar hiển thị trên tất cả containers */
+/* Firefox - Target tất cả elements */
 html, body, .stApp, 
 [data-testid="stAppViewContainer"],
-[data-testid="stMainBlock"] {{
-    scrollbar-width: auto;
-    scrollbar-color: #667eea rgba(0, 0, 0, 0.3);
+[data-testid="stMainBlock"],
+.main,
+section[data-testid="stAppViewContainer"] > div {{
+    scrollbar-width: thick !important; /* 'thick' cho Firefox */
+    scrollbar-color: #667eea rgba(0, 0, 0, 0.5) !important;
+}}
+
+/* Đảm bảo overflow được set đúng */
+html, body {{
+    overflow-y: scroll !important; /* Luôn hiển thị scrollbar */
+    overflow-x: hidden !important;
+}}
+
+.stApp {{
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
 }}
 
 html, body, .stApp {{
