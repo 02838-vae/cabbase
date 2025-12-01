@@ -738,7 +738,7 @@ css_style = f"""
 
 /* Webkit Browsers (Chrome, Safari, Edge, Opera) */
 ::-webkit-scrollbar {{
-    width: 16px; /* Bề rộng scrollbar - to hơn để dễ thao tác */
+    width: 48px; /* Bề rộng scrollbar - to hơn để dễ thao tác */
 }}
 
 ::-webkit-scrollbar-track {{
