@@ -737,30 +737,46 @@ css_style = f"""
    ==================================================== */
 
 /* Webkit Browsers (Chrome, Safari, Edge, Opera) */
-::-webkit-scrollbar {{
+* {{
+    scrollbar-width: auto;
+    scrollbar-color: #667eea rgba(0, 0, 0, 0.4);
+}}
+
+*::-webkit-scrollbar {{
     width: 20px;
+    height: 20px;
 }}
 
-::-webkit-scrollbar-track {{
+*::-webkit-scrollbar-track {{
     background: rgba(0, 0, 0, 0.4);
+    border-radius: 10px;
 }}
 
-::-webkit-scrollbar-thumb {{
+*::-webkit-scrollbar-thumb {{
     background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
     border-radius: 10px;
     border: 3px solid rgba(0, 0, 0, 0.4);
 }}
 
-::-webkit-scrollbar-thumb:hover {{
+*::-webkit-scrollbar-thumb:hover {{
     background: linear-gradient(180deg, #764ba2 0%, #667eea 100%);
     box-shadow: 0 0 10px rgba(102, 126, 234, 0.5);
 }}
 
-/* Firefox */
-html {{
-    scrollbar-width: auto;
-    scrollbar-color: #667eea rgba(0, 0, 0, 0.4);
+html, body {{
+    overflow-y: scroll !important;
+    height: auto !important;
+    min-height: 100vh !important;
 }}
+</style>
+
+<script>
+// Force scrollbar to appear
+document.addEventListener('DOMContentLoaded', function() {{
+    document.documentElement.style.overflowY = 'scroll';
+    document.body.style.overflowY = 'scroll';
+}});
+</script>
 
 .stApp {{
     overflow-y: auto !important;
