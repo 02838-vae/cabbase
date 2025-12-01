@@ -353,7 +353,7 @@ def set_custom_css():
                 border-top: 2px dashed #ddd;
                 margin: 30px 0;
             }
-            
+
             /* === BỔ SUNG: CUSTOM SCROLLBAR === */
             /* WebKit (Chrome, Edge, Safari) */
             .stApp ::-webkit-scrollbar {
@@ -947,7 +947,8 @@ def main():
 
     # ---------------- Nội dung chính ----------------
     questions = st.session_state.questions
-    
+    bank_choice = st.session_state.current_bank_choice # Thêm biến này để truyền vào display_test_mode
+
     if not questions:
         if st.session_state.current_bank_choice is None:
             st.info("Vui lòng tải lên một file DOCX để bắt đầu luyện tập.")
@@ -959,38 +960,50 @@ def main():
     if st.session_state.current_mode == "group":
         groups = questions
         
-        if st.session_state.current_group_idx < len(groups):
-            display_group_practice(groups)
-            
-            # Nút chuyển nhóm dưới cùng
-            st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
-            col_b1, col_b2 = st.columns([1, 1])
-            with col_b1:
-                if st.session_state.current_group_idx > 0:
-                    if st.button("⬅️ Quay lại nhóm trước", key="prev_group_bottom"):
-                        st.session_state.current_group_idx -= 1
-                        st.session_state.submitted = False
-                        st.session_state.current_group_selections = {}
-                        st.session_state.active_translation_key = None
-                        st.rerun()
-            with col_b2:
-                if st.session_state.current_group_idx < len(groups) - 1:
-                    if st.button("➡️ Tiếp tục nhóm sau", key="next_group"):
-                        st.session_state.current_group_idx += 1
-                        st.session_state.submitted = False
-                        st.session_state.current_group_selections = {}
-                        st.session_state.active_translation_key = None # Reset dịch khi chuyển nhóm
-                        st.rerun()
-                else: st.info("🎉 Đã hoàn thành tất cả các nhóm câu hỏi!")
-        else: st.warning("Không có câu hỏi trong nhóm này.")
+        if groups:
+            if st.session_state.current_group_idx < len(groups):
+                display_group_practice(groups)
+                
+                # Nút chuyển nhóm dưới cùng
+                st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+                col_b1, col_b2 = st.columns([1, 1])
+                with col_b1:
+                    if st.session_state.current_group_idx > 0:
+                        if st.button("⬅️ Quay lại nhóm trước", key="prev_group_bottom"):
+                            st.session_state.current_group_idx -= 1
+                            st.session_state.submitted = False
+                            st.session_state.current_group_selections = {}
+                            st.session_state.active_translation_key = None
+                            st.rerun()
+                with col_b2:
+                    if st.session_state.current_group_idx < len(groups) - 1:
+                        if st.button("➡️ Tiếp tục nhóm sau", key="next_group"):
+                            st.session_state.current_group_idx += 1
+                            st.session_state.submitted = False
+                            st.session_state.current_group_selections = {}
+                            st.session_state.active_translation_key = None # Reset dịch khi chuyển nhóm
+                            st.rerun()
+                    else: st.info("🎉 Đã hoàn thành tất cả các nhóm câu hỏi!")
+            else: st.warning("Không có câu hỏi trong nhóm này.")
+        else: st.warning("Không có câu hỏi nào trong ngân hàng này.") # Đã khôi phục dòng này
 
     elif st.session_state.current_mode == "all":
+        # Đã khôi phục nút Quay lại
+        if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
+            st.session_state.current_mode = "group"
+            st.session_state.active_translation_key = None # Reset dịch khi chuyển mode
+            st.rerun()
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
         display_all_questions(questions)
         
     elif st.session_state.current_mode == "test":
+        # Đã khôi phục nút Quay lại
+        if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
+            st.session_state.current_mode = "group"
+            st.session_state.active_translation_key = None # Reset dịch khi chuyển mode
+            st.rerun()
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
-        display_test_mode(questions, st.session_state.current_bank_choice)
+        display_test_mode(questions, bank_choice)
 
 if __name__ == "__main__":
     main()
