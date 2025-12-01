@@ -147,7 +147,7 @@ def get_translator():
         return None
 
 def translate_text(text):
-    """Dịch văn bản sử dụng deep_translator"""
+    """Dịch văn bản sử dụng deep_translator (ĐÃ SỬA LỖI "Một...")"""
     translator = get_translator()
     
     if translator is None:
@@ -169,15 +169,38 @@ def translate_text(text):
                 a_translated_list.append("")
                 continue
             
+            # 1. Tách prefix và nội dung chính để CHỈ DỊCH NỘI DUNG
             original_prefix_match = re.match(r'^([a-d]\.|\s*)\s*', option_content, re.IGNORECASE)
-            original_prefix = original_prefix_match.group(0).strip() if original_prefix_match and original_prefix_match.group(0).strip() else f"{i+1}."
+            original_prefix_with_space = original_prefix_match.group(0) if original_prefix_match else ""
+            # Lấy prefix để gắn lại
+            original_prefix = original_prefix_with_space.strip() if original_prefix_with_space.strip() else f"{i+1}."
             
-            # Dịch nội dung chính
-            translated_text = translator.translate(option_content)
-            stripped_translated_text = translated_text.lstrip(original_prefix).strip()
+            # Lấy nội dung chính (body)
+            content_to_translate = option_content[len(original_prefix_with_space):].strip()
+            
+            if not content_to_translate:
+                a_translated_list.append(original_prefix)
+                continue
+
+            # 2. CHỈ DỊCH NỘI DUNG CHÍNH
+            translated_text = translator.translate(content_to_translate)
+            
+            # 3. Loại bỏ ký tự thừa do translator tự thêm (VD: "Một", "A.", "1.")
+            stripped_translated_text = translated_text.strip()
+            
+            # Loại bỏ "Một " hoặc "một " ở đầu bản dịch (Fix lỗi người dùng báo cáo)
+            if stripped_translated_text.lower().startswith("một "):
+                stripped_translated_text = stripped_translated_text[len("một "):]
+                
+            # Loại bỏ các prefix kiểu chữ cái/số + dấu chấm (VD: "A. ", "1. ") 
+            # mà translator có thể thêm vào khi dịch body
+            stripped_translated_text = re.sub(r'^\s*([a-d]\.|\d+\.)\s*', '', stripped_translated_text, flags=re.IGNORECASE).strip()
+            
+            # Đảm bảo không bị rỗng
             if not stripped_translated_text:
-                stripped_translated_text = translated_text
+                stripped_translated_text = translated_text.strip()
             
+            # 4. Gắn prefix gốc và nội dung đã dịch
             a_translated_list.append(f"{original_prefix} {stripped_translated_text}")
         
         a_translated_text = "\n".join([f"- {opt}" for opt in a_translated_list])
@@ -187,6 +210,8 @@ def translate_text(text):
     except Exception as e:
         print(f"Lỗi dịch thuật: {e}")
         return f"**[LỖI DỊCH THUẬT]**\n- Không thể dịch nội dung. Chi tiết: {type(e).__name__}\n- Câu hỏi gốc:\n{text}"
+
+# ====================================================
 
 # ====================================================
 # 🧩 PARSER 1: NGÂN HÀNG KỸ THUẬT (CABBANK)
