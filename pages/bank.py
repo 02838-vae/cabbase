@@ -36,7 +36,6 @@ def clean_text(s: str) -> str:
         r'\[[\s]{2,}\]',
     ]
     
-    # SỬA LỖI NAMEERROR: THAY standalone.patterns THÀNH standalone_patterns
     for pattern in standalone_patterns:
         for match in re.finditer(pattern, temp_s):
             matched_text = match.group()
@@ -1055,7 +1054,7 @@ div[data-testid="stAlert"] strong {{
     scrollbar-color: #667eea rgba(0, 0, 0, 0.4);
 }}
 
-/* THANH CUỘN TÙY CHỈNH - HIỆN ĐẠI VÀ ĐẸP */
+/* THANH CUỘN TÙY CHỈNH - HIỆN ĐẠI VÀ ĐẸP - FORCE OVERRIDE */
 /* Cho toàn bộ trang - FORCE OVERRIDE */
 html::-webkit-scrollbar,
 body::-webkit-scrollbar,
@@ -1107,8 +1106,8 @@ html, body, .main, [data-testid="stAppViewContainer"], * {{
 
 /* THANH CUỘN CỰC TO - WEBKIT */
 ::-webkit-scrollbar {{
-    width: 22px !important;
-    height: 22px !important;
+    width: 30px !important;  /* TĂNG BỀ RỘNG */
+    height: 30px !important; /* TĂNG BỀ RỘNG */
 }}
 
 ::-webkit-scrollbar-track {{
@@ -1120,13 +1119,13 @@ html, body, .main, [data-testid="stAppViewContainer"], * {{
 ::-webkit-scrollbar-thumb {{
     background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
     border-radius: 10px !important;
-    border: 4px solid rgba(0, 0, 0, 0.4) !important;
-    box-shadow: 0 0 20px rgba(102, 126, 234, 0.7) !important;
+    border: 8px solid rgba(0, 0, 0, 0.8) !important; /* TĂNG ĐỘ DÀY BORDER */
+    box-shadow: 0 0 30px rgba(102, 126, 234, 0.9) !important;
 }}
 
 ::-webkit-scrollbar-thumb:hover {{
     background: linear-gradient(180deg, #764ba2 0%, #667eea 100%) !important;
-    box-shadow: 0 0 30px rgba(118, 75, 162, 1) !important;
+    box-shadow: 0 0 40px rgba(118, 75, 162, 1.2) !important;
 }}
 
 /* Firefox */
@@ -1137,8 +1136,8 @@ html, body, .main, [data-testid="stAppViewContainer"], * {{
 
 /* THANH CUỘN CỰC TO - WEBKIT */
 ::-webkit-scrollbar {{
-    width: 22px !important;
-    height: 22px !important;
+    width: 30px !important;  /* TĂNG BỀ RỘNG */
+    height: 30px !important; /* TĂNG BỀ RỘNG */
 }}
 
 ::-webkit-scrollbar-track {{
@@ -1150,13 +1149,13 @@ html, body, .main, [data-testid="stAppViewContainer"], * {{
 ::-webkit-scrollbar-thumb {{
     background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
     border-radius: 10px !important;
-    border: 4px solid rgba(0, 0, 0, 0.4) !important;
-    box-shadow: 0 0 20px rgba(102, 126, 234, 0.7) !important;
+    border: 8px solid rgba(0, 0, 0, 0.8) !important; /* TĂNG ĐỘ DÀY BORDER */
+    box-shadow: 0 0 30px rgba(102, 126, 234, 0.9) !important;
 }}
 
 ::-webkit-scrollbar-thumb:hover {{
     background: linear-gradient(180deg, #764ba2 0%, #667eea 100%) !important;
-    box-shadow: 0 0 30px rgba(118, 75, 162, 1) !important;
+    box-shadow: 0 0 40px rgba(118, 75, 162, 1.2) !important;
 }}
 
 /* Firefox */
@@ -1167,8 +1166,8 @@ html, body, .main, [data-testid="stAppViewContainer"], * {{
 
 /* THANH CUỘN CỰC TO - WEBKIT */
 ::-webkit-scrollbar {{
-    width: 22px !important;
-    height: 22px !important;
+    width: 30px !important;  /* TĂNG BỀ RỘNG */
+    height: 30px !important; /* TĂNG BỀ RỘNG */
 }}
 
 ::-webkit-scrollbar-track {{
@@ -1180,13 +1179,13 @@ html, body, .main, [data-testid="stAppViewContainer"], * {{
 ::-webkit-scrollbar-thumb {{
     background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
     border-radius: 10px !important;
-    border: 4px solid rgba(0, 0, 0, 0.4) !important;
-    box-shadow: 0 0 20px rgba(102, 126, 234, 0.7) !important;
+    border: 8px solid rgba(0, 0, 0, 0.8) !important; /* TĂNG ĐỘ DÀY BORDER */
+    box-shadow: 0 0 30px rgba(102, 126, 234, 0.9) !important;
 }}
 
 ::-webkit-scrollbar-thumb:hover {{
     background: linear-gradient(180deg, #764ba2 0%, #667eea 100%) !important;
-    box-shadow: 0 0 30px rgba(118, 75, 162, 1) !important;
+    box-shadow: 0 0 40px rgba(118, 75, 162, 1.2) !important;
 }}
 
 /* Firefox */
@@ -1197,8 +1196,8 @@ html, body, .main, [data-testid="stAppViewContainer"], * {{
 
 /* THANH CUỘN CỰC TO - WEBKIT */
 ::-webkit-scrollbar {{
-    width: 22px !important;
-    height: 22px !important;
+    width: 30px !important;  /* TĂNG BỀ RỘNG */
+    height: 30px !important; /* TĂNG BỀ RỘNG */
 }}
 
 ::-webkit-scrollbar-track {{
@@ -1210,13 +1209,13 @@ html, body, .main, [data-testid="stAppViewContainer"], * {{
 ::-webkit-scrollbar-thumb {{
     background: linear-gradient(180deg, #667eea 0%, #764ba2 100%) !important;
     border-radius: 10px !important;
-    border: 4px solid rgba(0, 0, 0, 0.4) !important;
-    box-shadow: 0 0 20px rgba(102, 126, 234, 0.7) !important;
+    border: 8px solid rgba(0, 0, 0, 0.8) !important; /* TĂNG ĐỘ DÀY BORDER */
+    box-shadow: 0 0 30px rgba(102, 126, 234, 0.9) !important;
 }}
 
 ::-webkit-scrollbar-thumb:hover {{
     background: linear-gradient(180deg, #764ba2 0%, #667eea 100%) !important;
-    box-shadow: 0 0 30px rgba(118, 75, 162, 1) !important;
+    box-shadow: 0 0 40px rgba(118, 75, 162, 1.2) !important;
 }}
 
 /* Firefox */
@@ -1255,13 +1254,13 @@ html, body, .main, [data-testid="stAppViewContainer"], * {{
     
     /* THANH CUỘN CỰC TO TRÊN MOBILE */
     ::-webkit-scrollbar {{
-        width: 20px !important;
-        height: 20px !important;
+        width: 25px !important; /* TĂNG BỀ RỘNG MOBILE */
+        height: 25px !important; /* TĂNG BỀ RỘNG MOBILE */
     }}
     
     ::-webkit-scrollbar-thumb {{
         min-height: 60px !important;
-        border: 3px solid rgba(0, 0, 0, 0.5) !important;
+        border: 6px solid rgba(0, 0, 0, 0.8) !important; /* Tăng độ dày */
     }}
 }}
 </style>
@@ -1536,4 +1535,3 @@ if bank_choice != "----":
             st.rerun()
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
         display_test_mode(questions, bank_choice)
-
