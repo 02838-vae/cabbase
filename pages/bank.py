@@ -9,8 +9,7 @@ import pandas as pd
 import base64
 import os
 import random 
-# THAY THẾ googletrans bằng translate
-from translate import Translator # <-- THAY THẾ THƯ VIỆN
+from deep_translator import GoogleTranslator
 
 # ====================================================
 # ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
@@ -135,89 +134,59 @@ def get_base64_encoded_file(file_path):
 # 🌐 HÀM DỊCH THUẬT (ĐÃ CẬP NHẬT DÙNG translate)
 # ====================================================
 
+# Thay thế import
+from deep_translator import GoogleTranslator
+
 @st.cache_resource
 def get_translator():
-    """
-    Khởi tạo Translator Client.
-    """
+    """Khởi tạo Translator với deep_translator"""
     try:
-        # Khởi tạo Translator, target language là 'vi'
-        # Thư viện này không yêu cầu API Key cho bản miễn phí.
-        translator = Translator(to_lang="vi") 
-        return translator
+        return GoogleTranslator(source='auto', target='vi')
     except Exception as e:
-        print(f"Lỗi khởi tạo translate.Translator: {e}")
-        # Trả về None nếu không thể khởi tạo
+        print(f"Lỗi khởi tạo translator: {e}")
         return None
 
 def translate_text(text):
-    """
-    Hàm dịch thuật sử dụng Unofficial 'translate' API hoặc fallback về MOCK nếu có lỗi.
-    (ĐÃ XÓA CHUỖI "Unofficial Translate API")
-    """
+    """Dịch văn bản sử dụng deep_translator"""
     translator = get_translator()
     
-    # ----------------------------------------------------
-    # FALLBACK VỀ MOCK/PLACEHOLDER (Nếu Client không hợp lệ)
-    # ----------------------------------------------------
     if translator is None:
-        parts = text.split('\nĐáp án: ')
-        q_content = parts[0].replace('Câu hỏi: ', '').strip()
-        a_content_raw = parts[1].strip() if len(parts) > 1 else ""
-        options = [opt.strip() for opt in a_content_raw.split(';') if opt.strip()]
-        q_translated_text = f"Nội dung: *{q_content}*."
-        a_translated_text = "\n".join([f"- {i+1}. Dịch của: {opt}" for i, opt in enumerate(options)])
-        return f"""**[Bản dịch Tiếng Việt]**\n\n- **Câu hỏi:** {q_translated_text}\n- **Các đáp án:** \n{a_translated_text}"""
-
-
-    # ----------------------------------------------------
-    # LOGIC DỊCH translate THỰC TẾ
-    # ----------------------------------------------------
+        return f"**[LỖI]** Không thể khởi tạo translator.\n{text}"
+    
     try:
-        # 1. Tách Câu hỏi và Đáp án
         parts = text.split('\nĐáp án: ')
         q_content = parts[0].replace('Câu hỏi: ', '').strip()
         a_content_raw = parts[1].strip() if len(parts) > 1 else ""
-        
-        # Lấy tất cả nội dung cần dịch: Câu hỏi + các đáp án
         options = [opt.strip() for opt in a_content_raw.split(';') if opt.strip()]
         
-        # 2. Dịch từng phần: Câu hỏi
         # Dịch câu hỏi
         q_translated = translator.translate(q_content)
-
-        # 3. Dịch các đáp án
+        
+        # Dịch từng đáp án
         a_translated_list = []
         for i, option_content in enumerate(options):
             if not option_content:
                 a_translated_list.append("")
                 continue
             
-            # Tách phần tiền tố (a., b., c.) từ option gốc
             original_prefix_match = re.match(r'^([a-d]\.|\s*)\s*', option_content, re.IGNORECASE)
-            # Dùng prefix gốc (vd: a. ) hoặc f"{i+1}." nếu không tìm thấy
             original_prefix = original_prefix_match.group(0).strip() if original_prefix_match and original_prefix_match.group(0).strip() else f"{i+1}."
             
-            # Dịch phần nội dung chính
+            # Dịch nội dung chính
             translated_text = translator.translate(option_content)
-            
-            # 4. Ghép lại Đáp án với prefix
-            # Cố gắng loại bỏ prefix nếu bị dịch đúp, sau đó ghép lại prefix gốc.
             stripped_translated_text = translated_text.lstrip(original_prefix).strip()
             if not stripped_translated_text:
-                 stripped_translated_text = translated_text
+                stripped_translated_text = translated_text
             
             a_translated_list.append(f"{original_prefix} {stripped_translated_text}")
-
-        # 5. Định dạng kết quả
+        
         a_translated_text = "\n".join([f"- {opt}" for opt in a_translated_list])
         
         return f"**[Bản dịch Tiếng Việt]**\n\n- **Câu hỏi:** {q_translated}\n- **Các đáp án:** \n{a_translated_text}"
-
+        
     except Exception as e:
-        # Log lỗi chi tiết ra console
-        print(f"LỖI DỊCH THUẬT 'translate': {e}")
-        return f"**[LỖI DỊCH THUẬT]**\n- Không thể dịch nội dung. Chi tiết lỗi đã được ghi lại (Exception: {type(e).__name__}).\n- Câu hỏi gốc:\n{text}"
+        print(f"Lỗi dịch thuật: {e}")
+        return f"**[LỖI DỊCH THUẬT]**\n- Không thể dịch nội dung. Chi tiết: {type(e).__name__}\n- Câu hỏi gốc:\n{text}"
 
 # ====================================================
 # 🧩 PARSER 1: NGÂN HÀNG KỸ THUẬT (CABBANK)
