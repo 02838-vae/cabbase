@@ -719,7 +719,7 @@ img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 # === CSS ===
 css_style = f"""
 <style>
-/* Đã thống nhất font nội dung là Oswald, tiêu đề là Playfair Display */
+/* ĐÃ thống nhất font nội dung là Oswald, tiêu đề là Playfair Display */
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap');
 @keyframes colorShift {{
@@ -730,6 +730,52 @@ css_style = f"""
 @keyframes scrollRight {{
     0% {{ transform: translateX(100%); }}
     100% {{ transform: translateX(-100%); }}
+}}
+
+/* ====================================================
+   CUSTOM SCROLLBAR - VERTICAL (DỄ THAO TÁC)
+   ==================================================== */
+
+/* Webkit Browsers (Chrome, Safari, Edge, Opera) */
+::-webkit-scrollbar {{
+    width: 16px; /* Bề rộng scrollbar - to hơn để dễ thao tác */
+}}
+
+::-webkit-scrollbar-track {{
+    background: rgba(0, 0, 0, 0.3); /* Nền track tối */
+    border-radius: 10px;
+    margin: 5px 0; /* Khoảng cách trên dưới */
+}}
+
+::-webkit-scrollbar-thumb {{
+    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%); /* Gradient đẹp */
+    border-radius: 10px;
+    border: 3px solid rgba(0, 0, 0, 0.3); /* Viền để tạo khoảng cách */
+    transition: all 0.3s ease;
+}}
+
+::-webkit-scrollbar-thumb:hover {{
+    background: linear-gradient(180deg, #764ba2 0%, #667eea 100%); /* Đảo gradient khi hover */
+    border-color: rgba(255, 255, 255, 0.2);
+    box-shadow: 0 0 10px rgba(102, 126, 234, 0.5); /* Hiệu ứng phát sáng */
+}}
+
+::-webkit-scrollbar-thumb:active {{
+    background: linear-gradient(180deg, #5a67d8 0%, #6b46a0 100%); /* Màu đậm hơn khi click */
+}}
+
+/* Firefox */
+* {{
+    scrollbar-width: auto; /* 'auto' hoặc 'thin' - dùng auto để to hơn */
+    scrollbar-color: #667eea rgba(0, 0, 0, 0.3); /* thumb color | track color */
+}}
+
+/* Đảm bảo scrollbar hiển thị trên tất cả containers */
+html, body, .stApp, 
+[data-testid="stAppViewContainer"],
+[data-testid="stMainBlock"] {{
+    scrollbar-width: auto;
+    scrollbar-color: #667eea rgba(0, 0, 0, 0.3);
 }}
 
 html, body, .stApp {{
