@@ -946,6 +946,7 @@ div[data-testid="stMarkdownContainer"] p {{
     padding: 0;
     margin: 0;
     line-height: 1 !important;
+    color: #FFFF00 !important; /* MÀU VÀNG */
 }}
 .stToggle > label > div[data-testid="stMarkdownContainer"] {{
     margin-top: 10px !important; 
