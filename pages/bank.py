@@ -965,7 +965,20 @@ div[data-testid="stAlert"] {{
     box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3) !important;
 }}
 
-}} div[data-testid="stAlert"] *, div[data-testid="stAlert"] p, div[data-testid="stAlert"] strong, div[data-testid="stAlert"] em, div[data-testid="stAlert"] li, div[data-testid="stAlert"] span, div[data-testid="stAlert"] div {{ color: #FFD700 !important;
+div[data-testid="stAlert"] *,
+div[data-testid="stAlert"] p,
+div[data-testid="stAlert"] strong,
+div[data-testid="stAlert"] em,
+div[data-testid="stAlert"] li,
+div[data-testid="stAlert"] span,
+div[data-testid="stAlert"] div {{
+    color: #FFFFFF !important;
+    font-size: 18px !important;
+    line-height: 1.6 !important;
+}}
+
+div[data-testid="stAlert"] strong {{
+    color: #FFD700 !important;
     font-weight: 900 !important;
 }}
 
