@@ -939,15 +939,24 @@ div[data-testid="stMarkdownContainer"] p {{
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
 }}
 
-/* STYLE CHO NÚT DỊCH (st.toggle) */
-.stToggle label p {{
+/* STYLE CHO NÚT DỊCH (st.toggle) - FORCE MÀU VÀNG */
+.stToggle label p,
+.stToggle label span,
+.stToggle label div,
+.stToggle > label > div[data-testid="stMarkdownContainer"] p,
+.stToggle > label > div[data-testid="stMarkdownContainer"] span,
+.stToggle > label > div[data-testid="stMarkdownContainer"],
+div[data-baseweb="checkbox"] + div p,
+div[data-baseweb="checkbox"] + div span {{
     font-size: 14px !important;
     font-weight: 700 !important;
-    padding: 0;
-    margin: 0;
+    padding: 0 !important;
+    margin: 0 !important;
     line-height: 1 !important;
     color: #FFFF00 !important; /* MÀU VÀNG */
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9) !important; /* SHADOW ĐỂ NỔI BẬT */
 }}
+
 .stToggle > label > div[data-testid="stMarkdownContainer"] {{
     margin-top: 10px !important; 
 }}
