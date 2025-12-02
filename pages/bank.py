@@ -972,7 +972,7 @@ div[data-testid="stAlert"] em,
 div[data-testid="stAlert"] li,
 div[data-testid="stAlert"] span,
 div[data-testid="stAlert"] div {{
-    color: #FFFFFF !important;
+    color: #FFFF00 !important;
     font-size: 18px !important;
     line-height: 1.6 !important;
 }}
