@@ -939,26 +939,16 @@ div[data-testid="stMarkdownContainer"] p {{
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
 }}
 
-/* STYLE CHO NÚT DỊCH (st.toggle) - FORCE MÀU VÀNG */
-.stToggle label p,
-.stToggle label span,
-.stToggle label div,
-.stToggle > label > div[data-testid="stMarkdownContainer"] p,
-.stToggle > label > div[data-testid="stMarkdownContainer"] span,
-.stToggle > label > div[data-testid="stMarkdownContainer"],
-div[data-baseweb="checkbox"] + div p,
-div[data-baseweb="checkbox"] + div span {{
-    font-size: 14px !important;
-    font-weight: 700 !important;
-    padding: 0 !important;
-    margin: 0 !important;
-    line-height: 1 !important;
-    color: #FFFF00 !important; /* MÀU VÀNG */
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9) !important; /* SHADOW ĐỂ NỔI BẬT */
+/* FORCE MÀU VÀNG CHO TOGGLE - CÁCH 2 */
+.stToggle * {{
+    color: #FFFF00 !important;
 }}
 
-.stToggle > label > div[data-testid="stMarkdownContainer"] {{
-    margin-top: 10px !important; 
+.stToggle label p {{
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    color: #FFFF00 !important;
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9) !important;
 }}
 
 div.stSelectbox label p {{
