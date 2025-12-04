@@ -940,12 +940,14 @@ div[data-testid="stMarkdownContainer"] p {{
 }}
 
 /* STYLE CHO NÚT DỊCH (st.toggle) */
+/* STYLE CHO NÃšT Dá»ŠCH (st.toggle) */
 .stToggle label p {{
     font-size: 14px !important;
     font-weight: 700 !important;
     padding: 0;
     margin: 0;
     line-height: 1 !important;
+    color: #FFEA00 !important;
 }}
 .stToggle > label > div[data-testid="stMarkdownContainer"] {{
     margin-top: 10px !important; 
