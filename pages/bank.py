@@ -953,11 +953,22 @@ div[data-testid="stMarkdownContainer"] p {{
 .stToggle label div,
 .stToggle label > div[data-testid="stMarkdownContainer"],
 .stToggle label > div[data-testid="stMarkdownContainer"] p,
-.stToggle label > div[data-testid="stMarkdownContainer"] span {{
+.stToggle label > div[data-testid="stMarkdownContainer"] span,
+.stToggle label * {{
     color: #FFEA00 !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
 }}
 .stToggle > label > div[data-testid="stMarkdownContainer"] {{
     margin-top: 10px !important; 
+}}
+
+/* Force màu vàng cho toggle text */
+[data-testid="stMarkdownContainer"] > p {{
+    color: inherit !important;
+}}
+.stToggle [data-testid="stMarkdownContainer"] > p {{
+    color: #FFEA00 !important;
 }}
 
 div.stSelectbox label p {{
