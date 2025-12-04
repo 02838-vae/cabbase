@@ -958,7 +958,7 @@ div[data-testid="stCheckbox"] div,
 }}
 
 .stToggle label p {{
-    font-size: 14px !important;
+    font-size: 20px !important;
     font-weight: 700 !important;
     padding: 0;
     margin: 0;
@@ -973,7 +973,7 @@ div[data-testid="stCheckbox"] div,
 .stToggle label > div[data-testid="stMarkdownContainer"] span,
 .stToggle label * {{
     color: #FFEA00 !important;
-    font-size: 14px !important;
+    font-size: 20px !important;
     font-weight: 700 !important;
 }}
 .stToggle > label > div[data-testid="stMarkdownContainer"] {{
