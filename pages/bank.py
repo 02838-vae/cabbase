@@ -869,7 +869,7 @@ a#manual-home-btn:hover {{
 
 /* STYLE ĐÁP ÁN - PC (TRẮNG ĐẬM HƠN) */
 .bank-answer-text {{
-    font-family: 'Oswald', sans-serif !important;
+    font-family: 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif !important;
     font-weight: 900 !important;
     font-size: 22px !important; 
     padding: 5px 15px;
