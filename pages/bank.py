@@ -940,6 +940,23 @@ div[data-testid="stMarkdownContainer"] p {{
 }}
 
 /* STYLE CHO NÚT DỊCH (st.toggle) */
+div[data-testid="stCheckbox"] label p,
+div[data-testid="stCheckbox"] label span,
+div[data-testid="stCheckbox"] label div,
+div[data-testid="stCheckbox"] label,
+div[data-testid="stCheckbox"] p,
+div[data-testid="stCheckbox"] span,
+div[data-testid="stCheckbox"] div,
+.stCheckbox label p,
+.stCheckbox label span, 
+.stCheckbox label,
+.stCheckbox p,
+.stCheckbox span {{
+    color: #FFEA00 !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+}}
+
 .stToggle label p {{
     font-size: 14px !important;
     font-weight: 700 !important;
