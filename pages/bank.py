@@ -853,8 +853,9 @@ a#manual-home-btn:hover {{
 .bank-question-text {{
     color: #FF8C00 !important;
     font-weight: 900 !important;
+    letter-spacing: 0.5px !important;
     font-size: 22px !important; 
-    font-family: 'Oswald', sans-serif !important;
+    font-family: 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif !important;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
     padding: 8px 15px;
     margin-bottom: 10px;
