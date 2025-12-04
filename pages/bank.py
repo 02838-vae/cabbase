@@ -815,7 +815,8 @@ a#manual-home-btn:hover {{
 }}
 #main-title-container h1 {{
     font-family: 'Playfair Display', serif !important;
-    font-size: 5vw;
+    font-size: 3.5vw; /* ĐÃ SỬA: Giảm kích thước font từ 5vw xuống 3.5vw */
+    max-width: 48px; /* ĐÃ THÊM: Giới hạn kích thước font tối đa trên PC */
     color: #FFFFFF;
     text-shadow: 0 0 10px #FFEA00, 0 0 20px #FFEA00;
     line-height: 1.2 !important;
@@ -831,9 +832,7 @@ a#manual-home-btn:hover {{
     margin-top: 10px;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.7);
     line-height: 1.2 !important;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    /* ĐÃ BỎ white-space, overflow, text-overflow để tiêu đề phụ hiển thị đầy đủ */
 }}
 .result-title h3 {{
     font-family: 'Oswald', sans-serif !important;
@@ -1090,7 +1089,13 @@ if bank_choice != "----":
         is_docwise = True
         # Cập nhật nhãn Phụ lục 2
         doc_options = ["Phụ lục 1 : Ngữ pháp chung", "Phụ lục 2 : Từ vựng, thuật ngữ"]
-        doc_selected_new = st.selectbox("Chọn Phụ lục:", doc_options, index=doc_options.index(st.session_state.get('doc_selected', doc_options[0])), key="docwise_selector")
+        
+        # BỔ SUNG: Xử lý an toàn cho index của selectbox (Sửa lỗi ValueError)
+        current_doc_state = st.session_state.get('doc_selected', doc_options[0])
+        default_index_pl = doc_options.index(current_doc_state) if current_doc_state in doc_options else 0
+        
+        doc_selected_new = st.selectbox("Chọn Phụ lục:", doc_options, index=default_index_pl, key="docwise_selector")
+        
         # Xử lý khi đổi phụ lục (reset mode)
         if st.session_state.doc_selected != doc_selected_new:
             st.session_state.doc_selected = doc_selected_new
