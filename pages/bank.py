@@ -953,7 +953,7 @@ div[data-testid="stCheckbox"] div,
 .stCheckbox p,
 .stCheckbox span {{
     color: #FFEA00 !important;
-    font-size: 14px !important;
+    font-size: 20px !important;
     font-weight: 700 !important;
 }}
 
