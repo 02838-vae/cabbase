@@ -998,7 +998,13 @@ div[data-testid="stAlert"] strong {{
 @media (max-width: 768px) {{
     #back-to-home-btn-container {{ top: 5px; left: 5px; }}
     #main-title-container {{ height: 100px; padding-top: 10px; }}
-    #main-title-container h1 {{ font-size: 8vw; line-height: 1.5 !important; }}
+    /* FIX: Giảm size và buộc hiển thị ngang */
+    #main-title-container h1 {{ 
+        font-size: 6vw !important; 
+        line-height: 1.5 !important; 
+        white-space: normal !important; 
+        writing-mode: horizontal-tb !important; 
+    }}
     .main > div:first-child {{ padding-top: 20px !important; }}
     /* Chỉnh kích thước tiêu đề trên mobile - FIX HIỂN THỊ ĐẦY ĐỦ */
     #sub-static-title h2, .result-title h3 {{
@@ -1090,7 +1096,7 @@ if bank_choice != "----":
         # Cập nhật nhãn Phụ lục 2
         doc_options = ["Phụ lục 1 : Ngữ pháp chung", "Phụ lục 2 : Từ vựng, thuật ngữ"]
         
-        # BỔ SUNG: Xử lý an toàn cho index của selectbox (Sửa lỗi ValueError)
+        # BỔ SUNG: Xử lý an toàn cho index của selectbox (ĐÃ SỬA LỖI ValueError)
         current_doc_state = st.session_state.get('doc_selected', doc_options[0])
         default_index_pl = doc_options.index(current_doc_state) if current_doc_state in doc_options else 0
         
