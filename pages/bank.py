@@ -851,7 +851,7 @@ a#manual-home-btn:hover {{
 
 /* STYLE CÂU HỎI - PC (NỀN ĐEN BAO VỪA CHỮ) */
 .bank-question-text {{
-    color: #FFFFFF !important;
+    color: #FF8C00 !important;
     font-weight: 900 !important;
     font-size: 22px !important; 
     font-family: 'Oswald', sans-serif !important;
