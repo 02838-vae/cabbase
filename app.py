@@ -704,17 +704,21 @@ const mins = Math.floor(seconds / 60);
             const progress = (audio.currentTime / audio.duration) * 100;
             progressBar.style.width = progress + '%';
             currentTimeEl.textContent = formatTime(audio.currentTime);
-        }}); 
+        }}
+        ); 
 audio.addEventListener('loadedmetadata', () => {{
             durationEl.textContent = formatTime(audio.duration);
-        }}); 
+        }}
+        ); 
 audio.addEventListener('ended', () => {{
             nextTrack();
-        }}); 
+        }}
+        ); 
 audio.addEventListener('error', (e) => {{
             console.error("Error loading music track:", e);
             nextTrack();
-        }}); 
+        }}
+        ); 
 playPauseBtn.addEventListener('click', togglePlayPause);
         nextBtn.addEventListener('click', nextTrack);
         prevBtn.addEventListener('click', prevTrack);
@@ -723,7 +727,8 @@ playPauseBtn.addEventListener('click', togglePlayPause);
             const rect = progressContainer.getBoundingClientRect();
             const percent = (e.clientX - rect.left) / rect.width;
             audio.currentTime = percent * audio.duration;
-        }}); 
+        }}
+        ); 
 loadTrack(0);
         console.log("Music player initialized successfully");
     }} 
@@ -748,7 +753,7 @@ loadTrack(0);
                  iframe.style.opacity = 0;
      
              iframe.style.visibility = 'hidden';
-                 iframe.style.pointer-events = 'none'; 
+                 iframe.style.pointerEvents = 'none'; 
             }}
             return; 
         }}
