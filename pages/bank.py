@@ -71,7 +71,7 @@ def find_file_path(source):
 
 def read_docx_paragraphs(source):
     """
-    Hàm đọc paragraphs chỉ lấy TEXT (sử dụng cho cabbank, lawbank, PL1, PL3)
+    Hàm đọc paragraphs chỉ lấy TEXT (sử dụng cho cabbank, lawbank, PL1)
     """
     path = find_file_path(source)
     if not path:
@@ -154,53 +154,15 @@ def translate_text(text):
         return f"**[LỖI]** Không thể khởi tạo translator.\n{text}"
     
     try:
-        # Nếu là câu hỏi có đoạn văn (PL3)
-        if text.startswith("Câu hỏi: 📝 "):
-            parts = text.split('\nĐáp án: ')
-            q_content_raw = parts[0].replace('Câu hỏi: ', '').strip()
-            a_content_raw = parts[1].strip() if len(parts) > 1 else ""
-            
-            # Tách đoạn văn và câu hỏi chính
-            if "\n\n" in q_content_raw:
-                passage_part, question_part = q_content_raw.split("\n\n", 1)
-                passage_part = passage_part.replace("📝 ", "").strip()
-            else:
-                passage_part = ""
-                question_part = q_content_raw.replace("📝 ", "").strip()
-            
-            # Dịch đoạn văn (Passage)
-            if passage_part:
-                passage_translated = translator.translate(passage_part)
-                # Đảm bảo không bị thêm prefix
-                passage_translated = re.sub(r'^\s*([a-d]\.|\d+\.)\s*', '', passage_translated, flags=re.IGNORECASE).strip()
-            else:
-                passage_translated = ""
-
-            # Dịch câu hỏi chính
-            q_translated = translator.translate(question_part)
-            q_translated = re.sub(r'^\s*([a-d]\.|\d+\.)\s*', '', q_translated, flags=re.IGNORECASE).strip()
-            
-            # Ghép lại
-            q_full_translated = ""
-            if passage_translated:
-                q_full_translated += f"**Đoạn văn:** {passage_translated}\n\n"
-            q_full_translated += f"**Câu hỏi:** {q_translated}"
-            
-        # Nếu là câu hỏi thường (PL1, PL2, CABBANK, LAWBANK)
-        else:
-            parts = text.split('\nĐáp án: ')
-            q_content = parts[0].replace('Câu hỏi: ', '').strip()
-            a_content_raw = parts[1].strip() if len(parts) > 1 else ""
-            
-            # Dịch câu hỏi
-            q_translated = translator.translate(q_content)
-            # Dùng output format chung
-            q_full_translated = f"**Câu hỏi:** {q_translated}"
-            
-            
+        parts = text.split('\nĐáp án: ')
+        q_content = parts[0].replace('Câu hỏi: ', '').strip()
+        a_content_raw = parts[1].strip() if len(parts) > 1 else ""
         options = [opt.strip() for opt in a_content_raw.split(';') if opt.strip()]
         
-        # Dịch từng đáp án (Logic giữ nguyên)
+        # Dịch câu hỏi
+        q_translated = translator.translate(q_content)
+        
+        # Dịch từng đáp án
         a_translated_list = []
         for i, option_content in enumerate(options):
             if not option_content:
@@ -243,7 +205,7 @@ def translate_text(text):
         
         a_translated_text = "\n".join([f"- {opt}" for opt in a_translated_list])
         
-        return f"**[Bản dịch Tiếng Việt]**\n\n- {q_full_translated}\n- **Các đáp án:** \n{a_translated_text}"
+        return f"**[Bản dịch Tiếng Việt]**\n\n- **Câu hỏi:** {q_translated}\n- **Các đáp án:** \n{a_translated_text}"
         
     except Exception as e:
         print(f"Lỗi dịch thuật: {e}")
@@ -527,123 +489,148 @@ def parse_pl2(source):
     return questions
 
 # ====================================================
-# 🧩 PARSER 5: PHỤ LỤC 3 (ĐOẠN VĂN - Dùng dấu (*)) <--- BỔ SUNG MỚI
+# 🧩 PARSER 5: PHỤ LỤC 3 - BÀI ĐỌC HIỂU (PASSAGE-BASED)
 # ====================================================
-def parse_pl3(source):
+def parse_pl3_passage_bank(source):
     """
-    Parser cho định dạng PL3 (Đoạn văn - Câu hỏi).
-    Cấu trúc: **Paragraph X**. -> Nội dung đoạn văn -> Câu hỏi 1., 2., 3... với đáp án A, B, C (đáp án đúng có (*))
-    Trả về: list các câu hỏi với metadata về paragraph
+    Parser cho định dạng PL3 (Bài đọc hiểu)
+    - Nhận diện 'Paragraph X .' để bắt đầu nhóm mới.
+    - Thu thập nội dung đoạn văn (passage content) giữa tiêu đề và câu hỏi đầu tiên.
+    - Thu thập câu hỏi/đáp án/đáp án đúng (*).
+    - Lưu nội dung đoạn văn vào mỗi câu hỏi trong nhóm.
     """
-    paras = read_docx_paragraphs(source)
-    if not paras: return []
-
+    path = find_file_path(source)
+    if not path:
+        print(f"Lỗi không tìm thấy file DOCX: {source}")
+        return []
+    
     questions = []
-    current_paragraph_content = [] # Lưu nội dung đoạn văn (giữ nguyên xuống dòng)
-    current_paragraph_title = "" # Lưu tiêu đề paragraph (VD: "Paragraph 1")
-    current_paragraph_num = 0 # Số thứ tự paragraph
-    question_num_in_paragraph = 0 # Số thứ tự câu hỏi trong paragraph
-    current_q = {"question": "", "options": [], "answer": "", "paragraph_title": "", "paragraph_content": "", "paragraph_num": 0, "q_num_in_para": 0}
+    current_group = None
+    group_content = ""
+    current_q_num = 0
     
-    # REGEX
-    paragraph_pat = re.compile(r'^\*{0,2}\s*Paragraph\s+(\d+)\s*\*{0,2}[\.\s]*', re.I) 
-    q_start_pat = re.compile(r'^\s*(\d+)[\.\)]\s*') 
-    opt_prefix_pat = re.compile(r'^\s*[A-Da-d][\.\)]\s*') 
-    labels = ["a", "b", "c", "d"]
-    MAX_OPTIONS = 4
+    # Regex cho tiêu đề đoạn văn mới
+    paragraph_start_pat = re.compile(r'^\s*Paragraph\s*(\d+)\s*\.\s*', re.I)
+    # Regex cho số thứ tự câu hỏi
+    q_start_pat = re.compile(r'^\s*(\d+)\s*[\.\)]\s*', re.I)
+    # Regex cho đáp án, bao gồm ký tự (*)
+    opt_pat = re.compile(r'^\s*(?P<letter>[A-Da-d])[\.\)]\s*(?P<text>.*?)(\s*\(\*\))?$', re.I)
+    
+    try:
+        doc = Document(path)
+    except Exception as e:
+        print(f"Lỗi đọc file DOCX: {source}. Chi tiết: {e}")
+        return []
 
-    def finalize_current_question(q_dict, q_list):
-        """Hoàn thành và lưu câu hỏi hiện tại"""
-        if q_dict["question"].strip() and q_dict["paragraph_title"]:
-            # Nếu không có đáp án đúng, mặc định chọn đáp án đầu tiên
-            if not q_dict["answer"] and q_dict["options"]:
-                q_dict["answer"] = q_dict["options"][0]
-            
-            q_list.append(q_dict.copy())
-        return {"question": "", "options": [], "answer": "", "paragraph_title": "", "paragraph_content": "", "paragraph_num": 0, "q_num_in_para": 0}
-    
-    in_paragraph_content = False
-    
-    for p in paras:
-        clean_p = clean_text(p)
-        if not clean_p: continue
+    for paragraph in doc.paragraphs:
+        text = paragraph.text.strip()
         
-        # 1. PHÁT HIỆN TIÊU ĐỀ ĐOẠN VĂN MỚI
-        paragraph_match = paragraph_pat.match(clean_p)
-        if paragraph_match:
-            # Hoàn thành câu hỏi trước đó
-            current_q = finalize_current_question(current_q, questions)
+        is_new_paragraph_group = paragraph_start_pat.match(text)
+        is_question_start = q_start_pat.match(text)
+        
+        # 1. BẮT ĐẦU NHÓM ĐOẠN VĂN MỚI
+        if is_new_paragraph_group:
+            # Lưu câu hỏi/group cũ nếu có
+            if current_group is not None and current_group.get('question'):
+                questions.append(current_group)
             
-            # Bắt đầu đoạn văn mới
-            current_paragraph_num = int(paragraph_match.group(1))
-            current_paragraph_title = f"Paragraph {current_paragraph_num}"
-            current_paragraph_content = []
-            question_num_in_paragraph = 0
-            in_paragraph_content = True
-            current_q = {"question": "", "options": [], "answer": "", "paragraph_title": "", "paragraph_content": "", "paragraph_num": 0, "q_num_in_para": 0}
+            group_name = is_new_paragraph_group.group(0).strip()
+            # Khởi tạo group mới
+            # Cấu trúc này sẽ được dùng cho câu hỏi đầu tiên của nhóm
+            current_group = {
+                'group_name': group_name,
+                'paragraph_content': "",
+                'question': "",
+                'options': {},
+                'correct_answer': "",
+                'number': 0
+            }
+            group_content = "" # Reset nội dung đoạn văn
+            current_q_num = 0 # Reset số thứ tự câu hỏi
             continue
-        
-        # 2. PHÁT HIỆN BẮT ĐẦU CÂU HỎI
-        q_match = q_start_pat.match(clean_p)
-        if q_match and current_paragraph_title:
-            # Hoàn thành câu hỏi trước
-            current_q = finalize_current_question(current_q, questions)
+            
+        if current_group is None:
+            # Bỏ qua nếu chưa bắt đầu Paragraph X .
+            continue
+            
+        # 2. BẮT ĐẦU CÂU HỎI MỚI
+        if is_question_start:
+            # Lưu câu hỏi cũ nếu có
+            if current_group.get('question') and current_group.get('options'):
+                 questions.append(current_group)
+            
+            q_num = is_question_start.group(1)
+            q_text = text[is_question_start.end():].strip()
             
             # Bắt đầu câu hỏi mới
-            question_num_in_paragraph += 1
-            q_text = q_start_pat.sub('', clean_p).strip()
-            
-            # Lưu thông tin paragraph cho câu hỏi này
-            paragraph_content_text = "\n".join(current_paragraph_content)
-            
-            current_q = {
-                "question": q_text,
-                "options": [],
-                "answer": "",
-                "paragraph_title": current_paragraph_title,
-                "paragraph_content": paragraph_content_text,
-                "paragraph_num": current_paragraph_num,
-                "q_num_in_para": question_num_in_paragraph
+            current_group = {
+                'group_name': current_group['group_name'],
+                'paragraph_content': group_content.strip(), # Gán nội dung đoạn văn đã thu thập
+                'question': clean_text(q_text),
+                'options': {},
+                'correct_answer': "",
+                'number': int(q_num)
             }
-            in_paragraph_content = False
+            current_q_num = int(q_num)
+            
+        # 3. ĐANG TRONG CÂU HỎI (Option hoặc phần tiếp theo của câu hỏi)
+        elif current_q_num > 0:
+            match_opt = opt_pat.match(text)
+            if match_opt:
+                letter = match_opt.group('letter').upper()
+                opt_text_raw = match_opt.group('text').strip()
+                is_correct = match_opt.group(3) is not None
+                
+                # Loại bỏ ký tự thừa (*), sau đó clean text
+                opt_text = clean_text(opt_text_raw.replace("(*)", "").strip())
+                
+                # Lấy toàn bộ text để hiển thị (bao gồm cả ký tự A. B. C.)
+                full_opt_text = f"{letter}. {opt_text}"
+                
+                # Dùng chữ cái làm key để dễ dàng tìm đáp án đúng
+                current_group['options'][letter] = full_opt_text
+                
+                if is_correct:
+                    current_group['correct_answer'] = letter
+            else:
+                # Nếu không phải option, thêm vào câu hỏi (trường hợp câu hỏi xuống dòng)
+                current_group['question'] += " " + clean_text(text)
+                
+        # 4. ĐANG THU THẬP NỘI DUNG ĐOẠN VĂN
+        elif current_group is not None and current_q_num == 0 and not is_new_paragraph_group:
+            # Dùng paragraph.text + "\n" để giữ nguyên bố cục xuống dòng, loại bỏ dòng tiêu đề Group
+            group_content += paragraph.text + "\n"
+        
+    # Lưu câu hỏi cuối cùng
+    if current_group is not None and current_group.get('question'):
+        questions.append(current_group)
+
+    # Chuẩn hóa cấu trúc để tương thích với các hàm hiển thị khác
+    final_questions = []
+    for q in questions:
+        if not q.get('correct_answer') and len(q.get('options', {})) > 0:
+             # Nếu không có (*), coi option đầu là đúng (hoặc bỏ qua nếu cần nghiêm ngặt hơn)
+             q['correct_answer'] = list(q['options'].keys())[0]
+        
+        # Nếu vẫn không có đáp án hoặc không có options, bỏ qua
+        if not q.get('correct_answer') or not q.get('options'):
             continue
         
-        # 3. XỬ LÝ ĐÁP ÁN
-        if current_q["question"] and len(current_q["options"]) < MAX_OPTIONS:
-            is_correct = False
-            temp_p = clean_p
-            
-            if "(*)" in temp_p:
-                is_correct = True
-                temp_p = temp_p.replace("(*)", "").strip()
-            
-            opt_match = opt_prefix_pat.match(temp_p)
-            if opt_match:
-                temp_p = temp_p[opt_match.end():].strip()
-                
-                idx = len(current_q["options"])
-                if idx < len(labels):
-                    label = labels[idx]
-                    opt_text = f"{label}. {temp_p}"
-                    current_q["options"].append(opt_text)
-                    
-                    if is_correct:
-                        current_q["answer"] = opt_text
-                continue
+        # Chuyển options từ dict sang list of strings (chỉ values)
+        options_list = list(q['options'].values()) 
         
-        # 4. XỬ LÝ NỘI DUNG
-        if in_paragraph_content:
-            # Thêm vào nội dung đoạn văn (giữ nguyên xuống dòng)
-            current_paragraph_content.append(clean_p)
-        elif current_q["question"]:
-            # Nối vào câu hỏi
-            current_q["question"] += " " + clean_p
+        final_questions.append({
+            'question': q['question'],
+            'options': options_list, 
+            'answer': q['options'][q['correct_answer']], # Lưu đáp án đúng dưới dạng string (A. Text)
+            'number': q['number'], # Số thứ tự câu hỏi (1, 2, 3...)
+            # Sử dụng 'group' thay cho 'group_name' để tương thích với display_all_questions/test_mode 
+            # (mặc dù các mode đó không dùng field này)
+            'group': q['group_name'], 
+            'paragraph_content': q['paragraph_content'] # Nội dung đoạn văn
+        })
 
-    # Hoàn thành câu hỏi cuối cùng
-    current_q = finalize_current_question(current_q, questions)
-    
-    return questions
-# ====================================================
+    return final_questions
 
 # ====================================================
 # 🌟 HÀM: LOGIC DỊCH ĐỘC QUYỀN (EXCLUSIVE TRANSLATION)
@@ -674,22 +661,30 @@ def display_all_questions(questions):
         st.warning("Không có câu hỏi nào để hiển thị.")
         return
     
+    # Logic hiển thị đoạn văn (nếu có)
+    current_passage_id = None
+    
     for i, q in enumerate(questions, start=1):
         q_key = f"all_q_{i}_{hash(q['question'])}" 
         translation_key = f"trans_{q_key}"
         is_active = (translation_key == st.session_state.active_translation_key)
         
+        # --- BỔ SUNG: HIỂN THỊ ĐOẠN VĂN (CHO PL3) ---
+        passage_content = q.get('paragraph_content', '').strip()
+        group_name = q.get('group', '')
+        
+        if passage_content:
+             # Dùng group_name + content để tạo ID duy nhất cho đoạn văn
+            passage_id = f"{group_name}_{hash(passage_content)}"
+            if passage_id != current_passage_id:
+                st.markdown(f"**{group_name}**") 
+                st.markdown(passage_content)
+                st.markdown("---")
+                current_passage_id = passage_id
+        # --- KẾT THÚC BỔ SUNG ---
+        
         # Hiển thị câu hỏi
-        # Xử lý hiển thị PL3
-        if q["question"].startswith("📝 "):
-            # Tách đoạn văn ra khỏi câu hỏi để hiển thị
-            content_parts = q["question"].split("\n\n", 1)
-            passage = content_parts[0].replace("📝 ", "").strip()
-            question_text = content_parts[1].strip() if len(content_parts) > 1 else ""
-            st.markdown(f'<div class="bank-question-text" style="color:#00D4FF !important;">**Đoạn văn:** {passage}</div>', unsafe_allow_html=True)
-            st.markdown(f'<div class="bank-question-text">{i}. {question_text}</div>', unsafe_allow_html=True)
-        else:
-            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+        st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
 
         # Nút Dịch ở dưới
         st.toggle(
@@ -717,12 +712,15 @@ def display_all_questions(questions):
         for opt in q["options"]:
             # Dùng clean_text để so sánh, bỏ qua khoảng trắng, ký tự ẩn
             if clean_text(opt) == clean_text(q["answer"]):
-                # Đáp án đúng: Xanh lá (Bỏ shadow)
+                # Đáp án đúng: Xanh lá (Thêm ký tự (*))
                 color_style = "color:#00ff00;" 
+                opt_display = opt + " (*)"
             else:
                 # Đáp án thường: Trắng (Bỏ shadow)
                 color_style = "color:#FFFFFF;"
-            st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
+                opt_display = opt
+                
+            st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
 
@@ -757,23 +755,32 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             st.rerun()
         return
 
+    # Logic hiển thị đoạn văn trong Test Mode (chỉ hiển thị 1 lần cho mỗi đoạn)
+    test_batch = st.session_state[f"{test_key_prefix}_questions"]
+    current_passage_id = None
+
     if not st.session_state[f"{test_key_prefix}_submitted"]:
         st.markdown('<div class="result-title"><h3>⏳ ĐANG LÀM BÀI TEST</h3></div>', unsafe_allow_html=True)
-        test_batch = st.session_state[f"{test_key_prefix}_questions"]
         for i, q in enumerate(test_batch, start=1):
             q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}" 
             translation_key = f"trans_{q_key}"
             is_active = (translation_key == st.session_state.active_translation_key)
             
+            # --- BỔ SUNG: HIỂN THỊ ĐOẠN VĂN (CHO PL3) ---
+            passage_content = q.get('paragraph_content', '').strip()
+            group_name = q.get('group', '')
+            
+            if passage_content:
+                passage_id = f"{group_name}_{hash(passage_content)}"
+                if passage_id != current_passage_id:
+                    st.markdown(f"**{group_name}**") 
+                    st.markdown(passage_content)
+                    st.markdown("---")
+                    current_passage_id = passage_id
+            # --- KẾT THÚC BỔ SUNG ---
+
             # Hiển thị câu hỏi
-            if q["question"].startswith("📝 "):
-                content_parts = q["question"].split("\n\n", 1)
-                passage = content_parts[0].replace("📝 ", "").strip()
-                question_text = content_parts[1].strip() if len(content_parts) > 1 else ""
-                st.markdown(f'<div class="bank-question-text" style="color:#00D4FF !important;">**Đoạn văn:** {passage}</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="bank-question-text">{i}. {question_text}</div>', unsafe_allow_html=True)
-            else:
-                st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
 
             # Nút Dịch ở dưới
             st.toggle(
@@ -806,8 +813,6 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             
     else:
         st.markdown('<div class="result-title"><h3>🎉 KẾT QUẢ BÀI TEST</h3></div>', unsafe_allow_html=True)
-        test_batch = st.session_state[f"{test_key_prefix}_questions"]
-        score = 0
         
         for i, q in enumerate(test_batch, start=1):
             q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}" 
@@ -817,15 +822,21 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             translation_key = f"trans_{q_key}"
             is_active = (translation_key == st.session_state.active_translation_key)
 
+            # --- BỔ SUNG: HIỂN THỊ ĐOẠN VĂN (CHO PL3) ---
+            passage_content = q.get('paragraph_content', '').strip()
+            group_name = q.get('group', '')
+            
+            if passage_content:
+                passage_id = f"{group_name}_{hash(passage_content)}"
+                if passage_id != current_passage_id:
+                    st.markdown(f"**{group_name}**") 
+                    st.markdown(passage_content)
+                    st.markdown("---")
+                    current_passage_id = passage_id
+            # --- KẾT THÚC BỔ SUNG ---
+
             # Hiển thị câu hỏi
-            if q["question"].startswith("📝 "):
-                content_parts = q["question"].split("\n\n", 1)
-                passage = content_parts[0].replace("📝 ", "").strip()
-                question_text = content_parts[1].strip() if len(content_parts) > 1 else ""
-                st.markdown(f'<div class="bank-question-text" style="color:#00D4FF !important;">**Đoạn văn:** {passage}</div>', unsafe_allow_html=True)
-                st.markdown(f'<div class="bank-question-text">{i}. {question_text}</div>', unsafe_allow_html=True)
-            else:
-                st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
 
             # Nút Dịch ở dưới
             st.toggle(
@@ -850,13 +861,17 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             # Hiển thị Đáp án (KẾT QUẢ)
             for opt in q["options"]:
                 opt_clean = clean_text(opt)
+                opt_display = opt # Khởi tạo giá trị hiển thị
+
                 if opt_clean == correct:
                     color_style = "color:#00ff00;"
+                    opt_display += " (*)" # BỔ SUNG: Thêm ký tự (*)
                 elif opt_clean == clean_text(selected_opt):
                     color_style = "color:#ff3333;"
                 else:
                     color_style = "color:#FFFFFF;"
-                st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
+                    
+                st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
 
             if is_correct: score += 1
             st.info(f"Đáp án đúng: **{q['answer']}**", icon="💡")
@@ -1049,7 +1064,7 @@ a#manual-home-btn:hover {{
 
 /* STYLE ĐÁP ÁN - PC (TRẮNG ĐẬM HƠN) */
 .bank-answer-text {{
-    font-family: 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif !important;
+    font-family: 'Oswald', sans-serif !important;
     font-weight: 900 !important;
     font-size: 22px !important; 
     padding: 5px 15px;
@@ -1124,6 +1139,7 @@ div[data-testid="stMarkdownContainer"] p {{
 div[data-testid="stCheckbox"] label p,
 div[data-testid="stCheckbox"] label span,
 div[data-testid="stCheckbox"] label div,
+div[data-testid="stCheckbox"] label,
 div[data-testid="stCheckbox"] p,
 div[data-testid="stCheckbox"] span,
 div[data-testid="stCheckbox"] div,
@@ -1256,7 +1272,6 @@ if "current_group_idx" not in st.session_state: st.session_state.current_group_i
 if "submitted" not in st.session_state: st.session_state.submitted = False
 if "current_mode" not in st.session_state: st.session_state.current_mode = "group"
 if "last_bank_choice" not in st.session_state: st.session_state.last_bank_choice = "----" 
-# Cập nhật giá trị mặc định cho doc_selected
 if "doc_selected" not in st.session_state: st.session_state.doc_selected = "Phụ lục 1 : Ngữ pháp chung" 
 if 'translations' not in st.session_state: st.session_state.translations = {} # KHỞI TẠO STATE DỊCH THUẬT
 if 'active_translation_key' not in st.session_state: st.session_state.active_translation_key = None # KHỞI TẠO KEY DỊCH ĐỘC QUYỀN
@@ -1294,8 +1309,8 @@ if bank_choice != "----":
         source = "lawbank.docx"
     elif "Docwise" in bank_choice:
         is_docwise = True
-        # Cập nhật nhãn Phụ lục 2
-        doc_options = ["Phụ lục 1 : Ngữ pháp chung", "Phụ lục 2 : Từ vựng, thuật ngữ", "Phụ lục 3 : Đoạn văn"] # <--- ĐÃ THÊM PHỤ LỤC 3
+        # Cập nhật nhãn Phụ lục 2 và BỔ SUNG PHỤ LỤC 3
+        doc_options = ["Phụ lục 1 : Ngữ pháp chung", "Phụ lục 2 : Từ vựng, thuật ngữ", "Phụ lục 3 : Bài đọc hiểu"]
         doc_selected_new = st.selectbox("Chọn Phụ lục:", doc_options, index=doc_options.index(st.session_state.get('doc_selected', doc_options[0])), key="docwise_selector")
         
         # Xử lý khi đổi phụ lục (reset mode)
@@ -1310,8 +1325,8 @@ if bank_choice != "----":
             source = "PL1.docx" # File PL1.docx (Dùng parse_pl1)
         elif st.session_state.doc_selected == "Phụ lục 2 : Từ vựng, thuật ngữ": 
             source = "PL2.docx" # File PL2.docx (Dùng parse_pl2 đã sửa)
-        elif st.session_state.doc_selected == "Phụ lục 3 : Đoạn văn": # <--- BỔ SUNG LOGIC CHỌN FILE PL3
-            source = "PL3.docx" 
+        elif st.session_state.doc_selected == "Phụ lục 3 : Bài đọc hiểu": 
+            source = "PL3.docx" # File PL3.docx (Dùng parse_pl3_passage_bank mới)
         
     # LOAD CÂU HỎI
     questions = []
@@ -1325,8 +1340,8 @@ if bank_choice != "----":
                 questions = parse_pl1(source) # Sử dụng parser cũ (dùng (*))
             elif source == "PL2.docx":
                 questions = parse_pl2(source) # Sử dụng parser mới (dùng (*))
-            elif source == "PL3.docx": # <--- BỔ SUNG LOGIC DÙNG PARSER MỚI
-                questions = parse_pl3(source) 
+            elif source == "PL3.docx":
+                questions = parse_pl3_passage_bank(source) # <-- Dùng parser mới cho PL3
     
     if not questions:
         # Cập nhật thông báo lỗi để phù hợp với logic (*) cho cả PL1 và PL2
@@ -1337,51 +1352,12 @@ if bank_choice != "----":
 
     # --- MODE: GROUP ---
     if st.session_state.current_mode == "group":
-        # Xác định kích thước nhóm
-        group_size = 30 # Mặc định là 30 câu/nhóm
-        is_pl3 = (bank_choice == "Ngân hàng Docwise" and st.session_state.doc_selected == "Phụ lục 3 : Đoạn văn")
-        
-        # Cập nhật tiêu đề
-        if is_pl3:
-             st.markdown('<div class="result-title" style="margin-top: 0px;"><h3>Luyện tập theo nhóm (2 Đoạn văn/nhóm)</h3></div>', unsafe_allow_html=True)
-        else:
-             st.markdown('<div class="result-title" style="margin-top: 0px;"><h3>Luyện tập theo nhóm (30 câu/nhóm)</h3></div>', unsafe_allow_html=True)
-
+        # Cập nhật tiêu đề nhóm câu hỏi
+        st.markdown('<div class="result-title" style="margin-top: 0px;"><h3>Luyện tập theo nhóm (30 câu/nhóm)</h3></div>', unsafe_allow_html=True)
+        group_size = 30 # Tăng lên 30 câu/nhóm
         if total > 0:
-            # Xử lý nhóm cho PL3 (theo Đoạn văn) <--- LOGIC CHIA NHÓM MỚI
-            if is_pl3:
-                # Tìm index của câu hỏi đầu tiên của mỗi Paragraph
-                # Điều kiện: câu hỏi bắt đầu bằng '📝 Paragraph'
-                paragraph_start_indices = [i for i, q in enumerate(questions) if q['question'].strip().startswith("📝 Paragraph")]
-                if not paragraph_start_indices: paragraph_start_indices = [0] # Đề phòng không tìm thấy Paragraph
-
-                group_info = []
-                num_paragraphs = len(paragraph_start_indices)
-                
-                # Chia nhóm 2 đoạn văn
-                for i in range(0, num_paragraphs, 2):
-                    start_para_index = paragraph_start_indices[i] 
-                    
-                    # Index kết thúc là index bắt đầu của đoạn văn i+2, hoặc tổng số câu hỏi nếu là 2 đoạn cuối.
-                    end_para_index = paragraph_start_indices[i+2] if i + 2 < num_paragraphs else total
-                    
-                    start_para_num = i + 1
-                    end_para_num = min(i + 2, num_paragraphs) # Đảm bảo không vượt quá tổng số đoạn văn
-
-                    group_info.append({
-                        "label": f"Đoạn văn {start_para_num}-{end_para_num}",
-                        "start": start_para_index,
-                        "end": end_para_index
-                    })
-                
-                groups = [g["label"] for g in group_info]
-                
-            # Xử lý nhóm cho các ngân hàng khác (theo số câu cố định)
-            else:
-                groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
-                group_info = [{"label": groups[i], "start": i*group_size, "end": min((i+1)*group_size, total)} for i in range(len(groups))]
-
-            # Logic chọn nhóm (Giữ nguyên)
+            # Logic nhóm câu hỏi theo số lượng (30 câu/nhóm)
+            groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
             if st.session_state.current_group_idx >= len(groups): st.session_state.current_group_idx = 0
             selected = st.selectbox("Chọn nhóm câu:", groups, index=st.session_state.current_group_idx, key="group_selector")
             
@@ -1393,9 +1369,8 @@ if bank_choice != "----":
                 st.session_state.active_translation_key = None # Reset dịch khi chuyển nhóm
                 st.rerun()
 
-            # Lấy batch câu hỏi
-            current_group = group_info[st.session_state.current_group_idx]
-            start, end = current_group["start"], current_group["end"]
+            idx = st.session_state.current_group_idx
+            start, end = idx * group_size, min((idx+1) * group_size, total)
             batch = questions[start:end]
             
             st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
@@ -1419,6 +1394,24 @@ if bank_choice != "----":
                     st.rerun()
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
             
+            # --- START: PHẦN BỔ SUNG: HIỂN THỊ ĐOẠN VĂN (CHO PL3) ---
+            current_passage_id = None
+            if batch and 'paragraph_content' in batch[0]:
+                group_name = batch[0].get('group', '')
+                paragraph_content = batch[0].get('paragraph_content', '').strip()
+                
+                # Check if this group has passage content and it's the first question in the group
+                if paragraph_content:
+                    # Dùng group_name + content để tạo ID duy nhất cho đoạn văn
+                    passage_id = f"{group_name}_{hash(paragraph_content)}"
+                    if passage_id != current_passage_id:
+                        st.markdown(f"**{group_name}**") # Hiển thị tiêu đề nhóm (Paragraph X .)
+                        # Hiển thị nội dung đoạn văn, tuân thủ xuống dòng, bố cục như file
+                        st.markdown(paragraph_content) 
+                        st.markdown("---") # Đường kẻ phân cách đoạn văn và câu hỏi
+                        current_passage_id = passage_id
+            # --- END: PHẦN BỔ SUNG ---
+
             if batch:
                 if not st.session_state.submitted:
                     for i, q in enumerate(batch, start=start+1):
@@ -1426,15 +1419,8 @@ if bank_choice != "----":
                         translation_key = f"trans_{q_key}"
                         is_active = (translation_key == st.session_state.active_translation_key)
                         
-                        # Hiển thị câu hỏi (ĐÃ CẬP NHẬT LOGIC HIỂN THỊ PL3)
-                        if q["question"].startswith("📝 "):
-                            content_parts = q["question"].split("\n\n", 1)
-                            passage = content_parts[0].replace("📝 ", "").strip()
-                            question_text = content_parts[1].strip() if len(content_parts) > 1 else ""
-                            st.markdown(f'<div class="bank-question-text" style="color:#00D4FF !important;">**Đoạn văn:** {passage}</div>', unsafe_allow_html=True)
-                            st.markdown(f'<div class="bank-question-text">{i}. {question_text}</div>', unsafe_allow_html=True)
-                        else:
-                            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+                        # Hiển thị câu hỏi
+                        st.markdown(f'<div class="bank-question-text">{q["number"]}. {q["question"]}</div>', unsafe_allow_html=True) # Dùng q["number"]
 
                         # Nút Dịch ở dưới
                         st.toggle(
@@ -1476,15 +1462,8 @@ if bank_choice != "----":
                         translation_key = f"trans_{q_key}"
                         is_active = (translation_key == st.session_state.active_translation_key)
 
-                      # Hiển thị câu hỏi (ĐÃ CẬP NHẬT LOGIC HIỂN THỊ PL3)
-                        if q["question"].startswith("📝 "):
-                            content_parts = q["question"].split("\n\n", 1)
-                            passage = content_parts[0].replace("📝 ", "").strip()
-                            question_text = content_parts[1].strip() if len(content_parts) > 1 else ""
-                            st.markdown(f'<div class="bank-question-text" style="color:#00D4FF !important;">**Đoạn văn:** {passage}</div>', unsafe_allow_html=True)
-                            st.markdown(f'<div class="bank-question-text">{i}. {question_text}</div>', unsafe_allow_html=True)
-                        else:
-                            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+                      # Hiển thị câu hỏi
+                        st.markdown(f'<div class="bank-question-text">{q["number"]}. {q["question"]}</div>', unsafe_allow_html=True) # Dùng q["number"]
 
                         # Nút Dịch ở dưới
                         st.toggle(
@@ -1511,13 +1490,16 @@ if bank_choice != "----":
                         # Hiển thị Đáp án (KẾT QUẢ)
                         for opt in q["options"]:
                             opt_clean = clean_text(opt)
+                            opt_display = opt # Khởi tạo giá trị hiển thị
+
                             if opt_clean == correct:
-                                color_style = "color:#00ff00;" # Xanh lá, bỏ shadow
+                                color_style = "color:#00ff00;" # Xanh lá
+                                opt_display += " (*)" # BỔ SUNG: Thêm ký tự (*)
                             elif opt_clean == clean_text(selected_opt):
-                                color_style = "color:#ff3333;" # Đỏ, bỏ shadow
+                                color_style = "color:#ff3333;" # Đỏ
                             else:
                                 color_style = "color:#FFFFFF;" # Trắng chân phương
-                            st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
+                            st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
                         
                         if is_correct: 
                             st.success(f"✅ Đúng – Đáp án: {q['answer']}")
