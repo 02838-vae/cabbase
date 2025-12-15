@@ -565,7 +565,8 @@ def parse_pl3_passage_bank(source):
             # Bắt đầu câu hỏi mới
             current_group = {
                 'group_name': current_group['group_name'],
-                'paragraph_content': group_content.strip(), # Gán nội dung đoạn văn đã thu thập
+                # Gán nội dung đoạn văn đã thu thập (dùng .strip() để loại bỏ \n thừa ở đầu/cuối)
+                'paragraph_content': group_content.strip(), 
                 'question': clean_text(q_text),
                 'options': {},
                 'correct_answer': "",
@@ -598,7 +599,7 @@ def parse_pl3_passage_bank(source):
                 
         # 4. ĐANG THU THẬP NỘI DUNG ĐOẠN VĂN
         elif current_group is not None and current_q_num == 0 and not is_new_paragraph_group:
-            # Dùng paragraph.text + "\n" để giữ nguyên bố cục xuống dòng, loại bỏ dòng tiêu đề Group
+            # Dùng paragraph.text + "\n" để giữ nguyên bố cục xuống dòng
             group_content += paragraph.text + "\n"
         
     # Lưu câu hỏi cuối cùng
@@ -677,8 +678,11 @@ def display_all_questions(questions):
              # Dùng group_name + content để tạo ID duy nhất cho đoạn văn
             passage_id = f"{group_name}_{hash(passage_content)}"
             if passage_id != current_passage_id:
-                st.markdown(f"**{group_name}**") 
-                st.markdown(passage_content)
+                # Cập nhật: In đậm, đổi màu tiêu đề
+                st.markdown(f'<div class="paragraph-title">**{group_name}**</div>', unsafe_allow_html=True) 
+                
+                # Cập nhật: Dùng CSS để hiển thị đúng ngắt dòng
+                st.markdown(f'<div class="paragraph-content-box">{passage_content}</div>', unsafe_allow_html=True)
                 st.markdown("---")
                 current_passage_id = passage_id
         # --- KẾT THÚC BỔ SUNG ---
@@ -743,6 +747,8 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         st.session_state[f"{test_key_prefix}_submitted"] = False
     if f"{test_key_prefix}_questions" not in st.session_state:
         st.session_state[f"{test_key_prefix}_questions"] = []
+    
+    score = 0 # Khởi tạo biến score ở đây
 
     if not st.session_state[f"{test_key_prefix}_started"]:
         st.markdown('<div class="result-title"><h3>📝 LÀM BÀI TEST 50 CÂU</h3></div>', unsafe_allow_html=True)
@@ -773,8 +779,11 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             if passage_content:
                 passage_id = f"{group_name}_{hash(passage_content)}"
                 if passage_id != current_passage_id:
-                    st.markdown(f"**{group_name}**") 
-                    st.markdown(passage_content)
+                     # Cập nhật: In đậm, đổi màu tiêu đề
+                    st.markdown(f'<div class="paragraph-title">**{group_name}**</div>', unsafe_allow_html=True) 
+                    
+                    # Cập nhật: Dùng CSS để hiển thị đúng ngắt dòng
+                    st.markdown(f'<div class="paragraph-content-box">{passage_content}</div>', unsafe_allow_html=True)
                     st.markdown("---")
                     current_passage_id = passage_id
             # --- KẾT THÚC BỔ SUNG ---
@@ -829,8 +838,11 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             if passage_content:
                 passage_id = f"{group_name}_{hash(passage_content)}"
                 if passage_id != current_passage_id:
-                    st.markdown(f"**{group_name}**") 
-                    st.markdown(passage_content)
+                     # Cập nhật: In đậm, đổi màu tiêu đề
+                    st.markdown(f'<div class="paragraph-title">**{group_name}**</div>', unsafe_allow_html=True) 
+                    
+                    # Cập nhật: Dùng CSS để hiển thị đúng ngắt dòng
+                    st.markdown(f'<div class="paragraph-content-box">{passage_content}</div>', unsafe_allow_html=True)
                     st.markdown("---")
                     current_passage_id = passage_id
             # --- KẾT THÚC BỔ SUNG ---
@@ -905,7 +917,7 @@ MOBILE_IMAGE_FILE = "bank_mobile.jpg"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
 
-# === CSS ===
+# === CSS CẬP NHẬT CHO ĐOẠN VĂN (PARAGRAPH) ===
 css_style = f"""
 <style>
 /* Đã thống nhất font nội dung là Oswald, tiêu đề là Playfair Display */
@@ -1043,6 +1055,40 @@ a#manual-home-btn:hover {{
     color: #FFEA00;
     text-shadow: 0 0 15px #FFEA00;
 }}
+
+/* === BỔ SUNG CSS CHO ĐOẠN VĂN (PL3) === */
+
+/* Tiêu đề Paragraph X . (In đậm, màu cam) */
+.paragraph-title {{
+    font-family: 'Playfair Display', serif;
+    font-size: 1.8rem;
+    font-weight: 900;
+    color: #FFA500; /* Màu cam nổi bật */
+    text-shadow: 0 0 8px rgba(255, 165, 0, 0.5);
+    margin-top: 20px;
+    margin-bottom: 10px;
+    padding: 5px 15px;
+    background-color: rgba(30, 30, 30, 0.8);
+    border-radius: 8px;
+    display: inline-block;
+}}
+
+/* Nội dung đoạn văn (Giữ nguyên bố cục xuống dòng) */
+.paragraph-content-box {{
+    /* Dùng 'white-space: pre-wrap' để giữ nguyên khoảng trắng và ngắt dòng */
+    white-space: pre-wrap; 
+    font-family: 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif !important;
+    font-size: 20px !important; 
+    line-height: 1.6;
+    color: #F0F0F0; /* Màu trắng nhạt */
+    padding: 15px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border-radius: 8px;
+    margin-bottom: 20px;
+    border-left: 3px solid #FFA500;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
+}}
+
 
 /* STYLE CÂU HỎI - PC (NỀN ĐEN BAO VỪA CHỮ) */
 .bank-question-text {{
@@ -1245,6 +1291,18 @@ div[data-testid="stAlert"] strong {{
         font-size: 1em !important;
         padding: 10px 18px !important;
     }}
+    
+    /* Cập nhật mobile cho đoạn văn */
+    .paragraph-title {{
+        font-size: 1.2rem;
+        padding: 5px 10px;
+        margin-top: 10px;
+    }}
+    .paragraph-content-box {{
+        font-size: 16px !important; 
+        line-height: 1.4;
+        padding: 10px;
+    }}
 }}
 </style>
 """
@@ -1275,6 +1333,8 @@ if "last_bank_choice" not in st.session_state: st.session_state.last_bank_choice
 if "doc_selected" not in st.session_state: st.session_state.doc_selected = "Phụ lục 1 : Ngữ pháp chung" 
 if 'translations' not in st.session_state: st.session_state.translations = {} # KHỞI TẠO STATE DỊCH THUẬT
 if 'active_translation_key' not in st.session_state: st.session_state.active_translation_key = None # KHỞI TẠO KEY DỊCH ĐỘC QUYỀN
+# KHỞI TẠO STATE ĐỂ QUẢN LÝ VIỆC HIỂN THỊ ĐOẠN VĂN
+if 'current_passage_id_displayed' not in st.session_state: st.session_state.current_passage_id_displayed = None 
 
 # CẬP NHẬT LIST NGÂN HÀNG
 BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật VAECO", "Ngân hàng Docwise"]
@@ -1288,6 +1348,7 @@ if st.session_state.get('last_bank_choice') != bank_choice and bank_choice != "-
     st.session_state.current_mode = "group" 
     # Reset active translation key
     st.session_state.active_translation_key = None 
+    st.session_state.current_passage_id_displayed = None # Reset passage display
     last_bank_name = st.session_state.get('last_bank_choice')
     if not isinstance(last_bank_name, str) or last_bank_name == "----": last_bank_name = "null bank" 
     # Xoá session state của bài test cũ
@@ -1319,6 +1380,7 @@ if bank_choice != "----":
             st.session_state.current_group_idx = 0
             st.session_state.submitted = False
             st.session_state.current_mode = "group"
+            st.session_state.current_passage_id_displayed = None # Reset passage display
             st.rerun()
 
         if st.session_state.doc_selected == "Phụ lục 1 : Ngữ pháp chung":
@@ -1367,6 +1429,8 @@ if bank_choice != "----":
                 st.session_state.current_group_idx = new_idx
                 st.session_state.submitted = False
                 st.session_state.active_translation_key = None # Reset dịch khi chuyển nhóm
+                # RESET current_passage_id_displayed ĐỂ HIỂN THỊ LẠI ĐOẠN VĂN MỚI
+                st.session_state.current_passage_id_displayed = None 
                 st.rerun()
 
             idx = st.session_state.current_group_idx
@@ -1379,12 +1443,14 @@ if bank_choice != "----":
                 if st.button("📖 Hiển thị toàn bộ ngân hàng", key="btn_show_all"):
                     st.session_state.current_mode = "all"
                     st.session_state.active_translation_key = None # Reset dịch khi chuyển mode
+                    st.session_state.current_passage_id_displayed = None # Reset passage display
                     st.rerun()
             with col_test:
                 # Đổi tên nút test
                 if st.button("Làm bài test", key="btn_start_test"):
                     st.session_state.current_mode = "test"
                     st.session_state.active_translation_key = None # Reset dịch khi chuyển mode
+                    st.session_state.current_passage_id_displayed = None # Reset passage display
                     bank_slug_new = bank_choice.split()[-1].lower()
                     test_key_prefix = f"test_{bank_slug_new}"
                     # Reset session state cho bài test trước khi bắt đầu
@@ -1394,23 +1460,28 @@ if bank_choice != "----":
                     st.rerun()
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
             
-            # --- START: PHẦN BỔ SUNG: HIỂN THỊ ĐOẠN VĂN (CHO PL3) ---
-            current_passage_id = None
-            if batch and 'paragraph_content' in batch[0]:
+            # --- START: PHẦN CẬP NHẬT HIỂN THỊ ĐOẠN VĂN (CHO PL3) ---
+            # Chỉ hiển thị đoạn văn nếu đây là Docwise/PL3 và đoạn văn chưa được hiển thị
+            if is_docwise and source == "PL3.docx" and batch:
                 group_name = batch[0].get('group', '')
                 paragraph_content = batch[0].get('paragraph_content', '').strip()
                 
-                # Check if this group has passage content and it's the first question in the group
-                if paragraph_content:
-                    # Dùng group_name + content để tạo ID duy nhất cho đoạn văn
-                    passage_id = f"{group_name}_{hash(paragraph_content)}"
-                    if passage_id != current_passage_id:
-                        st.markdown(f"**{group_name}**") # Hiển thị tiêu đề nhóm (Paragraph X .)
-                        # Hiển thị nội dung đoạn văn, tuân thủ xuống dòng, bố cục như file
-                        st.markdown(paragraph_content) 
-                        st.markdown("---") # Đường kẻ phân cách đoạn văn và câu hỏi
-                        current_passage_id = passage_id
-            # --- END: PHẦN BỔ SUNG ---
+                # Tạo ID duy nhất cho đoạn văn hiện tại
+                passage_id = f"{group_name}_{hash(paragraph_content)}"
+                
+                # KIỂM TRA ĐỂ ĐẢM BẢO CHỈ HIỂN THỊ MỘT LẦN KHI CHUYỂN NHÓM
+                if paragraph_content and passage_id != st.session_state.current_passage_id_displayed:
+                    # 1. In đậm, đổi màu tiêu đề
+                    st.markdown(f'<div class="paragraph-title">**{group_name}**</div>', unsafe_allow_html=True) 
+                    
+                    # 2. Hiển thị nội dung đoạn văn, dùng CSS để giữ nguyên ngắt dòng
+                    st.markdown(f'<div class="paragraph-content-box">{paragraph_content}</div>', unsafe_allow_html=True)
+                    st.markdown("---") 
+                    
+                    # Lưu lại ID của đoạn văn đã hiển thị
+                    st.session_state.current_passage_id_displayed = passage_id
+            # --- END: PHẦN CẬP NHẬT ---
+
 
             if batch:
                 if not st.session_state.submitted:
@@ -1517,6 +1588,7 @@ if bank_choice != "----":
                                 st.session_state.pop(f"q_{i}_{hash(q['question'])}", None) 
                             st.session_state.submitted = False
                             st.session_state.active_translation_key = None # Reset dịch khi làm lại
+                            st.session_state.current_passage_id_displayed = None # Reset passage display
                             st.rerun()
                     with col_next:
                         if st.session_state.current_group_idx < len(groups) - 1:
@@ -1524,6 +1596,7 @@ if bank_choice != "----":
                                 st.session_state.current_group_idx += 1
                                 st.session_state.submitted = False
                                 st.session_state.active_translation_key = None # Reset dịch khi chuyển nhóm
+                                st.session_state.current_passage_id_displayed = None # Reset passage display
                                 st.rerun()
                         else: st.info("🎉 Đã hoàn thành tất cả các nhóm câu hỏi!")
             else: st.warning("Không có câu hỏi trong nhóm này.")
@@ -1533,6 +1606,7 @@ if bank_choice != "----":
         if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
             st.session_state.current_mode = "group"
             st.session_state.active_translation_key = None # Reset dịch khi chuyển mode
+            st.session_state.current_passage_id_displayed = None # Reset passage display
             st.rerun()
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
         display_all_questions(questions)
@@ -1541,6 +1615,7 @@ if bank_choice != "----":
         if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
             st.session_state.current_mode = "group"
             st.session_state.active_translation_key = None # Reset dịch khi chuyển mode
+            st.session_state.current_passage_id_displayed = None # Reset passage display
             st.rerun()
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
         display_test_mode(questions, bank_choice)
