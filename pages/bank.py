@@ -687,8 +687,9 @@ def display_all_questions(questions):
                 current_passage_id = passage_id
         # --- KẾT THÚC BỔ SUNG ---
         
-        # Hiển thị câu hỏi
-        st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+        # Hiển thị câu hỏi (FIX KEYERROR: 'number')
+        display_num = q.get('number', i)
+        st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
 
         # Nút Dịch ở dưới
         st.toggle(
@@ -788,8 +789,9 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
                     current_passage_id = passage_id
             # --- KẾT THÚC BỔ SUNG ---
 
-            # Hiển thị câu hỏi
-            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+            # Hiển thị câu hỏi (FIX KEYERROR: 'number')
+            display_num = q.get('number', i)
+            st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
 
             # Nút Dịch ở dưới
             st.toggle(
@@ -847,8 +849,9 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
                     current_passage_id = passage_id
             # --- KẾT THÚC BỔ SUNG ---
 
-            # Hiển thị câu hỏi
-            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+            # Hiển thị câu hỏi (FIX KEYERROR: 'number')
+            display_num = q.get('number', i)
+            st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
 
             # Nút Dịch ở dưới
             st.toggle(
@@ -1333,8 +1336,8 @@ if "last_bank_choice" not in st.session_state: st.session_state.last_bank_choice
 if "doc_selected" not in st.session_state: st.session_state.doc_selected = "Phụ lục 1 : Ngữ pháp chung" 
 if 'translations' not in st.session_state: st.session_state.translations = {} # KHỞI TẠO STATE DỊCH THUẬT
 if 'active_translation_key' not in st.session_state: st.session_state.active_translation_key = None # KHỞI TẠO KEY DỊCH ĐỘC QUYỀN
-# KHỞI TẠO STATE ĐỂ QUẢN LÝ VIỆC HIỂN THỊ ĐOẠN VĂN
 if 'current_passage_id_displayed' not in st.session_state: st.session_state.current_passage_id_displayed = None 
+if 'group_mode_title' not in st.session_state: st.session_state.group_mode_title = "Luyện tập theo nhóm (30 câu/nhóm)"
 
 # CẬP NHẬT LIST NGÂN HÀNG
 BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật VAECO", "Ngân hàng Docwise"]
@@ -1412,14 +1415,44 @@ if bank_choice != "----":
     
     total = len(questions)
 
+    # === LOGIC NHÓM CÂU HỎI THEO MODE (PL3 TÙY CHỈNH) - FIX 2a ===
+    group_size = 30 # Mặc định 30 câu/nhóm
+    custom_groups = [] # Chỉ dùng cho PL3
+    is_pl3_grouping = False
+
+    if is_docwise and source == "PL3.docx":
+        is_pl3_grouping = True
+        passage_groups = {}
+        for q in questions:
+            # group_key: "Paragraph 1 ."
+            group_key = q.get('group', 'Không có đoạn văn')
+            if group_key not in passage_groups:
+                passage_groups[group_key] = []
+            passage_groups[group_key].append(q)
+            
+        # TẠO CÁC NHÓM 2 ĐOẠN VĂN
+        passage_names = list(passage_groups.keys())
+        for i in range(0, len(passage_names), 2):
+            group_names_batch = passage_names[i:i+2]
+            group_label = " & ".join(group_names_batch)
+            custom_groups.append({
+                'label': group_label,
+                'questions': [q for name in group_names_batch for q in passage_groups[name]]
+            })
+        
+        groups = [g['label'] for g in custom_groups]
+        st.session_state.group_mode_title = "Luyện tập theo nhóm (2 đoạn văn/nhóm)"
+    else:
+        # Nhóm câu hỏi theo số lượng (30 câu/nhóm) cho các ngân hàng khác
+        groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
+        st.session_state.group_mode_title = f"Luyện tập theo nhóm ({group_size} câu/nhóm)"
+        
     # --- MODE: GROUP ---
     if st.session_state.current_mode == "group":
         # Cập nhật tiêu đề nhóm câu hỏi
-        st.markdown('<div class="result-title" style="margin-top: 0px;"><h3>Luyện tập theo nhóm (30 câu/nhóm)</h3></div>', unsafe_allow_html=True)
-        group_size = 30 # Tăng lên 30 câu/nhóm
+        st.markdown(f'<div class="result-title" style="margin-top: 0px;"><h3>{st.session_state.group_mode_title}</h3></div>', unsafe_allow_html=True)
+        
         if total > 0:
-            # Logic nhóm câu hỏi theo số lượng (30 câu/nhóm)
-            groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
             if st.session_state.current_group_idx >= len(groups): st.session_state.current_group_idx = 0
             selected = st.selectbox("Chọn nhóm câu:", groups, index=st.session_state.current_group_idx, key="group_selector")
             
@@ -1428,14 +1461,22 @@ if bank_choice != "----":
             if st.session_state.current_group_idx != new_idx:
                 st.session_state.current_group_idx = new_idx
                 st.session_state.submitted = False
-                st.session_state.active_translation_key = None # Reset dịch khi chuyển nhóm
-                # RESET current_passage_id_displayed ĐỂ HIỂN THỊ LẠI ĐOẠN VĂN MỚI
-                st.session_state.current_passage_id_displayed = None 
+                st.session_state.active_translation_key = None 
                 st.rerun()
 
             idx = st.session_state.current_group_idx
-            start, end = idx * group_size, min((idx+1) * group_size, total)
-            batch = questions[start:end]
+            
+            if is_pl3_grouping:
+                batch = custom_groups[idx]['questions']
+                start = 0 # No global index needed for batch calculation
+            else:
+                # Logic lấy batch cũ (30 câu/nhóm)
+                start = idx * group_size
+                end = min((idx+1) * group_size, total)
+                batch = questions[start:end]
+
+            # Set starting index for questions in non-PL3 mode
+            start_i = start + 1 
             
             st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
             col_all_bank, col_test = st.columns(2)
@@ -1460,38 +1501,43 @@ if bank_choice != "----":
                     st.rerun()
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
             
-            # --- START: PHẦN CẬP NHẬT HIỂN THỊ ĐOẠN VĂN (CHO PL3) ---
-            # Chỉ hiển thị đoạn văn nếu đây là Docwise/PL3 và đoạn văn chưa được hiển thị
+            # --- START: PHẦN CẬP NHẬT HIỂN THỊ ĐOẠN VĂN (CHO PL3) - FIX 2b ---
             if is_docwise and source == "PL3.docx" and batch:
-                group_name = batch[0].get('group', '')
-                paragraph_content = batch[0].get('paragraph_content', '').strip()
-                
-                # Tạo ID duy nhất cho đoạn văn hiện tại
-                passage_id = f"{group_name}_{hash(paragraph_content)}"
-                
-                # KIỂM TRA ĐỂ ĐẢM BẢO CHỈ HIỂN THỊ MỘT LẦN KHI CHUYỂN NHÓM
-                if paragraph_content and passage_id != st.session_state.current_passage_id_displayed:
-                    # 1. In đậm, đổi màu tiêu đề
-                    st.markdown(f'<div class="paragraph-title">**{group_name}**</div>', unsafe_allow_html=True) 
+                displayed_passage_ids_in_batch = set()
+                # Iterate through batch to find unique passages to display
+                for q in batch: 
+                    group_name = q.get('group', '')
+                    paragraph_content = q.get('paragraph_content', '').strip()
                     
-                    # 2. Hiển thị nội dung đoạn văn, dùng CSS để giữ nguyên ngắt dòng
-                    st.markdown(f'<div class="paragraph-content-box">{paragraph_content}</div>', unsafe_allow_html=True)
-                    st.markdown("---") 
-                    
-                    # Lưu lại ID của đoạn văn đã hiển thị
-                    st.session_state.current_passage_id_displayed = passage_id
+                    if paragraph_content:
+                        passage_id = f"{group_name}_{hash(paragraph_content)}"
+                        
+                        if passage_id not in displayed_passage_ids_in_batch:
+                            # 1. In đậm, đổi màu tiêu đề
+                            st.markdown(f'<div class="paragraph-title">**{group_name}**</div>', unsafe_allow_html=True) 
+                            
+                            # 2. Hiển thị nội dung đoạn văn, dùng CSS để giữ nguyên ngắt dòng
+                            st.markdown(f'<div class="paragraph-content-box">{paragraph_content}</div>', unsafe_allow_html=True)
+                            st.markdown("---") 
+                            
+                            displayed_passage_ids_in_batch.add(passage_id)
             # --- END: PHẦN CẬP NHẬT ---
-
+            
 
             if batch:
                 if not st.session_state.submitted:
-                    for i, q in enumerate(batch, start=start+1):
-                        q_key = f"q_{i}_{hash(q['question'])}" # Dùng hash để tránh trùng key
+                    # Fix 1: Sử dụng q.get('number', i_global)
+                    for i_local, q in enumerate(batch):
+                        i_global = start + i_local + 1 # Số thứ tự toàn cục (fallback cho non-PL3)
+                        q_key = f"q_{i_global}_{hash(q['question'])}" 
                         translation_key = f"trans_{q_key}"
                         is_active = (translation_key == st.session_state.active_translation_key)
                         
+                        # Fix KeyError: 'number'
+                        display_num = q.get('number', i_global) 
+                        
                         # Hiển thị câu hỏi
-                        st.markdown(f'<div class="bank-question-text">{q["number"]}. {q["question"]}</div>', unsafe_allow_html=True) # Dùng q["number"]
+                        st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True) 
 
                         # Nút Dịch ở dưới
                         st.toggle(
@@ -1525,16 +1571,18 @@ if bank_choice != "----":
                         st.rerun()
                 else:
                     score = 0
-                    for i, q in enumerate(batch, start=start+1):
-                        q_key = f"q_{i}_{hash(q['question'])}" 
+                    for i_local, q in enumerate(batch):
+                        i_global = start + i_local + 1 
+                        q_key = f"q_{i_global}_{hash(q['question'])}" 
                         selected_opt = st.session_state.get(q_key)
                         correct = clean_text(q["answer"])
                         is_correct = clean_text(selected_opt) == correct
                         translation_key = f"trans_{q_key}"
                         is_active = (translation_key == st.session_state.active_translation_key)
 
-                      # Hiển thị câu hỏi
-                        st.markdown(f'<div class="bank-question-text">{q["number"]}. {q["question"]}</div>', unsafe_allow_html=True) # Dùng q["number"]
+                        # Hiển thị câu hỏi: FIX KeyError: 'number'
+                        display_num = q.get('number', i_global)
+                        st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True) 
 
                         # Nút Dịch ở dưới
                         st.toggle(
@@ -1584,11 +1632,11 @@ if bank_choice != "----":
                     with col_reset:
                         if st.button("🔄 Làm lại nhóm này", key="reset_group"):
                             # Xoá session state của các radio button trong nhóm
-                            for i, q in enumerate(batch, start=start+1):
-                                st.session_state.pop(f"q_{i}_{hash(q['question'])}", None) 
+                            for i_local, q in enumerate(batch):
+                                i_global = start + i_local + 1
+                                st.session_state.pop(f"q_{i_global}_{hash(q['question'])}", None) 
                             st.session_state.submitted = False
                             st.session_state.active_translation_key = None # Reset dịch khi làm lại
-                            st.session_state.current_passage_id_displayed = None # Reset passage display
                             st.rerun()
                     with col_next:
                         if st.session_state.current_group_idx < len(groups) - 1:
@@ -1596,7 +1644,6 @@ if bank_choice != "----":
                                 st.session_state.current_group_idx += 1
                                 st.session_state.submitted = False
                                 st.session_state.active_translation_key = None # Reset dịch khi chuyển nhóm
-                                st.session_state.current_passage_id_displayed = None # Reset passage display
                                 st.rerun()
                         else: st.info("🎉 Đã hoàn thành tất cả các nhóm câu hỏi!")
             else: st.warning("Không có câu hỏi trong nhóm này.")
