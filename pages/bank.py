@@ -533,85 +533,90 @@ def parse_pl3(source):
     """
     Parser cho định dạng PL3 (Đoạn văn - Câu hỏi).
     Cấu trúc: **Paragraph X**. -> Nội dung đoạn văn -> Câu hỏi 1., 2., 3... với đáp án A, B, C (đáp án đúng có (*))
+    Trả về: list các câu hỏi với metadata về paragraph
     """
     paras = read_docx_paragraphs(source)
     if not paras: return []
 
     questions = []
-    current_paragraph_content = "" # Lưu nội dung đoạn văn hiện tại
+    current_paragraph_content = [] # Lưu nội dung đoạn văn (giữ nguyên xuống dòng)
     current_paragraph_title = "" # Lưu tiêu đề paragraph (VD: "Paragraph 1")
-    current_q = {"question": "", "options": [], "answer": ""}
+    current_paragraph_num = 0 # Số thứ tự paragraph
+    question_num_in_paragraph = 0 # Số thứ tự câu hỏi trong paragraph
+    current_q = {"question": "", "options": [], "answer": "", "paragraph_title": "", "paragraph_content": "", "paragraph_num": 0, "q_num_in_para": 0}
     
-    # REGEX - CẬP NHẬT ĐỂ KHỚP VỚI ĐỊNH DẠNG THỰC TẾ
-    # Tìm dòng bắt đầu bằng "**Paragraph X**" hoặc "Paragraph X."
-    paragraph_pat = re.compile(r'^\*{0,2}\s*Paragraph\s+\d+\s*\*{0,2}[\.\s]*', re.I) 
-    # Tìm câu hỏi bắt đầu bằng số (1., 2., 3...)
+    # REGEX
+    paragraph_pat = re.compile(r'^\*{0,2}\s*Paragraph\s+(\d+)\s*\*{0,2}[\.\s]*', re.I) 
     q_start_pat = re.compile(r'^\s*(\d+)[\.\)]\s*') 
-    # Tìm đáp án (A., B., C., D.)
     opt_prefix_pat = re.compile(r'^\s*[A-Da-d][\.\)]\s*') 
     labels = ["a", "b", "c", "d"]
     MAX_OPTIONS = 4
 
     def finalize_current_question(q_dict, q_list):
         """Hoàn thành và lưu câu hỏi hiện tại"""
-        if q_dict["question"].strip():
-            # Gắn nội dung đoạn văn vào đầu câu hỏi
-            if current_paragraph_content.strip():
-                # Dùng ký hiệu đặc biệt để đánh dấu (dùng cho việc hiển thị sau này)
-                full_paragraph = current_paragraph_title + "\n\n" + current_paragraph_content.strip()
-                q_dict["question"] = "📖 " + full_paragraph + "\n\n" + q_dict["question"].strip()
-            
+        if q_dict["question"].strip() and q_dict["paragraph_title"]:
             # Nếu không có đáp án đúng, mặc định chọn đáp án đầu tiên
             if not q_dict["answer"] and q_dict["options"]:
                 q_dict["answer"] = q_dict["options"][0]
             
-            q_list.append(q_dict)
-        return {"question": "", "options": [], "answer": ""}
+            q_list.append(q_dict.copy())
+        return {"question": "", "options": [], "answer": "", "paragraph_title": "", "paragraph_content": "", "paragraph_num": 0, "q_num_in_para": 0}
     
-    in_paragraph_content = False # Đang đọc nội dung đoạn văn (chưa gặp câu hỏi)
+    in_paragraph_content = False
     
     for p in paras:
         clean_p = clean_text(p)
         if not clean_p: continue
         
-        # 1. PHÁT HIỆN TIÊU ĐỀ ĐOẠN VĂN MỚI (Paragraph X)
+        # 1. PHÁT HIỆN TIÊU ĐỀ ĐOẠN VĂN MỚI
         paragraph_match = paragraph_pat.match(clean_p)
         if paragraph_match:
-            # Hoàn thành câu hỏi trước đó (nếu có)
+            # Hoàn thành câu hỏi trước đó
             current_q = finalize_current_question(current_q, questions)
             
-            # Reset và bắt đầu đoạn văn mới
-            current_paragraph_title = clean_p.strip()
-            current_paragraph_content = ""
-            in_paragraph_content = True  # Bắt đầu đọc nội dung đoạn văn
-            current_q = {"question": "", "options": [], "answer": ""}
+            # Bắt đầu đoạn văn mới
+            current_paragraph_num = int(paragraph_match.group(1))
+            current_paragraph_title = f"Paragraph {current_paragraph_num}"
+            current_paragraph_content = []
+            question_num_in_paragraph = 0
+            in_paragraph_content = True
+            current_q = {"question": "", "options": [], "answer": "", "paragraph_title": "", "paragraph_content": "", "paragraph_num": 0, "q_num_in_para": 0}
             continue
         
-        # 2. PHÁT HIỆN BẮT ĐẦU CÂU HỎI (1., 2., 3...)
+        # 2. PHÁT HIỆN BẮT ĐẦU CÂU HỎI
         q_match = q_start_pat.match(clean_p)
-        if q_match and current_paragraph_title:  # Chỉ nhận diện câu hỏi khi đã có paragraph
+        if q_match and current_paragraph_title:
             # Hoàn thành câu hỏi trước
             current_q = finalize_current_question(current_q, questions)
             
             # Bắt đầu câu hỏi mới
+            question_num_in_paragraph += 1
             q_text = q_start_pat.sub('', clean_p).strip()
-            current_q["question"] = q_text
-            current_q["options"] = []
-            current_q["answer"] = ""
-            in_paragraph_content = False  # Đã vào phần câu hỏi, không còn là nội dung đoạn văn
+            
+            # Lưu thông tin paragraph cho câu hỏi này
+            paragraph_content_text = "\n".join(current_paragraph_content)
+            
+            current_q = {
+                "question": q_text,
+                "options": [],
+                "answer": "",
+                "paragraph_title": current_paragraph_title,
+                "paragraph_content": paragraph_content_text,
+                "paragraph_num": current_paragraph_num,
+                "q_num_in_para": question_num_in_paragraph
+            }
+            in_paragraph_content = False
             continue
         
-        # 3. XỬ LÝ ĐÁP ÁN (A., B., C., D.)
+        # 3. XỬ LÝ ĐÁP ÁN
         if current_q["question"] and len(current_q["options"]) < MAX_OPTIONS:
             is_correct = False
             temp_p = clean_p
             
-            # Kiểm tra dấu (*) đánh dấu đáp án đúng
             if "(*)" in temp_p:
                 is_correct = True
                 temp_p = temp_p.replace("(*)", "").strip()
             
-            # Kiểm tra prefix đáp án (A., B., C., D.)
             opt_match = opt_prefix_pat.match(temp_p)
             if opt_match:
                 temp_p = temp_p[opt_match.end():].strip()
@@ -626,15 +631,12 @@ def parse_pl3(source):
                         current_q["answer"] = opt_text
                 continue
         
-        # 4. XỬ LÝ NỘI DUNG CHUNG (nội dung đoạn văn hoặc phần mở rộng của câu hỏi)
+        # 4. XỬ LÝ NỘI DUNG
         if in_paragraph_content:
-            # Đang đọc nội dung đoạn văn (chưa gặp câu hỏi)
-            if current_paragraph_content:
-                current_paragraph_content += " " + clean_p
-            else:
-                current_paragraph_content = clean_p
+            # Thêm vào nội dung đoạn văn (giữ nguyên xuống dòng)
+            current_paragraph_content.append(clean_p)
         elif current_q["question"]:
-            # Đang có câu hỏi -> nối thêm vào câu hỏi (trường hợp câu hỏi dài nhiều dòng)
+            # Nối vào câu hỏi
             current_q["question"] += " " + clean_p
 
     # Hoàn thành câu hỏi cuối cùng
