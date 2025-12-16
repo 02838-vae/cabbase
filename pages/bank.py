@@ -12,9 +12,177 @@ import random
 from deep_translator import GoogleTranslator
 
 # ====================================================
+# 📚 NỘI DUNG VÀ HÀM HIỂN THỊ KIẾN THỨC NGỮ PHÁP PHỤ LỤC 1
+# ====================================================
+
+GRAMMAR_PL1_CONTENT = """
+<style>
+/* CSS cho khối Kiến thức Ngữ pháp */
+.grammar-box {
+    background-color: #000033; /* Dark Blue */
+    border: 3px solid #00d4ff; /* Light Blue Border */
+    border-radius: 10px;
+    padding: 20px;
+    margin-top: 15px;
+    margin-bottom: 25px;
+    color: #E0E0E0;
+    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.4);
+    font-family: 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif !important;
+}
+.grammar-box h3 {
+    color: #00d4ff !important; 
+    font-family: 'Playfair Display', serif;
+    margin-top: 0px;
+    text-shadow: 0 0 10px rgba(0, 212, 255, 0.5);
+}
+.grammar-box h4 {
+    color: #FFEA00; /* Yellow */
+    border-bottom: 2px solid #FFEA00;
+    padding-bottom: 5px;
+    margin-top: 25px;
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+.grammar-box h5 {
+    color: #00ff00; /* Green */
+    margin-top: 10px;
+    font-size: 1.1rem;
+    font-weight: 600;
+}
+.grammar-box table {
+    width: 100%;
+    margin-bottom: 20px;
+    border-collapse: collapse;
+}
+.grammar-box th, .grammar-box td {
+    border: 1px solid #333366;
+    padding: 8px;
+    text-align: left;
+    font-size: 16px;
+    line-height: 1.5;
+}
+.grammar-box th {
+    background-color: #1a1a40;
+    color: #FFFFFF;
+}
+.grammar-box td {
+    background-color: #0d0d26;
+}
+.grammar-box p, .grammar-box ul li {
+    font-size: 16px;
+    margin-top: 5px;
+    margin-bottom: 10px;
+    line-height: 1.6;
+}
+</style>
+<div class="grammar-box">
+    <h3 style="color: #00d4ff;">📚 TÓM LƯỢC NGỮ PHÁP CHUYÊN SÂU PHỤ LỤC 1</h3>
+    <p>Phụ lục này tập trung vào các cấu trúc ngữ pháp cơ bản và cách sử dụng chuyên ngành trong tài liệu kỹ thuật hàng không.</p>
+
+    <h4>I. TRẬT TỰ TỪ TRONG CỤM DANH TỪ KỸ THUẬT (NOUN PHRASE ORDER)</h4>
+    <p>Quy tắc cơ bản: **Danh từ Chính (Head Noun)** luôn đứng cuối cùng. Các Danh từ và Tính từ bổ nghĩa đứng trước nó, sắp xếp theo thứ tự từ *chung* đến *cụ thể*.</p>
+    <h5>Cấu trúc Ưu tiên trong Kỹ thuật:</h5>
+    <p><code>(Modifiers - Adjs/Nouns)</code> → <code>(Function/Purpose)</code> → <code>(Type/Location)</code> → <code>**HEAD NOUN**</code></p>
+    <table>
+        <thead>
+            <tr>
+                <th>Cấu trúc</th>
+                <th>Phân tích</th>
+                <th>Ví dụ từ Phụ lục 1</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Adj + Noun</td>
+                <td>Tính từ mô tả chung (Màu sắc, kích cỡ, vị trí)</td>
+                <td><code>**RIGHT OUTER WING**</code> (Wing: Danh từ chính)</td>
+            </tr>
+            <tr>
+                <td>N-as-Adj + Head Noun</td>
+                <td>Danh từ mô tả chức năng, loại hoặc chất liệu</td>
+                <td><code>**INTEGRAL FUEL TANK**</code> (Fuel: Danh từ làm tính từ)</td>
+            </tr>
+            <tr>
+                <td>Complex Noun Chain</td>
+                <td>Nhiều danh từ liên kết nhau mô tả chi tiết hệ thống/vị trí.</td>
+                <td><code>**AFT CABIN CONDITIONED AIR DISTRIBUTION SYSTEM**</code><br>(Hệ thống phân phối khí điều hòa cabin sau)</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h4>II. ĐỘNG TỪ KHUYẾT THIẾU (MODAL VERBS) VÀ NGHĨA VỤ</h4>
+    <p>Được sử dụng trong các Manual để chỉ dẫn (Obligation) và cảnh báo (Prohibition).</p>
+    <table>
+        <thead>
+            <tr>
+                <th>Modal</th>
+                <th>Ý nghĩa</th>
+                <th>Ví dụ & Ứng dụng</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>**Must**</td>
+                <td>Nghĩa vụ, sự cần thiết tuyệt đối (Bắt buộc phải làm theo quy trình, lệnh).</td>
+                <td><code>The pilot **must** extend the landing gear...</code></td>
+            </tr>
+            <tr>
+                <td>**Must Not**</td>
+                <td>Cấm đoán, nghiêm cấm (Prohibition). Mệnh lệnh cấm tuyệt đối.</td>
+                <td><code>You **must not** open the bottle with an oily cloth.</code></td>
+            </tr>
+            <tr>
+                <td>**Have to / Has to**</td>
+                <td>Nghĩa vụ do ngoại cảnh, quy tắc (Thường dùng thay thế cho <i>Must</i> trong Manual).</td>
+                <td><code>The planes **have to be** de-iced before take-off.</code></td>
+            </tr>
+            <tr>
+                <td>**Can't**</td>
+                <td>Không có khả năng/giới hạn về mặt vật lý, kỹ thuật.</td>
+                <td><code>I **can’t** lift this heavy box.</code></td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h4>III. DANH ĐỘNG TỪ (GERUND - V-ing) VÀ GIỚI TỪ</h4>
+    <h5>1. Giới từ + V-ing:</h5>
+    <p>Sau tất cả các giới từ (<code>for</code>, <code>in</code>, <code>after</code>, <code>by</code>...), động từ phải được chia ở dạng V-ing.</p>
+    <ul>
+        <li>**Chỉ Mục đích:** <code>**for** + V-ing</code> (Dùng để/Cho mục đích).<br>VD: <code>He needs an instrument **for detecting** the fault.</code></li>
+        <li>**Chỉ Thời gian:** <code>**after** + Noun/V-ing</code> / <code>**before** + Noun/V-ing</code>.</li>
+    </ul>
+    <h5>2. Rút gọn Mệnh đề Trạng ngữ (Time Clause Reduction):</h5>
+    <p>Khi mệnh đề trạng ngữ (thường bắt đầu bằng <code>When</code>, <code>Before</code>, <code>After</code>) có cùng chủ ngữ với mệnh đề chính, có thể rút gọn:</p>
+    <ul>
+        <li>**Chủ động:** <code>When (S + be) V-ing...</code> → <code>**When V-ing**...</code><br>VD: <code>**When working** in the hangar smoking is not allowed.</code></li>
+    </ul>
+
+    <h4>IV. CẤU TRÚC SO SÁNH (COMPARISON)</h4>
+    <p>Phụ lục 1 kiểm tra khả năng sử dụng cấu trúc so sánh đúng đắn, đặc biệt là với tính từ ngắn.</p>
+    <ul>
+        <li>**So sánh Hơn:** <code>Tính từ ngắn + **-er than**</code><br>VD: <code>... It is **faster than** all the other airplanes.</code></li>
+        <li>**Lỗi thường gặp:** Không dùng <code>more</code> với tính từ ngắn.<br>Đúng: <code>We don’t need a **bigger plane**.</code></li>
+        <li>**So sánh Bằng:** <code>**as** + Adj + **as**</code><br>VD: <code>Now they are **as good as** new.</code></li>
+    </ul>
+    
+    <h4>V. THỂ BỊ ĐỘNG VÀ THÌ ĐỘNG TỪ (PASSIVE VOICE & TENSE)</h4>
+    <ul>
+        <li>**Hiện tại Tiếp diễn (Present Continuous):** Diễn tả hành động đang xảy ra tại thời điểm nói hoặc hành động tạm thời.<br>Cấu trúc: <code>S + **am/is/are + V-ing**</code><br>VD: <code>The engine **is running**.</code></li>
+        <li>**Bị động với Modal:** Hành động cần được thực hiện.<br>Cấu trúc: <code>S + Modal + **be + V3/ed**</code><br>VD: <code>The planes **have to be de-iced**...</code></li>
+    </ul>
+</div>
+"""
+
+def display_grammar_pl1():
+    """Hàm hiển thị nội dung ngữ pháp cho Phụ lục 1 trong một Expander."""
+    with st.expander("👉 Bấm vào đây để xem chi tiết kiến thức ngữ pháp", expanded=True):
+        st.markdown(GRAMMAR_PL1_CONTENT, unsafe_allow_html=True)
+
+# ====================================================
 # ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
 # ====================================================
 def clean_text(s: str) -> str:
+# ... (Phần còn lại của hàm clean_text giữ nguyên)
     if s is None:
         return ""
     
@@ -58,6 +226,7 @@ def clean_text(s: str) -> str:
     return temp_s.strip()
 
 def find_file_path(source):
+# ... (Hàm find_file_path giữ nguyên)
     """Hàm tìm đường dẫn file với cơ chế tìm kiếm đa dạng."""
     paths = [
         os.path.join(os.path.dirname(__file__), source),
@@ -70,6 +239,7 @@ def find_file_path(source):
     return None
 
 def read_docx_paragraphs(source):
+# ... (Hàm read_docx_paragraphs giữ nguyên)
     """
     Hàm đọc paragraphs chỉ lấy TEXT (sử dụng cho cabbank, lawbank, PL1)
     """
@@ -87,6 +257,7 @@ def read_docx_paragraphs(source):
 
 # HÀM ĐỌC FILE MỚI: DÙNG CHO PL2 (CHỈ LẤY TEXT)
 def read_pl2_data(source):
+# ... (Hàm read_pl2_data giữ nguyên)
     """
     Hàm đọc paragraphs chỉ lấy TEXT (tương tự read_docx_paragraphs),
     để parse_pl2 có thể dùng logic (*).
@@ -118,6 +289,7 @@ def read_pl2_data(source):
     return data
 
 def get_base64_encoded_file(file_path):
+# ... (Hàm get_base64_encoded_file giữ nguyên)
     fallback_base64 = "iVBORw0KGgoAAAANSUhEUAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="
     path_to_check = find_file_path(file_path)
     if not path_to_check:
@@ -139,6 +311,7 @@ from deep_translator import GoogleTranslator
 
 @st.cache_resource
 def get_translator():
+# ... (Hàm get_translator giữ nguyên)
     """Khởi tạo Translator với deep_translator"""
     try:
         return GoogleTranslator(source='auto', target='vi')
@@ -148,6 +321,7 @@ def get_translator():
 
 # HÀM MỚI: Dịch văn bản thuần túy (Dùng cho đoạn văn)
 def translate_passage_content(text):
+# ... (Hàm translate_passage_content giữ nguyên)
     """
     Dịch văn bản thuần túy và cố gắng bảo toàn định dạng xuống dòng.
     """
@@ -165,6 +339,7 @@ def translate_passage_content(text):
 
 # HÀM MỚI: Dùng để xây dựng chuỗi dịch cho Q/A
 def build_translation_text_for_qa(q):
+# ... (Hàm build_translation_text_for_qa giữ nguyên)
     """Xây dựng chuỗi văn bản đầy đủ để gửi đi dịch (chỉ Question và Options)."""
     question_text = q['question']
     options_text = '; '.join(q['options'])
@@ -173,6 +348,7 @@ def build_translation_text_for_qa(q):
 
 # HÀM GỐC: Đã được đổi tên thành `translate_question_and_options`
 def translate_question_and_options(text):
+# ... (Hàm translate_question_and_options giữ nguyên)
     """
     Dịch câu hỏi và đáp án sử dụng deep_translator.
     (Input là chuỗi đã được build_translation_text_for_qa định dạng)
@@ -692,6 +868,7 @@ if 'active_passage_translation' not in st.session_state: st.session_state.active
 if 'passage_translations_cache' not in st.session_state: st.session_state.passage_translations_cache = {}
 
 def on_translate_toggle(key_clicked):
+# ... (Hàm on_translate_toggle giữ nguyên)
     """
     Callback function để quản lý chế độ Dịch Q&A.
     (Đã loại bỏ logic tắt Dịch Đoạn văn để cho phép dịch song song)
@@ -708,6 +885,7 @@ def on_translate_toggle(key_clicked):
         st.session_state.active_translation_key = None
     
 def on_passage_translate_toggle(passage_id_clicked):
+# ... (Hàm on_passage_translate_toggle giữ nguyên)
     """
     Callback function để quản lý chế độ Dịch Đoạn Văn.
     (Đã loại bỏ logic tắt Dịch Q&A để cho phép dịch song song)
@@ -726,6 +904,7 @@ def on_passage_translate_toggle(passage_id_clicked):
 # 🌟 HÀM: XEM TOÀN BỘ CÂU HỎI (CẬP NHẬT CHỨC NĂNG DỊCH)
 # ====================================================
 def display_all_questions(questions):
+# ... (Hàm display_all_questions giữ nguyên)
     st.markdown('<div class="result-title"><h3>📚 TOÀN BỘ NGÂN HÀNG CÂU HỎI</h3></div>', unsafe_allow_html=True)
     if not questions:
         st.warning("Không có câu hỏi nào để hiển thị.")
@@ -841,10 +1020,12 @@ def display_all_questions(questions):
 # 🌟 HÀM: TEST MODE (CẬP NHẬT CHỨC NĂNG DỊCH)
 # ====================================================
 def get_random_questions(questions, count=50):
+# ... (Hàm get_random_questions giữ nguyên)
     if len(questions) <= count: return questions
     return random.sample(questions, count)
 
 def display_test_mode(questions, bank_name, key_prefix="test"):
+# ... (Hàm display_test_mode giữ nguyên)
     TOTAL_QUESTIONS = 50
     PASS_RATE = 0.75
     bank_slug = bank_name.split()[-1].lower()
@@ -1522,6 +1703,11 @@ if 'active_passage_translation' not in st.session_state: st.session_state.active
 if 'passage_translations_cache' not in st.session_state: st.session_state.passage_translations_cache = {} # CACHE DỊCH ĐOẠN VĂN
 if 'current_passage_id_displayed' not in st.session_state: st.session_state.current_passage_id_displayed = None 
 if 'group_mode_title' not in st.session_state: st.session_state.group_mode_title = "Luyện tập theo nhóm (30 câu/nhóm)"
+# BỔ SUNG: STATE HIỂN THỊ KIẾN THỨC NGỮ PHÁP
+if 'show_grammar_phụ_lục_1' not in st.session_state: st.session_state.show_grammar_phụ_lục_1 = False
+if 'show_grammar_phụ_lục_2' not in st.session_state: st.session_state.show_grammar_phụ_lục_2 = False
+if 'show_grammar_phụ_lục_3' not in st.session_state: st.session_state.show_grammar_phụ_lục_3 = False
+
 
 # CẬP NHẬT LIST NGÂN HÀNG
 BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật VAECO", "Ngân hàng Docwise"]
@@ -1537,6 +1723,11 @@ if st.session_state.get('last_bank_choice') != bank_choice and bank_choice != "-
     st.session_state.active_translation_key = None 
     st.session_state.active_passage_translation = None 
     st.session_state.current_passage_id_displayed = None # Reset passage display
+    # Reset Grammar State
+    st.session_state.show_grammar_phụ_lục_1 = False
+    st.session_state.show_grammar_phụ_lục_2 = False
+    st.session_state.show_grammar_phụ_lục_3 = False
+
     last_bank_name = st.session_state.get('last_bank_choice')
     if not isinstance(last_bank_name, str) or last_bank_name == "----": last_bank_name = "null bank" 
     # Xoá session state của bài test cũ
@@ -1565,12 +1756,27 @@ if bank_choice != "----":
         # --- BỔ SUNG: NÚT KIẾN THỨC NGỮ PHÁP ---
         # Lấy tên Phụ lục rút gọn
         doc_name_match = re.search(r'(Phụ lục \d+)', doc_selected_new)
-        doc_name_short = doc_name_match.group(1).lower() if doc_name_match else "phụ lục này"
+        doc_name_short = doc_name_match.group(1).lower().replace(' ', '_') if doc_name_match else "phụ lục này"
         
         # Hiển thị nút Knowledge
-        if st.button(f"💡 Kiến thức ngữ pháp cho {doc_name_short}", key="btn_knowledge_docwise"):
-            st.info(f"Đã nhấn nút **Kiến thức ngữ pháp cho {doc_name_short}**. Bạn có thể thêm logic hiển thị tài liệu/popup tại đây.")
-        # --- KẾT THÚC BỔ SUNG ---
+        btn_knowledge_clicked = st.button(f"💡 Kiến thức ngữ pháp cho {doc_name_short.replace('_', ' ')}", key="btn_knowledge_docwise")
+
+        # Xử lý khi nhấn nút Knowledge
+        grammar_state_key = f"show_grammar_{doc_name_short}"
+        if btn_knowledge_clicked:
+            # Toggle the visibility state for the current document
+            st.session_state[grammar_state_key] = not st.session_state.get(grammar_state_key, False)
+
+        # Hiển thị nội dung ngữ pháp nếu state là True
+        if st.session_state.get(grammar_state_key):
+            if doc_name_short == "phụ_lục_1":
+                display_grammar_pl1() 
+            elif doc_name_short == "phụ_lục_2":
+                st.info("Kiến thức ngữ pháp cho Phụ lục 2 sẽ được cập nhật sau.")
+            elif doc_name_short == "phụ_lục_3":
+                st.info("Kiến thức ngữ pháp cho Phụ lục 3 sẽ được cập nhật sau.")
+            else:
+                st.info(f"Đã nhấn nút **Kiến thức ngữ pháp cho {doc_name_short.replace('_', ' ')}**. Nội dung đang được cập nhật.")
 
         # Xử lý khi đổi phụ lục (reset mode)
         if st.session_state.doc_selected != doc_selected_new:
@@ -1581,6 +1787,11 @@ if bank_choice != "----":
             st.session_state.active_translation_key = None 
             st.session_state.active_passage_translation = None 
             st.session_state.current_passage_id_displayed = None # Reset passage display
+            # Reset tất cả trạng thái hiển thị ngữ pháp
+            st.session_state.show_grammar_phụ_lục_1 = False
+            st.session_state.show_grammar_phụ_lục_2 = False
+            st.session_state.show_grammar_phụ_lục_3 = False
+
             st.rerun()
 
         if st.session_state.doc_selected == "Phụ lục 1 : Ngữ pháp chung":
