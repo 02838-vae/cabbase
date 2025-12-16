@@ -489,15 +489,12 @@ def parse_pl2(source):
     return questions
 
 # ====================================================
-# 🧩 PARSER 5: PHỤ LỤC 3 - BÀI ĐỌC HIỂU (PASSAGE-BASED)
+# 🧩 PARSER 5: PHỤ LỤC 3 - BÀI ĐỌC HIỂU (PASSAGE-BASED) - ĐÃ SỬA LỖI PARAGRAPH 2
 # ====================================================
 def parse_pl3_passage_bank(source):
     """
     Parser cho định dạng PL3 (Bài đọc hiểu)
-    - Nhận diện 'Paragraph X .' để bắt đầu nhóm mới.
-    - Thu thập nội dung đoạn văn (passage content) giữa tiêu đề và câu hỏi đầu tiên.
-    - Thu thập câu hỏi/đáp án/đáp án đúng (*).
-    - Lưu nội dung đoạn văn vào mỗi câu hỏi trong nhóm.
+    - Fix: Xử lý đúng cho câu hỏi điền chỗ trống (Paragraph 2) bằng cách tạo câu hỏi tường minh.
     """
     path = find_file_path(source)
     if not path:
@@ -512,9 +509,9 @@ def parse_pl3_passage_bank(source):
     # Regex cho tiêu đề đoạn văn mới
     paragraph_start_pat = re.compile(r'^\s*Paragraph\s*(\d+)\s*\.\s*', re.I)
     # Regex cho số thứ tự câu hỏi
-    q_start_pat = re.compile(r'^\s*(\d+)\s*[\.\)]\s*', re.I)
+    q_start_pat = re.compile(r'^\s*(?P<q_num>\d+)\s*[\.\)]\s*', re.I)
     # Regex cho đáp án, bao gồm ký tự (*)
-    opt_pat = re.compile(r'^\s*(?P<letter>[A-Da-d])[\.\)]\s*(?P<text>.*?)(\s*\(\*\))?$', re.I)
+    opt_pat_single = re.compile(r'^\s*(?P<letter>[A-Da-d])[\.\)]\s*(?P<text>.*?)(\s*\(\*\))?$', re.I)
     
     try:
         doc = Document(path)
@@ -524,9 +521,10 @@ def parse_pl3_passage_bank(source):
 
     for paragraph in doc.paragraphs:
         text = paragraph.text.strip()
+        if not text: continue
         
         is_new_paragraph_group = paragraph_start_pat.match(text)
-        is_question_start = q_start_pat.match(text)
+        match_q_start = q_start_pat.match(text)
         
         # 1. BẮT ĐẦU NHÓM ĐOẠN VĂN MỚI
         if is_new_paragraph_group:
@@ -535,8 +533,6 @@ def parse_pl3_passage_bank(source):
                 questions.append(current_group)
             
             group_name = is_new_paragraph_group.group(0).strip()
-            # Khởi tạo group mới
-            # Cấu trúc này sẽ được dùng cho câu hỏi đầu tiên của nhóm
             current_group = {
                 'group_name': group_name,
                 'paragraph_content': "",
@@ -554,30 +550,60 @@ def parse_pl3_passage_bank(source):
             continue
             
         # 2. BẮT ĐẦU CÂU HỎI MỚI
-        if is_question_start:
+        if match_q_start:
             # Lưu câu hỏi cũ nếu có
             if current_group.get('question') and current_group.get('options'):
                  questions.append(current_group)
             
-            q_num = is_question_start.group(1)
-            q_text = text[is_question_start.end():].strip()
+            q_num_str = match_q_start.group('q_num')
+            remaining_text = text[match_q_start.end():].strip()
+            
+            # --- XÁC ĐỊNH LOẠI CÂU HỎI & NỘI DUNG ---
+            # Type B: Fill-in-the-blank (Passage content contains patterns like (1), (2)...)
+            # Check for fill-in-the-blank context inside the collected passage content
+            is_fill_in_blank = bool(re.search(r'\(\s*\d+\s*\)', group_content))
+            
+            if is_fill_in_blank:
+                # Type B: Question is implicit, remaining text is the first option (A.)
+                q_text = f"Chọn đáp án thích hợp cho ô trống **({q_num_str})** trong đoạn văn trên."
+                first_option_text = remaining_text # This is the first option (A.)
+            else:
+                # Type A: Reading Comp. Remaining text is the question body.
+                q_text = remaining_text
+                first_option_text = ""
             
             # Bắt đầu câu hỏi mới
             current_group = {
                 'group_name': current_group['group_name'],
-                # Gán nội dung đoạn văn đã thu thập (dùng .strip() để loại bỏ \n thừa ở đầu/cuối)
+                # Gán nội dung đoạn văn đã thu thập
                 'paragraph_content': group_content.strip(), 
                 'question': clean_text(q_text),
                 'options': {},
                 'correct_answer': "",
-                'number': int(q_num)
+                'number': int(q_num_str)
             }
-            current_q_num = int(q_num)
+            current_q_num = int(q_num_str)
+            
+            # Process the first option (if Fill-in-the-blank mode)
+            if is_fill_in_blank and first_option_text:
+                match_opt = opt_pat_single.match(first_option_text)
+                if match_opt:
+                    letter = match_opt.group('letter').upper()
+                    opt_text_raw = match_opt.group('text').strip()
+                    is_correct = match_opt.group(3) is not None
+                    
+                    opt_text = clean_text(opt_text_raw.replace("(*)", "").strip())
+                    full_opt_text = f"{letter}. {opt_text}"
+                    
+                    current_group['options'][letter] = full_opt_text
+                    if is_correct:
+                        current_group['correct_answer'] = letter
             
         # 3. ĐANG TRONG CÂU HỎI (Option hoặc phần tiếp theo của câu hỏi)
         elif current_q_num > 0:
-            match_opt = opt_pat.match(text)
+            match_opt = opt_pat_single.match(text)
             if match_opt:
+                # Xử lý các options B., C. cho cả hai loại câu hỏi
                 letter = match_opt.group('letter').upper()
                 opt_text_raw = match_opt.group('text').strip()
                 is_correct = match_opt.group(3) is not None
@@ -594,7 +620,7 @@ def parse_pl3_passage_bank(source):
                 if is_correct:
                     current_group['correct_answer'] = letter
             else:
-                # Nếu không phải option, thêm vào câu hỏi (trường hợp câu hỏi xuống dòng)
+                # Nếu không phải option, thêm vào câu hỏi (chỉ áp dụng cho Reading Comp - Type A)
                 current_group['question'] += " " + clean_text(text)
                 
         # 4. ĐANG THU THẬP NỘI DUNG ĐOẠN VĂN
@@ -626,7 +652,6 @@ def parse_pl3_passage_bank(source):
             'answer': q['options'][q['correct_answer']], # Lưu đáp án đúng dưới dạng string (A. Text)
             'number': q['number'], # Số thứ tự câu hỏi (1, 2, 3...)
             # Sử dụng 'group' thay cho 'group_name' để tương thích với display_all_questions/test_mode 
-            # (mặc dù các mode đó không dùng field này)
             'group': q['group_name'], 
             'paragraph_content': q['paragraph_content'] # Nội dung đoạn văn
         })
@@ -1406,7 +1431,7 @@ if bank_choice != "----":
             elif source == "PL2.docx":
                 questions = parse_pl2(source) # Sử dụng parser mới (dùng (*))
             elif source == "PL3.docx":
-                questions = parse_pl3_passage_bank(source) # <-- Dùng parser mới cho PL3
+                questions = parse_pl3_passage_bank(source) # <-- Dùng parser đã sửa cho PL3
     
     if not questions:
         # Cập nhật thông báo lỗi để phù hợp với logic (*) cho cả PL1 và PL2
@@ -1423,11 +1448,18 @@ if bank_choice != "----":
     if is_docwise and source == "PL3.docx":
         is_pl3_grouping = True
         passage_groups = {}
+        # Cần một vòng lặp phụ để xác định lại chỉ mục câu hỏi toàn cục (i_global)
+        q_counter = 1
         for q in questions:
             # group_key: "Paragraph 1 ."
             group_key = q.get('group', 'Không có đoạn văn')
             if group_key not in passage_groups:
                 passage_groups[group_key] = []
+            
+            # Gán lại chỉ mục toàn cục cho câu hỏi
+            q['global_number'] = q_counter 
+            q_counter += 1
+            
             passage_groups[group_key].append(q)
             
         # TẠO CÁC NHÓM 2 ĐOẠN VĂN
@@ -1435,9 +1467,17 @@ if bank_choice != "----":
         for i in range(0, len(passage_names), 2):
             group_names_batch = passage_names[i:i+2]
             group_label = " & ".join(group_names_batch)
+            
+            questions_in_group = [q for name in group_names_batch for q in passage_groups[name]]
+            
+            # Label cho câu hỏi: Câu [min_q_num]-[max_q_num]
+            min_q_num = questions_in_group[0]['global_number']
+            max_q_num = questions_in_group[-1]['global_number']
+            final_group_label = f"Câu {min_q_num}-{max_q_num} ({group_label})"
+            
             custom_groups.append({
-                'label': group_label,
-                'questions': [q for name in group_names_batch for q in passage_groups[name]]
+                'label': final_group_label,
+                'questions': questions_in_group
             })
         
         groups = [g['label'] for g in custom_groups]
@@ -1462,6 +1502,7 @@ if bank_choice != "----":
                 st.session_state.current_group_idx = new_idx
                 st.session_state.submitted = False
                 st.session_state.active_translation_key = None 
+                st.session_state.current_passage_id_displayed = None # Reset passage display
                 st.rerun()
 
             idx = st.session_state.current_group_idx
@@ -1501,40 +1542,40 @@ if bank_choice != "----":
                     st.rerun()
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
             
-            # --- START: PHẦN CẬP NHẬT HIỂN THỊ ĐOẠN VĂN (CHO PL3) - FIX 2b ---
-            if is_docwise and source == "PL3.docx" and batch:
-                displayed_passage_ids_in_batch = set()
-                # Iterate through batch to find unique passages to display
-                for q in batch: 
-                    group_name = q.get('group', '')
-                    paragraph_content = q.get('paragraph_content', '').strip()
-                    
-                    if paragraph_content:
-                        passage_id = f"{group_name}_{hash(paragraph_content)}"
-                        
-                        if passage_id not in displayed_passage_ids_in_batch:
-                            # 1. In đậm, đổi màu tiêu đề
-                            st.markdown(f'<div class="paragraph-title">**{group_name}**</div>', unsafe_allow_html=True) 
-                            
-                            # 2. Hiển thị nội dung đoạn văn, dùng CSS để giữ nguyên ngắt dòng
-                            st.markdown(f'<div class="paragraph-content-box">{paragraph_content}</div>', unsafe_allow_html=True)
-                            st.markdown("---") 
-                            
-                            displayed_passage_ids_in_batch.add(passage_id)
-            # --- END: PHẦN CẬP NHẬT ---
-            
+            # --- XÓA: PHẦN HIỂN THỊ ĐOẠN VĂN Ở ĐÂY --- (Đã chuyển vào trong vòng lặp)
 
+            
+            # --- BẮT ĐẦU VÒNG LẶP CÂU HỎI ---
             if batch:
+                current_passage_id_in_group_mode = None
+                
                 if not st.session_state.submitted:
-                    # Fix 1: Sử dụng q.get('number', i_global)
+                    # Luyện tập
                     for i_local, q in enumerate(batch):
-                        i_global = start + i_local + 1 # Số thứ tự toàn cục (fallback cho non-PL3)
+                        i_global = q.get('global_number', start + i_local + 1) # Sử dụng global_number nếu có
                         q_key = f"q_{i_global}_{hash(q['question'])}" 
                         translation_key = f"trans_{q_key}"
                         is_active = (translation_key == st.session_state.active_translation_key)
                         
-                        # Fix KeyError: 'number'
-                        display_num = q.get('number', i_global) 
+                        # --- CẬP NHẬT: HIỂN THỊ ĐOẠN VĂN (CHO PL3) TRƯỚC CÂU HỎI ---
+                        passage_content = q.get('paragraph_content', '').strip()
+                        group_name = q.get('group', '')
+                        
+                        if passage_content:
+                            passage_id = f"{group_name}_{hash(passage_content)}"
+                            if passage_id != current_passage_id_in_group_mode:
+                                # 1. In đậm, đổi màu tiêu đề
+                                st.markdown(f'<div class="paragraph-title">**{group_name}**</div>', unsafe_allow_html=True) 
+                                
+                                # 2. Hiển thị nội dung đoạn văn, dùng CSS để giữ nguyên ngắt dòng
+                                st.markdown(f'<div class="paragraph-content-box">{passage_content}</div>', unsafe_allow_html=True)
+                                st.markdown("---") 
+                                
+                                current_passage_id_in_group_mode = passage_id
+                        # -----------------------------------------------------------------
+                        
+                        # Fix KeyError: 'number' (Sử dụng global number nếu có, nếu không thì dùng number của paragraph)
+                        display_num = q.get('global_number', q.get('number', i_global)) 
                         
                         # Hiển thị câu hỏi
                         st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True) 
@@ -1570,18 +1611,36 @@ if bank_choice != "----":
                         st.session_state.active_translation_key = None # Tắt dịch khi nộp bài
                         st.rerun()
                 else:
+                    # Chế độ xem đáp án
                     score = 0
                     for i_local, q in enumerate(batch):
-                        i_global = start + i_local + 1 
+                        i_global = q.get('global_number', start + i_local + 1)
                         q_key = f"q_{i_global}_{hash(q['question'])}" 
                         selected_opt = st.session_state.get(q_key)
                         correct = clean_text(q["answer"])
                         is_correct = clean_text(selected_opt) == correct
                         translation_key = f"trans_{q_key}"
                         is_active = (translation_key == st.session_state.active_translation_key)
+                        
+                        # --- CẬP NHẬT: HIỂN THỊ ĐOẠN VĂN (CHO PL3) TRƯỚC CÂU HỎI ---
+                        passage_content = q.get('paragraph_content', '').strip()
+                        group_name = q.get('group', '')
+                        
+                        if passage_content:
+                            passage_id = f"{group_name}_{hash(passage_content)}"
+                            if passage_id != current_passage_id_in_group_mode:
+                                # 1. In đậm, đổi màu tiêu đề
+                                st.markdown(f'<div class="paragraph-title">**{group_name}**</div>', unsafe_allow_html=True) 
+                                
+                                # 2. Hiển thị nội dung đoạn văn, dùng CSS để giữ nguyên ngắt dòng
+                                st.markdown(f'<div class="paragraph-content-box">{passage_content}</div>', unsafe_allow_html=True)
+                                st.markdown("---") 
+                                
+                                current_passage_id_in_group_mode = passage_id
+                        # -----------------------------------------------------------------
 
                         # Hiển thị câu hỏi: FIX KeyError: 'number'
-                        display_num = q.get('number', i_global)
+                        display_num = q.get('global_number', q.get('number', i_global))
                         st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True) 
 
                         # Nút Dịch ở dưới
@@ -1633,7 +1692,7 @@ if bank_choice != "----":
                         if st.button("🔄 Làm lại nhóm này", key="reset_group"):
                             # Xoá session state của các radio button trong nhóm
                             for i_local, q in enumerate(batch):
-                                i_global = start + i_local + 1
+                                i_global = q.get('global_number', start + i_local + 1)
                                 st.session_state.pop(f"q_{i_global}_{hash(q['question'])}", None) 
                             st.session_state.submitted = False
                             st.session_state.active_translation_key = None # Reset dịch khi làm lại
