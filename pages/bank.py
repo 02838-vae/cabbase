@@ -146,66 +146,104 @@ def get_translator():
         print(f"Lỗi khởi tạo translator: {e}")
         return None
 
+# HÀM MỚI: Dùng để xây dựng chuỗi dịch
+def build_translation_text(q):
+    """Xây dựng chuỗi văn bản đầy đủ để gửi đi dịch."""
+    passage_content = q.get('paragraph_content', '').strip()
+    question_text = q['question']
+    options_text = '; '.join(q['options'])
+    
+    if passage_content:
+        # Dùng một bộ phân cách đặc biệt ít bị dịch để tách Passage và Question
+        return f"Đoạn văn: {passage_content}\n\n[QUESTION_SEPARATOR]\n\nCâu hỏi: {question_text}\nĐáp án: {options_text}"
+    else:
+        # Định dạng cũ cho các loại câu hỏi khác
+        return f"Câu hỏi: {question_text}\nĐáp án: {options_text}"
+
 def translate_text(text):
-    """Dịch văn bản sử dụng deep_translator (ĐÃ SỬA LỖI "Một...")"""
+    """
+    Dịch văn bản sử dụng deep_translator, đã cập nhật để xử lý
+    cả Đoạn văn (Passage) và Câu hỏi (Question)
+    """
     translator = get_translator()
     
     if translator is None:
         return f"**[LỖI]** Không thể khởi tạo translator.\n{text}"
     
     try:
-        parts = text.split('\nĐáp án: ')
-        q_content = parts[0].replace('Câu hỏi: ', '').strip()
-        a_content_raw = parts[1].strip() if len(parts) > 1 else ""
-        options = [opt.strip() for opt in a_content_raw.split(';') if opt.strip()]
+        # 1. Tách phần câu hỏi/options khỏi phần passage (nếu có)
+        passage_and_q_parts = text.split('[QUESTION_SEPARATOR]')
         
-        # Dịch câu hỏi
-        q_translated = translator.translate(q_content)
-        
-        # Dịch từng đáp án
-        a_translated_list = []
-        for i, option_content in enumerate(options):
-            if not option_content:
-                a_translated_list.append("")
-                continue
-            
-            # 1. Tách prefix và nội dung chính để CHỈ DỊCH NỘI DUNG
-            original_prefix_match = re.match(r'^([a-d]\.|\s*)\s*', option_content, re.IGNORECASE)
-            original_prefix_with_space = original_prefix_match.group(0) if original_prefix_match else ""
-            # Lấy prefix để gắn lại
-            original_prefix = original_prefix_with_space.strip() if original_prefix_with_space.strip() else f"{i+1}."
-            
-            # Lấy nội dung chính (body)
-            content_to_translate = option_content[len(original_prefix_with_space):].strip()
-            
-            if not content_to_translate:
-                a_translated_list.append(original_prefix)
-                continue
-
-            # 2. CHỈ DỊCH NỘI DUNG CHÍNH
-            translated_text = translator.translate(content_to_translate)
-            
-            # 3. Loại bỏ ký tự thừa do translator tự thêm (VD: "Một", "A.", "1.")
-            stripped_translated_text = translated_text.strip()
-            
-            # Loại bỏ "Một " hoặc "một " ở đầu bản dịch (Fix lỗi người dùng báo cáo)
-            if stripped_translated_text.lower().startswith("một "):
-                stripped_translated_text = stripped_translated_text[len("một "):]
+        # --- LOGIC PHỤC VỤ DỊCH OPTIONS (DÙNG CHUNG) ---
+        def _translate_options(options_raw_text):
+            a_translated_list = []
+            options = [opt.strip() for opt in options_raw_text.split(';') if opt.strip()]
+            for i, option_content in enumerate(options):
+                if not option_content: a_translated_list.append(""); continue
                 
-            # Loại bỏ các prefix kiểu chữ cái/số + dấu chấm (VD: "A. ", "1. ") 
-            # mà translator có thể thêm vào khi dịch body
-            stripped_translated_text = re.sub(r'^\s*([a-d]\.|\d+\.)\s*', '', stripped_translated_text, flags=re.IGNORECASE).strip()
-            
-            # Đảm bảo không bị rỗng
-            if not stripped_translated_text:
+                original_prefix_match = re.match(r'^([a-d]\.|\s*)\s*', option_content, re.IGNORECASE)
+                original_prefix_with_space = original_prefix_match.group(0) if original_prefix_match else ""
+                original_prefix = original_prefix_with_space.strip() if original_prefix_with_space.strip() else f"{i+1}."
+                
+                content_to_translate = option_content[len(original_prefix_with_space):].strip()
+                if not content_to_translate: a_translated_list.append(original_prefix); continue
+                
+                translated_text = translator.translate(content_to_translate)
                 stripped_translated_text = translated_text.strip()
+                
+                if stripped_translated_text.lower().startswith("một "): stripped_translated_text = stripped_translated_text[len("một "):]
+                stripped_translated_text = re.sub(r'^\s*([a-d]\.|\d+\.)\s*', '', stripped_translated_text, flags=re.IGNORECASE).strip()
+                if not stripped_translated_text: stripped_translated_text = translated_text.strip()
+                
+                a_translated_list.append(f"{original_prefix} {stripped_translated_text}")
             
-            # 4. Gắn prefix gốc và nội dung đã dịch
-            a_translated_list.append(f"{original_prefix} {stripped_translated_text}")
-        
-        a_translated_text = "\n".join([f"- {opt}" for opt in a_translated_list])
-        
-        return f"**[Bản dịch Tiếng Việt]**\n\n- **Câu hỏi:** {q_translated}\n- **Các đáp án:** \n{a_translated_text}"
+            return "\n".join([f"- {opt}" for opt in a_translated_list])
+        # --------------------------------------------------
+
+        if len(passage_and_q_parts) == 2:
+            # Đây là câu hỏi đọc hiểu (PL3) - Cần dịch Passage
+            passage_part_raw = passage_and_q_parts[0].replace('Đoạn văn: ', '').strip()
+            q_options_part = passage_and_q_parts[1].strip()
+            
+            # Tách Câu hỏi và Đáp án
+            q_parts = q_options_part.split('\nĐáp án: ')
+            q_content = q_parts[0].replace('Câu hỏi: ', '').strip()
+            a_content_raw = q_parts[1].strip() if len(q_parts) > 1 else ""
+            
+            # Ghép Passage và Question để dịch 1 lần (sử dụng dấu phân cách nội bộ)
+            internal_separator = "|||QUESTION_START|||" 
+            full_content_to_translate = passage_part_raw + "\n\n" + internal_separator + "\n\n" + q_content
+            
+            # Dịch toàn bộ
+            translated_full_content = translator.translate(full_content_to_translate)
+            
+            # Tách lại phần dịch
+            translated_parts = translated_full_content.split(internal_separator)
+            
+            passage_translated = translated_parts[0].strip()
+            q_translated = translated_parts[1].strip() if len(translated_parts) == 2 else q_content # Dùng câu hỏi gốc nếu tách lỗi
+            
+            # Dịch Options
+            a_translated_text = _translate_options(a_content_raw)
+
+            # Định dạng đầu ra PL3
+            return f"""**[Bản dịch Tiếng Việt]**
+- **Đoạn văn:** {passage_translated}
+- **Câu hỏi:** {q_translated}
+- **Các đáp án:** {a_translated_text}
+"""
+
+        else:
+            # Đây là câu hỏi thông thường (Không có Passage) - Dùng logic cũ
+            q_options_part = passage_and_q_parts[0].strip()
+            q_parts = q_options_part.split('\nĐáp án: ')
+            q_content = q_parts[0].replace('Câu hỏi: ', '').strip()
+            a_content_raw = q_parts[1].strip() if len(q_parts) > 1 else ""
+            
+            q_translated = translator.translate(q_content)
+            a_translated_text = _translate_options(a_content_raw)
+            
+            return f"**[Bản dịch Tiếng Việt]**\n\n- **Câu hỏi:** {q_translated}\n- **Các đáp án:** \n{a_translated_text}"
         
     except Exception as e:
         print(f"Lỗi dịch thuật: {e}")
@@ -744,7 +782,8 @@ def display_all_questions(questions):
             
             # If not cached or is not a string (default True/False state)
             if not isinstance(translated_content, str):
-                full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
+                # GỌI HÀM MỚI ĐỂ GỬI CẢ ĐOẠN VĂN ĐI DỊCH
+                full_text_to_translate = build_translation_text(q) 
                 st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
                 translated_content = st.session_state.translations[translation_key]
 
@@ -849,7 +888,8 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
                 translated_content = st.session_state.translations.get(translation_key)
                 
                 if not isinstance(translated_content, str):
-                    full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
+                    # GỌI HÀM MỚI ĐỂ GỬI CẢ ĐOẠN VĂN ĐI DỊCH
+                    full_text_to_translate = build_translation_text(q)
                     st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
                     translated_content = st.session_state.translations[translation_key]
 
@@ -914,7 +954,8 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
                 translated_content = st.session_state.translations.get(translation_key)
                 
                 if not isinstance(translated_content, str):
-                    full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
+                    # GỌI HÀM MỚI ĐỂ GỬI CẢ ĐOẠN VĂN ĐI DỊCH
+                    full_text_to_translate = build_translation_text(q)
                     st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
                     translated_content = st.session_state.translations[translation_key]
 
@@ -1497,12 +1538,19 @@ if bank_choice != "----":
                 questions_in_pair.extend(passage_groups[p2_name])
                 
                 # Format label: "Paragraph 1 & 2" (dựa trên tên Paragraph đã làm sạch)
-                p1_base = p1_name.strip(' .') # Ví dụ: "Paragraph 1"
-                p2_base = p2_name.strip(' .') # Ví dụ: "Paragraph 2"
-                base_group_label = f"{p1_base} & {p2_base}"
+                # Bóc tách số thứ tự khỏi chuỗi "Paragraph X ."
+                p1_match = re.search(r'Paragraph\s*(\d+)', p1_name, re.I)
+                p2_match = re.search(r'Paragraph\s*(\d+)', p2_name, re.I)
+                
+                p1_num = p1_match.group(1) if p1_match else p1_name
+                p2_num = p2_match.group(1) if p2_match else p2_name
+                
+                base_group_label = f"Paragraph {p1_num} & {p2_num}"
             else:
                 # Xử lý Paragraph lẻ cuối cùng (ví dụ: "Paragraph 11")
-                base_group_label = p1_name.strip(' .')
+                p1_match = re.search(r'Paragraph\s*(\d+)', p1_name, re.I)
+                p1_num = p1_match.group(1) if p1_match else p1_name
+                base_group_label = f"Paragraph {p1_num}"
             
             # TẠO LABEL CUỐI CÙNG (CHỈ DÙNG TÊN PARAGRAPH)
             final_group_label = base_group_label # <--- ĐÃ SỬA THEO YÊU CẦU CỦA USER
@@ -1638,7 +1686,8 @@ if bank_choice != "----":
                             
                             # If not cached or is not a string (default True/False state)
                             if not isinstance(translated_content, str):
-                                full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
+                                # GỌI HÀM MỚI ĐỂ GỬI CẢ ĐOẠN VĂN ĐI DỊCH
+                                full_text_to_translate = build_translation_text(q) 
                                 st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
                                 translated_content = st.session_state.translations[translation_key]
 
@@ -1706,7 +1755,8 @@ if bank_choice != "----":
                             
                             # If not cached or is not a string (default True/False state)
                             if not isinstance(translated_content, str):
-                                full_text_to_translate = f"Câu hỏi: {q['question']}\nĐáp án: {'; '.join(q['options'])}"
+                                # GỌI HÀM MỚI ĐỂ GỬI CẢ ĐOẠN VĂN ĐI DỊCH
+                                full_text_to_translate = build_translation_text(q)
                                 st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
                                 translated_content = st.session_state.translations[translation_key]
 
