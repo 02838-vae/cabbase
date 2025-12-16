@@ -131,7 +131,7 @@ def get_base64_encoded_file(file_path):
         return fallback_base64
 
 # ====================================================
-# 🌐 HÀM DỊCH THUẬT (ĐÃ CẬP NHẬT DÙNG translate)
+# 🌐 HÀM DỊCH THUẬT (ĐÃ CẬP NHẬT DÙNG deep_translator)
 # ====================================================
 
 # Thay thế import
@@ -146,35 +146,44 @@ def get_translator():
         print(f"Lỗi khởi tạo translator: {e}")
         return None
 
-# HÀM MỚI: Dùng để xây dựng chuỗi dịch
-def build_translation_text(q):
-    """Xây dựng chuỗi văn bản đầy đủ để gửi đi dịch."""
-    passage_content = q.get('paragraph_content', '').strip()
+# HÀM MỚI: Dịch văn bản thuần túy (Dùng cho đoạn văn)
+def translate_passage_content(text):
+    """
+    Dịch văn bản thuần túy và cố gắng bảo toàn định dạng xuống dòng.
+    """
+    translator = get_translator()
+    if translator is None or not text.strip():
+        return f"**[LỖI]** Không thể khởi tạo translator." if not text.strip() else ""
+    try:
+        # Dịch nguyên khối, deep_translator thường bảo toàn line breaks nếu input có
+        translated_text = translator.translate(text)
+        return translated_text
+    except Exception as e:
+        print(f"Lỗi dịch thuật passage: {e}")
+        return f"**[LỖI DỊCH THUẬT ĐOẠN VĂN]** Không thể dịch nội dung. Chi tiết: {type(e).__name__}"
+
+
+# HÀM MỚI: Dùng để xây dựng chuỗi dịch cho Q/A
+def build_translation_text_for_qa(q):
+    """Xây dựng chuỗi văn bản đầy đủ để gửi đi dịch (chỉ Question và Options)."""
     question_text = q['question']
     options_text = '; '.join(q['options'])
-    
-    if passage_content:
-        # Dùng một bộ phân cách đặc biệt ít bị dịch để tách Passage và Question
-        return f"Đoạn văn: {passage_content}\n\n[QUESTION_SEPARATOR]\n\nCâu hỏi: {question_text}\nĐáp án: {options_text}"
-    else:
-        # Định dạng cũ cho các loại câu hỏi khác
-        return f"Câu hỏi: {question_text}\nĐáp án: {options_text}"
+    return f"Câu hỏi: {question_text}\nĐáp án: {options_text}"
 
-def translate_text(text):
+
+# HÀM GỐC: Đã được đổi tên thành `translate_question_and_options`
+def translate_question_and_options(text):
     """
-    Dịch văn bản sử dụng deep_translator, đã cập nhật để xử lý
-    cả Đoạn văn (Passage) và Câu hỏi (Question)
+    Dịch câu hỏi và đáp án sử dụng deep_translator.
+    (Input là chuỗi đã được build_translation_text_for_qa định dạng)
     """
     translator = get_translator()
     
     if translator is None:
-        return f"**[LỖI]** Không thể khởi tạo translator.\n{text}"
+        return f"**[LỖI]** Không thể khởi tạo translator."
     
     try:
-        # 1. Tách phần câu hỏi/options khỏi phần passage (nếu có)
-        passage_and_q_parts = text.split('[QUESTION_SEPARATOR]')
-        
-        # --- LOGIC PHỤC VỤ DỊCH OPTIONS (DÙNG CHUNG) ---
+        # 1. Logic dịch Options (Dùng chung)
         def _translate_options(options_raw_text):
             a_translated_list = []
             options = [opt.strip() for opt in options_raw_text.split(';') if opt.strip()]
@@ -200,60 +209,28 @@ def translate_text(text):
             return "\n".join([f"- {opt}" for opt in a_translated_list])
         # --------------------------------------------------
 
-        if len(passage_and_q_parts) == 2:
-            # Đây là câu hỏi đọc hiểu (PL3) - Cần dịch Passage
-            passage_part_raw = passage_and_q_parts[0].replace('Đoạn văn: ', '').strip()
-            q_options_part = passage_and_q_parts[1].strip()
-            
-            # Tách Câu hỏi và Đáp án
-            q_parts = q_options_part.split('\nĐáp án: ')
-            q_content = q_parts[0].replace('Câu hỏi: ', '').strip()
-            a_content_raw = q_parts[1].strip() if len(q_parts) > 1 else ""
-            
-            # Ghép Passage và Question để dịch 1 lần (sử dụng dấu phân cách nội bộ)
-            internal_separator = "|||QUESTION_START|||" 
-            full_content_to_translate = passage_part_raw + "\n\n" + internal_separator + "\n\n" + q_content
-            
-            # Dịch toàn bộ
-            translated_full_content = translator.translate(full_content_to_translate)
-            
-            # Tách lại phần dịch
-            translated_parts = translated_full_content.split(internal_separator)
-            
-            passage_translated = translated_parts[0].strip()
-            q_translated = translated_parts[1].strip() if len(translated_parts) == 2 else q_content # Dùng câu hỏi gốc nếu tách lỗi
-            
-            # Dịch Options
-            a_translated_text = _translate_options(a_content_raw)
-
-            # Định dạng đầu ra PL3
-            return f"""**[Bản dịch Tiếng Việt]**
-- **Đoạn văn:** {passage_translated}
-- **Câu hỏi:** {q_translated}
-- **Các đáp án:** {a_translated_text}
-"""
-
-        else:
-            # Đây là câu hỏi thông thường (Không có Passage) - Dùng logic cũ
-            q_options_part = passage_and_q_parts[0].strip()
-            q_parts = q_options_part.split('\nĐáp án: ')
-            q_content = q_parts[0].replace('Câu hỏi: ', '').strip()
-            a_content_raw = q_parts[1].strip() if len(q_parts) > 1 else ""
-            
-            q_translated = translator.translate(q_content)
-            a_translated_text = _translate_options(a_content_raw)
-            
-            return f"**[Bản dịch Tiếng Việt]**\n\n- **Câu hỏi:** {q_translated}\n- **Các đáp án:** \n{a_translated_text}"
+        # Tách Câu hỏi và Đáp án từ input text
+        q_parts = text.split('\nĐáp án: ')
+        q_content = q_parts[0].replace('Câu hỏi: ', '').strip()
+        a_content_raw = q_parts[1].strip() if len(q_parts) > 1 else ""
+        
+        q_translated = translator.translate(q_content)
+        a_translated_text = _translate_options(a_content_raw)
+        
+        return f"**[Bản dịch Tiếng Việt]**\n\n- **Câu hỏi:** {q_translated}\n- **Các đáp án:** \n{a_translated_text}"
         
     except Exception as e:
         print(f"Lỗi dịch thuật: {e}")
         return f"**[LỖI DỊCH THUẬT]**\n- Không thể dịch nội dung. Chi tiết: {type(e).__name__}\n- Câu hỏi gốc:\n{text}"
 
+# Đặt lại tên hàm cũ (translate_text) để tương thích với các hàm hiển thị
+translate_text = translate_question_and_options
 # ====================================================
 
 # ====================================================
 # 🧩 PARSER 1: NGÂN HÀNG KỸ THUẬT (CABBANK)
 # ====================================================
+# ... (parse_cabbank remains unchanged)
 def parse_cabbank(source):
     """
     Parser cho định dạng CABBANK (Dùng dấu * trước option đúng)
@@ -308,6 +285,7 @@ def parse_cabbank(source):
 # ====================================================
 # 🧩 PARSER 2: NGÂN HÀNG LUẬT (LAWBANK)
 # ====================================================
+# ... (parse_lawbank remains unchanged)
 def parse_lawbank(source):
     """
     Parser cho định dạng LAWBANK (Dùng dấu * trước option đúng)
@@ -366,6 +344,7 @@ def parse_lawbank(source):
 # ====================================================
 # 🧩 PARSER 3: PHỤ LỤC 1 (Dùng dấu (*))
 # ====================================================
+# ... (parse_pl1 remains unchanged)
 def parse_pl1(source):
     """
     Parser cho định dạng PL1 (sử dụng dấu (*) để nhận diện đáp án đúng)
@@ -448,6 +427,7 @@ def parse_pl1(source):
 # ====================================================
 # 🧩 PARSER 4: PHỤ LỤC 2 (Dùng dấu (*))
 # ====================================================
+# ... (parse_pl2 remains unchanged)
 def parse_pl2(source):
     """
     Parser cho định dạng PL2 (Sử dụng ký hiệu (*) để nhận diện đáp án đúng)
@@ -529,6 +509,7 @@ def parse_pl2(source):
 # ====================================================
 # 🧩 PARSER 5: PHỤ LỤC 3 - BÀI ĐỌC HIỂU (PASSAGE-BASED) - ĐÃ SỬA LỖI PARAGRAPH 2
 # ====================================================
+# ... (parse_pl3_passage_bank remains unchanged)
 def parse_pl3_passage_bank(source):
     """
     Parser cho định dạng PL3 (Bài đọc hiểu)
@@ -706,9 +687,12 @@ def parse_pl3_passage_bank(source):
 # 🌟 HÀM: LOGIC DỊCH ĐỘC QUYỀN (EXCLUSIVE TRANSLATION)
 # ====================================================
 if 'active_translation_key' not in st.session_state: st.session_state.active_translation_key = None
+# Thêm trạng thái cho dịch đoạn văn
+if 'active_passage_translation' not in st.session_state: st.session_state.active_passage_translation = None
+if 'passage_translations_cache' not in st.session_state: st.session_state.passage_translations_cache = {}
 
 def on_translate_toggle(key_clicked):
-    """Callback function để quản lý chế độ Dịch ĐỘC QUYỀN."""
+    """Callback function để quản lý chế độ Dịch ĐỘC QUYỀN (Q&A)."""
     toggle_key = f"toggle_{key_clicked}"
     # Check the state of the toggle in session state (it is the state *after* the click)
     is_on_after_click = st.session_state.get(toggle_key, False)
@@ -716,11 +700,25 @@ def on_translate_toggle(key_clicked):
     if is_on_after_click:
         # User turned this specific toggle ON -> Make it the active key
         st.session_state.active_translation_key = key_clicked
+        # Tắt dịch đoạn văn (độc quyền)
+        st.session_state.active_passage_translation = None 
     elif st.session_state.active_translation_key == key_clicked:
         # User turned this specific toggle OFF -> Clear the active key
         st.session_state.active_translation_key = None
     
-    # Bỏ st.rerun() để tránh warning "Calling st.rerun() within a callback is a no-op."
+def on_passage_translate_toggle(passage_id_clicked):
+    """Callback function để quản lý chế độ Dịch ĐỘC QUYỀN (Passage)."""
+    toggle_key = f"toggle_passage_{passage_id_clicked}"
+    is_on_after_click = st.session_state.get(toggle_key, False)
+
+    if is_on_after_click:
+        # User turned this specific toggle ON -> Make it the active passage key
+        st.session_state.active_passage_translation = passage_id_clicked
+        # Tắt dịch câu hỏi/đáp án (độc quyền)
+        st.session_state.active_translation_key = None 
+    elif st.session_state.active_passage_translation == passage_id_clicked:
+        # User turned this specific toggle OFF -> Clear the active key
+        st.session_state.active_passage_translation = None
 
 # ====================================================
 # 🌟 HÀM: XEM TOÀN BỘ CÂU HỎI (CẬP NHẬT CHỨC NĂNG DỊCH)
@@ -745,13 +743,45 @@ def display_all_questions(questions):
         
         if passage_content:
              # Dùng group_name + content để tạo ID duy nhất cho đoạn văn
-            passage_id = f"{group_name}_{hash(passage_content)}"
+            passage_id = f"passage_{group_name}_{hash(passage_content)}"
+            is_passage_active = (passage_id == st.session_state.active_passage_translation)
+
             if passage_id != current_passage_id:
-                # Cập nhật: In đậm, đổi màu tiêu đề
+                # 1. In đậm, đổi màu tiêu đề
                 st.markdown(f'<div class="paragraph-title">**{group_name}**</div>', unsafe_allow_html=True) 
                 
-                # Cập nhật: Dùng CSS để hiển thị đúng ngắt dòng
+                # 2. Hiển thị nội dung đoạn văn gốc
                 st.markdown(f'<div class="paragraph-content-box">{passage_content}</div>', unsafe_allow_html=True)
+                
+                # 3. Thêm Nút Dịch Đoạn Văn
+                st.toggle(
+                    "🌐 Dịch đoạn văn sang Tiếng Việt", 
+                    value=is_passage_active, 
+                    key=f"toggle_passage_{passage_id}",
+                    on_change=on_passage_translate_toggle,
+                    args=(passage_id,)
+                )
+                
+                # 4. Hiển thị Bản Dịch Đoạn Văn
+                if is_passage_active:
+                    translated_passage = st.session_state.passage_translations_cache.get(passage_id)
+                    if not isinstance(translated_passage, str):
+                        # GỌI HÀM DỊCH CHỈ ĐOẠN VĂN
+                        translated_passage = translate_passage_content(passage_content)
+                        st.session_state.passage_translations_cache[passage_id] = translated_passage
+
+                    # Sử dụng st.markdown + CSS để ép kiểu 'pre-wrap'
+                    st.markdown(f"""
+                    <div data-testid="stAlert" class="stAlert stAlert-info">
+                        <div style="font-size: 18px; line-height: 1.6; color: white; padding: 10px;">
+                            <strong style="color: #FFD700;">[Bản dịch Đoạn văn]</strong>
+                            <div class="paragraph-content-box" style="white-space: pre-wrap; margin-bottom: 0px; padding: 10px; background-color: rgba(0, 0, 0, 0.5); border-left: 3px solid #00d4ff;">
+                            {translated_passage}
+                            </div>
+                        </div>
+                    </div>
+                    """, unsafe_allow_html=True)
+                
                 st.markdown("---")
                 current_passage_id = passage_id
         # --- KẾT THÚC BỔ SUNG ---
@@ -766,24 +796,24 @@ def display_all_questions(questions):
             
         st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
 
-        # Nút Dịch ở dưới
+        # Nút Dịch Q&A ở dưới
         st.toggle(
-            "🌐 Dịch sang Tiếng Việt", 
+            "🌐 Dịch Câu hỏi & Đáp án sang Tiếng Việt", 
             value=is_active, 
             key=f"toggle_{translation_key}",
             on_change=on_translate_toggle,
             args=(translation_key,)
         )
 
-        # Hiển thị Bản Dịch
+        # Hiển thị Bản Dịch Q&A
         if is_active:
             # Check if translated content is already cached
             translated_content = st.session_state.translations.get(translation_key)
             
             # If not cached or is not a string (default True/False state)
             if not isinstance(translated_content, str):
-                # GỌI HÀM MỚI ĐỂ GỬI CẢ ĐOẠN VĂN ĐI DỊCH
-                full_text_to_translate = build_translation_text(q) 
+                # GỌI HÀM MỚI ĐỂ GỬI CHỈ CÂU HỎI VÀ ĐÁP ÁN ĐI DỊCH
+                full_text_to_translate = build_translation_text_for_qa(q) 
                 st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
                 translated_content = st.session_state.translations[translation_key]
 
@@ -854,13 +884,44 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             group_name = q.get('group', '')
             
             if passage_content:
-                passage_id = f"{group_name}_{hash(passage_content)}"
+                passage_id = f"passage_{group_name}_{hash(passage_content)}"
+                is_passage_active = (passage_id == st.session_state.active_passage_translation)
+
                 if passage_id != current_passage_id:
-                     # Cập nhật: In đậm, đổi màu tiêu đề
+                     # 1. In đậm, đổi màu tiêu đề
                     st.markdown(f'<div class="paragraph-title">**{group_name}**</div>', unsafe_allow_html=True) 
                     
-                    # Cập nhật: Dùng CSS để hiển thị đúng ngắt dòng
+                    # 2. Hiển thị nội dung đoạn văn gốc
                     st.markdown(f'<div class="paragraph-content-box">{passage_content}</div>', unsafe_allow_html=True)
+                    
+                    # 3. Thêm Nút Dịch Đoạn Văn
+                    st.toggle(
+                        "🌐 Dịch đoạn văn sang Tiếng Việt", 
+                        value=is_passage_active, 
+                        key=f"toggle_passage_{passage_id}",
+                        on_change=on_passage_translate_toggle,
+                        args=(passage_id,)
+                    )
+                    
+                    # 4. Hiển thị Bản Dịch Đoạn Văn
+                    if is_passage_active:
+                        translated_passage = st.session_state.passage_translations_cache.get(passage_id)
+                        if not isinstance(translated_passage, str):
+                            # GỌI HÀM DỊCH CHỈ ĐOẠAN VĂN
+                            translated_passage = translate_passage_content(passage_content)
+                            st.session_state.passage_translations_cache[passage_id] = translated_passage
+
+                        st.markdown(f"""
+                        <div data-testid="stAlert" class="stAlert stAlert-info">
+                            <div style="font-size: 18px; line-height: 1.6; color: white; padding: 10px;">
+                                <strong style="color: #FFD700;">[Bản dịch Đoạn văn]</strong>
+                                <div class="paragraph-content-box" style="white-space: pre-wrap; margin-bottom: 0px; padding: 10px; background-color: rgba(0, 0, 0, 0.5); border-left: 3px solid #00d4ff;">
+                                {translated_passage}
+                                </div>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+
                     st.markdown("---")
                     current_passage_id = passage_id
             # --- KẾT THÚC BỔ SUNG ---
@@ -874,22 +935,22 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
                 display_num = i
             st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
 
-            # Nút Dịch ở dưới
+            # Nút Dịch Q&A ở dưới
             st.toggle(
-                "🌐 Dịch sang Tiếng Việt", 
+                "🌐 Dịch Câu hỏi & Đáp án sang Tiếng Việt", 
                 value=is_active, 
                 key=f"toggle_{translation_key}",
                 on_change=on_translate_toggle,
                 args=(translation_key,)
             )
 
-            # Hiển thị Bản Dịch
+            # Hiển thị Bản Dịch Q&A
             if is_active:
                 translated_content = st.session_state.translations.get(translation_key)
                 
                 if not isinstance(translated_content, str):
-                    # GỌI HÀM MỚI ĐỂ GỬI CẢ ĐOẠN VĂN ĐI DỊCH
-                    full_text_to_translate = build_translation_text(q)
+                    # GỌI HÀM MỚI ĐỂ GỬI CHỈ CÂU HỎI VÀ ĐÁP ÁN ĐI DỊCH
+                    full_text_to_translate = build_translation_text_for_qa(q)
                     st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
                     translated_content = st.session_state.translations[translation_key]
 
@@ -902,6 +963,8 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             
         if st.button("✅ Nộp bài Test", key=f"{test_key_prefix}_submit_btn"):
             st.session_state[f"{test_key_prefix}_submitted"] = True
+            st.session_state.active_translation_key = None # Tắt dịch Q&A khi nộp
+            st.session_state.active_passage_translation = None # Tắt dịch Passage khi nộp
             st.rerun()
             
     else:
@@ -920,13 +983,44 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             group_name = q.get('group', '')
             
             if passage_content:
-                passage_id = f"{group_name}_{hash(passage_content)}"
+                passage_id = f"passage_{group_name}_{hash(passage_content)}"
+                is_passage_active = (passage_id == st.session_state.active_passage_translation)
+
                 if passage_id != current_passage_id:
-                     # Cập nhật: In đậm, đổi màu tiêu đề
+                     # 1. In đậm, đổi màu tiêu đề
                     st.markdown(f'<div class="paragraph-title">**{group_name}**</div>', unsafe_allow_html=True) 
                     
-                    # Cập nhật: Dùng CSS để hiển thị đúng ngắt dòng
+                    # 2. Hiển thị nội dung đoạn văn gốc
                     st.markdown(f'<div class="paragraph-content-box">{passage_content}</div>', unsafe_allow_html=True)
+                    
+                    # 3. Thêm Nút Dịch Đoạn Văn
+                    st.toggle(
+                        "🌐 Dịch đoạn văn sang Tiếng Việt", 
+                        value=is_passage_active, 
+                        key=f"toggle_passage_{passage_id}",
+                        on_change=on_passage_translate_toggle,
+                        args=(passage_id,)
+                    )
+                    
+                    # 4. Hiển thị Bản Dịch Đoạn Văn
+                    if is_passage_active:
+                        translated_passage = st.session_state.passage_translations_cache.get(passage_id)
+                        if not isinstance(translated_passage, str):
+                            # GỌI HÀM DỊCH CHỈ ĐOẠN VĂN
+                            translated_passage = translate_passage_content(passage_content)
+                            st.session_state.passage_translations_cache[passage_id] = translated_passage
+
+                        st.markdown(f"""
+                        <div data-testid="stAlert" class="stAlert stAlert-info">
+                            <div style="font-size: 18px; line-height: 1.6; color: white; padding: 10px;">
+                                <strong style="color: #FFD700;">[Bản dịch Đoạn văn]</strong>
+                                <div class="paragraph-content-box" style="white-space: pre-wrap; margin-bottom: 0px; padding: 10px; background-color: rgba(0, 0, 0, 0.5); border-left: 3px solid #00d4ff;">
+                                {translated_passage}
+                                </div>
+                            </div>
+                        </div>
+                        """, unsafe_allow_html=True)
+
                     st.markdown("---")
                     current_passage_id = passage_id
             # --- KẾT THÚC BỔ SUNG ---
@@ -940,22 +1034,22 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
                 display_num = i
             st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
 
-            # Nút Dịch ở dưới
+            # Nút Dịch Q&A ở dưới
             st.toggle(
-                "🌐 Dịch sang Tiếng Việt", 
+                "🌐 Dịch Câu hỏi & Đáp án sang Tiếng Việt", 
                 value=is_active, 
                 key=f"toggle_{translation_key}",
                 on_change=on_translate_toggle,
                 args=(translation_key,)
             )
 
-            # Hiển thị Bản Dịch
+            # Hiển thị Bản Dịch Q&A
             if is_active:
                 translated_content = st.session_state.translations.get(translation_key)
                 
                 if not isinstance(translated_content, str):
-                    # GỌI HÀM MỚI ĐỂ GỬI CẢ ĐOẠN VĂN ĐI DỊCH
-                    full_text_to_translate = build_translation_text(q)
+                    # GỌI HÀM MỚI ĐỂ GỬI CHỈ CÂU HỎI VÀ ĐÁP ÁN ĐI DỊCH
+                    full_text_to_translate = build_translation_text_for_qa(q)
                     st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
                     translated_content = st.session_state.translations[translation_key]
 
@@ -1422,8 +1516,10 @@ if "submitted" not in st.session_state: st.session_state.submitted = False
 if "current_mode" not in st.session_state: st.session_state.current_mode = "group"
 if "last_bank_choice" not in st.session_state: st.session_state.last_bank_choice = "----" 
 if "doc_selected" not in st.session_state: st.session_state.doc_selected = "Phụ lục 1 : Ngữ pháp chung" 
-if 'translations' not in st.session_state: st.session_state.translations = {} # KHỞI TẠO STATE DỊCH THUẬT
-if 'active_translation_key' not in st.session_state: st.session_state.active_translation_key = None # KHỞI TẠO KEY DỊCH ĐỘC QUYỀN
+if 'translations' not in st.session_state: st.session_state.translations = {} # KHỞI TẠO STATE DỊCH THUẬT Q&A
+if 'active_translation_key' not in st.session_state: st.session_state.active_translation_key = None # KHỞI TẠO KEY DỊCH Q&A ĐỘC QUYỀN
+if 'active_passage_translation' not in st.session_state: st.session_state.active_passage_translation = None # KHỞI TẠO KEY DỊCH ĐOẠN VĂN ĐỘC QUYỀN
+if 'passage_translations_cache' not in st.session_state: st.session_state.passage_translations_cache = {} # CACHE DỊCH ĐOẠN VĂN
 if 'current_passage_id_displayed' not in st.session_state: st.session_state.current_passage_id_displayed = None 
 if 'group_mode_title' not in st.session_state: st.session_state.group_mode_title = "Luyện tập theo nhóm (30 câu/nhóm)"
 
@@ -1437,8 +1533,9 @@ if st.session_state.get('last_bank_choice') != bank_choice and bank_choice != "-
     st.session_state.current_group_idx = 0
     st.session_state.submitted = False
     st.session_state.current_mode = "group" 
-    # Reset active translation key
+    # Reset active translation keys
     st.session_state.active_translation_key = None 
+    st.session_state.active_passage_translation = None 
     st.session_state.current_passage_id_displayed = None # Reset passage display
     last_bank_name = st.session_state.get('last_bank_choice')
     if not isinstance(last_bank_name, str) or last_bank_name == "----": last_bank_name = "null bank" 
@@ -1471,6 +1568,8 @@ if bank_choice != "----":
             st.session_state.current_group_idx = 0
             st.session_state.submitted = False
             st.session_state.current_mode = "group"
+            st.session_state.active_translation_key = None 
+            st.session_state.active_passage_translation = None 
             st.session_state.current_passage_id_displayed = None # Reset passage display
             st.rerun()
 
@@ -1522,7 +1621,7 @@ if bank_choice != "----":
             passage_groups[group_key].append(q)
             
         # ----------------------------------------------------
-        # LOGIC MỚI: NHÓM 2 PARAGRAPH THÀNH 1 NHÓM (KHÔNG HIỂN THỊ SỐ THỨ TỰ CÂU HỎI)
+        # LOGIC MỚI: NHÓM 2 PARAGRAPH THÀNH 1 NHÓM
         # ----------------------------------------------------
         passage_names = list(passage_groups.keys())
         
@@ -1537,7 +1636,6 @@ if bank_choice != "----":
             if p2_name:
                 questions_in_pair.extend(passage_groups[p2_name])
                 
-                # Format label: "Paragraph 1 & 2" (dựa trên tên Paragraph đã làm sạch)
                 # Bóc tách số thứ tự khỏi chuỗi "Paragraph X ."
                 p1_match = re.search(r'Paragraph\s*(\d+)', p1_name, re.I)
                 p2_match = re.search(r'Paragraph\s*(\d+)', p2_name, re.I)
@@ -1588,7 +1686,8 @@ if bank_choice != "----":
             if st.session_state.current_group_idx != new_idx:
                 st.session_state.current_group_idx = new_idx
                 st.session_state.submitted = False
-                st.session_state.active_translation_key = None 
+                st.session_state.active_translation_key = None # Reset dịch Q&A
+                st.session_state.active_passage_translation = None # Reset dịch Passage
                 st.session_state.current_passage_id_displayed = None # Reset passage display
                 st.rerun()
 
@@ -1611,14 +1710,16 @@ if bank_choice != "----":
             with col_all_bank:
                 if st.button("📖 Hiển thị toàn bộ ngân hàng", key="btn_show_all"):
                     st.session_state.current_mode = "all"
-                    st.session_state.active_translation_key = None # Reset dịch khi chuyển mode
+                    st.session_state.active_translation_key = None # Reset dịch Q&A
+                    st.session_state.active_passage_translation = None # Reset dịch Passage
                     st.session_state.current_passage_id_displayed = None # Reset passage display
                     st.rerun()
             with col_test:
                 # Đổi tên nút test
                 if st.button("Làm bài test", key="btn_start_test"):
                     st.session_state.current_mode = "test"
-                    st.session_state.active_translation_key = None # Reset dịch khi chuyển mode
+                    st.session_state.active_translation_key = None # Reset dịch Q&A
+                    st.session_state.active_passage_translation = None # Reset dịch Passage
                     st.session_state.current_passage_id_displayed = None # Reset passage display
                     bank_slug_new = bank_choice.split()[-1].lower()
                     test_key_prefix = f"test_{bank_slug_new}"
@@ -1647,13 +1748,44 @@ if bank_choice != "----":
                         group_name = q.get('group', '')
                         
                         if passage_content:
-                            passage_id = f"{group_name}_{hash(passage_content)}"
+                            passage_id = f"passage_{group_name}_{hash(passage_content)}"
+                            is_passage_active = (passage_id == st.session_state.active_passage_translation)
+
                             if passage_id != current_passage_id_in_group_mode:
                                 # 1. In đậm, đổi màu tiêu đề
                                 st.markdown(f'<div class="paragraph-title">**{group_name}**</div>', unsafe_allow_html=True) 
                                 
-                                # 2. Hiển thị nội dung đoạn văn, dùng CSS để giữ nguyên ngắt dòng
+                                # 2. Hiển thị nội dung đoạn văn gốc
                                 st.markdown(f'<div class="paragraph-content-box">{passage_content}</div>', unsafe_allow_html=True)
+                                
+                                # 3. Thêm Nút Dịch Đoạn Văn
+                                st.toggle(
+                                    "🌐 Dịch đoạn văn sang Tiếng Việt", 
+                                    value=is_passage_active, 
+                                    key=f"toggle_passage_{passage_id}",
+                                    on_change=on_passage_translate_toggle,
+                                    args=(passage_id,)
+                                )
+                                
+                                # 4. Hiển thị Bản Dịch Đoạn Văn
+                                if is_passage_active:
+                                    translated_passage = st.session_state.passage_translations_cache.get(passage_id)
+                                    if not isinstance(translated_passage, str):
+                                        # GỌI HÀM DỊCH CHỈ ĐOẠN VĂN
+                                        translated_passage = translate_passage_content(passage_content)
+                                        st.session_state.passage_translations_cache[passage_id] = translated_passage
+
+                                    st.markdown(f"""
+                                    <div data-testid="stAlert" class="stAlert stAlert-info">
+                                        <div style="font-size: 18px; line-height: 1.6; color: white; padding: 10px;">
+                                            <strong style="color: #FFD700;">[Bản dịch Đoạn văn]</strong>
+                                            <div class="paragraph-content-box" style="white-space: pre-wrap; margin-bottom: 0px; padding: 10px; background-color: rgba(0, 0, 0, 0.5); border-left: 3px solid #00d4ff;">
+                                            {translated_passage}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+
                                 st.markdown("---") 
                                 
                                 current_passage_id_in_group_mode = passage_id
@@ -1670,24 +1802,24 @@ if bank_choice != "----":
                         # Hiển thị câu hỏi
                         st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True) 
 
-                        # Nút Dịch ở dưới
+                        # Nút Dịch Q&A ở dưới
                         st.toggle(
-                            "🌐 Dịch sang Tiếng Việt", 
+                            "🌐 Dịch Câu hỏi & Đáp án sang Tiếng Việt", 
                             value=is_active, 
                             key=f"toggle_{translation_key}",
                             on_change=on_translate_toggle,
                             args=(translation_key,)
                         )
 
-                        # Hiển thị Bản Dịch
+                        # Hiển thị Bản Dịch Q&A
                         if is_active:
                             # Check if translated content is already cached
                             translated_content = st.session_state.translations.get(translation_key)
                             
                             # If not cached or is not a string (default True/False state)
                             if not isinstance(translated_content, str):
-                                # GỌI HÀM MỚI ĐỂ GỬI CẢ ĐOẠN VĂN ĐI DỊCH
-                                full_text_to_translate = build_translation_text(q) 
+                                # GỌI HÀM MỚI ĐỂ GỬI CHỈ CÂU HỎI VÀ ĐÁP ÁN ĐI DỊCH
+                                full_text_to_translate = build_translation_text_for_qa(q) 
                                 st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
                                 translated_content = st.session_state.translations[translation_key]
 
@@ -1699,7 +1831,8 @@ if bank_choice != "----":
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
                     if st.button("✅ Nộp bài", key="submit_group"):
                         st.session_state.submitted = True
-                        st.session_state.active_translation_key = None # Tắt dịch khi nộp bài
+                        st.session_state.active_translation_key = None # Tắt dịch Q&A khi nộp
+                        st.session_state.active_passage_translation = None # Tắt dịch Passage khi nộp
                         st.rerun()
                 else:
                     # Chế độ xem đáp án
@@ -1718,13 +1851,44 @@ if bank_choice != "----":
                         group_name = q.get('group', '')
                         
                         if passage_content:
-                            passage_id = f"{group_name}_{hash(passage_content)}"
+                            passage_id = f"passage_{group_name}_{hash(passage_content)}"
+                            is_passage_active = (passage_id == st.session_state.active_passage_translation)
+
                             if passage_id != current_passage_id_in_group_mode:
                                 # 1. In đậm, đổi màu tiêu đề
                                 st.markdown(f'<div class="paragraph-title">**{group_name}**</div>', unsafe_allow_html=True) 
                                 
-                                # 2. Hiển thị nội dung đoạn văn, dùng CSS để giữ nguyên ngắt dòng
+                                # 2. Hiển thị nội dung đoạn văn gốc
                                 st.markdown(f'<div class="paragraph-content-box">{passage_content}</div>', unsafe_allow_html=True)
+                                
+                                # 3. Thêm Nút Dịch Đoạn Văn
+                                st.toggle(
+                                    "🌐 Dịch đoạn văn sang Tiếng Việt", 
+                                    value=is_passage_active, 
+                                    key=f"toggle_passage_{passage_id}",
+                                    on_change=on_passage_translate_toggle,
+                                    args=(passage_id,)
+                                )
+                                
+                                # 4. Hiển thị Bản Dịch Đoạn Văn
+                                if is_passage_active:
+                                    translated_passage = st.session_state.passage_translations_cache.get(passage_id)
+                                    if not isinstance(translated_passage, str):
+                                        # GỌI HÀM DỊCH CHỈ ĐOẠN VĂN
+                                        translated_passage = translate_passage_content(passage_content)
+                                        st.session_state.passage_translations_cache[passage_id] = translated_passage
+
+                                    st.markdown(f"""
+                                    <div data-testid="stAlert" class="stAlert stAlert-info">
+                                        <div style="font-size: 18px; line-height: 1.6; color: white; padding: 10px;">
+                                            <strong style="color: #FFD700;">[Bản dịch Đoạn văn]</strong>
+                                            <div class="paragraph-content-box" style="white-space: pre-wrap; margin-bottom: 0px; padding: 10px; background-color: rgba(0, 0, 0, 0.5); border-left: 3px solid #00d4ff;">
+                                            {translated_passage}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    """, unsafe_allow_html=True)
+
                                 st.markdown("---") 
                                 
                                 current_passage_id_in_group_mode = passage_id
@@ -1739,24 +1903,24 @@ if bank_choice != "----":
                             display_num = i_global 
                         st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True) 
 
-                        # Nút Dịch ở dưới
+                        # Nút Dịch Q&A ở dưới
                         st.toggle(
-                            "🌐 Dịch sang Tiếng Việt", 
+                            "🌐 Dịch Câu hỏi & Đáp án sang Tiếng Việt", 
                             value=is_active, 
                             key=f"toggle_{translation_key}",
                             on_change=on_translate_toggle,
                             args=(translation_key,)
                         )
 
-                        # Hiển thị Bản Dịch
+                        # Hiển thị Bản Dịch Q&A
                         if is_active:
                             # Check if translated content is already cached
                             translated_content = st.session_state.translations.get(translation_key)
                             
                             # If not cached or is not a string (default True/False state)
                             if not isinstance(translated_content, str):
-                                # GỌI HÀM MỚI ĐỂ GỬI CẢ ĐOẠN VĂN ĐI DỊCH
-                                full_text_to_translate = build_translation_text(q)
+                                # GỌI HÀM MỚI ĐỂ GỬI CHỈ CÂU HỎI VÀ ĐÁP ÁN ĐI DỊCH
+                                full_text_to_translate = build_translation_text_for_qa(q)
                                 st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
                                 translated_content = st.session_state.translations[translation_key]
 
@@ -1792,14 +1956,16 @@ if bank_choice != "----":
                                 i_global = q.get('global_number', start + i_local + 1)
                                 st.session_state.pop(f"q_{i_global}_{hash(q['question'])}", None) 
                             st.session_state.submitted = False
-                            st.session_state.active_translation_key = None # Reset dịch khi làm lại
+                            st.session_state.active_translation_key = None # Reset dịch Q&A
+                            st.session_state.active_passage_translation = None # Reset dịch Passage
                             st.rerun()
                     with col_next:
                         if st.session_state.current_group_idx < len(groups) - 1:
                             if st.button("➡️ Tiếp tục nhóm sau", key="next_group"):
                                 st.session_state.current_group_idx += 1
                                 st.session_state.submitted = False
-                                st.session_state.active_translation_key = None # Reset dịch khi chuyển nhóm
+                                st.session_state.active_translation_key = None # Reset dịch Q&A
+                                st.session_state.active_passage_translation = None # Reset dịch Passage
                                 st.rerun()
                         else: st.info("🎉 Đã hoàn thành tất cả các nhóm câu hỏi!")
             else: st.warning("Không có câu hỏi trong nhóm này.")
@@ -1808,7 +1974,8 @@ if bank_choice != "----":
     elif st.session_state.current_mode == "all":
         if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
             st.session_state.current_mode = "group"
-            st.session_state.active_translation_key = None # Reset dịch khi chuyển mode
+            st.session_state.active_translation_key = None # Reset dịch Q&A
+            st.session_state.active_passage_translation = None # Reset dịch Passage
             st.session_state.current_passage_id_displayed = None # Reset passage display
             st.rerun()
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
@@ -1817,7 +1984,8 @@ if bank_choice != "----":
     elif st.session_state.current_mode == "test":
         if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
             st.session_state.current_mode = "group"
-            st.session_state.active_translation_key = None # Reset dịch khi chuyển mode
+            st.session_state.active_translation_key = None # Reset dịch Q&A
+            st.session_state.active_passage_translation = None # Reset dịch Passage
             st.session_state.current_passage_id_displayed = None # Reset passage display
             st.rerun()
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
