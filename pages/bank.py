@@ -1480,25 +1480,47 @@ if bank_choice != "----":
             
             passage_groups[group_key].append(q)
             
-        # TẠO CÁC NHÓM 1 ĐOẠN VĂN (ĐÃ SỬA ĐỂ TÁCH RIÊNG TỪNG PARAGRAPH)
+        # ----------------------------------------------------
+        # LOGIC MỚI: NHÓM 2 PARAGRAPH THÀNH 1 NHÓM (KHÔNG HIỂN THỊ SỐ THỨ TỰ CÂU HỎI)
+        # ----------------------------------------------------
         passage_names = list(passage_groups.keys())
-        for name in passage_names:
-            questions_in_group = passage_groups[name]
+        
+        # Duyệt qua danh sách tên Paragraph theo bước nhảy 2
+        for i in range(0, len(passage_names), 2):
+            p1_name = passage_names[i]
+            p2_name = passage_names[i+1] if i + 1 < len(passage_names) else None
             
-            # Label cho câu hỏi: Câu [min_q_num]-[max_q_num] (SỬ DỤNG GLOBAL NUMBER)
-            min_q_num = questions_in_group[0]['global_number']
-            max_q_num = questions_in_group[-1]['global_number']
+            questions_in_pair = passage_groups[p1_name]
             
-            # Format label: "Câu 1-5 (Paragraph 1)"
-            final_group_label = f"Câu {min_q_num}-{max_q_num} ({name.strip(' .')})"
+            # Xử lý Paragraph thứ 2
+            if p2_name:
+                questions_in_pair.extend(passage_groups[p2_name])
+                
+                # Format label: "Paragraph 1 & 2" (dựa trên tên Paragraph đã làm sạch)
+                p1_base = p1_name.strip(' .') # Ví dụ: "Paragraph 1"
+                p2_base = p2_name.strip(' .') # Ví dụ: "Paragraph 2"
+                base_group_label = f"{p1_base} & {p2_base}"
+            else:
+                # Xử lý Paragraph lẻ cuối cùng (ví dụ: "Paragraph 11")
+                base_group_label = p1_name.strip(' .')
             
+            # TẠO LABEL CUỐI CÙNG (CHỈ DÙNG TÊN PARAGRAPH)
+            final_group_label = base_group_label # <--- ĐÃ SỬA THEO YÊU CẦU CỦA USER
+            
+            if questions_in_pair:
+                # Dù có câu hỏi hay không, vẫn dùng base_group_label (ví dụ: "Paragraph 1 & 2")
+                pass
+            else:
+                 # Trường hợp không có câu hỏi nào (chỉ để dự phòng, hiếm xảy ra)
+                final_group_label = base_group_label
+
             custom_groups.append({
                 'label': final_group_label,
-                'questions': questions_in_group
+                'questions': questions_in_pair
             })
         
         groups = [g['label'] for g in custom_groups]
-        st.session_state.group_mode_title = "Luyện tập theo đoạn văn (1 đoạn/nhóm)"
+        st.session_state.group_mode_title = "Luyện tập theo đoạn văn (2 đoạn/nhóm)"
     else:
         # Nhóm câu hỏi theo số lượng (30 câu/nhóm) cho các ngân hàng khác
         groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
