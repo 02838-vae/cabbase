@@ -684,7 +684,7 @@ def parse_pl3_passage_bank(source):
     return final_questions
 
 # ====================================================
-# 🌟 HÀM: LOGIC DỊCH ĐỘC QUYỀN (EXCLUSIVE TRANSLATION)
+# 🌟 HÀM: LOGIC DỊCH ĐỘC QUYỀN (EXCLUSIVE TRANSLATION) - ĐÃ CẬP NHẬT ĐỂ DỊCH CHUNG
 # ====================================================
 if 'active_translation_key' not in st.session_state: st.session_state.active_translation_key = None
 # Thêm trạng thái cho dịch đoạn văn
@@ -692,7 +692,10 @@ if 'active_passage_translation' not in st.session_state: st.session_state.active
 if 'passage_translations_cache' not in st.session_state: st.session_state.passage_translations_cache = {}
 
 def on_translate_toggle(key_clicked):
-    """Callback function để quản lý chế độ Dịch ĐỘC QUYỀN (Q&A)."""
+    """
+    Callback function để quản lý chế độ Dịch Q&A.
+    (Đã loại bỏ logic tắt Dịch Đoạn văn để cho phép dịch song song)
+    """
     toggle_key = f"toggle_{key_clicked}"
     # Check the state of the toggle in session state (it is the state *after* the click)
     is_on_after_click = st.session_state.get(toggle_key, False)
@@ -700,22 +703,21 @@ def on_translate_toggle(key_clicked):
     if is_on_after_click:
         # User turned this specific toggle ON -> Make it the active key
         st.session_state.active_translation_key = key_clicked
-        # Tắt dịch đoạn văn (độc quyền)
-        st.session_state.active_passage_translation = None 
     elif st.session_state.active_translation_key == key_clicked:
         # User turned this specific toggle OFF -> Clear the active key
         st.session_state.active_translation_key = None
     
 def on_passage_translate_toggle(passage_id_clicked):
-    """Callback function để quản lý chế độ Dịch ĐỘC QUYỀN (Passage)."""
+    """
+    Callback function để quản lý chế độ Dịch Đoạn Văn.
+    (Đã loại bỏ logic tắt Dịch Q&A để cho phép dịch song song)
+    """
     toggle_key = f"toggle_passage_{passage_id_clicked}"
     is_on_after_click = st.session_state.get(toggle_key, False)
 
     if is_on_after_click:
         # User turned this specific toggle ON -> Make it the active passage key
         st.session_state.active_passage_translation = passage_id_clicked
-        # Tắt dịch câu hỏi/đáp án (độc quyền)
-        st.session_state.active_translation_key = None 
     elif st.session_state.active_passage_translation == passage_id_clicked:
         # User turned this specific toggle OFF -> Clear the active key
         st.session_state.active_passage_translation = None
@@ -963,8 +965,6 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             
         if st.button("✅ Nộp bài Test", key=f"{test_key_prefix}_submit_btn"):
             st.session_state[f"{test_key_prefix}_submitted"] = True
-            st.session_state.active_translation_key = None # Tắt dịch Q&A khi nộp
-            st.session_state.active_passage_translation = None # Tắt dịch Passage khi nộp
             st.rerun()
             
     else:
@@ -1562,6 +1562,16 @@ if bank_choice != "----":
         doc_options = ["Phụ lục 1 : Ngữ pháp chung", "Phụ lục 2 : Từ vựng, thuật ngữ", "Phụ lục 3 : Bài đọc hiểu"]
         doc_selected_new = st.selectbox("Chọn Phụ lục:", doc_options, index=doc_options.index(st.session_state.get('doc_selected', doc_options[0])), key="docwise_selector")
         
+        # --- BỔ SUNG: NÚT KIẾN THỨC NGỮ PHÁP ---
+        # Lấy tên Phụ lục rút gọn
+        doc_name_match = re.search(r'(Phụ lục \d+)', doc_selected_new)
+        doc_name_short = doc_name_match.group(1).lower() if doc_name_match else "phụ lục này"
+        
+        # Hiển thị nút Knowledge
+        if st.button(f"💡 Kiến thức ngữ pháp cho {doc_name_short}", key="btn_knowledge_docwise"):
+            st.info(f"Đã nhấn nút **Kiến thức ngữ pháp cho {doc_name_short}**. Bạn có thể thêm logic hiển thị tài liệu/popup tại đây.")
+        # --- KẾT THÚC BỔ SUNG ---
+
         # Xử lý khi đổi phụ lục (reset mode)
         if st.session_state.doc_selected != doc_selected_new:
             st.session_state.doc_selected = doc_selected_new
@@ -1831,8 +1841,6 @@ if bank_choice != "----":
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
                     if st.button("✅ Nộp bài", key="submit_group"):
                         st.session_state.submitted = True
-                        st.session_state.active_translation_key = None # Tắt dịch Q&A khi nộp
-                        st.session_state.active_passage_translation = None # Tắt dịch Passage khi nộp
                         st.rerun()
                 else:
                     # Chế độ xem đáp án
@@ -1956,16 +1964,12 @@ if bank_choice != "----":
                                 i_global = q.get('global_number', start + i_local + 1)
                                 st.session_state.pop(f"q_{i_global}_{hash(q['question'])}", None) 
                             st.session_state.submitted = False
-                            st.session_state.active_translation_key = None # Reset dịch Q&A
-                            st.session_state.active_passage_translation = None # Reset dịch Passage
                             st.rerun()
                     with col_next:
                         if st.session_state.current_group_idx < len(groups) - 1:
                             if st.button("➡️ Tiếp tục nhóm sau", key="next_group"):
                                 st.session_state.current_group_idx += 1
                                 st.session_state.submitted = False
-                                st.session_state.active_translation_key = None # Reset dịch Q&A
-                                st.session_state.active_passage_translation = None # Reset dịch Passage
                                 st.rerun()
                         else: st.info("🎉 Đã hoàn thành tất cả các nhóm câu hỏi!")
             else: st.warning("Không có câu hỏi trong nhóm này.")
