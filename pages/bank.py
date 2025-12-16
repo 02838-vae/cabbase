@@ -580,7 +580,8 @@ def parse_pl3_passage_bank(source):
                 'question': clean_text(q_text),
                 'options': {},
                 'correct_answer': "",
-                'number': int(q_num_str)
+                # Gán số thứ tự câu hỏi cục bộ (local number)
+                'number': int(q_num_str) 
             }
             current_q_num = int(q_num_str)
             
@@ -634,6 +635,9 @@ def parse_pl3_passage_bank(source):
 
     # Chuẩn hóa cấu trúc để tương thích với các hàm hiển thị khác
     final_questions = []
+    
+    # Gán số thứ tự toàn cục (global number) cho mỗi câu hỏi
+    global_q_counter = 1 
     for q in questions:
         if not q.get('correct_answer') and len(q.get('options', {})) > 0:
              # Nếu không có (*), coi option đầu là đúng (hoặc bỏ qua nếu cần nghiêm ngặt hơn)
@@ -650,11 +654,13 @@ def parse_pl3_passage_bank(source):
             'question': q['question'],
             'options': options_list, 
             'answer': q['options'][q['correct_answer']], # Lưu đáp án đúng dưới dạng string (A. Text)
-            'number': q['number'], # Số thứ tự câu hỏi (1, 2, 3...)
+            'number': q['number'], # Số thứ tự câu hỏi cục bộ (1, 2, 3...)
+            'global_number': global_q_counter, # Bổ sung số thứ tự toàn cục
             # Sử dụng 'group' thay cho 'group_name' để tương thích với display_all_questions/test_mode 
             'group': q['group_name'], 
             'paragraph_content': q['paragraph_content'] # Nội dung đoạn văn
         })
+        global_q_counter += 1
 
     return final_questions
 
@@ -712,8 +718,14 @@ def display_all_questions(questions):
                 current_passage_id = passage_id
         # --- KẾT THÚC BỔ SUNG ---
         
-        # Hiển thị câu hỏi (FIX KEYERROR: 'number')
-        display_num = q.get('number', i)
+        # Hiển thị câu hỏi (SỬ DỤNG SỐ THỨ TỰ CỤC BỘ NẾU LÀ PL3, NẾU KHÔNG DÙNG SỐ THỨ TỰ TOÀN CỤC)
+        if q.get('group', '').startswith('Paragraph'):
+            # Dùng số thứ tự cục bộ (number) nếu là bài đọc hiểu
+            display_num = q.get('number', i) 
+        else:
+             # Dùng số thứ tự toàn cục (i) cho các ngân hàng khác
+            display_num = i 
+            
         st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
 
         # Nút Dịch ở dưới
@@ -814,8 +826,13 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
                     current_passage_id = passage_id
             # --- KẾT THÚC BỔ SUNG ---
 
-            # Hiển thị câu hỏi (FIX KEYERROR: 'number')
-            display_num = q.get('number', i)
+            # Hiển thị câu hỏi (SỬ DỤNG SỐ THỨ TỰ CỤC BỘ NẾU LÀ PL3, NẾU KHÔNG DÙNG SỐ THỨ TỰ TOÀN CỤC)
+            if q.get('group', '').startswith('Paragraph'):
+                # Dùng số thứ tự cục bộ (number) nếu là bài đọc hiểu
+                display_num = q.get('number', i) 
+            else:
+                # Dùng số thứ tự toàn cục (i) cho các ngân hàng khác
+                display_num = i
             st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
 
             # Nút Dịch ở dưới
@@ -874,8 +891,13 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
                     current_passage_id = passage_id
             # --- KẾT THÚC BỔ SUNG ---
 
-            # Hiển thị câu hỏi (FIX KEYERROR: 'number')
-            display_num = q.get('number', i)
+            # Hiển thị câu hỏi (SỬ DỤNG SỐ THỨ TỰ CỤC BỘ NẾU LÀ PL3, NẾU KHÔNG DÙNG SỐ THỨ TỰ TOÀN CỤC)
+            if q.get('group', '').startswith('Paragraph'):
+                # Dùng số thứ tự cục bộ (number) nếu là bài đọc hiểu
+                display_num = q.get('number', i) 
+            else:
+                # Dùng số thứ tự toàn cục (i) cho các ngân hàng khác
+                display_num = i
             st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
 
             # Nút Dịch ở dưới
@@ -1440,7 +1462,7 @@ if bank_choice != "----":
     
     total = len(questions)
 
-    # === LOGIC NHÓM CÂU HỎI THEO MODE (PL3 TÙY CHỈNH) - FIX 2a ===
+    # === LOGIC NHÓM CÂU HỎI THEO MODE (PL3 TÙY CHỈNH) - ĐÃ SỬA THEO YÊU CẦU MỚI ===
     group_size = 30 # Mặc định 30 câu/nhóm
     custom_groups = [] # Chỉ dùng cho PL3
     is_pl3_grouping = False
@@ -1448,32 +1470,27 @@ if bank_choice != "----":
     if is_docwise and source == "PL3.docx":
         is_pl3_grouping = True
         passage_groups = {}
-        # Cần một vòng lặp phụ để xác định lại chỉ mục câu hỏi toàn cục (i_global)
-        q_counter = 1
+        
+        # Nhóm câu hỏi theo tên Paragraph
         for q in questions:
             # group_key: "Paragraph 1 ."
             group_key = q.get('group', 'Không có đoạn văn')
             if group_key not in passage_groups:
                 passage_groups[group_key] = []
             
-            # Gán lại chỉ mục toàn cục cho câu hỏi
-            q['global_number'] = q_counter 
-            q_counter += 1
-            
             passage_groups[group_key].append(q)
             
-        # TẠO CÁC NHÓM 2 ĐOẠN VĂN
+        # TẠO CÁC NHÓM 1 ĐOẠN VĂN (ĐÃ SỬA ĐỂ TÁCH RIÊNG TỪNG PARAGRAPH)
         passage_names = list(passage_groups.keys())
-        for i in range(0, len(passage_names), 2):
-            group_names_batch = passage_names[i:i+2]
-            group_label = " & ".join(group_names_batch)
+        for name in passage_names:
+            questions_in_group = passage_groups[name]
             
-            questions_in_group = [q for name in group_names_batch for q in passage_groups[name]]
-            
-            # Label cho câu hỏi: Câu [min_q_num]-[max_q_num]
+            # Label cho câu hỏi: Câu [min_q_num]-[max_q_num] (SỬ DỤNG GLOBAL NUMBER)
             min_q_num = questions_in_group[0]['global_number']
             max_q_num = questions_in_group[-1]['global_number']
-            final_group_label = f"Câu {min_q_num}-{max_q_num} ({group_label})"
+            
+            # Format label: "Câu 1-5 (Paragraph 1)"
+            final_group_label = f"Câu {min_q_num}-{max_q_num} ({name.strip(' .')})"
             
             custom_groups.append({
                 'label': final_group_label,
@@ -1481,7 +1498,7 @@ if bank_choice != "----":
             })
         
         groups = [g['label'] for g in custom_groups]
-        st.session_state.group_mode_title = "Luyện tập theo nhóm (2 đoạn văn/nhóm)"
+        st.session_state.group_mode_title = "Luyện tập theo đoạn văn (1 đoạn/nhóm)"
     else:
         # Nhóm câu hỏi theo số lượng (30 câu/nhóm) cho các ngân hàng khác
         groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
@@ -1509,7 +1526,7 @@ if bank_choice != "----":
             
             if is_pl3_grouping:
                 batch = custom_groups[idx]['questions']
-                start = 0 # No global index needed for batch calculation
+                start = 0 # Not relevant in this new grouping mode
             else:
                 # Logic lấy batch cũ (30 câu/nhóm)
                 start = idx * group_size
@@ -1542,8 +1559,6 @@ if bank_choice != "----":
                     st.rerun()
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
             
-            # --- XÓA: PHẦN HIỂN THỊ ĐOẠN VĂN Ở ĐÂY --- (Đã chuyển vào trong vòng lặp)
-
             
             # --- BẮT ĐẦU VÒNG LẶP CÂU HỎI ---
             if batch:
@@ -1575,7 +1590,12 @@ if bank_choice != "----":
                         # -----------------------------------------------------------------
                         
                         # Fix KeyError: 'number' (Sử dụng global number nếu có, nếu không thì dùng number của paragraph)
-                        display_num = q.get('global_number', q.get('number', i_global)) 
+                        if q.get('group', '').startswith('Paragraph'):
+                            # Dùng số thứ tự cục bộ (number) nếu là bài đọc hiểu
+                            display_num = q.get('number', i_global) 
+                        else:
+                            # Dùng số thứ tự toàn cục (i_global) cho các ngân hàng khác
+                            display_num = i_global 
                         
                         # Hiển thị câu hỏi
                         st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True) 
@@ -1640,7 +1660,12 @@ if bank_choice != "----":
                         # -----------------------------------------------------------------
 
                         # Hiển thị câu hỏi: FIX KeyError: 'number'
-                        display_num = q.get('global_number', q.get('number', i_global))
+                        if q.get('group', '').startswith('Paragraph'):
+                            # Dùng số thứ tự cục bộ (number) nếu là bài đọc hiểu
+                            display_num = q.get('number', i_global) 
+                        else:
+                            # Dùng số thứ tự toàn cục (i_global) cho các ngân hàng khác
+                            display_num = i_global 
                         st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True) 
 
                         # Nút Dịch ở dưới
