@@ -1624,18 +1624,34 @@ if bank_choice != "----":
         display_test_mode(questions, bank_choice)
 
         # --- MODE: HIỂN THỊ KIẾN THỨC NGỮ PHÁP (MỚI) ---
-    elif st.session_state.current_mode == "grammar_pl1":
-        # Thêm nút quay lại ở trên cùng
-        if st.button("⬅️ Quay lại chế độ Luyện tập", key="back_from_grammar"):
+        elif st.session_state.current_mode == "grammar_pl1":
+        if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
             st.session_state.current_mode = "group"
             st.rerun()
-            
         st.markdown('<div class="result-title" style="margin-top: 0px;"><h3>💡 KIẾN THỨC NGỮ PHÁP</h3></div>', unsafe_allow_html=True)
         
-        # SỬ DỤNG container để đảm bảo render HTML riêng biệt
-        with st.container():
-            st.markdown(GRAMMAR_KNOWLEDGE_HTML, unsafe_allow_html=True)
-            
+        # SỬ DỤNG components.html để fix lỗi render văn bản thô
+        components.html(f"""
+            <div style="font-family: sans-serif;">
+                {GRAMMAR_KNOWLEDGE_HTML}
+            </div>
+            <script>
+                // Đảm bảo script accordion chạy được bên trong iframe
+                var acc = document.getElementsByClassName("accordion-grammar");
+                for (var i = 0; i < acc.length; i++) {{
+                    acc[i].onclick = function() {{
+                        this.classList.toggle("active");
+                        var panel = this.nextElementSibling;
+                        if (panel.style.maxHeight) {{
+                            panel.style.maxHeight = null;
+                        } else {{
+                            panel.style.maxHeight = panel.scrollHeight + "px";
+                        }}
+                    }};
+                }}
+            </script>
+        """, height=1000, scrolling=True)
+
         # Thêm nút quay lại ở dưới cùng để tiện cho mobile
         if st.button("⬅️ Quay lại", key="back_from_grammar_bottom"):
             st.session_state.current_mode = "group"
