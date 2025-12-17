@@ -1622,11 +1622,21 @@ if bank_choice != "----":
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
         display_test_mode(questions, bank_choice)
 
-    # --- MODE: HIỂN THỊ KIẾN THỨC NGỮ PHÁP (MỚI) ---
+        # --- MODE: HIỂN THỊ KIẾN THỨC NGỮ PHÁP (MỚI) ---
     elif st.session_state.current_mode == "grammar_pl1":
-        if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
+        # Thêm nút quay lại ở trên cùng
+        if st.button("⬅️ Quay lại chế độ Luyện tập", key="back_from_grammar"):
             st.session_state.current_mode = "group"
             st.rerun()
+            
         st.markdown('<div class="result-title" style="margin-top: 0px;"><h3>💡 KIẾN THỨC NGỮ PHÁP</h3></div>', unsafe_allow_html=True)
-        # Sử dụng st.markdown để render HTML/CSS/JS (cần unsafe_allow_html=True)
-        st.markdown(GRAMMAR_KNOWLEDGE_HTML, unsafe_allow_html=True)
+        
+        # SỬ DỤNG container để đảm bảo render HTML riêng biệt
+        with st.container():
+            st.markdown(GRAMMAR_KNOWLEDGE_HTML, unsafe_allow_html=True)
+            
+        # Thêm nút quay lại ở dưới cùng để tiện cho mobile
+        if st.button("⬅️ Quay lại", key="back_from_grammar_bottom"):
+            st.session_state.current_mode = "group"
+            st.rerun()
+
