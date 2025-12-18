@@ -1,7 +1,7 @@
-
-# HÀM ĐỌC # -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 import streamlit as st
 from docx import Document
+# THÊM IMPORT ĐỂ XỬ LÝ ĐỊNH DẠNG (HIGHLIGHT)
 from docx.enum.text import WD_COLOR_INDEX 
 import re
 import math
@@ -15,109 +15,77 @@ from deep_translator import GoogleTranslator
 # ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
 # ====================================================
 def clean_text(s: str) -> str:
-    if s is None: return ""
-    temp_s = re.sub(r'\([\s._-]{2,}\)', '(    )', s)
-    temp_s = re.sub(r'\[[\s._-]{2,}\]', '[    ]', temp_s)
+    if s is None:
+        return ""
+    
+    # GIỮ NGUYÊN các pattern điền chỗ trống:
+    # - 2-10 dấu chấm (có thể có space xen kẽ): .... hoặc . . . .
+    # - 2-10 gạch dưới (có thể có space xen kẽ): ____ hoặc __ __
+    # - Ngoặc chứa các ký tự trên: (____) hoặc (__  __) → chuẩn hóa thành (____) 
+    
+    temp_s = s
+    placeholders = {}
+    counter = 0
+    
+    # BƯỚC 1: Xử lý ngoặc có nhiều space/ký tự → chuẩn hóa thành 4 spaces
+    # VD: (__           __) → (____)
+    temp_s = re.sub(r'\([\s._-]{2,}\)', '(    )', temp_s)  # Ngoặc đơn
+    temp_s = re.sub(r'\[[\s._-]{2,}\]', '[    ]', temp_s)  # Ngoặc vuông
+    
+    # BƯỚC 2: Lưu các pattern điền chỗ trống còn lại
+    standalone_patterns = [
+        r'(?<!\S)([._])(?:\s*\1){1,9}(?!\S)',  # 2-10 dấu . hoặc _ liên tiếp (có thể có space)
+        r'-{2,10}',  # 2-10 gạch ngang liên tiếp
+        r'\([\s]{2,}\)',  # Ngoặc đơn có spaces (đã chuẩn hóa ở bước 1)
+        r'\[[\s]{2,}\]',  # Ngoặc vuông có spaces
+    ]
+    
+    for pattern in standalone_patterns:
+        for match in re.finditer(pattern, temp_s): # Đã sửa: finditer thành re.finditer (Fix NameError cũ)
+            matched_text = match.group()
+            placeholder = f"__PLACEHOLDER_{counter}__"
+            placeholders[placeholder] = matched_text
+            temp_s = temp_s.replace(matched_text, placeholder, 1)
+            counter += 1
+    
+    # BƯỚC 3: Xóa khoảng trắng thừa (2+ spaces → 1 space)
     temp_s = re.sub(r'\s{2,}', ' ', temp_s)
+    
+    # BƯỚC 4: Khôi phục các pattern đã lưu
+    for placeholder, original in placeholders.items():
+        temp_s = temp_s.replace(placeholder, original)
+    
     return temp_s.strip()
 
 def find_file_path(source):
-    paths = [os.path.join(os.path.dirname(__file__), source), source, f"pages/{source}"]
+    """Hàm tìm đường dẫn file với cơ chế tìm kiếm đa dạng."""
+    paths = [
+        os.path.join(os.path.dirname(__file__), source),
+        source,
+        f"pages/{source}"
+    ]
     for path in paths:
-        if os.path.exists(path) and os.path.getsize(path) > 0: return path
+        if os.path.exists(path) and os.path.getsize(path) > 0:
+            return path
     return None
 
 def read_docx_paragraphs(source):
+    """
+    Hàm đọc paragraphs chỉ lấy TEXT (sử dụng cho cabbank, lawbank, PL1)
+    """
     path = find_file_path(source)
-    if not path: return []
+    if not path:
+        print(f"Lỗi không tìm thấy file DOCX: {source}")
+        return []
+    
     try:
         doc = Document(path)
         return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
-    except: return []
+    except Exception as e:
+        print(f"Lỗi đọc file DOCX (chỉ text): {source}. Chi tiết: {e}")
+        return []
 
-# ====================================================
-# 📘 NỘI DUNG NGỮ PHÁP (TỔNG HỢP TỪ PL1)
-# ====================================================
-def show_grammar_summary():
-    """Hiển thị bảng tóm tắt ngữ pháp chuyên ngành từ PL1"""
-    st.markdown("---")
-    with st.expander("📖 KIẾN THỨC NGỮ PHÁP TRỌNG TÂM (PHỤ LỤC 1)", expanded=True):
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("""
-            **1. Trật tự Cụm danh từ (Noun Phrases)**
-            *Quy tắc:* Vị trí ➔ Tính chất ➔ Chức năng ➔ **Danh từ chính**.
-            - *VD:* **AFT CABIN** (Vị trí) + **CONDITIONED AIR** (Tính chất) + **DISTRIBUTION SYSTEM** (Vật thể).
-            - *Mẹo:* Danh từ quan trọng nhất luôn đứng cuối cùng.
-            
-            **2. Câu bị động (Passive Voice)**
-            *Cấu trúc:* `be + V3/ed`. Dùng mô tả trạng thái kỹ thuật.
-            - *VD:* "The fan can **be damaged** by bird strikes."
-            - *VD:* "The plane must **be de-iced**."
-            """)
-        with col2:
-            st.markdown("""
-            **3. Giới từ & Liên từ kỹ thuật**
-            - **By + V-ing:** Chỉ phương thức (By pushing the button).
-            - **When + V-ing:** Chỉ thời điểm (When refueling).
-            - **For + V-ing:** Chỉ mục đích (Instrument for detecting).
-            
-            **4. Động từ khuyết thiếu (Modals)**
-            - **Must / Have to:** Bắt buộc thực hiện theo manual.
-            - **Must not:** Tuyệt đối cấm (Must not open with oily cloth).
-            """)
-        st.info("💡 *Nguồn: Tổng hợp từ tài liệu kỹ thuật hàng không uy tín.*")
-
-# ====================================================
-# 🧩 PARSER PHỤ LỤC 1 (PL1)
-# ====================================================
-def parse_pl1(source):
-    paras = read_docx_paragraphs(source)
-    if not paras: return []
-    questions = []
-    current = {"question": "", "options": [], "answer": ""}
-    labels = ["a", "b", "c"]
-    
-    for p in paras:
-        clean_p = clean_text(p)
-        if "Choose the correct group" in clean_p or len(current["options"]) >= 3:
-            if current["question"]:
-                if not current["answer"] and current["options"]: current["answer"] = current["options"][0]
-                questions.append(current)
-            current = {"question": clean_p, "options": [], "answer": ""}
-        else:
-            if "(*)" in clean_p:
-                clean_p = clean_p.replace("(*)", "").strip()
-                opt = f"{labels[len(current['options'])]}. {clean_p}"
-                current["options"].append(opt)
-                current["answer"] = opt
-            elif current["question"]:
-                if len(current["options"]) < 3:
-                    current["options"].append(f"{labels[len(current['options'])]}. {clean_p}")
-                else: current["question"] += " " + clean_p
-    return questions
-
-# ====================================================
-# 🚀 MAIN APP
-# ====================================================
-def main():
-    st.set_page_config(page_title="Ngân hàng Docwise", layout="wide")
-    st.title("🚁 Ngân hàng Câu hỏi Tiếng Anh Chuyên ngành")
-
-    bank_choice = st.selectbox("Chọn Ngân hàng câu hỏi:", ["Chọn ngân hàng...", "Phụ lục 1", "Phụ lục 2"])
-
-    if bank_choice == "Phụ lục 1":
-        # THÊM NÚT NGỮ PHÁP TẠI ĐÂY
-        if st.button("📖 Kiến thức ngữ pháp Phụ lục 1"):
-            show_grammar_pl1()
-        
-        questions = parse_pl1("PL1.docx")
-        st.write(f"Tìm thấy {len(questions)} câu hỏi.")
-        # Logic hiển thị câu hỏi tiếp theo...
-
-if __name__ == "__main__":
-    main()
- MỚI: DÙNG CHO PL2 (CHỈ LẤY TEXT)
+# HÀM ĐỌC FILE MỚI: DÙNG CHO PL2 (CHỈ LẤY TEXT)
 def read_pl2_data(source):
     """
     Hàm đọc paragraphs chỉ lấy TEXT (tương tự read_docx_paragraphs),
