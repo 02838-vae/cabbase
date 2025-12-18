@@ -1,5 +1,117 @@
 
-# HÀM ĐỌC FILE MỚI: DÙNG CHO PL2 (CHỈ LẤY TEXT)
+# HÀM ĐỌC # -*- coding: utf-8 -*-
+import streamlit as st
+from docx import Document
+from docx.enum.text import WD_COLOR_INDEX 
+import re
+import math
+import pandas as pd
+import base64
+import os
+import random 
+from deep_translator import GoogleTranslator
+
+# ====================================================
+# ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
+# ====================================================
+def clean_text(s: str) -> str:
+    if s is None: return ""
+    temp_s = re.sub(r'\([\s._-]{2,}\)', '(    )', s)
+    temp_s = re.sub(r'\[[\s._-]{2,}\]', '[    ]', temp_s)
+    temp_s = re.sub(r'\s{2,}', ' ', temp_s)
+    return temp_s.strip()
+
+def find_file_path(source):
+    paths = [os.path.join(os.path.dirname(__file__), source), source, f"pages/{source}"]
+    for path in paths:
+        if os.path.exists(path) and os.path.getsize(path) > 0: return path
+    return None
+
+def read_docx_paragraphs(source):
+    path = find_file_path(source)
+    if not path: return []
+    try:
+        doc = Document(path)
+        return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
+    except: return []
+
+# ====================================================
+# 🧩 PARSER PHỤ LỤC 1 (PL1)
+# ====================================================
+def parse_pl1(source):
+    paras = read_docx_paragraphs(source)
+    if not paras: return []
+    questions = []
+    current = {"question": "", "options": [], "answer": ""}
+    labels = ["a", "b", "c"]
+    
+    for p in paras:
+        clean_p = clean_text(p)
+        if "Choose the correct group" in clean_p or len(current["options"]) >= 3:
+            if current["question"]:
+                if not current["answer"] and current["options"]: current["answer"] = current["options"][0]
+                questions.append(current)
+            current = {"question": clean_p, "options": [], "answer": ""}
+        else:
+            if "(*)" in clean_p:
+                clean_p = clean_p.replace("(*)", "").strip()
+                opt = f"{labels[len(current['options'])]}. {clean_p}"
+                current["options"].append(opt)
+                current["answer"] = opt
+            elif current["question"]:
+                if len(current["options"]) < 3:
+                    current["options"].append(f"{labels[len(current['options'])]}. {clean_p}")
+                else: current["question"] += " " + clean_p
+    return questions
+
+# ====================================================
+# 🎨 GIAO DIỆN HIỂN THỊ TÓM TẮT NGỮ PHÁP
+# ====================================================
+def show_grammar_pl1():
+    st.info("### 📘 Kiến thức Ngữ pháp Trọng tâm - Phụ lục 1")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("""
+        **1. Cụm danh từ (Noun Phrases)**
+        - **Trật tự:** Vị trí ➔ Tính chất ➔ Chức năng ➔ Danh từ chính.
+        - *VD:* `Aft` (Vị trí) + `Cabin` (Nơi chốn) + `Conditioned Air` (Tính chất) + `Distribution System` (Vật thể).
+        
+        **2. Câu bị động (Passive Voice)**
+        - **Cấu trúc:** `S + be + V3/ed + (by O)`.
+        - Dùng để mô tả tác động kỹ thuật: *is monitored, are activated, can be damaged*.
+        """)
+    with col2:
+        st.markdown("""
+        **3. Động từ khuyết thiếu (Modals)**
+        - `Must/Should/Shall + be + V3`: Chỉ sự bắt buộc hoặc quy định.
+        - *VD:* The C/B must be safetied.
+        
+        **4. Giới từ quan trọng (Prepositions)**
+        - **By + V-ing:** Chỉ phương thức (By pushing the button).
+        - **At/In/On:** Chỉ vị trí cụ thể trong máy bay hoặc thời gian.
+        """)
+
+# ====================================================
+# 🚀 MAIN APP
+# ====================================================
+def main():
+    st.set_page_config(page_title="Ngân hàng Docwise", layout="wide")
+    st.title("🚁 Ngân hàng Câu hỏi Tiếng Anh Chuyên ngành")
+
+    bank_choice = st.selectbox("Chọn Ngân hàng câu hỏi:", ["Chọn ngân hàng...", "Phụ lục 1", "Phụ lục 2"])
+
+    if bank_choice == "Phụ lục 1":
+        # THÊM NÚT NGỮ PHÁP TẠI ĐÂY
+        if st.button("📖 Kiến thức ngữ pháp Phụ lục 1"):
+            show_grammar_pl1()
+        
+        questions = parse_pl1("PL1.docx")
+        st.write(f"Tìm thấy {len(questions)} câu hỏi.")
+        # Logic hiển thị câu hỏi tiếp theo...
+
+if __name__ == "__main__":
+    main()
+ MỚI: DÙNG CHO PL2 (CHỈ LẤY TEXT)
 def read_pl2_data(source):
     """
     Hàm đọc paragraphs chỉ lấy TEXT (tương tự read_docx_paragraphs),
