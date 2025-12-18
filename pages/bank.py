@@ -1561,7 +1561,35 @@ if bank_choice != "----":
         # Cập nhật nhãn Phụ lục 2 và BỔ SUNG PHỤ LỤC 3
         doc_options = ["Phụ lục 1 : Ngữ pháp chung", "Phụ lục 2 : Từ vựng, thuật ngữ", "Phụ lục 3 : Bài đọc hiểu"]
         doc_selected_new = st.selectbox("Chọn Phụ lục:", doc_options, index=doc_options.index(st.session_state.get('doc_selected', doc_options[0])), key="docwise_selector")
-        
+        #Kiểm tra nếu chọn đúng Ngân hàng docwise và Phụ lục 1
+        if "docwise" in BANK_OPTIONS and doc_options == "Phụ lục 1 : Ngữ pháp chung":
+            with st.expander("📘 XEM NGỮ PHÁP TỔNG HỢP CHO PHỤ LỤC 1", expanded=False):
+                st.markdown("""
+                ### 📚 Kiến thức Ngữ pháp trọng tâm (Phụ lục 1)
+                
+                #### 1. Trật tự cụm danh từ kỹ thuật (Word Order)
+                Quy tắc: **Tính chất/Vị trí + Bộ phận + Danh từ chính**.
+                * *Ví dụ:* `LOW PRESSURE WARNING SWITCH` (Công tắc cảnh báo áp suất thấp). Danh từ chính "Switch" luôn đứng cuối.
+                
+                #### 2. Thì của động từ (Tenses)
+                * **Hiện tại tiếp diễn (V-ing):** Diễn tả trạng thái đang hoạt động. (VD: *The engine is running*).
+                * **Hiện tại hoàn thành (Have/Has + V3/ed):** Diễn tả việc vừa hoàn tất. (VD: *The tires have been overhauled*).
+                
+                #### 3. Động từ khuyết thiếu (Modal Verbs)
+                * **Must not:** Cấm đoán tuyệt đối (VD: *You must not open the bottle with oily cloth*).
+                * **Have to be + V3/ed:** Cấu trúc bị động bắt buộc (VD: *Planes have to be de-iced*).
+                * **Must:** Sự cần thiết (VD: *Pilot must extend the landing gear*).
+                
+                #### 4. Giới từ & Cấu trúc bổ trợ
+                * **For + V-ing:** Chỉ mục đích của công cụ (VD: *Instrument for detecting fault*).
+                * **When + V-ing:** Rút gọn mệnh đề thời gian (VD: *When refueling*).
+                * **By + V-ing:** Chỉ cách thức hành động (VD: *By using the correct instrument*).
+                
+                #### 5. Cấu trúc so sánh (Comparison)
+                * **So sánh hơn:** *Adj-er + than* (VD: *Faster than*, *Bigger plane*).
+                * **So sánh bằng:** *As + adj + as* (VD: *As good as new*).
+                """)
+        # --- KẾT THÚC MÃ MỚI ---        
         # Xử lý khi đổi phụ lục (reset mode)
         if st.session_state.doc_selected != doc_selected_new:
             st.session_state.doc_selected = doc_selected_new
