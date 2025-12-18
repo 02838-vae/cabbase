@@ -36,6 +36,39 @@ def read_docx_paragraphs(source):
     except: return []
 
 # ====================================================
+# 📘 NỘI DUNG NGỮ PHÁP (TỔNG HỢP TỪ PL1)
+# ====================================================
+def show_grammar_summary():
+    """Hiển thị bảng tóm tắt ngữ pháp chuyên ngành từ PL1"""
+    st.markdown("---")
+    with st.expander("📖 KIẾN THỨC NGỮ PHÁP TRỌNG TÂM (PHỤ LỤC 1)", expanded=True):
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("""
+            **1. Trật tự Cụm danh từ (Noun Phrases)**
+            *Quy tắc:* Vị trí ➔ Tính chất ➔ Chức năng ➔ **Danh từ chính**.
+            - *VD:* **AFT CABIN** (Vị trí) + **CONDITIONED AIR** (Tính chất) + **DISTRIBUTION SYSTEM** (Vật thể).
+            - *Mẹo:* Danh từ quan trọng nhất luôn đứng cuối cùng.
+            
+            **2. Câu bị động (Passive Voice)**
+            *Cấu trúc:* `be + V3/ed`. Dùng mô tả trạng thái kỹ thuật.
+            - *VD:* "The fan can **be damaged** by bird strikes."
+            - *VD:* "The plane must **be de-iced**."
+            """)
+        with col2:
+            st.markdown("""
+            **3. Giới từ & Liên từ kỹ thuật**
+            - **By + V-ing:** Chỉ phương thức (By pushing the button).
+            - **When + V-ing:** Chỉ thời điểm (When refueling).
+            - **For + V-ing:** Chỉ mục đích (Instrument for detecting).
+            
+            **4. Động từ khuyết thiếu (Modals)**
+            - **Must / Have to:** Bắt buộc thực hiện theo manual.
+            - **Must not:** Tuyệt đối cấm (Must not open with oily cloth).
+            """)
+        st.info("💡 *Nguồn: Tổng hợp từ tài liệu kỹ thuật hàng không uy tín.*")
+
+# ====================================================
 # 🧩 PARSER PHỤ LỤC 1 (PL1)
 # ====================================================
 def parse_pl1(source):
@@ -63,33 +96,6 @@ def parse_pl1(source):
                     current["options"].append(f"{labels[len(current['options'])]}. {clean_p}")
                 else: current["question"] += " " + clean_p
     return questions
-
-# ====================================================
-# 🎨 GIAO DIỆN HIỂN THỊ TÓM TẮT NGỮ PHÁP
-# ====================================================
-def show_grammar_pl1():
-    st.info("### 📘 Kiến thức Ngữ pháp Trọng tâm - Phụ lục 1")
-    col1, col2 = st.columns(2)
-    with col1:
-        st.markdown("""
-        **1. Cụm danh từ (Noun Phrases)**
-        - **Trật tự:** Vị trí ➔ Tính chất ➔ Chức năng ➔ Danh từ chính.
-        - *VD:* `Aft` (Vị trí) + `Cabin` (Nơi chốn) + `Conditioned Air` (Tính chất) + `Distribution System` (Vật thể).
-        
-        **2. Câu bị động (Passive Voice)**
-        - **Cấu trúc:** `S + be + V3/ed + (by O)`.
-        - Dùng để mô tả tác động kỹ thuật: *is monitored, are activated, can be damaged*.
-        """)
-    with col2:
-        st.markdown("""
-        **3. Động từ khuyết thiếu (Modals)**
-        - `Must/Should/Shall + be + V3`: Chỉ sự bắt buộc hoặc quy định.
-        - *VD:* The C/B must be safetied.
-        
-        **4. Giới từ quan trọng (Prepositions)**
-        - **By + V-ing:** Chỉ phương thức (By pushing the button).
-        - **At/In/On:** Chỉ vị trí cụ thể trong máy bay hoặc thời gian.
-        """)
 
 # ====================================================
 # 🚀 MAIN APP
