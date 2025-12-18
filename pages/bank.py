@@ -700,8 +700,6 @@ def on_translate_toggle(key_clicked):
     if is_on_after_click:
         # User turned this specific toggle ON -> Make it the active key
         st.session_state.active_translation_key = key_clicked
-        # Tắt dịch đoạn văn (độc quyền)
-        st.session_state.active_passage_translation = None 
     elif st.session_state.active_translation_key == key_clicked:
         # User turned this specific toggle OFF -> Clear the active key
         st.session_state.active_translation_key = None
@@ -714,8 +712,6 @@ def on_passage_translate_toggle(passage_id_clicked):
     if is_on_after_click:
         # User turned this specific toggle ON -> Make it the active passage key
         st.session_state.active_passage_translation = passage_id_clicked
-        # Tắt dịch câu hỏi/đáp án (độc quyền)
-        st.session_state.active_translation_key = None 
     elif st.session_state.active_passage_translation == passage_id_clicked:
         # User turned this specific toggle OFF -> Clear the active key
         st.session_state.active_passage_translation = None
