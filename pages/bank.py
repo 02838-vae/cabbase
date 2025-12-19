@@ -717,7 +717,7 @@ def on_passage_translate_toggle(passage_id_clicked):
         st.session_state.active_passage_translation = None
 
 # ====================================================
-# 🌟 HÀM: XEM TOÀN BỘ CÂU HỎI (CẬP NHẬT CHỨC NĂNG DỊCH)
+# 🌟 HÀM: XEM TOÀN BỘ CÂU HỎI (CẬP NHẬT NÚT NGỮ PHÁP)
 # ====================================================
 def display_all_questions(questions):
     st.markdown('<div class="result-title"><h3>📚 TOÀN BỘ NGÂN HÀNG CÂU HỎI</h3></div>', unsafe_allow_html=True)
@@ -733,7 +733,7 @@ def display_all_questions(questions):
         translation_key = f"trans_{q_key}"
         is_active = (translation_key == st.session_state.active_translation_key)
         
-        # --- BỔ SUNG: HIỂN THỊ ĐOẠN VĂN (CHO PL3) ---
+        # --- BỔ SUNG: HIỂN THỊ ĐOẠN VĂN (CHO PHỤ LỤC 1, 2, 3) ---
         passage_content = q.get('paragraph_content', '').strip()
         group_name = q.get('group', '')
         
@@ -749,24 +749,36 @@ def display_all_questions(questions):
                 # 2. Hiển thị nội dung đoạn văn gốc
                 st.markdown(f'<div class="paragraph-content-box">{passage_content}</div>', unsafe_allow_html=True)
                 
-                # 3. Thêm Nút Dịch Đoạn Văn
-                st.toggle(
-                    "🌐 Dịch đoạn văn sang Tiếng Việt", 
-                    value=is_passage_active, 
-                    key=f"toggle_passage_{passage_id}",
-                    on_change=on_passage_translate_toggle,
-                    args=(passage_id,)
-                )
+                # --- PHẦN MỚI: NÚT DỊCH VÀ NÚT NGỮ PHÁP ---
+                col_btn1, col_btn2 = st.columns([1, 1])
                 
+                with col_btn1:
+                    st.toggle(
+                        "🌐 Dịch đoạn văn", 
+                        value=is_passage_active, 
+                        key=f"toggle_passage_{passage_id}",
+                        on_change=on_passage_translate_toggle,
+                        args=(passage_id,)
+                    )
+                
+                with col_btn2:
+                    # Kiểm tra nếu là các Phụ lục thì hiện nút Ngữ Pháp
+                    if "Paragraph" in group_name or "Phụ lục" in group_name:
+                        # Bạn có thể thay đổi URL hoặc logic hiển thị tại đây
+                        st.link_button(
+                            f"📝 Ngữ pháp cho {group_name}",
+                            url=f"https://google.com/search?q=grammar+for+{group_name.replace(' ', '+')}",
+                            use_container_width=True
+                        )
+                # ------------------------------------------
+
                 # 4. Hiển thị Bản Dịch Đoạn Văn
                 if is_passage_active:
                     translated_passage = st.session_state.passage_translations_cache.get(passage_id)
                     if not isinstance(translated_passage, str):
-                        # GỌI HÀM DỊCH CHỈ ĐOẠN VĂN
                         translated_passage = translate_passage_content(passage_content)
                         st.session_state.passage_translations_cache[passage_id] = translated_passage
 
-                    # Sử dụng st.markdown + CSS để ép kiểu 'pre-wrap'
                     st.markdown(f"""
                     <div data-testid="stAlert" class="stAlert stAlert-info">
                         <div style="font-size: 18px; line-height: 1.6; color: white; padding: 10px;">
@@ -780,56 +792,44 @@ def display_all_questions(questions):
                 
                 st.markdown("---")
                 current_passage_id = passage_id
-        # --- KẾT THÚC BỔ SUNG ---
         
-        # Hiển thị câu hỏi (SỬ DỤNG SỐ THỨ TỰ CỤC BỘ NẾU LÀ PL3, NẾU KHÔNG DÙNG SỐ THỨ TỰ TOÀN CỤC)
+        # Hiển thị câu hỏi
         if q.get('group', '').startswith('Paragraph'):
-            # Dùng số thứ tự cục bộ (number) nếu là bài đọc hiểu
             display_num = q.get('number', i) 
         else:
-             # Dùng số thứ tự toàn cục (i) cho các ngân hàng khác
             display_num = i 
             
         st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
 
-        # Nút Dịch Q&A ở dưới
+        # Nút Dịch Q&A
         st.toggle(
-            "🌐 Dịch Câu hỏi & Đáp án sang Tiếng Việt", 
+            "🌐 Dịch Câu hỏi & Đáp án", 
             value=is_active, 
             key=f"toggle_{translation_key}",
             on_change=on_translate_toggle,
             args=(translation_key,)
         )
 
-        # Hiển thị Bản Dịch Q&A
         if is_active:
-            # Check if translated content is already cached
             translated_content = st.session_state.translations.get(translation_key)
-            
-            # If not cached or is not a string (default True/False state)
             if not isinstance(translated_content, str):
-                # GỌI HÀM MỚI ĐỂ GỬI CHỈ CÂU HỎI VÀ ĐÁP ÁN ĐI DỊCH
                 full_text_to_translate = build_translation_text_for_qa(q) 
                 st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
                 translated_content = st.session_state.translations[translation_key]
-
             st.info(translated_content, icon="🌐")
             
         # Hiển thị Đáp án
         for opt in q["options"]:
-            # Dùng clean_text để so sánh, bỏ qua khoảng trắng, ký tự ẩn
             if clean_text(opt) == clean_text(q["answer"]):
-                # Đáp án đúng: Xanh lá (Thêm ký tự (*))
                 color_style = "color:#00ff00;" 
                 opt_display = opt + " (*)"
             else:
-                # Đáp án thường: Trắng (Bỏ shadow)
                 color_style = "color:#FFFFFF;"
                 opt_display = opt
-                
             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
         
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+
 
 # ====================================================
 # 🌟 HÀM: TEST MODE (CẬP NHẬT CHỨC NĂNG DỊCH)
