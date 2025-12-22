@@ -684,12 +684,11 @@ def parse_pl3_passage_bank(source):
     return final_questions
 
 # Thêm Parser riêng cho Phụ lục 4 (Sử dụng logic của PL3)
-def parse_pl4(source):
+def parse_pl4_passage_bank(source):
     """
-    Parser cho Phụ lục 4: Luật và quy trình.
-    Tái sử dụng logic parse_pl3_passage_bank vì cấu trúc tương đồng.
+    Sử dụng chung logic với Phụ lục 3 cho Phụ lục 4 (Luật và quy trình)
+    vì cả hai đều có cấu trúc Paragraph -> Questions.
     """
-    # Gọi hàm parse của PL3 vì cấu trúc Paragraph + Question là như nhau
     return parse_pl3_passage_bank(source)
 
 # ====================================================
