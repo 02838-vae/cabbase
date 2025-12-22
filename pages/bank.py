@@ -683,13 +683,67 @@ def parse_pl3_passage_bank(source):
 
     return final_questions
 
-# Thêm Parser riêng cho Phụ lục 4 (Sử dụng logic của PL3)
 def parse_pl4_passage_bank(source):
     """
-    Sử dụng chung logic với Phụ lục 3 cho Phụ lục 4 (Luật và quy trình)
-    vì cả hai đều có cấu trúc Paragraph -> Questions.
+    Parser đặc biệt cho Phụ lục 4: Luật và quy trình.
+    Nhận diện 'Paragraph X.' và gom nhóm câu hỏi chính xác.
     """
-    return parse_pl3_passage_bank(source)
+    if isinstance(source, str):
+        doc = Document(source)
+    else:
+        doc = Document(source)
+
+    passages = []
+    current_passage = None
+    
+    # Regex để nhận diện "Paragraph 1.", "Paragraph 2 .", v.v.
+    paragraph_regex = re.compile(r'^Paragraph\s+\d+\s?\.?', re.IGNORECASE)
+
+    for para in doc.paragraphs:
+        text = para.text.strip()
+        if not text:
+            continue
+            
+        # Kiểm tra nếu dòng này là bắt đầu của một Paragraph mới
+        if paragraph_regex.match(text):
+            if current_passage:
+                passages.append(current_passage)
+            
+            current_passage = {
+                "passage_id": text,
+                "passage_text": "",
+                "questions": []
+            }
+        elif current_passage:
+            # Nếu dòng này kết thúc bằng (*), đó là một lựa chọn (Option)
+            if "(*)" in text:
+                if current_passage["questions"]:
+                    clean_opt = text.replace("(*)", "").strip()
+                    current_passage["questions"][-1]["options"].append(clean_opt)
+                    current_passage["questions"][-1]["answer"] = clean_opt
+            # Nếu dòng này trông giống một câu hỏi (thường không có tiền tố A, B, C ở đầu hoặc là dòng đầu tiên sau passage)
+            elif current_passage["passage_text"] != "" and not re.match(r'^[A-D]\.', text):
+                 # Kiểm tra xem có phải câu hỏi mới không (dựa vào ngữ cảnh PL4)
+                 # Nếu dòng trước đó đã có đủ options hoặc đây là dòng text sau passage
+                 current_passage["questions"].append({
+                    "question": text,
+                    "options": [],
+                    "answer": None
+                })
+            else:
+                # Nếu chưa có câu hỏi nào, thì text này thuộc về nội dung của Passage
+                if not current_passage["questions"]:
+                    current_passage["passage_text"] += text + "\n"
+                else:
+                    # Nếu đã có câu hỏi, thì đây là các lựa chọn A, B, C...
+                    clean_opt = re.sub(r'^[A-D]\.\s*', '', text).strip()
+                    current_passage["questions"][-1]["options"].append(clean_opt)
+
+    if current_passage:
+        passages.append(current_passage)
+    
+    return passages
+
 
 # ====================================================
 # 🌟 HÀM: LOGIC DỊCH ĐỘC QUYỀN (EXCLUSIVE TRANSLATION)
