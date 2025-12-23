@@ -702,21 +702,15 @@ def parse_pl4_passage_bank(source):
     passages = []
     current_passage = None
     
-    # Regex để nhận diện "Paragraph 1.", "Paragraph 2.", v.v.
+    # Regex để nhận diện "Paragraph 1.", "Paragraph 2 .", v.v.
     paragraph_regex = re.compile(r'^Paragraph\s+\d+\s?\.?', re.IGNORECASE)
-    
-    # Regex để nhận diện câu hỏi có số thứ tự: "1.", "2.", "3.", ...
-    question_regex = re.compile(r'^\s*(\d+)\s*\.\s*(.+)', re.IGNORECASE)
-    
-    # Regex để nhận diện đáp án: "A.", "B.", "C.", "D."
-    option_regex = re.compile(r'^\s*([A-D])\s*\.\s*(.+)', re.IGNORECASE)
 
     for para in doc.paragraphs:
         text = para.text.strip()
         if not text:
             continue
             
-        # 1. KIỂM TRA BẮT ĐẦU PARAGRAPH MỚI
+        # Kiểm tra nếu dòng này là bắt đầu của một Paragraph mới
         if paragraph_regex.match(text):
             if current_passage:
                 passages.append(current_passage)
@@ -726,50 +720,28 @@ def parse_pl4_passage_bank(source):
                 "passage_text": "",
                 "questions": []
             }
-            continue
-        
-        if current_passage is None:
-            continue
-            
-        # 2. KIỂM TRA CÂU HỎI MỚI (có số thứ tự 1., 2., 3., ...)
-        question_match = question_regex.match(text)
-        if question_match:
-            q_number = question_match.group(1)
-            q_text = question_match.group(2).strip()
-            
-            current_passage["questions"].append({
-                "number": int(q_number),
-                "question": q_text,
-                "options": [],
-                "answer": None
-            })
-            continue
-        
-        # 3. KIỂM TRA ĐÁP ÁN (A., B., C., D.)
-        option_match = option_regex.match(text)
-        if option_match and current_passage["questions"]:
-            option_letter = option_match.group(1).upper()
-            option_text = option_match.group(2).strip()
-            
-            # Kiểm tra đáp án đúng (có dấu (*) ở cuối)
-            is_correct = False
-            if "(*)" in option_text:
-                is_correct = True
-                option_text = option_text.replace("(*)", "").strip()
-            
-            current_passage["questions"][-1]["options"].append({
-                "letter": option_letter,
-                "text": option_text,
-                "is_correct": is_correct
-            })
-            
-            if is_correct:
-                current_passage["questions"][-1]["answer"] = option_text
-            continue
-        
-        # 4. NẾU KHÔNG PHẢI CÂU HỎI HOẶC ĐÁP ÁN → THUỘC NỘI DUNG ĐOẠN VĂN
-        if not current_passage["questions"]:
-            current_passage["passage_text"] += text + "\n"
+        elif current_passage:
+            # Nếu dòng này kết thúc bằng (*), đó là một lựa chọn (Option)
+            if "(*)" in text:
+                if current_passage["questions"]:
+                    clean_opt = text.replace("(*)", "").strip()
+                    current_passage["questions"][-1]["options"].append(clean_opt)
+                    current_passage["questions"][-1]["answer"] = clean_opt
+            # Nếu dòng này trông giống một câu hỏi
+            elif current_passage["passage_text"] != "" and not re.match(r'^[A-D]\.', text):
+                 current_passage["questions"].append({
+                    "question": text,
+                    "options": [],
+                    "answer": None
+                })
+            else:
+                # Nếu chưa có câu hỏi nào, thì text này thuộc về nội dung của Passage
+                if not current_passage["questions"]:
+                    current_passage["passage_text"] += text + "\n"
+                else:
+                    # Nếu đã có câu hỏi, thì đây là các lựa chọn A, B, C...
+                    clean_opt = re.sub(r'^[A-D]\.\s*', '', text).strip()
+                    current_passage["questions"][-1]["options"].append(clean_opt)
 
     if current_passage:
         passages.append(current_passage)
@@ -782,20 +754,24 @@ def parse_pl4_passage_bank(source):
         passage_content = passage["passage_text"].strip()
         group_name = passage["passage_id"]
         
-        for q_data in passage["questions"]:
-            # Chuyển options sang format "a. text", "b. text"...
+        for local_idx, q_data in enumerate(passage["questions"], start=1):
+            # Chuyển options từ list sang format "a. text", "b. text"...
             formatted_options = []
+            labels = ["a", "b", "c", "d"]
+            
+            for i, opt_text in enumerate(q_data["options"]):
+                if i < len(labels):
+                    formatted_options.append(f"{labels[i]}. {opt_text}")
+            
+            # Tìm đáp án đúng (format: "a. text")
             correct_answer = ""
+            if q_data["answer"]:
+                for formatted_opt in formatted_options:
+                    if q_data["answer"] in formatted_opt:
+                        correct_answer = formatted_opt
+                        break
             
-            for opt in q_data["options"]:
-                letter_lower = opt["letter"].lower()
-                formatted_opt = f"{letter_lower}. {opt['text']}"
-                formatted_options.append(formatted_opt)
-                
-                if opt["is_correct"]:
-                    correct_answer = formatted_opt
-            
-            # Nếu không tìm thấy đáp án đúng, dùng option đầu tiên
+            # Nếu không tìm thấy đáp án, dùng option đầu tiên
             if not correct_answer and formatted_options:
                 correct_answer = formatted_options[0]
             
@@ -803,14 +779,14 @@ def parse_pl4_passage_bank(source):
                 'question': q_data["question"],
                 'options': formatted_options,
                 'answer': correct_answer,
-                'number': q_data["number"],  # Số thứ tự cục bộ trong paragraph
+                'number': local_idx,  # Số thứ tự cục bộ
                 'global_number': global_q_counter,  # Số thứ tự toàn cục
                 'group': group_name,
                 'paragraph_content': passage_content
             })
             global_q_counter += 1
     
-    return final_questions
+    return final_questions                            
 
 
 # ====================================================
