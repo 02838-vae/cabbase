@@ -688,14 +688,13 @@ def parse_pl4_passage_bank(source):
     Parser đặc biệt cho Phụ lục 4: Luật và quy trình.
     Nhận diện 'Paragraph X.' và gom nhóm câu hỏi chính xác.
     """
-    # THÊM LOGIC TÌM FILE
     path = find_file_path(source)
     if not path:
         print(f"Lỗi không tìm thấy file DOCX: {source}")
         return []
     
     try:
-        doc = Document(path)  # Sử dụng path thay vì source
+        doc = Document(path)
     except Exception as e:
         print(f"Lỗi đọc file DOCX: {source}. Chi tiết: {e}")
         return []
@@ -728,10 +727,8 @@ def parse_pl4_passage_bank(source):
                     clean_opt = text.replace("(*)", "").strip()
                     current_passage["questions"][-1]["options"].append(clean_opt)
                     current_passage["questions"][-1]["answer"] = clean_opt
-            # Nếu dòng này trông giống một câu hỏi (thường không có tiền tố A, B, C ở đầu hoặc là dòng đầu tiên sau passage)
+            # Nếu dòng này trông giống một câu hỏi
             elif current_passage["passage_text"] != "" and not re.match(r'^[A-D]\.', text):
-                 # Kiểm tra xem có phải câu hỏi mới không (dựa vào ngữ cảnh PL4)
-                 # Nếu dòng trước đó đã có đủ options hoặc đây là dòng text sau passage
                  current_passage["questions"].append({
                     "question": text,
                     "options": [],
@@ -749,7 +746,47 @@ def parse_pl4_passage_bank(source):
     if current_passage:
         passages.append(current_passage)
     
-    return passages
+    # CHUẨN HÓA OUTPUT: Chuyển đổi sang format giống PL3
+    final_questions = []
+    global_q_counter = 1
+    
+    for passage in passages:
+        passage_content = passage["passage_text"].strip()
+        group_name = passage["passage_id"]
+        
+        for local_idx, q_data in enumerate(passage["questions"], start=1):
+            # Chuyển options từ list sang format "a. text", "b. text"...
+            formatted_options = []
+            labels = ["a", "b", "c", "d"]
+            
+            for i, opt_text in enumerate(q_data["options"]):
+                if i < len(labels):
+                    formatted_options.append(f"{labels[i]}. {opt_text}")
+            
+            # Tìm đáp án đúng (format: "a. text")
+            correct_answer = ""
+            if q_data["answer"]:
+                for formatted_opt in formatted_options:
+                    if q_data["answer"] in formatted_opt:
+                        correct_answer = formatted_opt
+                        break
+            
+            # Nếu không tìm thấy đáp án, dùng option đầu tiên
+            if not correct_answer and formatted_options:
+                correct_answer = formatted_options[0]
+            
+            final_questions.append({
+                'question': q_data["question"],
+                'options': formatted_options,
+                'answer': correct_answer,
+                'number': local_idx,  # Số thứ tự cục bộ
+                'global_number': global_q_counter,  # Số thứ tự toàn cục
+                'group': group_name,
+                'paragraph_content': passage_content
+            })
+            global_q_counter += 1
+    
+    return final_questions
 
 
 # ====================================================
