@@ -688,10 +688,17 @@ def parse_pl4_passage_bank(source):
     Parser đặc biệt cho Phụ lục 4: Luật và quy trình.
     Nhận diện 'Paragraph X.' và gom nhóm câu hỏi chính xác.
     """
-    if isinstance(source, str):
-        doc = Document(source)
-    else:
-        doc = Document(source)
+    # THÊM LOGIC TÌM FILE
+    path = find_file_path(source)
+    if not path:
+        print(f"Lỗi không tìm thấy file DOCX: {source}")
+        return []
+    
+    try:
+        doc = Document(path)  # Sử dụng path thay vì source
+    except Exception as e:
+        print(f"Lỗi đọc file DOCX: {source}. Chi tiết: {e}")
+        return []
 
     passages = []
     current_passage = None
