@@ -684,10 +684,9 @@ def parse_pl3_passage_bank(source):
     return final_questions
 def parse_pl4_passage_bank(source):
     """
-    Parser tối ưu cho Phụ lục 4:
-    - Sửa lỗi mất dữ liệu (hiển thị không đầy đủ).
-    - Đồng bộ logic gom nhóm Paragraph 1, 2... giống Phụ lục 3.
-    - Nhận diện câu hỏi khắt khe (phải có số thứ tự) để không nhầm với nội dung đoạn văn.
+    Parser chuẩn hóa cho Phụ lục 4:
+    - Chỉ nhận diện câu hỏi khi bắt đầu bằng số (1., 2. ...)
+    - Gom nhóm nội dung mô tả vào paragraph_content như Phụ lục 3
     """
     path = find_file_path(source)
     if not path:
@@ -704,22 +703,20 @@ def parse_pl4_passage_bank(source):
     current_passage_text = ""
     current_questions_in_group = []
     
-    # Regex nhận diện Paragraph (Ví dụ: Paragraph 1. hoặc Paragraph 2)
-    paragraph_regex = re.compile(r'^\s*Paragraph\s*(\d+)\s?\.?', re.IGNORECASE)
-    # Regex nhận diện câu hỏi bắt đầu bằng số (1. hoặc 2))
+    # Regex nhận diện tiêu đề Paragraph
+    paragraph_regex = re.compile(r'^\s*Paragraph\s*\d+\s?\.?', re.IGNORECASE)
+    # Regex nhận diện câu hỏi bắt đầu bằng số (Phải có số ở đầu)
     q_start_regex = re.compile(r'^\s*(?P<q_num>\d+)[\.\)]\s*')
     # Regex nhận diện đáp án A. B. C. D.
     opt_prefix_regex = re.compile(r'^\s*(?P<letter>[A-Da-d])[\.\)]\s*')
 
-    def save_current_group():
-        """Đóng gói toàn bộ câu hỏi của Paragraph hiện tại vào danh sách kết quả"""
+    def save_group():
         nonlocal current_questions_in_group
         for q_data in current_questions_in_group:
             labels = ["a", "b", "c", "d"]
             formatted_options = []
             correct_answer = ""
             
-            # Chuẩn hóa danh sách đáp án
             for i, opt_text in enumerate(q_data["options_raw"]):
                 if i < len(labels):
                     lbl = labels[i]
@@ -728,7 +725,6 @@ def parse_pl4_passage_bank(source):
                     if q_data["raw_answer"] == opt_text:
                         correct_answer = fmt_opt
 
-            # Nếu không có dấu (*), mặc định lấy câu đầu làm đáp án
             if not correct_answer and formatted_options:
                 correct_answer = formatted_options[0]
 
@@ -739,7 +735,7 @@ def parse_pl4_passage_bank(source):
                 'number': q_data["local_idx"],
                 'global_number': len(final_questions) + 1,
                 'group': current_group_name,
-                'paragraph_content': current_passage_text.strip() # Nội dung đoạn văn dùng chung cho cả nhóm
+                'paragraph_content': current_passage_text.strip()
             })
         current_questions_in_group.clear()
 
@@ -747,15 +743,15 @@ def parse_pl4_passage_bank(source):
         text = para.text.strip()
         if not text: continue
             
-        # BƯỚC 1: Nếu gặp tiêu đề Paragraph mới
+        # 1. Nhận diện Paragraph mới
         match_p = paragraph_regex.match(text)
         if match_p:
-            save_current_group() # Lưu toàn bộ câu hỏi của paragraph trước đó
+            save_group()
             current_group_name = text
-            current_passage_text = "" # Reset nội dung đoạn văn
+            current_passage_text = ""
             continue
             
-        # BƯỚC 2: Nếu gặp Câu hỏi (Bắt buộc phải có số thứ tự ở đầu dòng)
+        # 2. Nhận diện Câu hỏi (Bắt buộc có số thứ tự)
         match_q = q_start_regex.match(text)
         if match_q:
             q_text = text[match_q.end():].strip()
@@ -767,11 +763,10 @@ def parse_pl4_passage_bank(source):
             })
             continue
 
-        # BƯỚC 3: Nếu gặp Đáp án (A. B... hoặc có dấu (*))
+        # 3. Nhận diện Đáp án (A. B... hoặc có dấu (*))
         match_opt = opt_prefix_regex.match(text)
         is_correct_marker = "(*)" in text
         if (match_opt or is_correct_marker) and current_questions_in_group:
-            # Loại bỏ prefix A. B. và dấu (*) để lấy nội dung thuần
             clean_opt = text.replace("(*)", "").strip()
             if match_opt:
                 clean_opt = text[match_opt.end():].replace("(*)", "").strip()
@@ -781,17 +776,16 @@ def parse_pl4_passage_bank(source):
                 current_questions_in_group[-1]["raw_answer"] = clean_opt
             continue
 
-        # BƯỚC 4: Xử lý văn bản "thừa" (Nội dung đoạn văn hoặc câu hỏi nhiều dòng)
+        # 4. Xử lý văn bản thuần (Nội dung đoạn văn hoặc nối dòng câu hỏi)
         if current_group_name:
             if not current_questions_in_group:
-                # Nếu chưa xuất hiện câu hỏi nào, đây là phần miêu tả Paragraph
                 current_passage_text += text + "\n"
             else:
-                # Nếu đang trong một câu hỏi, cộng dồn văn bản vào câu hỏi đó (hỗ trợ xuống dòng trong câu hỏi)
                 current_questions_in_group[-1]["question_text"] += " " + text
 
-    save_current_group() # Lưu nhóm cuối cùng của file
+    save_group()
     return final_questions
+
 
           
 # ====================================================
