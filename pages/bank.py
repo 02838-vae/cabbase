@@ -682,44 +682,43 @@ def parse_pl3_passage_bank(source):
         global_q_counter += 1
 
     return final_questions
-
 def parse_pl4_passage_bank(source):
     """
-    Parser đặc biệt cho Phụ lục 4: Luật và quy trình.
-    - Sửa lỗi: Chỉ nhận diện câu hỏi khi bắt đầu bằng số (1., 2., ...).
-    - Sửa lỗi: Gom nhóm Paragraph tương tự Phụ lục 3.
+    Parser tối ưu cho Phụ lục 4:
+    - Gom nhóm Paragraph 1, 2 giống Phụ lục 3.
+    - Sửa lỗi nhận diện nhầm câu hỏi từ các dòng xuống dòng.
     """
     path = find_file_path(source)
     if not path:
-        print(f"Lỗi không tìm thấy file DOCX: {source}")
         return []
     
     try:
         doc = Document(path)
     except Exception as e:
-        print(f"Lỗi đọc file DOCX: {source}. Chi tiết: {e}")
+        print(f"Lỗi đọc file: {e}")
         return []
 
     final_questions = []
     current_group_name = ""
     current_passage_text = ""
-    current_questions_in_passage = []
+    current_questions_in_group = []
     
-    # Regex nhận diện Paragraph X.
-    paragraph_regex = re.compile(r'^\s*Paragraph\s*\d+\s?\.?', re.IGNORECASE)
-    # Regex nhận diện câu hỏi bắt đầu bằng số (ví dụ: 1. hoặc 1))
-    q_start_regex = re.compile(r'^\s*(\d+)[\.\)]\s*')
-    # Regex nhận diện đáp án A. B. C. D.
-    opt_prefix_regex = re.compile(r'^\s*([A-Da-d])[\.\)]\s*')
+    # Regex nhận diện Paragraph (Giống Phụ lục 3)
+    paragraph_regex = re.compile(r'^\s*Paragraph\s*(\d+)\s?\.?', re.IGNORECASE)
+    # Regex nhận diện câu hỏi bắt buộc bắt đầu bằng số (1., 2., ...)
+    q_start_regex = re.compile(r'^\s*(?P<q_num>\d+)[\.\)]\s*')
+    # Regex nhận diện đáp án A., B., C., D.
+    opt_prefix_regex = re.compile(r'^\s*(?P<letter>[A-Da-d])[\.\)]\s*')
 
-    def save_current_passage():
-        nonlocal current_questions_in_passage
-        for q_data in current_questions_in_passage:
-            # Format lại options và tìm đáp án đúng tương tự logic cũ của bạn
+    def save_group():
+        """Hàm phụ trợ để đóng gói dữ liệu của nhóm hiện tại vào danh sách chung"""
+        nonlocal current_questions_in_group
+        for q_data in current_questions_in_group:
             labels = ["a", "b", "c", "d"]
             formatted_options = []
             correct_answer = ""
             
+            # Chuẩn hóa options sang format 'a. text'
             for i, opt_text in enumerate(q_data["options_raw"]):
                 if i < len(labels):
                     lbl = labels[i]
@@ -732,7 +731,7 @@ def parse_pl4_passage_bank(source):
                 correct_answer = formatted_options[0]
 
             final_questions.append({
-                'question': q_data["question_text"],
+                'question': q_data["question_text"].strip(),
                 'options': formatted_options,
                 'answer': correct_answer,
                 'number': q_data["local_idx"],
@@ -740,58 +739,58 @@ def parse_pl4_passage_bank(source):
                 'group': current_group_name,
                 'paragraph_content': current_passage_text.strip()
             })
-        current_questions_in_passage.clear()
+        current_questions_in_group.clear()
 
     for para in doc.paragraphs:
         text = para.text.strip()
         if not text: continue
             
-        # 1. Nếu gặp Paragraph mới
-        if paragraph_regex.match(text):
-            save_current_passage() # Lưu lại những câu hỏi của paragraph trước đó
+        # 1. Nếu gặp tiêu đề Paragraph mới (Ví dụ: Paragraph 1.)
+        match_p = paragraph_regex.match(text)
+        if match_p:
+            save_group() # Lưu nhóm cũ
             current_group_name = text
-            current_passage_text = ""
+            current_passage_text = "" # Reset nội dung đoạn văn cho nhóm mới
             continue
             
-        # 2. Nếu gặp câu hỏi (Bắt buộc phải có số thứ tự ở đầu dòng)
+        # 2. Nếu gặp Câu hỏi (Phải có số thứ tự)
         match_q = q_start_regex.match(text)
         if match_q:
-            q_text = q_start_regex.sub('', text).strip()
-            current_questions_in_passage.append({
-                "local_idx": int(match_q.group(1)),
+            q_text = text[match_q.end():].strip()
+            current_questions_in_group.append({
+                "local_idx": int(match_q.group("q_num")),
                 "question_text": q_text,
                 "options_raw": [],
                 "raw_answer": None
             })
             continue
 
-        # 3. Nếu gặp đáp án (A. B. C. hoặc có dấu (*))
-        is_opt = opt_prefix_regex.match(text) or "(*)" in text
-        if is_opt and current_questions_in_passage:
+        # 3. Nếu gặp Đáp án (A. B... hoặc có dấu (*))
+        match_opt = opt_prefix_regex.match(text)
+        is_correct_marker = "(*)" in text
+        
+        if (match_opt or is_correct_marker) and current_questions_in_group:
             clean_opt = text.replace("(*)", "").strip()
-            clean_opt = opt_prefix_regex.sub('', clean_opt).strip()
+            if match_opt:
+                clean_opt = text[match_opt.end():].replace("(*)", "").strip()
             
-            current_questions_in_passage[-1]["options_raw"].append(clean_opt)
-            if "(*)" in text:
-                current_questions_in_passage[-1]["raw_answer"] = clean_opt
+            current_questions_in_group[-1]["options_raw"].append(clean_opt)
+            if is_correct_marker:
+                current_questions_in_group[-1]["raw_answer"] = clean_opt
             continue
 
-        # 4. Nếu không phải những cái trên:
+        # 4. Xử lý văn bản thừa (Nội dung đoạn văn hoặc Câu hỏi dài nhiều dòng)
         if current_group_name:
-            if not current_questions_in_passage:
-                # Nếu chưa có câu hỏi nào thì đây là nội dung đoạn văn (Passage)
+            if not current_questions_in_group:
+                # Nếu chưa có câu hỏi nào trong group, đây là nội dung mô tả Paragraph
                 current_passage_text += text + "\n"
             else:
-                # Nếu đã có câu hỏi, các dòng xuống dòng thừa sẽ được cộng dồn vào nội dung câu hỏi hiện tại
-                current_questions_in_passage[-1]["question_text"] += " " + text
+                # Nếu đã có câu hỏi, các dòng văn bản không định dạng sẽ được nối vào câu hỏi hiện tại
+                current_questions_in_group[-1]["question_text"] += " " + text
 
-    save_current_passage() # Lưu group cuối cùng
+    save_group() # Lưu nhóm cuối cùng
     return final_questions
-
-    
-                                
-
-
+          
 # ====================================================
 # 🌟 HÀM: LOGIC DỊCH ĐỘC QUYỀN (EXCLUSIVE TRANSLATION)
 # ====================================================
