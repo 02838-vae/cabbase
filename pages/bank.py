@@ -682,42 +682,6 @@ def parse_pl3_passage_bank(source):
         global_q_counter += 1
 
     return final_questions
-def parse_pl4_passage_bank(source):
-    doc = Document(source)
-    lines = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
-
-    questions = []
-    current_paragraph = None
-    paragraph_content = []
-    q_number = 1
-
-    for line in lines:
-        # Detect paragraph title
-        if re.match(r"PARAGRAPH\s+\d+", line, re.I):
-            current_paragraph = line.strip()
-            paragraph_content = []
-            continue
-
-        # Question line
-        if re.match(r"\d+\.", line):
-            question_text = line.split('.', 1)[1].strip()
-            options = []
-            answer = None
-
-            continue
-
-        # Options
-        if line.startswith(("A.", "B.", "C.")):
-            opt = line
-            if "(*)" in line:
-                answer = line.replace("(*)", "").strip()
-                opt = answer
-            options.append(opt)
-            continue
-
-        paragraph_content.append(line)
-
-    return questions
 
 # ====================================================
 # 🌟 HÀM: LOGIC DỊCH ĐỘC QUYỀN (EXCLUSIVE TRANSLATION)
@@ -1591,7 +1555,7 @@ if bank_choice != "----":
     elif "Docwise" in bank_choice:
         is_docwise = True
         # Cập nhật nhãn Phụ lục 2 và BỔ SUNG PHỤ LỤC 3
-        doc_options = ["Phụ lục 1 : Ngữ pháp chung", "Phụ lục 2 : Từ vựng, thuật ngữ", "Phụ lục 3 : Bài đọc hiểu", "Phụ lục 4 : Luật và qui trình"]
+        doc_options = ["Phụ lục 1 : Ngữ pháp chung", "Phụ lục 2 : Từ vựng, thuật ngữ", "Phụ lục 3 : Bài đọc hiểu"]
         doc_selected_new = st.selectbox("Chọn Phụ lục:", doc_options, index=doc_options.index(st.session_state.get('doc_selected', doc_options[0])), key="docwise_selector")
         
         # Xử lý khi đổi phụ lục (reset mode)
@@ -1611,8 +1575,6 @@ if bank_choice != "----":
             source = "PL2.docx" # File PL2.docx (Dùng parse_pl2 đã sửa)
         elif st.session_state.doc_selected == "Phụ lục 3 : Bài đọc hiểu": 
             source = "PL3.docx" # File PL3.docx (Dùng parse_pl3_passage_bank mới)
-        elif st.session_state.doc_selected == "Phụ lục 4 : Luật và qui trình":
-            source = "PL4L.docx"
         
     # LOAD CÂU HỎI
     questions = []
@@ -1628,8 +1590,6 @@ if bank_choice != "----":
                 questions = parse_pl2(source) # Sử dụng parser mới (dùng (*))
             elif source == "PL3.docx":
                 questions = parse_pl3_passage_bank(source) # <-- Dùng parser đã sửa cho PL3
-            elif source == "PL4.docx":
-                questions = parse_pl4_passage_bank(source)
     
     if not questions:
         # Cập nhật thông báo lỗi để phù hợp với logic (*) cho cả PL1 và PL2
@@ -1643,7 +1603,7 @@ if bank_choice != "----":
     custom_groups = [] # Chỉ dùng cho PL3
     is_pl3_grouping = False
 
-    if is_docwise and source == "PL3.docx", "PL4.docx":
+    if is_docwise and source == "PL3.docx":
         is_pl3_grouping = True
         passage_groups = {}
         
