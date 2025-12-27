@@ -682,52 +682,42 @@ def parse_pl3_passage_bank(source):
         global_q_counter += 1
 
     return final_questions
-def read_pl4_grouped(source):
-    """
-    Read PL4 docx and group content by:
-    (Paragraph 1 & 2), (3 & 4), (5 & 6)...
-    Return list of grouped question blocks
-    """
-
-    path = find_file_path(source)
-    if not path:
-        print(f"Không tìm thấy file PL4: {source}")
-        return []
-
-    doc = Document(path)
+def parse_pl4_passage_bank(source):
+    doc = Document(source)
     lines = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
 
-    paragraphs = {}
-    current_para = None
+    questions = []
+    current_paragraph = None
+    paragraph_content = []
+    q_number = 1
 
-    # 1️⃣ Tách nội dung theo từng paragraph
     for line in lines:
-        if re.match(r"PARAGRAPH\s+\d+", line, re.IGNORECASE):
-            num = int(re.findall(r"\d+", line)[0])
-            current_para = num
-            paragraphs[current_para] = []
-        elif current_para:
-            paragraphs[current_para].append(line)
+        # Detect paragraph title
+        if re.match(r"PARAGRAPH\s+\d+", line, re.I):
+            current_paragraph = line.strip()
+            paragraph_content = []
+            continue
 
-    # 2️⃣ Gom theo cặp paragraph
-    grouped_blocks = []
-    para_nums = sorted(paragraphs.keys())
+        # Question line
+        if re.match(r"\d+\.", line):
+            question_text = line.split('.', 1)[1].strip()
+            options = []
+            answer = None
 
-    for i in range(0, len(para_nums), 2):
-        p1 = para_nums[i]
-        p2 = para_nums[i + 1] if i + 1 < len(para_nums) else None
+            continue
 
-        content = []
-        content.append(f"PARAGRAPH {p1}")
-        content.extend(paragraphs[p1])
+        # Options
+        if line.startswith(("A.", "B.", "C.")):
+            opt = line
+            if "(*)" in line:
+                answer = line.replace("(*)", "").strip()
+                opt = answer
+            options.append(opt)
+            continue
 
-        if p2:
-            content.append(f"PARAGRAPH {p2}")
-            content.extend(paragraphs[p2])
+        paragraph_content.append(line)
 
-        grouped_blocks.append("\n".join(content))
-
-    return grouped_blocks
+    return questions
 
 # ====================================================
 # 🌟 HÀM: LOGIC DỊCH ĐỘC QUYỀN (EXCLUSIVE TRANSLATION)
