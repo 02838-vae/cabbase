@@ -689,98 +689,70 @@ def parse_pl4_passage_bank(source):
     questions = []
     doc = Document(path)
     
-    current_paragraph_text = ""
-    current_questions_in_para = []
+    current_para_name = ""
+    current_para_content = ""
+    temp_qs = []
     
-    # Regex
-    para_header_pat = re.compile(r'^\s*Paragraph\s*\d+', re.I)
-    q_start_pat = re.compile(r'^\s*(?P<q_num>\d+)\s*[\.\)]\s*(?P<content>.*)', re.I)
-    opt_pat = re.compile(r'^\s*(?P<letter>[A-Da-d])[\.\)]\s*(?P<text>.*?)(\s*\(\*\))?$', re.I)
+    para_header_pat = re.compile(r'^\s*Paragraph\s*(\d+)', re.I)
+    q_start_pat = re.compile(r'^\s*(\d+)\s*[\.\)]\s*(.*)', re.I)
+    opt_pat = re.compile(r'^\s*([A-Da-d])[\.\)]\s*(.*)', re.I)
 
     lines = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
     
     i = 0
     while i < len(lines):
         line = lines[i]
-        
-        # Nếu gặp tiêu đề Paragraph mới
         if para_header_pat.match(line):
-            # Lưu nhóm cũ trước khi sang nhóm mới
-            if current_paragraph_text and current_questions_in_para:
-                for q in current_questions_in_para:
-                    q['paragraph_content'] = current_paragraph_text
+            # Lưu nhóm cũ
+            if current_para_content and temp_qs:
+                for q in temp_qs:
+                    q['paragraph_content'] = current_para_content.strip()
                     questions.append(q)
             
-            current_paragraph_text = ""
-            current_questions_in_para = []
-            group_name = line
+            current_para_name = line
+            current_para_content = ""
+            temp_qs = []
             i += 1
-            
-            # Đọc nội dung đoạn văn cho đến khi gặp câu hỏi đầu tiên
-            while i < len(lines) and not q_start_pat.match(lines[i]):
-                current_paragraph_text += lines[i] + "\n"
+            while i < len(lines) and not q_start_pat.match(lines[i]) and not para_header_pat.match(lines[i]):
+                current_para_content += lines[i] + "\n"
                 i += 1
             continue
 
-        # Nếu gặp câu hỏi
         q_match = q_start_pat.match(line)
         if q_match:
-            q_num = q_match.group('q_num')
-            q_text = q_match.group('content')
+            q_num = q_match.group(1)
+            q_text = q_match.group(2).strip()
             
-            # Check nếu là dạng điền từ (đoạn văn có chứa (1), (2)...)
-            if f"({q_num})" in current_paragraph_text or f" {q_num}. " in current_paragraph_text:
-                actual_q_text = f"Chọn đáp án đúng cho vị trí **({q_num})**"
-                # Nếu dòng câu hỏi chứa luôn Option A
-                opt_inline = opt_pat.match(q_text)
-                options = {}
-                ans = ""
-                if opt_inline:
-                    letter = opt_inline.group('letter').upper()
-                    txt = opt_inline.group('text').replace("(*)", "").strip()
-                    options[letter] = f"{letter}. {txt}"
-                    if "(*)" in q_text: ans = options[letter]
-                    q_text = "" # Đã dùng làm option
-                else:
-                    q_text = actual_q_text
-            
+            # Logic nhận diện điền chỗ trống (giống PL3)
+            if f"({q_num})" in current_para_content or f"({int(q_num)})" in current_para_content:
+                q_text = f"Chọn đáp án đúng cho vị trí **({q_num})**"
+
             new_q = {
-                'group': group_name if 'group_name' in locals() else "Bài đọc",
+                'group': current_para_name,
                 'question': q_text,
-                'options': options if 'options' in locals() else {},
-                'answer': ans if 'ans' in locals() else "",
+                'options': [],
+                'answer': "",
                 'number': int(q_num)
             }
-            
             i += 1
-            # Đọc các Option tiếp theo
-            while i < len(lines):
+            while i < len(lines) and not q_start_pat.match(lines[i]) and not para_header_pat.match(lines[i]):
                 opt_match = opt_pat.match(lines[i])
                 if opt_match:
-                    letter = opt_match.group('letter').upper()
-                    txt = opt_match.group('text').replace("(*)", "").strip()
-                    new_q['options'][letter] = f"{letter}. {txt}"
-                    if "(*)" in lines[i]:
-                        new_q['answer'] = new_q['options'][letter]
-                    i += 1
-                elif q_start_pat.match(lines[i]) or para_header_pat.match(lines[i]):
-                    break
+                    letter = opt_match.group(1).upper()
+                    content = opt_match.group(2).replace("(*)", "").strip()
+                    full_opt = f"{letter}. {content}"
+                    new_q['options'].append(full_opt)
+                    if "(*)" in lines[i]: new_q['answer'] = full_opt
                 else:
                     new_q['question'] += " " + lines[i]
-                    i += 1
-            
-            # Chuyển dict options thành list
-            new_q['options'] = list(new_q['options'].values())
-            current_questions_in_para.append(new_q)
-        else:
-            i += 1
+                i += 1
+            temp_qs.append(new_q)
+        else: i += 1
 
-    # Lưu đoạn cuối cùng
-    if current_paragraph_text and current_questions_in_para:
-        for q in current_questions_in_para:
-            q['paragraph_content'] = current_paragraph_text
+    if current_para_content and temp_qs:
+        for q in temp_qs:
+            q['paragraph_content'] = current_para_content.strip()
             questions.append(q)
-            
     return questions
 
           
@@ -1694,12 +1666,42 @@ if bank_choice != "----":
             elif source == "PL3.docx":
                 questions = parse_pl3_passage_bank(source) # <-- Dùng parser đã sửa cho PL3
             elif source == "PL4.docx":
-                questions = parse_pl4_passage_bank(source)
+                questions = parse_pl4_passage_bank("PL4.docx")
     
-    if not questions:
-        # Cập nhật thông báo lỗi để phù hợp với logic (*) cho cả PL1 và PL2
-        st.error(f"❌ Không đọc được câu hỏi nào từ file **{source}**. Vui lòng kiểm tra file và cấu trúc thư mục (đảm bảo file nằm trong thư mục gốc hoặc thư mục 'pages/'), và kiểm tra lại định dạng đáp án đúng (dùng dấu `(*)`).")
-        st.stop() 
+   # SAU ĐÓ, sửa logic chia nhóm ngay bên dưới:
+    if questions:
+        if selected_bank in ["Phụ lục 3", "Phụ lục 4"]:
+            # Lấy danh sách các Paragraph duy nhất
+            unique_paras = []
+            for q in questions:
+                p = q.get('paragraph_content', '')
+                if p and p not in unique_paras:
+                    unique_paras.append(p)
+            
+            # Chia 2 Paragraph vào 1 nhóm
+            group_titles = []
+            for i in range(0, len(unique_paras), 2):
+                end_idx = min(i + 2, len(unique_paras))
+                # Tạo tiêu đề hiển thị: Nhóm 1 (Para 1-2),...
+                group_titles.append(f"Nhóm: Paragraph {i+1} - {end_idx}")
+            
+            # Đồng bộ với biến st.session_state.group_mode_title của bạn
+            selected_title = st.selectbox("Chọn nhóm luyện tập:", group_titles, key="group_selector")
+            st.session_state.group_mode_title = selected_title
+            
+            # Lọc câu hỏi cho nhóm hiện tại
+            idx = group_titles.index(selected_title) * 2
+            active_paras = unique_paras[idx : idx + 2]
+            current_questions = [q for q in questions if q.get('paragraph_content') in active_paras]
+        else:
+            # Logic cũ cho PL1, PL2 (30 câu/nhóm)
+            num_groups = math.ceil(len(questions) / 30)
+            group_titles = [f"Nhóm {i+1} (Câu {i*30+1} - {min((i+1)*30, len(questions))})" for i in range(num_groups)]
+            selected_title = st.selectbox("Chọn nhóm luyện tập:", group_titles)
+            st.session_state.group_mode_title = selected_title
+            
+            start_idx = group_titles.index(selected_title) * 30
+            current_questions = questions[start_idx : start_idx + 30]
     
     total = len(questions)
 
