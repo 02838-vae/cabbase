@@ -682,7 +682,13 @@ def parse_pl3_passage_bank(source):
         global_q_counter += 1
 
     return final_questions
-
+def parse_pl4_law_process(source):
+    """
+    Parser cho Phụ lục 4: Luật và quy trình (Cấu trúc tương tự PL3)
+    Nhóm 2 đoạn văn/nhóm và xử lý câu hỏi dựa trên nội dung đoạn văn.
+    """
+    # Sử dụng lại logic của Phụ lục 3 vì cấu trúc yêu cầu là y hệt
+    return parse_pl3_passage_bank(source)
 # ====================================================
 # 🌟 HÀM: LOGIC DỊCH ĐỘC QUYỀN (EXCLUSIVE TRANSLATION)
 # ====================================================
@@ -1555,7 +1561,7 @@ if bank_choice != "----":
     elif "Docwise" in bank_choice:
         is_docwise = True
         # Cập nhật nhãn Phụ lục 2 và BỔ SUNG PHỤ LỤC 3
-        doc_options = ["Phụ lục 1 : Ngữ pháp chung", "Phụ lục 2 : Từ vựng, thuật ngữ", "Phụ lục 3 : Bài đọc hiểu"]
+        doc_options = ["Phụ lục 1 : Ngữ pháp chung", "Phụ lục 2 : Từ vựng, thuật ngữ", "Phụ lục 3 : Bài đọc hiểu", "Phụ lục 4 : Luật và qui trình"]
         doc_selected_new = st.selectbox("Chọn Phụ lục:", doc_options, index=doc_options.index(st.session_state.get('doc_selected', doc_options[0])), key="docwise_selector")
         
         # Xử lý khi đổi phụ lục (reset mode)
@@ -1575,6 +1581,8 @@ if bank_choice != "----":
             source = "PL2.docx" # File PL2.docx (Dùng parse_pl2 đã sửa)
         elif st.session_state.doc_selected == "Phụ lục 3 : Bài đọc hiểu": 
             source = "PL3.docx" # File PL3.docx (Dùng parse_pl3_passage_bank mới)
+        elif st.session_state.doc_selected == "Phụ lục 4 : Luật và qui trình": 
+            source = "PL4.docx" # File Pl4.docx
         
     # LOAD CÂU HỎI
     questions = []
@@ -1590,6 +1598,8 @@ if bank_choice != "----":
                 questions = parse_pl2(source) # Sử dụng parser mới (dùng (*))
             elif source == "PL3.docx":
                 questions = parse_pl3_passage_bank(source) # <-- Dùng parser đã sửa cho PL3
+            elif source == "PL4.docx":
+                questions = parse_pl4_law_process(source)
     
     if not questions:
         # Cập nhật thông báo lỗi để phù hợp với logic (*) cho cả PL1 và PL2
