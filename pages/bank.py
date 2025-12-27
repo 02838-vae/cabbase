@@ -682,6 +682,78 @@ def parse_pl3_passage_bank(source):
         global_q_counter += 1
 
     return final_questions
+def parse_pl4_grouped(source):
+    """
+    Parser cho Phụ lục 4: Nhóm câu hỏi theo cặp Paragraph (1&2, 3&4,...)
+    """
+    path = find_file_path(source)
+    if not path: return []
+    
+    doc = Document(path)
+    all_paras = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
+    
+    groups = []
+    current_paragraphs = [] # Lưu nội dung của các paragraph trong nhóm
+    current_q = None
+    
+    # Regex nhận diện
+    para_header_pat = re.compile(r'^Paragraph\s*(\d+)', re.I)
+    q_num_pat = re.compile(r'^(\d+)\.\s*')
+    opt_pat = re.compile(r'^([A-D])\.\s*(.*)', re.I)
+    
+    # Logic tạm thời để gom nhóm
+    temp_storage = {} # {para_num: {"content": str, "questions": []}}
+    last_para_num = 0
+
+    # Bước 1: Tách dữ liệu thô từ file thành từng Paragraph
+    for text in all_paras:
+        para_match = para_header_pat.match(text)
+        if para_match:
+            last_para_num = int(para_match.group(1))
+            temp_storage[last_para_num] = {"header": text, "content": "", "questions": []}
+            current_q = None
+            continue
+            
+        if last_para_num == 0: continue
+        
+        # Nhận diện câu hỏi trắc nghiệm (Dạng 1. hoặc Câu hỏi trực tiếp)
+        # Nếu dòng text kết thúc bằng (?) hoặc là một câu hỏi mới
+        is_opt = opt_pat.match(text)
+        if not is_opt and (text.endswith('?') or q_num_pat.match(text)):
+            if current_q: 
+                temp_storage[last_para_num]["questions"].append(current_q)
+            current_q = {"question": clean_text(text), "options": [], "answer": ""}
+        elif is_opt and current_q:
+            is_correct = "(*)" in text
+            clean_opt = text.replace("(*)", "").strip()
+            current_q["options"].append(clean_opt)
+            if is_correct: current_q["answer"] = clean_opt
+        else:
+            # Nếu không phải câu hỏi/đáp án thì là nội dung đoạn văn
+            temp_storage[last_para_num]["content"] += text + "\n"
+
+    if current_q: temp_storage[last_para_num]["questions"].append(current_q)
+
+    # Bước 2: Gom nhóm Paragraph 1&2, 3&4...
+    sorted_keys = sorted(temp_storage.keys())
+    for i in range(0, len(sorted_keys), 2):
+        p_nums = sorted_keys[i:i+2]
+        group_name = " & ".join([f"Paragraph {n}" for n in p_nums])
+        combined_content = "\n\n".join([f"**{temp_storage[n]['header']}**\n{temp_storage[n]['content']}" for n in p_nums])
+        combined_questions = []
+        for n in p_nums:
+            combined_questions.extend(temp_storage[n]['questions'])
+            
+        for q in combined_questions:
+            groups.append({
+                "group_name": group_name,
+                "paragraph_content": combined_content,
+                "question": q["question"],
+                "options": q["options"],
+                "answer": q["answer"]
+            })
+            
+    return groups
 
 # ====================================================
 # 🌟 HÀM: LOGIC DỊCH ĐỘC QUYỀN (EXCLUSIVE TRANSLATION)
