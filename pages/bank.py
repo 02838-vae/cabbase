@@ -683,11 +683,6 @@ def parse_pl3_passage_bank(source):
 
     return final_questions
 def parse_pl4_passage_bank(source):
-    """
-    Parser cho định dạng PL4 (Bài đọc hiểu - giống PL3)
-    - Gom câu hỏi theo Paragraph
-    - Lưu nội dung đoạn văn vào 'paragraph_content'
-    """
     path = find_file_path(source)
     if not path:
         print(f"Lỗi không tìm thấy file DOCX: {source}")
@@ -698,11 +693,8 @@ def parse_pl4_passage_bank(source):
     group_content = ""
     current_q_num = 0
     
-    # Regex cho tiêu đề đoạn văn mới
     paragraph_start_pat = re.compile(r'^\s*Paragraph\s*(\d+)\s*\.\s*', re.I)
-    # Regex cho số thứ tự câu hỏi
     q_start_pat = re.compile(r'^\s*(?P<q_num>\d+)\s*[\.\)]\s*', re.I)
-    # Regex cho đáp án, bao gồm ký tự (*)
     opt_pat_single = re.compile(r'^\s*(?P<letter>[A-Da-d])[\.\)]\s*(?P<text>.*?)(\s*\(\*\))?$', re.I)
     
     try:
@@ -713,14 +705,13 @@ def parse_pl4_passage_bank(source):
 
     for paragraph in doc.paragraphs:
         text = paragraph.text.strip()
-        if not text: continue
+        if not text:
+            continue
         
         is_new_paragraph_group = paragraph_start_pat.match(text)
         match_q_start = q_start_pat.match(text)
         
-        # 1. BẮT ĐẦU NHÓM ĐOẠN VĂN MỚI
         if is_new_paragraph_group:
-            # Lưu câu hỏi/group cũ nếu có
             if current_group is not None and current_group.get('question'):
                 questions.append(current_group)
             
@@ -733,148 +724,39 @@ def parse_pl4_passage_bank(source):
                 'correct_answer': "",
                 'number': 0
             }
-            group_content = "" # Reset nội dung đoạn văn
-            current_q_num = 0 # Reset số thứ tự câu hỏi
+            group_content = ""
+            current_q_num = 0
             continue
             
         if current_group is None:
-            # Bỏ qua nếu chưa bắt đầu Paragraph X .
             continue
             
-        # 2. BẮT ĐẦU CÂU HỎI MỚI
         if match_q_start:
-            # Lưu câu hỏi cũ nếu có
             if current_group.get('question') and current_group.get('options'):
-                 questions.append(current_group)
-            
-            q_num_str = match_q_start.group('q_num')
-            remaining_text = text[match_q_start.end():].strip()
-            
-            # --- XÁC ĐỊNH LOẠI CÂU HỎI & NỘI DUNG ---
-            # Type B: Fill-in-the-blank (Passage content contains patterns like (1), (2)...)
-            # Check for fill-in-the-blank context inside the collected passage content
-            is_fill_in_blank = bool(re.search(r'\(\s*\d+\s*\)', group_content))
-            
-            if is_fill_in_blank:
-                # Type B: Question is implicit, remaining text is the first option (A.)
-                q_text = f"Chọn đáp án thích hợp cho ô trống **({q_num_str})** trong đoạn văn trên."
-                first_option_text = remaining_text # This is the first option (A.)
-            else:
-                # Type A: Reading Comp. Remaining text is the question body.
-                q_text = remaining_text
-                first_option_text = ""
-            
-            # Bắt đầu câu hỏi mới
-            current_group = {
-                'group_name': current_group['group_name'],
-                # Gán nội dung đoạn văn đã thu thập
-                'paragraph_content': group_content.strip(), 
-                'question': clean_text(q_text),
-                'options': {},
-                'correct_answer': "",
-                # Gán số thứ tự câu hỏi cục bộ (local number)
-                'number': int(q_num_str) 
-            }
-            current_q_num = int(q_num_str)
-            
-            # Process the first option (if Fill-in-the-blank mode)
-            if is_fill_in_blank and first_option_text:
-def parse_pl4_passage_bank(source):
-    """
-    Parser cho định dạng PL4 (Bài đọc hiểu - giống PL3)
-    - Gom câu hỏi theo Paragraph
-    - Lưu nội dung đoạn văn vào 'paragraph_content'
-    """
-    path = find_file_path(source)
-    if not path:
-        print(f"Lỗi không tìm thấy file DOCX: {source}")
-        return []
-    
-    questions = []
-    current_group = None
-    group_content = ""
-    current_q_num = 0
-    
-    # Regex cho tiêu đề đoạn văn mới
-    paragraph_start_pat = re.compile(r'^\s*Paragraph\s*(\d+)\s*\.\s*', re.I)
-    # Regex cho số thứ tự câu hỏi
-    q_start_pat = re.compile(r'^\s*(?P<q_num>\d+)\s*[\.\)]\s*', re.I)
-    # Regex cho đáp án, bao gồm ký tự (*)
-    opt_pat_single = re.compile(r'^\s*(?P<letter>[A-Da-d])[\.\)]\s*(?P<text>.*?)(\s*\(\*\))?$', re.I)
-    
-    try:
-        doc = Document(path)
-    except Exception as e:
-        print(f"Lỗi đọc file DOCX: {source}. Chi tiết: {e}")
-        return []
-
-    for paragraph in doc.paragraphs:
-        text = paragraph.text.strip()
-        if not text: continue
-        
-        is_new_paragraph_group = paragraph_start_pat.match(text)
-        match_q_start = q_start_pat.match(text)
-        
-        # 1. BẮT ĐẦU NHÓM ĐOẠN VĂN MỚI
-        if is_new_paragraph_group:
-            # Lưu câu hỏi/group cũ nếu có
-            if current_group is not None and current_group.get('question'):
                 questions.append(current_group)
             
-            group_name = is_new_paragraph_group.group(0).strip()
-            current_group = {
-                'group_name': group_name,
-                'paragraph_content': "",
-                'question': "",
-                'options': {},
-                'correct_answer': "",
-                'number': 0
-            }
-            group_content = "" # Reset nội dung đoạn văn
-            current_q_num = 0 # Reset số thứ tự câu hỏi
-            continue
-            
-        if current_group is None:
-            # Bỏ qua nếu chưa bắt đầu Paragraph X .
-            continue
-            
-        # 2. BẮT ĐẦU CÂU HỎI MỚI
-        if match_q_start:
-            # Lưu câu hỏi cũ nếu có
-            if current_group.get('question') and current_group.get('options'):
-                 questions.append(current_group)
-            
             q_num_str = match_q_start.group('q_num')
             remaining_text = text[match_q_start.end():].strip()
             
-            # --- XÁC ĐỊNH LOẠI CÂU HỎI & NỘI DUNG ---
-            # Type B: Fill-in-the-blank (Passage content contains patterns like (1), (2)...)
-            # Check for fill-in-the-blank context inside the collected passage content
             is_fill_in_blank = bool(re.search(r'\(\s*\d+\s*\)', group_content))
             
             if is_fill_in_blank:
-                # Type B: Question is implicit, remaining text is the first option (A.)
                 q_text = f"Chọn đáp án thích hợp cho ô trống **({q_num_str})** trong đoạn văn trên."
-                first_option_text = remaining_text # This is the first option (A.)
+                first_option_text = remaining_text
             else:
-                # Type A: Reading Comp. Remaining text is the question body.
                 q_text = remaining_text
                 first_option_text = ""
             
-            # Bắt đầu câu hỏi mới
             current_group = {
                 'group_name': current_group['group_name'],
-                # Gán nội dung đoạn văn đã thu thập
-                'paragraph_content': group_content.strip(), 
+                'paragraph_content': group_content.strip(),
                 'question': clean_text(q_text),
                 'options': {},
                 'correct_answer': "",
-                # Gán số thứ tự câu hỏi cục bộ (local number)
-                'number': int(q_num_str) 
+                'number': int(q_num_str)
             }
             current_q_num = int(q_num_str)
             
-            # Process the first option (if Fill-in-the-blank mode)
             if is_fill_in_blank and first_option_text:
                 match_opt = opt_pat_single.match(first_option_text)
                 if match_opt:
@@ -889,69 +771,53 @@ def parse_pl4_passage_bank(source):
                     if is_correct:
                         current_group['correct_answer'] = letter
             
-        # 3. ĐANG TRONG CÂU HỎI (Option hoặc phần tiếp theo của câu hỏi)
         elif current_q_num > 0:
             match_opt = opt_pat_single.match(text)
             if match_opt:
-                # Xử lý các options B., C. cho cả hai loại câu hỏi
                 letter = match_opt.group('letter').upper()
                 opt_text_raw = match_opt.group('text').strip()
                 is_correct = match_opt.group(3) is not None
                 
-                # Loại bỏ ký tự thừa (*), sau đó clean text
                 opt_text = clean_text(opt_text_raw.replace("(*)", "").strip())
-                
-                # Lấy toàn bộ text để hiển thị (bao gồm cả ký tự A. B. C.)
                 full_opt_text = f"{letter}. {opt_text}"
                 
-                # Dùng chữ cái làm key để dễ dàng tìm đáp án đúng
                 current_group['options'][letter] = full_opt_text
                 
                 if is_correct:
                     current_group['correct_answer'] = letter
             else:
-                # Nếu không phải option, thêm vào câu hỏi (chỉ áp dụng cho Reading Comp - Type A)
                 current_group['question'] += " " + clean_text(text)
                 
-        # 4. ĐANG THU THẬP NỘI DUNG ĐOẠN VĂN
         elif current_group is not None and current_q_num == 0 and not is_new_paragraph_group:
-            # Dùng paragraph.text + "\n" để giữ nguyên bố cục xuống dòng
             group_content += paragraph.text + "\n"
         
-    # Lưu câu hỏi cuối cùng
     if current_group is not None and current_group.get('question'):
         questions.append(current_group)
 
-    # Chuẩn hóa cấu trúc để tương thích với các hàm hiển thị khác
     final_questions = []
     
-    # Gán số thứ tự toàn cục (global number) cho mỗi câu hỏi
-    global_q_counter = 1 
+    global_q_counter = 1
     for q in questions:
         if not q.get('correct_answer') and len(q.get('options', {})) > 0:
-             # Nếu không có (*), coi option đầu là đúng (hoặc bỏ qua nếu cần nghiêm ngặt hơn)
-             q['correct_answer'] = list(q['options'].keys())[0]
+            q['correct_answer'] = list(q['options'].keys())[0]
         
-        # Nếu vẫn không có đáp án hoặc không có options, bỏ qua
         if not q.get('correct_answer') or not q.get('options'):
             continue
         
-        # Chuyển options từ dict sang list of strings (chỉ values)
-        options_list = list(q['options'].values()) 
+        options_list = list(q['options'].values())
         
         final_questions.append({
             'question': q['question'],
-            'options': options_list, 
-            'answer': q['options'][q['correct_answer']], # Lưu đáp án đúng dưới dạng string (A. Text)
-            'number': q['number'], # Số thứ tự câu hỏi cục bộ (1, 2, 3...)
-            'global_number': global_q_counter, # Bổ sung số thứ tự toàn cục
-            # Sử dụng 'group' thay cho 'group_name' để tương thích với display_all_questions/test_mode 
-            'group': q['group_name'], 
-            'paragraph_content': q['paragraph_content'] # Nội dung đoạn văn
+            'options': options_list,
+            'answer': q['options'][q['correct_answer']],
+            'number': q['number'],
+            'global_number': global_q_counter,
+            'group': q['group_name'],
+            'paragraph_content': q['paragraph_content']
         })
         global_q_counter += 1
 
-    return final_questions
+    return
 
 
 
