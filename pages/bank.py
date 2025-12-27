@@ -1669,8 +1669,9 @@ if bank_choice != "----":
                 questions = parse_pl4_passage_bank("PL4.docx")
     
    # SAU ĐÓ, sửa logic chia nhóm ngay bên dưới:
-    if questions:
-        if selected_bank in ["Phụ lục 3", "Phụ lục 4"]:
+     if questions:
+        # FIX: Sử dụng source hoặc doc_selected thay vì selected_bank
+        if is_docwise and source in ["PL3.docx", "PL4.docx"]:
             # Lấy danh sách các Paragraph duy nhất
             unique_paras = []
             for q in questions:
