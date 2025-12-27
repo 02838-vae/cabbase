@@ -817,9 +817,7 @@ def parse_pl4_passage_bank(source):
         })
         global_q_counter += 1
 
-    return
-
-
+    return final_questions
 
           
 # ====================================================
