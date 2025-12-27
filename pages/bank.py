@@ -682,78 +682,52 @@ def parse_pl3_passage_bank(source):
         global_q_counter += 1
 
     return final_questions
-def parse_pl4_grouped(source):
+def read_pl4_grouped(source):
     """
-    Parser cho Phụ lục 4: Nhóm câu hỏi theo cặp Paragraph (1&2, 3&4,...)
+    Read PL4 docx and group content by:
+    (Paragraph 1 & 2), (3 & 4), (5 & 6)...
+    Return list of grouped question blocks
     """
+
     path = find_file_path(source)
-    if not path: return []
-    
+    if not path:
+        print(f"Không tìm thấy file PL4: {source}")
+        return []
+
     doc = Document(path)
-    all_paras = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
-    
-    groups = []
-    current_paragraphs = [] # Lưu nội dung của các paragraph trong nhóm
-    current_q = None
-    
-    # Regex nhận diện
-    para_header_pat = re.compile(r'^Paragraph\s*(\d+)', re.I)
-    q_num_pat = re.compile(r'^(\d+)\.\s*')
-    opt_pat = re.compile(r'^([A-D])\.\s*(.*)', re.I)
-    
-    # Logic tạm thời để gom nhóm
-    temp_storage = {} # {para_num: {"content": str, "questions": []}}
-    last_para_num = 0
+    lines = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
 
-    # Bước 1: Tách dữ liệu thô từ file thành từng Paragraph
-    for text in all_paras:
-        para_match = para_header_pat.match(text)
-        if para_match:
-            last_para_num = int(para_match.group(1))
-            temp_storage[last_para_num] = {"header": text, "content": "", "questions": []}
-            current_q = None
-            continue
-            
-        if last_para_num == 0: continue
-        
-        # Nhận diện câu hỏi trắc nghiệm (Dạng 1. hoặc Câu hỏi trực tiếp)
-        # Nếu dòng text kết thúc bằng (?) hoặc là một câu hỏi mới
-        is_opt = opt_pat.match(text)
-        if not is_opt and (text.endswith('?') or q_num_pat.match(text)):
-            if current_q: 
-                temp_storage[last_para_num]["questions"].append(current_q)
-            current_q = {"question": clean_text(text), "options": [], "answer": ""}
-        elif is_opt and current_q:
-            is_correct = "(*)" in text
-            clean_opt = text.replace("(*)", "").strip()
-            current_q["options"].append(clean_opt)
-            if is_correct: current_q["answer"] = clean_opt
-        else:
-            # Nếu không phải câu hỏi/đáp án thì là nội dung đoạn văn
-            temp_storage[last_para_num]["content"] += text + "\n"
+    paragraphs = {}
+    current_para = None
 
-    if current_q: temp_storage[last_para_num]["questions"].append(current_q)
+    # 1️⃣ Tách nội dung theo từng paragraph
+    for line in lines:
+        if re.match(r"PARAGRAPH\s+\d+", line, re.IGNORECASE):
+            num = int(re.findall(r"\d+", line)[0])
+            current_para = num
+            paragraphs[current_para] = []
+        elif current_para:
+            paragraphs[current_para].append(line)
 
-    # Bước 2: Gom nhóm Paragraph 1&2, 3&4...
-    sorted_keys = sorted(temp_storage.keys())
-    for i in range(0, len(sorted_keys), 2):
-        p_nums = sorted_keys[i:i+2]
-        group_name = " & ".join([f"Paragraph {n}" for n in p_nums])
-        combined_content = "\n\n".join([f"**{temp_storage[n]['header']}**\n{temp_storage[n]['content']}" for n in p_nums])
-        combined_questions = []
-        for n in p_nums:
-            combined_questions.extend(temp_storage[n]['questions'])
-            
-        for q in combined_questions:
-            groups.append({
-                "group_name": group_name,
-                "paragraph_content": combined_content,
-                "question": q["question"],
-                "options": q["options"],
-                "answer": q["answer"]
-            })
-            
-    return groups
+    # 2️⃣ Gom theo cặp paragraph
+    grouped_blocks = []
+    para_nums = sorted(paragraphs.keys())
+
+    for i in range(0, len(para_nums), 2):
+        p1 = para_nums[i]
+        p2 = para_nums[i + 1] if i + 1 < len(para_nums) else None
+
+        content = []
+        content.append(f"PARAGRAPH {p1}")
+        content.extend(paragraphs[p1])
+
+        if p2:
+            content.append(f"PARAGRAPH {p2}")
+            content.extend(paragraphs[p2])
+
+        grouped_blocks.append("\n".join(content))
+
+    return grouped_blocks
 
 # ====================================================
 # 🌟 HÀM: LOGIC DỊCH ĐỘC QUYỀN (EXCLUSIVE TRANSLATION)
@@ -1627,7 +1601,7 @@ if bank_choice != "----":
     elif "Docwise" in bank_choice:
         is_docwise = True
         # Cập nhật nhãn Phụ lục 2 và BỔ SUNG PHỤ LỤC 3
-        doc_options = ["Phụ lục 1 : Ngữ pháp chung", "Phụ lục 2 : Từ vựng, thuật ngữ", "Phụ lục 3 : Bài đọc hiểu"]
+        doc_options = ["Phụ lục 1 : Ngữ pháp chung", "Phụ lục 2 : Từ vựng, thuật ngữ", "Phụ lục 3 : Bài đọc hiểu", "Phụ lục 4 : Luật và qui trình"]
         doc_selected_new = st.selectbox("Chọn Phụ lục:", doc_options, index=doc_options.index(st.session_state.get('doc_selected', doc_options[0])), key="docwise_selector")
         
         # Xử lý khi đổi phụ lục (reset mode)
@@ -1647,6 +1621,8 @@ if bank_choice != "----":
             source = "PL2.docx" # File PL2.docx (Dùng parse_pl2 đã sửa)
         elif st.session_state.doc_selected == "Phụ lục 3 : Bài đọc hiểu": 
             source = "PL3.docx" # File PL3.docx (Dùng parse_pl3_passage_bank mới)
+        elif st.session_state.doc_selected == "Phụ lục 4 : Luật và qui trình":
+            source = "PL4L.docx"
         
     # LOAD CÂU HỎI
     questions = []
@@ -1662,6 +1638,8 @@ if bank_choice != "----":
                 questions = parse_pl2(source) # Sử dụng parser mới (dùng (*))
             elif source == "PL3.docx":
                 questions = parse_pl3_passage_bank(source) # <-- Dùng parser đã sửa cho PL3
+            elif source == "PL4.docx":
+                questions = parse_pl4_passage_bank(source)
     
     if not questions:
         # Cập nhật thông báo lỗi để phù hợp với logic (*) cho cả PL1 và PL2
@@ -1675,7 +1653,7 @@ if bank_choice != "----":
     custom_groups = [] # Chỉ dùng cho PL3
     is_pl3_grouping = False
 
-    if is_docwise and source == "PL3.docx":
+    if is_docwise and source == "PL3.docx", "PL4.docx":
         is_pl3_grouping = True
         passage_groups = {}
         
