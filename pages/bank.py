@@ -687,6 +687,7 @@ def parse_pl4_law_process(source):
     Parser cho Phụ lục 4: Đánh lại số thứ tự câu hỏi từ 1 cho mỗi Paragraph
     và đảm bảo thu thập đầy đủ từ Paragraph 1.
     FIX: Khởi tạo group_name = "Paragraph 1" từ đầu để thu thập nội dung Paragraph 1.
+    FIX 2: Reset local_q_counter về 0 khi gặp Paragraph mới.
     """
     path = find_file_path(source)
     if not path: return []
@@ -701,7 +702,7 @@ def parse_pl4_law_process(source):
     
     paragraph_start_pat = re.compile(r'^\s*Paragraph\s*(\d+)\s*\.\s*', re.I)
     q_start_pat = re.compile(r'^\s*(?P<q_num>\d+)\s*[\.\)]\s*', re.I)
-    opt_pat_single = re.compile(r'^\s*(?P<letter>[A-Da-d])[\.\)]\s*(?P<text>.*?)(\s*\(\*\))?$', re.I)
+    opt_pat_single = re.compile(r'^\s*(?P<letter>[A-Da-d])[\.\)]\s*(?P<text>.*?)(\s*\(\*\))?, re.I)
     
     try:
         doc = Document(path)
@@ -725,6 +726,7 @@ def parse_pl4_law_process(source):
             group_name = is_new_paragraph_group.group(0).strip()
             current_group = None
             group_content = ""
+            # ✅ FIX 2: RESET local_q_counter về 0 khi gặp Paragraph mới
             local_q_counter = 0
             continue
 
@@ -733,6 +735,7 @@ def parse_pl4_law_process(source):
             if current_group and current_group.get('question'):
                 questions.append(current_group)
             
+            # ✅ Tăng counter (sẽ bắt đầu từ 1 cho mỗi Paragraph)
             local_q_counter += 1
             remaining_text = text[match_q_start.end():].strip()
             
@@ -742,7 +745,7 @@ def parse_pl4_law_process(source):
                 'question': clean_text(remaining_text),
                 'options': {},
                 'correct_answer': "",
-                'number': local_q_counter
+                'number': local_q_counter  # ✅ Số thứ tự đã được reset
             }
             continue
 
