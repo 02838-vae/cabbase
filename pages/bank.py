@@ -686,6 +686,7 @@ def parse_pl4_law_process(source):
     """
     Parser cho Phụ lục 4: Đánh lại số thứ tự câu hỏi từ 1 cho mỗi Paragraph
     và đảm bảo thu thập đầy đủ từ Paragraph 1.
+    FIX: Khởi tạo group_name = "Paragraph 1" từ đầu để thu thập nội dung Paragraph 1.
     """
     path = find_file_path(source)
     if not path: return []
@@ -693,8 +694,10 @@ def parse_pl4_law_process(source):
     questions = []
     current_group = None
     group_content = ""
-    # Biến quan trọng: đếm số câu hỏi cục bộ trong mỗi đoạn văn [cite: 32]
     local_q_counter = 0 
+    
+    # ✅ FIX: Khởi tạo group_name từ đầu
+    group_name = "Paragraph 1"
     
     paragraph_start_pat = re.compile(r'^\s*Paragraph\s*(\d+)\s*\.\s*', re.I)
     q_start_pat = re.compile(r'^\s*(?P<q_num>\d+)\s*[\.\)]\s*', re.I)
@@ -718,10 +721,11 @@ def parse_pl4_law_process(source):
             if current_group and current_group.get('question'):
                 questions.append(current_group)
             
+            # ✅ Cập nhật group_name mới
             group_name = is_new_paragraph_group.group(0).strip()
-            current_group = None # Reset group để bắt đầu thu thập paragraph_content mới
+            current_group = None
             group_content = ""
-            local_q_counter = 0 # RESET SỐ THỨ TỰ VỀ 0 [cite: 24]
+            local_q_counter = 0
             continue
 
         if match_q_start:
@@ -729,16 +733,16 @@ def parse_pl4_law_process(source):
             if current_group and current_group.get('question'):
                 questions.append(current_group)
             
-            local_q_counter += 1 # TĂNG SỐ THỨ TỰ CỤC BỘ [cite: 32]
+            local_q_counter += 1
             remaining_text = text[match_q_start.end():].strip()
             
             current_group = {
-                'group_name': group_name if 'group_name' in locals() else "Paragraph 1",
+                'group_name': group_name,  # ✅ Sử dụng group_name đã khởi tạo
                 'paragraph_content': group_content.strip(),
                 'question': clean_text(remaining_text),
                 'options': {},
                 'correct_answer': "",
-                'number': local_q_counter # Gán số thứ tự đã đánh lại [cite: 32]
+                'number': local_q_counter
             }
             continue
 
@@ -752,13 +756,13 @@ def parse_pl4_law_process(source):
                 if is_correct: current_group['correct_answer'] = letter
             else:
                 current_group['question'] += " " + clean_text(text)
-        else: # Đang thu thập nội dung đoạn văn (khi local_q_counter == 0)
+        else: # ✅ Đang thu thập nội dung đoạn văn (bao gồm cả Paragraph 1)
             group_content += text + "\n"
 
     if current_group and current_group.get('question'):
         questions.append(current_group)
 
-    # Chuyển đổi sang format chuẩn của ứng dụng [cite: 31, 32]
+    # Chuyển đổi sang format chuẩn của ứng dụng
     final_questions = []
     for q in questions:
         if not q.get('options'): continue
