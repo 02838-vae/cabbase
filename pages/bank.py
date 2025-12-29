@@ -1694,7 +1694,7 @@ if bank_choice != "----":
     
     total = len(questions)
 
-   # === LOGIC NHÓM CÂU HỎI THEO MODE (PL3 & PL4 TÙY CHỈNH) - ĐÃ SỬA THEO YÊU CẦU MỚI ===
+  # === LOGIC NHÓM CÂU HỎI THEO MODE (PL3 & PL4 TÙY CHỈNH) - ĐÃ SỬA THEO YÊU CẦU MỚI ===
     group_size = 30 # Mặc định 30 câu/nhóm
     custom_groups = [] # Chỉ dùng cho PL3 & PL4
     is_passage_grouping = False # Đổi tên từ is_pl3_grouping
