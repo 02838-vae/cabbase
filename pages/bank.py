@@ -1785,7 +1785,7 @@ if bank_choice != "----":
 
             idx = st.session_state.current_group_idx
             
-            if is_pl3_grouping:
+            if is_passage_grouping:
                 batch = custom_groups[idx]['questions']
                 start = 0 # Not relevant in this new grouping mode
             else:
