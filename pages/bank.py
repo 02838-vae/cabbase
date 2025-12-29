@@ -18,43 +18,35 @@ def clean_text(s: str) -> str:
     if s is None:
         return ""
     
-    # GIỮ NGUYÊN các pattern điền chỗ trống:
-    # - 2-10 dấu chấm (có thể có space xen kẽ): .... hoặc . . . .
-    # - 2-10 gạch dưới (có thể có space xen kẽ): ____ hoặc __ __
-    # - Ngoặc chứa các ký tự trên: (____) hoặc (__  __) → chuẩn hóa thành (____) 
-    
-    temp_s = s
+    # Bước 1: Bảo vệ các vị trí điền chỗ trống có đánh số như ....(1).... hoặc ____(2)____
+    # Chúng ta sẽ tạm thời thay thế chúng bằng một mã bảo vệ để không bị regex ở bước sau làm thay đổi
     placeholders = {}
     counter = 0
     
-    # BƯỚC 1: Xử lý ngoặc có nhiều space/ký tự → chuẩn hóa thành 4 spaces
-    # VD: (__           __) → (____)
-    temp_s = re.sub(r'\([\s._-]{2,}\)', '(    )', temp_s)  # Ngoặc đơn
-    temp_s = re.sub(r'\[[\s._-]{2,}\]', '[    ]', temp_s)  # Ngoặc vuông
+    # Regex này tìm các dạng: chuỗi dấu chấm/gạch/khoảng trắng + số trong ngoặc + chuỗi dấu chấm/gạch/khoảng trắng
+    protected_pattern = r'[\s._-]{0,}\(\d+\)[\s._-]{0,}'
     
-    # BƯỚC 2: Lưu các pattern điền chỗ trống còn lại
-    standalone_patterns = [
-        r'(?<!\S)([._])(?:\s*\1){1,9}(?!\S)',  # 2-10 dấu . hoặc _ liên tiếp (có thể có space)
-        r'-{2,10}',  # 2-10 gạch ngang liên tiếp
-        r'\([\s]{2,}\)',  # Ngoặc đơn có spaces (đã chuẩn hóa ở bước 1)
-        r'\[[\s]{2,}\]',  # Ngoặc vuông có spaces
-    ]
+    temp_s = s
+    for match in re.finditer(protected_pattern, temp_s):
+        matched_text = match.group()
+        placeholder = f"__PROTECT_{counter}__"
+        placeholders[placeholder] = matched_text
+        # Thay thế chính xác vị trí match để tránh trùng lặp
+        temp_s = temp_s.replace(matched_text, placeholder, 1)
+        counter += 1
+
+    # Bước 2: Xử lý các định dạng điền chỗ trống không đánh số (giữ nguyên logic cũ của bạn)
+    temp_s = re.sub(r'\([\s._-]{2,}\)', '(    )', temp_s)
+    temp_s = re.sub(r'\[[\s._-]{2,}\]', '[    ]', temp_s)
     
-    for pattern in standalone_patterns:
-        for match in re.finditer(pattern, temp_s): # Đã sửa: finditer thành re.finditer (Fix NameError cũ)
-            matched_text = match.group()
-            placeholder = f"__PLACEHOLDER_{counter}__"
-            placeholders[placeholder] = matched_text
-            temp_s = temp_s.replace(matched_text, placeholder, 1)
-            counter += 1
-    
-    # BƯỚC 3: Xóa khoảng trắng thừa (2+ spaces → 1 space)
+    # Bước 3: Xóa khoảng trắng thừa (2+ spaces → 1 space)
+    # Lưu ý: Nhờ bước 1, các cụm ....(1).... đã biến thành __PROTECT_X__ nên không bị ảnh hưởng
     temp_s = re.sub(r'\s{2,}', ' ', temp_s)
     
-    # BƯỚC 4: Khôi phục các pattern đã lưu
+    # Bước 4: Khôi phục lại các nội dung đã bảo vệ
     for placeholder, original in placeholders.items():
         temp_s = temp_s.replace(placeholder, original)
-    
+        
     return temp_s.strip()
 
 def find_file_path(source):
