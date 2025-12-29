@@ -18,32 +18,28 @@ def clean_text(s: str) -> str:
     if s is None:
         return ""
     
-    # Bước 1: Bảo vệ các vị trí điền chỗ trống có đánh số như ....(1).... hoặc ____(2)____
-    # Chúng ta sẽ tạm thời thay thế chúng bằng một mã bảo vệ để không bị regex ở bước sau làm thay đổi
+    # Bước 1: Bảo vệ các vị trí điền chỗ trống có đánh số như ....(1)....
     placeholders = {}
     counter = 0
-    
-    # Regex này tìm các dạng: chuỗi dấu chấm/gạch/khoảng trắng + số trong ngoặc + chuỗi dấu chấm/gạch/khoảng trắng
+    # Tìm các dạng: chuỗi dấu chấm/gạch + số trong ngoặc + chuỗi dấu chấm/gạch
     protected_pattern = r'[\s._-]{0,}\(\d+\)[\s._-]{0,}'
     
     temp_s = s
     for match in re.finditer(protected_pattern, temp_s):
         matched_text = match.group()
-        placeholder = f"__PROTECT_{counter}__"
+        placeholder = f"__PROTECT_FILL_{counter}__"
         placeholders[placeholder] = matched_text
-        # Thay thế chính xác vị trí match để tránh trùng lặp
         temp_s = temp_s.replace(matched_text, placeholder, 1)
         counter += 1
 
-    # Bước 2: Xử lý các định dạng điền chỗ trống không đánh số (giữ nguyên logic cũ của bạn)
+    # Bước 2: Chuẩn hóa các dấu ngoặc trống khác (giữ logic cũ của bạn)
     temp_s = re.sub(r'\([\s._-]{2,}\)', '(    )', temp_s)
     temp_s = re.sub(r'\[[\s._-]{2,}\]', '[    ]', temp_s)
     
-    # Bước 3: Xóa khoảng trắng thừa (2+ spaces → 1 space)
-    # Lưu ý: Nhờ bước 1, các cụm ....(1).... đã biến thành __PROTECT_X__ nên không bị ảnh hưởng
+    # Bước 3: Chỉ xóa khoảng trắng thừa giữa các từ
     temp_s = re.sub(r'\s{2,}', ' ', temp_s)
     
-    # Bước 4: Khôi phục lại các nội dung đã bảo vệ
+    # Bước 4: Khôi phục lại các nội dung điền từ đã bảo vệ
     for placeholder, original in placeholders.items():
         temp_s = temp_s.replace(placeholder, original)
         
@@ -675,11 +671,6 @@ def parse_pl3_passage_bank(source):
 
     return final_questions
 def parse_pl4_law_process(source):
-    """
-    Parser cho Phụ lục 4: Đánh lại số thứ tự câu hỏi từ 1 cho mỗi Paragraph
-    và đảm bảo thu thập đầy đủ từ Paragraph 1.
-    FIX: Khởi tạo group_name = "Paragraph 1" từ đầu để thu thập nội dung Paragraph 1.
-    """
     path = find_file_path(source)
     if not path: return []
     
@@ -687,50 +678,41 @@ def parse_pl4_law_process(source):
     current_group = None
     group_content = ""
     local_q_counter = 0 
-    
-    # ✅ FIX: Khởi tạo group_name từ đầu
     group_name = "Paragraph 1"
     
     paragraph_start_pat = re.compile(r'^\s*Paragraph\s*(\d+)\s*\.\s*', re.I)
     q_start_pat = re.compile(r'^\s*(?P<q_num>\d+)\s*[\.\)]\s*', re.I)
     opt_pat_single = re.compile(r'^\s*(?P<letter>[A-Da-d])[\.\)]\s*(?P<text>.*?)(\s*\(\*\))?$', re.I)
     
-    try:
-        doc = Document(path)
-    except Exception as e:
-        print(f"Lỗi: {e}")
-        return []
-
+    doc = Document(path)
     for paragraph in doc.paragraphs:
-        text = paragraph.text.strip()
-        if not text: continue
+        # Lấy văn bản thô, KHÔNG dùng clean_text ở đây để giữ nguyên định dạng gốc
+        raw_text = paragraph.text
+        text_stripped = raw_text.strip()
+        if not text_stripped: continue
         
-        is_new_paragraph_group = paragraph_start_pat.match(text)
-        match_q_start = q_start_pat.match(text)
+        is_new_paragraph_group = paragraph_start_pat.match(text_stripped)
+        match_q_start = q_start_pat.match(text_stripped)
         
         if is_new_paragraph_group:
-            # Lưu lại câu hỏi cuối của đoạn văn trước đó 
             if current_group and current_group.get('question'):
                 questions.append(current_group)
-            
-            # ✅ Cập nhật group_name mới
             group_name = is_new_paragraph_group.group(0).strip()
             current_group = None
-            group_content = ""
+            group_content = "" # Reset để thu thập nội dung cho Paragraph mới
             local_q_counter = 0
             continue
 
         if match_q_start:
-            # Trước khi tạo câu hỏi mới, lưu câu hỏi vừa xong
             if current_group and current_group.get('question'):
                 questions.append(current_group)
             
             local_q_counter += 1
-            remaining_text = text[match_q_start.end():].strip()
+            remaining_text = text_stripped[match_q_start.end():].strip()
             
             current_group = {
-                'group_name': group_name,  # ✅ Sử dụng group_name đã khởi tạo
-                'paragraph_content': group_content.strip(),
+                'group_name': group_name,
+                'paragraph_content': group_content.strip(), # Gán toàn bộ nội dung đã thu thập
                 'question': clean_text(remaining_text),
                 'options': {},
                 'correct_answer': "",
@@ -738,8 +720,8 @@ def parse_pl4_law_process(source):
             }
             continue
 
-        if current_group: # Đang trong phần câu hỏi
-            match_opt = opt_pat_single.match(text)
+        if current_group:
+            match_opt = opt_pat_single.match(text_stripped)
             if match_opt:
                 letter = match_opt.group('letter').upper()
                 is_correct = match_opt.group(3) is not None
@@ -747,14 +729,15 @@ def parse_pl4_law_process(source):
                 current_group['options'][letter] = f"{letter}. {opt_text}"
                 if is_correct: current_group['correct_answer'] = letter
             else:
-                current_group['question'] += " " + clean_text(text)
-        else: # ✅ Đang thu thập nội dung đoạn văn (bao gồm cả Paragraph 1)
-            group_content += text + "\n"
+                current_group['question'] += " " + clean_text(text_stripped)
+        else:
+            # Thu thập nội dung đoạn văn: Dùng raw_text để giữ nguyên các dấu chấm ....(1)....
+            group_content += raw_text + "\n"
 
     if current_group and current_group.get('question'):
         questions.append(current_group)
 
-    # Chuyển đổi sang format chuẩn của ứng dụng
+    # Chuyển đổi sang format chuẩn
     final_questions = []
     for q in questions:
         if not q.get('options'): continue
