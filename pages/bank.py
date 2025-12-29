@@ -1694,13 +1694,13 @@ if bank_choice != "----":
     
     total = len(questions)
 
-    # === LOGIC NHÓM CÂU HỎI THEO MODE (PL3 TÙY CHỈNH) - ĐÃ SỬA THEO YÊU CẦU MỚI ===
+   # === LOGIC NHÓM CÂU HỎI THEO MODE (PL3 & PL4 TÙY CHỈNH) - ĐÃ SỬA THEO YÊU CẦU MỚI ===
     group_size = 30 # Mặc định 30 câu/nhóm
-    custom_groups = [] # Chỉ dùng cho PL3
-    is_pl3_grouping = False
+    custom_groups = [] # Chỉ dùng cho PL3 & PL4
+    is_passage_grouping = False # Đổi tên từ is_pl3_grouping
 
-    if is_docwise and source == "PL3.docx":
-        is_pl3_grouping = True
+    if is_docwise and source in ["PL3.docx", "PL4.docx"]:
+        is_passage_grouping = True
         passage_groups = {}
         
         # Nhóm câu hỏi theo tên Paragraph
@@ -1743,7 +1743,7 @@ if bank_choice != "----":
                 base_group_label = f"Paragraph {p1_num}"
             
             # TẠO LABEL CUỐI CÙNG (CHỈ DÙNG TÊN PARAGRAPH)
-            final_group_label = base_group_label # <--- ĐÃ SỬA THEO YÊU CẦU CỦA USER
+            final_group_label = base_group_label
             
             if questions_in_pair:
                 # Dù có câu hỏi hay không, vẫn dùng base_group_label (ví dụ: "Paragraph 1 & 2")
