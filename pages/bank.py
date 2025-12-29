@@ -11,6 +11,29 @@ import os
 import random 
 from deep_translator import GoogleTranslator
 
+def identify_fill_blank_type(group_content, q_num_str):
+    """
+    Xác định xem câu hỏi hiện tại có phải là điền vào chỗ trống hay không
+    Dựa trên việc tìm thấy (1), (2)... hoặc ....(1).... trong đoạn văn
+    """
+    # Regex tìm các mẫu như (1), (2), ....(1)...., ___(1)___
+    fill_pattern = rf'[\._\s]*\(\s*{q_num_str}\s*\)[\._\s]*'
+    
+    if re.search(fill_pattern, group_content):
+        return True
+    return False
+
+# Trong hàm parse của bạn, khi bắt đầu một câu hỏi mới:
+is_fill_in_blank = identify_fill_blank_type(group_content, q_num_str)
+
+if is_fill_in_blank:
+    # Type B: Câu hỏi ẩn, nội dung text sau số thứ tự là phương án A
+    q_text = f"Chọn đáp án thích hợp cho ô trống **({q_num_str})** trong đoạn văn trên."
+    # ... logic xử lý các options A, B, C tiếp theo ...
+else:
+    # Type A: Câu hỏi đọc hiểu bình thường
+    q_text = remaining_text # Nội dung câu hỏi nằm ngay sau số thứ tự
+
 # ====================================================
 # ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
 # ====================================================
