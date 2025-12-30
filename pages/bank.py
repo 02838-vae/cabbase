@@ -18,31 +18,43 @@ def clean_text(s: str) -> str:
     if s is None:
         return ""
     
-    # Bước 1: Bảo vệ các vị trí điền chỗ trống có đánh số như ....(1)....
-    placeholders = {}
-    counter = 0
-    # Tìm các dạng: chuỗi dấu chấm/gạch + số trong ngoặc + chuỗi dấu chấm/gạch
-    protected_pattern = r'[\s._-]{0,}\(\d+\)[\s._-]{0,}'
+    # GIỮ NGUYÊN các pattern điền chỗ trống:
+    # - 2-10 dấu chấm (có thể có space xen kẽ): .... hoặc . . . .
+    # - 2-10 gạch dưới (có thể có space xen kẽ): ____ hoặc __ __
+    # - Ngoặc chứa các ký tự trên: (____) hoặc (__  __) → chuẩn hóa thành (____) 
     
     temp_s = s
-    for match in re.finditer(protected_pattern, temp_s):
-        matched_text = match.group()
-        placeholder = f"__PROTECT_FILL_{counter}__"
-        placeholders[placeholder] = matched_text
-        temp_s = temp_s.replace(matched_text, placeholder, 1)
-        counter += 1
-
-    # Bước 2: Chuẩn hóa các dấu ngoặc trống khác (giữ logic cũ của bạn)
-    temp_s = re.sub(r'\([\s._-]{2,}\)', '(    )', temp_s)
-    temp_s = re.sub(r'\[[\s._-]{2,}\]', '[    ]', temp_s)
+    placeholders = {}
+    counter = 0
     
-    # Bước 3: Chỉ xóa khoảng trắng thừa giữa các từ
+    # BƯỚC 1: Xử lý ngoặc có nhiều space/ký tự → chuẩn hóa thành 4 spaces
+    # VD: (__           __) → (____)
+    temp_s = re.sub(r'\([\s._-]{2,}\)', '(    )', temp_s)  # Ngoặc đơn
+    temp_s = re.sub(r'\[[\s._-]{2,}\]', '[    ]', temp_s)  # Ngoặc vuông
+    
+    # BƯỚC 2: Lưu các pattern điền chỗ trống còn lại
+    standalone_patterns = [
+        r'(?<!\S)([._])(?:\s*\1){1,9}(?!\S)',  # 2-10 dấu . hoặc _ liên tiếp (có thể có space)
+        r'-{2,10}',  # 2-10 gạch ngang liên tiếp
+        r'\([\s]{2,}\)',  # Ngoặc đơn có spaces (đã chuẩn hóa ở bước 1)
+        r'\[[\s]{2,}\]',  # Ngoặc vuông có spaces
+    ]
+    
+    for pattern in standalone_patterns:
+        for match in re.finditer(pattern, temp_s): # Đã sửa: finditer thành re.finditer (Fix NameError cũ)
+            matched_text = match.group()
+            placeholder = f"__PLACEHOLDER_{counter}__"
+            placeholders[placeholder] = matched_text
+            temp_s = temp_s.replace(matched_text, placeholder, 1)
+            counter += 1
+    
+    # BƯỚC 3: Xóa khoảng trắng thừa (2+ spaces → 1 space)
     temp_s = re.sub(r'\s{2,}', ' ', temp_s)
     
-    # Bước 4: Khôi phục lại các nội dung điền từ đã bảo vệ
+    # BƯỚC 4: Khôi phục các pattern đã lưu
     for placeholder, original in placeholders.items():
         temp_s = temp_s.replace(placeholder, original)
-        
+    
     return temp_s.strip()
 
 def find_file_path(source):
@@ -671,6 +683,11 @@ def parse_pl3_passage_bank(source):
 
     return final_questions
 def parse_pl4_law_process(source):
+    """
+    Parser cho Phụ lục 4: Đánh lại số thứ tự câu hỏi từ 1 cho mỗi Paragraph
+    và đảm bảo thu thập đầy đủ từ Paragraph 1.
+    FIX: Khởi tạo group_name = "Paragraph 1" từ đầu để thu thập nội dung Paragraph 1.
+    """
     path = find_file_path(source)
     if not path: return []
     
@@ -678,41 +695,50 @@ def parse_pl4_law_process(source):
     current_group = None
     group_content = ""
     local_q_counter = 0 
+    
+    # ✅ FIX: Khởi tạo group_name từ đầu
     group_name = "Paragraph 1"
     
     paragraph_start_pat = re.compile(r'^\s*Paragraph\s*(\d+)\s*\.\s*', re.I)
     q_start_pat = re.compile(r'^\s*(?P<q_num>\d+)\s*[\.\)]\s*', re.I)
     opt_pat_single = re.compile(r'^\s*(?P<letter>[A-Da-d])[\.\)]\s*(?P<text>.*?)(\s*\(\*\))?$', re.I)
     
-    doc = Document(path)
+    try:
+        doc = Document(path)
+    except Exception as e:
+        print(f"Lỗi: {e}")
+        return []
+
     for paragraph in doc.paragraphs:
-        # Lấy văn bản thô, KHÔNG dùng clean_text ở đây để giữ nguyên định dạng gốc
-        raw_text = paragraph.text
-        text_stripped = raw_text.strip()
-        if not text_stripped: continue
+        text = paragraph.text.strip()
+        if not text: continue
         
-        is_new_paragraph_group = paragraph_start_pat.match(text_stripped)
-        match_q_start = q_start_pat.match(text_stripped)
+        is_new_paragraph_group = paragraph_start_pat.match(text)
+        match_q_start = q_start_pat.match(text)
         
         if is_new_paragraph_group:
+            # Lưu lại câu hỏi cuối của đoạn văn trước đó 
             if current_group and current_group.get('question'):
                 questions.append(current_group)
+            
+            # ✅ Cập nhật group_name mới
             group_name = is_new_paragraph_group.group(0).strip()
             current_group = None
-            group_content = "" # Reset để thu thập nội dung cho Paragraph mới
+            group_content = ""
             local_q_counter = 0
             continue
 
         if match_q_start:
+            # Trước khi tạo câu hỏi mới, lưu câu hỏi vừa xong
             if current_group and current_group.get('question'):
                 questions.append(current_group)
             
             local_q_counter += 1
-            remaining_text = text_stripped[match_q_start.end():].strip()
+            remaining_text = text[match_q_start.end():].strip()
             
             current_group = {
-                'group_name': group_name,
-                'paragraph_content': group_content.strip(), # Gán toàn bộ nội dung đã thu thập
+                'group_name': group_name,  # ✅ Sử dụng group_name đã khởi tạo
+                'paragraph_content': group_content.strip(),
                 'question': clean_text(remaining_text),
                 'options': {},
                 'correct_answer': "",
@@ -720,8 +746,8 @@ def parse_pl4_law_process(source):
             }
             continue
 
-        if current_group:
-            match_opt = opt_pat_single.match(text_stripped)
+        if current_group: # Đang trong phần câu hỏi
+            match_opt = opt_pat_single.match(text)
             if match_opt:
                 letter = match_opt.group('letter').upper()
                 is_correct = match_opt.group(3) is not None
@@ -729,15 +755,14 @@ def parse_pl4_law_process(source):
                 current_group['options'][letter] = f"{letter}. {opt_text}"
                 if is_correct: current_group['correct_answer'] = letter
             else:
-                current_group['question'] += " " + clean_text(text_stripped)
-        else:
-            # Thu thập nội dung đoạn văn: Dùng raw_text để giữ nguyên các dấu chấm ....(1)....
-            group_content += raw_text + "\n"
+                current_group['question'] += " " + clean_text(text)
+        else: # ✅ Đang thu thập nội dung đoạn văn (bao gồm cả Paragraph 1)
+            group_content += text + "\n"
 
     if current_group and current_group.get('question'):
         questions.append(current_group)
 
-    # Chuyển đổi sang format chuẩn
+    # Chuyển đổi sang format chuẩn của ứng dụng
     final_questions = []
     for q in questions:
         if not q.get('options'): continue
