@@ -683,11 +683,6 @@ def parse_pl3_passage_bank(source):
 
     return final_questions
 def parse_pl4_law_process(source):
-    """
-    Parser cho Phụ lục 4: Đánh lại số thứ tự câu hỏi từ 1 cho mỗi Paragraph
-    và đảm bảo thu thập đầy đủ từ Paragraph 1.
-    FIX: Khởi tạo group_name = "Paragraph 1" từ đầu để thu thập nội dung Paragraph 1.
-    """
     path = find_file_path(source)
     if not path: return []
     
@@ -695,14 +690,15 @@ def parse_pl4_law_process(source):
     current_group = None
     group_content = ""
     local_q_counter = 0 
-    
-    # ✅ FIX: Khởi tạo group_name từ đầu
     group_name = "Paragraph 1"
     
+    # Pattern nhận diện: Paragraph X, Số câu hỏi, và Đáp án (*)
     paragraph_start_pat = re.compile(r'^\s*Paragraph\s*(\d+)\s*\.\s*', re.I)
     q_start_pat = re.compile(r'^\s*(?P<q_num>\d+)\s*[\.\)]\s*', re.I)
     opt_pat_single = re.compile(r'^\s*(?P<letter>[A-Da-d])[\.\)]\s*(?P<text>.*?)(\s*\(\*\))?$', re.I)
-    
+    # Pattern nhận diện vị trí điền trống trong đoạn văn: (1), (2)...
+    blank_pattern = re.compile(r'\(\s*(\d+)\s*\)')
+
     try:
         doc = Document(path)
     except Exception as e:
@@ -717,52 +713,70 @@ def parse_pl4_law_process(source):
         match_q_start = q_start_pat.match(text)
         
         if is_new_paragraph_group:
-            # Lưu lại câu hỏi cuối của đoạn văn trước đó 
             if current_group and current_group.get('question'):
                 questions.append(current_group)
-            
-            # ✅ Cập nhật group_name mới
             group_name = is_new_paragraph_group.group(0).strip()
             current_group = None
             group_content = ""
-            local_q_counter = 0
             continue
 
         if match_q_start:
-            # Trước khi tạo câu hỏi mới, lưu câu hỏi vừa xong
             if current_group and current_group.get('question'):
                 questions.append(current_group)
             
-            local_q_counter += 1
+            q_num_str = match_q_start.group('q_num')
             remaining_text = text[match_q_start.end():].strip()
             
+            # KIỂM TRA: Nếu trong đoạn văn có ký hiệu (1), (2)... thì đây là câu hỏi điền trống
+            is_fill_blank = bool(blank_pattern.search(group_content))
+            
+            if is_fill_blank:
+                # Tạo câu hỏi miêu tả tự động
+                q_text = f"Chọn đáp án thích hợp cho vị trí trống ………… ({q_num_str}) trong đoạn văn trên."
+                first_opt_raw = remaining_text # Text còn lại sau số thứ tự chính là Option A
+            else:
+                q_text = remaining_text
+                first_opt_raw = ""
+
             current_group = {
-                'group_name': group_name,  # ✅ Sử dụng group_name đã khởi tạo
+                'group_name': group_name,
                 'paragraph_content': group_content.strip(),
-                'question': clean_text(remaining_text),
+                'question': clean_text(q_text),
                 'options': {},
                 'correct_answer': "",
-                'number': local_q_counter
+                'number': int(q_num_str)
             }
+
+            # Nếu là điền trống, xử lý Option A ngay tại dòng này
+            if is_fill_blank and first_opt_raw:
+                m_opt = opt_pat_single.match(first_opt_raw)
+                if m_opt:
+                    letter = m_opt.group('letter').upper()
+                    is_correct = m_opt.group(3) is not None
+                    opt_body = clean_text(m_opt.group('text').replace("(*)", "").strip())
+                    current_group['options'][letter] = f"{letter}. {opt_body}"
+                    if is_correct: current_group['correct_answer'] = letter
             continue
 
-        if current_group: # Đang trong phần câu hỏi
+        if current_group:
             match_opt = opt_pat_single.match(text)
             if match_opt:
                 letter = match_opt.group('letter').upper()
                 is_correct = match_opt.group(3) is not None
-                opt_text = clean_text(match_opt.group('text').replace("(*)", "").strip())
-                current_group['options'][letter] = f"{letter}. {opt_text}"
+                opt_body = clean_text(match_opt.group('text').replace("(*)", "").strip())
+                current_group['options'][letter] = f"{letter}. {opt_body}"
                 if is_correct: current_group['correct_answer'] = letter
             else:
+                # Nếu không phải option, nối tiếp vào câu hỏi (trường hợp câu hỏi dài nhiều dòng)
                 current_group['question'] += " " + clean_text(text)
-        else: # ✅ Đang thu thập nội dung đoạn văn (bao gồm cả Paragraph 1)
+        else:
+            # Thu thập nội dung đoạn văn
             group_content += text + "\n"
 
     if current_group and current_group.get('question'):
         questions.append(current_group)
 
-    # Chuyển đổi sang format chuẩn của ứng dụng
+    # Chuyển đổi sang định dạng chuẩn để hiển thị
     final_questions = []
     for q in questions:
         if not q.get('options'): continue
