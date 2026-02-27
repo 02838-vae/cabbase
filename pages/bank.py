@@ -14,32 +14,44 @@ from deep_translator import GoogleTranslator
 st.markdown(
     """
     <style>
-    /* 1. Tùy chỉnh độ rộng và màu nền của thanh cuộn tổng thể */
+    /* 1. Tăng kích thước tổng thể - Rất to và rõ */
     ::-webkit-scrollbar {
-        width: 16px;              /* Độ rộng thanh cuộn (To hơn bình thường) */
-        height: 16px;             /* Độ cao cho thanh cuộn ngang */
+        width: 22px !important;       /* Độ rộng cực lớn cho PC */
+        height: 22px !important;      /* Độ cao cho thanh cuộn ngang */
     }
 
-    /* 2. Tùy chỉnh phần nền phía dưới (Track) */
+    /* 2. Thiết kế phần nền (Track) - Màu xám nhạt để lộ rõ rãnh cuộn */
     ::-webkit-scrollbar-track {
-        background: #1e1e1e;      /* Màu nền tối để phù hợp với giao diện hiện tại */
-        border-radius: 10px;
+        background: #2e2e2e !important;
+        border-left: 1px solid #444;
+        box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
     }
 
-    /* 3. Tùy chỉnh thanh trượt chính (Thumb) */
+    /* 3. Thanh trượt chính (Thumb) - Màu Vàng Neon cực kỳ dễ thấy */
     ::-webkit-scrollbar-thumb {
-        background: #00d4ff;      /* Màu xanh cyan nổi bật, dễ nhìn */
-        border-radius: 10px;      /* Bo tròn các góc */
-        border: 3px solid #1e1e1e; /* Tạo khoảng cách giữa thumb và track để dễ nhìn hơn */
+        background: linear-gradient(180deg, #ffeb3b, #fbc02d) !important; /* Màu vàng sáng */
+        border-radius: 5px !important;   /* Bo góc nhẹ kiểu hình khối */
+        border: 3px solid #2e2e2e !important; /* Tạo viền ngăn cách để nổi bật hơn */
+        box-shadow: 0 0 10px rgba(255, 235, 59, 0.4); /* Đổ bóng phát sáng */
     }
 
-    /* 4. Hiệu ứng khi di chuột vào thanh trượt (Hover) */
+    /* 4. Hiệu ứng khi di chuột vào (Hover) - Đổi sang màu Cam */
     ::-webkit-scrollbar-thumb:hover {
-        background: #008fb3;      /* Màu đậm hơn khi người dùng di chuột vào để biết là có thể tương tác */
+        background: #ffa000 !important;
+        box-shadow: 0 0 15px rgba(255, 160, 0, 0.7); /* Phát sáng mạnh hơn khi tương tác */
         cursor: pointer;
     }
+
+    /* 5. Hiệu ứng khi đang nhấn giữ (Active) */
+    ::-webkit-scrollbar-thumb:active {
+        background: #ff6f00 !important;
+    }
     
-    /* Đảm bảo thanh cuộn luôn hiển thị trên các trình duyệt dựa trên Webkit (Chrome, Safari, Edge) */
+    /* Tùy chỉnh cho Firefox (Trình duyệt này giới hạn hơn Chrome/Edge) */
+    * {
+        scrollbar-width: thick;
+        scrollbar-color: #ffeb3b #2e2e2e;
+    }
     </style>
     """,
     unsafe_allow_html=True
