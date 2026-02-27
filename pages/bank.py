@@ -11,46 +11,59 @@ import os
 import random 
 from deep_translator import GoogleTranslator
 
+Chào bạn, tôi đã hiểu vấn đề. Nguyên nhân là do các trình duyệt (Chrome, Edge) thường ưu tiên màu sắc mặc định của hệ thống cho thanh cuộn khi người dùng đang tương tác sâu (như chọn giá trị trong dropdown hoặc khi nội dung trang thay đổi).
+
+Để thanh cuộn luôn luôn hiện màu vàng sáng, to rõ và không bị mất màu khi bạn thao tác chọn Ngân hàng, bạn cần sử dụng thuộc tính !important một cách triệt để và bổ sung thêm các thuộc tính cho các vùng chứa nội dung của Streamlit.
+
+Bạn hãy thay thế đoạn mã cũ bằng đoạn mã "Siêu hiển thị & Chống ghi đè" này vào đầu file bank (7).py:
+
+Python
+
 st.markdown(
     """
     <style>
-    /* 1. Tăng kích thước tổng thể - Rất to và rõ */
+    /* 1. ÁP DỤNG CHO TOÀN BỘ TRÌNH DUYỆT - ĐẢM BẢO LUÔN HIỆN DIỆN */
+    /* Độ rộng cực lớn (24px) để dễ bấm trên PC */
     ::-webkit-scrollbar {
-        width: 22px !important;       /* Độ rộng cực lớn cho PC */
-        height: 22px !important;      /* Độ cao cho thanh cuộn ngang */
+        width: 24px !important;
+        height: 24px !important;
+        display: block !important;
     }
 
-    /* 2. Thiết kế phần nền (Track) - Màu xám nhạt để lộ rõ rãnh cuộn */
+    /* 2. PHẦN RÃNH TRƯỢT (TRACK) */
     ::-webkit-scrollbar-track {
-        background: #2e2e2e !important;
-        border-left: 1px solid #444;
-        box-shadow: inset 0 0 5px rgba(0,0,0,0.5);
+        background: #1e1e1e !important; /* Nền tối để làm nổi bật thanh trượt */
+        border-left: 2px solid #333 !important;
     }
 
-    /* 3. Thanh trượt chính (Thumb) - Màu Vàng Neon cực kỳ dễ thấy */
+    /* 3. THANH TRƯỢT CHÍNH (THUMB) - LUÔN LÀ MÀU VÀNG */
     ::-webkit-scrollbar-thumb {
-        background: linear-gradient(180deg, #ffeb3b, #fbc02d) !important; /* Màu vàng sáng */
-        border-radius: 5px !important;   /* Bo góc nhẹ kiểu hình khối */
-        border: 3px solid #2e2e2e !important; /* Tạo viền ngăn cách để nổi bật hơn */
-        box-shadow: 0 0 10px rgba(255, 235, 59, 0.4); /* Đổ bóng phát sáng */
+        background-color: #FFD700 !important; /* Vàng Gold nguyên bản */
+        background-image: linear-gradient(45deg, #FFD700 25%, #ffeb3b 50%, #FFD700 75%) !important;
+        border-radius: 4px !important;
+        border: 4px solid #1e1e1e !important; /* Tạo khoảng trống để thanh vàng nổi hẳn lên */
+        box-shadow: 0 0 10px rgba(255, 215, 0, 0.8) !important; /* Hiệu ứng phát sáng nhẹ để dễ thấy */
     }
 
-    /* 4. Hiệu ứng khi di chuột vào (Hover) - Đổi sang màu Cam */
-    ::-webkit-scrollbar-thumb:hover {
-        background: #ffa000 !important;
-        box-shadow: 0 0 15px rgba(255, 160, 0, 0.7); /* Phát sáng mạnh hơn khi tương tác */
-        cursor: pointer;
-    }
-
-    /* 5. Hiệu ứng khi đang nhấn giữ (Active) */
+    /* 4. GIỮ MÀU KHI DI CHUỘT HOẶC KÉO (HOVER/ACTIVE) */
+    ::-webkit-scrollbar-thumb:hover, 
     ::-webkit-scrollbar-thumb:active {
-        background: #ff6f00 !important;
+        background-color: #ffffff !important; /* Đổi sang Trắng khi đang chọn để phản hồi trực quan */
+        background-image: none !important;
+        box-shadow: 0 0 20px rgba(255, 255, 255, 1) !important;
+    }
+
+    /* 5. FIX ĐẶC BIỆT CHO STREAMLIT (Vùng Sidebar và Main Content) */
+    [data-testid="stSidebar"]::-webkit-scrollbar,
+    .main::-webkit-scrollbar,
+    .stApp::-webkit-scrollbar {
+        width: 24px !important;
     }
     
-    /* Tùy chỉnh cho Firefox (Trình duyệt này giới hạn hơn Chrome/Edge) */
+    /* Đối với Firefox */
     * {
-        scrollbar-width: thick;
-        scrollbar-color: #ffeb3b #2e2e2e;
+        scrollbar-width: thick !important;
+        scrollbar-color: #FFD700 #1e1e1e !important;
     }
     </style>
     """,
