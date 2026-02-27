@@ -11,6 +11,40 @@ import os
 import random 
 from deep_translator import GoogleTranslator
 
+st.markdown(
+    """
+    <style>
+    /* 1. Tùy chỉnh độ rộng và màu nền của thanh cuộn tổng thể */
+    ::-webkit-scrollbar {
+        width: 16px;              /* Độ rộng thanh cuộn (To hơn bình thường) */
+        height: 16px;             /* Độ cao cho thanh cuộn ngang */
+    }
+
+    /* 2. Tùy chỉnh phần nền phía dưới (Track) */
+    ::-webkit-scrollbar-track {
+        background: #1e1e1e;      /* Màu nền tối để phù hợp với giao diện hiện tại */
+        border-radius: 10px;
+    }
+
+    /* 3. Tùy chỉnh thanh trượt chính (Thumb) */
+    ::-webkit-scrollbar-thumb {
+        background: #00d4ff;      /* Màu xanh cyan nổi bật, dễ nhìn */
+        border-radius: 10px;      /* Bo tròn các góc */
+        border: 3px solid #1e1e1e; /* Tạo khoảng cách giữa thumb và track để dễ nhìn hơn */
+    }
+
+    /* 4. Hiệu ứng khi di chuột vào thanh trượt (Hover) */
+    ::-webkit-scrollbar-thumb:hover {
+        background: #008fb3;      /* Màu đậm hơn khi người dùng di chuột vào để biết là có thể tương tác */
+        cursor: pointer;
+    }
+    
+    /* Đảm bảo thanh cuộn luôn hiển thị trên các trình duyệt dựa trên Webkit (Chrome, Safari, Edge) */
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # ====================================================
 # ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
 # ====================================================
