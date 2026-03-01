@@ -62,45 +62,6 @@ st.markdown(
     unsafe_allow_html=True
 )
 
-# ====================================================
-# 🔼🔽 NÚT CUỘN LÊN / XUỐNG CỐ ĐỊNH BÊN PHẢI TRANG
-# ====================================================
-st.markdown("""
-    <style>
-    .scroll-btn-container {
-        position: fixed;
-        right: 18px;
-        bottom: 80px;
-        z-index: 9999;
-        display: flex;
-        flex-direction: column;
-        gap: 10px;
-    }
-    .scroll-btn {
-        width: 48px;
-        height: 48px;
-        border-radius: 50%;
-        background: linear-gradient(135deg, #FFD700, #FFA500);
-        border: none;
-        cursor: pointer;
-        font-size: 22px;
-        line-height: 48px;
-        text-align: center;
-        box-shadow: 0 0 12px rgba(255, 215, 0, 0.8);
-        color: #1a1a1a;
-        transition: transform 0.15s, box-shadow 0.15s;
-        user-select: none;
-    }
-    .scroll-btn:hover {
-        transform: scale(1.15);
-        box-shadow: 0 0 20px rgba(255, 215, 0, 1);
-    }
-    </style>
-    <div class="scroll-btn-container">
-        <button class="scroll-btn" onclick="window.scrollTo({top: 0, behavior: 'smooth'})" title="Lên đầu trang">▲</button>
-        <button class="scroll-btn" onclick="window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'})" title="Xuống cuối trang">▼</button>
-    </div>
-""", unsafe_allow_html=True)
 
 
 # ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
