@@ -14,62 +14,49 @@ from deep_translator import GoogleTranslator
 st.markdown(
     """
     <style>
-    /* --- CẤU HÌNH TỔNG THỂ --- */
-    /* Tăng độ rộng rãnh lên 30px */
+    /* 1. ÁP DỤNG CHO TOÀN BỘ TRÌNH DUYỆT VÀ CÁC LỚP CỦA STREAMLIT */
+    /* Tăng độ rộng lên 30px cho cả PC và ép hiển thị trên Mobile */
+    html, body, [data-testid="stAppViewContainer"], .main, .stApp, ::-webkit-scrollbar {
+        scrollbar-width: thick !important; /* Cho Firefox */
+    }
+
+    /* ĐỊNH NGHĨA KÍCH THƯỚC KHUNG CUỘN */
     ::-webkit-scrollbar {
         width: 32px !important; 
         height: 32px !important;
         display: block !important;
     }
 
-    /* Rãnh trượt (Track) - Làm màu xám rất tối để làm nền */
+    /* RÃNH TRƯỢT (TRACK) - Màu tối để làm nền */
     ::-webkit-scrollbar-track {
-        background: #121212 !important;
+        background: #1e1e1e !important;
         border: none !important;
     }
 
-    /* THANH TRƯỢT CHÍNH (Thumb) - ĐÃ FIX LỖI "LỌT THỎM" */
+    /* THANH TRƯỢT (THUMB) - Màu Vàng chiếm trọn bề ngang */
     ::-webkit-scrollbar-thumb {
-        background-color: #FFD700 !important; /* Vàng đậm rực rỡ */
-        /* Loại bỏ border dày hoặc dùng border cùng màu vàng để tăng kích thước */
-        border: 2px solid #FFD700 !important; 
-        border-radius: 4px !important;
-        /* Hiệu ứng đổ bóng nội khối để tạo cảm giác dày dặn */
-        box-shadow: inset 0 0 6px rgba(0,0,0,0.3) !important;
+        background-color: #FFD700 !important; /* Vàng Gold rực rỡ */
+        border: 2px solid #FFD700 !important; /* Viền cùng màu để nở rộng tối đa */
+        border-radius: 5px !important;
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.2) !important;
     }
 
-    /* Hiệu ứng khi di chuột/chạm: Chuyển sang Vàng Chanh sáng hơn */
+    /* HIỆU ỨNG KHI RÊ CHUỘT/CHẠM: Chuyển sang Trắng sáng để nổi bật */
     ::-webkit-scrollbar-thumb:hover, 
     ::-webkit-scrollbar-thumb:active {
-        background-color: #ADFF2F !important; 
-        border-color: #ADFF2F !important;
+        background-color: #ffffff !important; 
+        border-color: #ffffff !important;
+        box-shadow: 0 0 15px rgba(255, 215, 0, 1) !important;
     }
 
-    /* --- HIỂN THỊ TRÊN MOBILE --- */
-    @media only screen and (max-width: 768px) {
+    /* ĐẢM BẢO TRÊN MOBILE KHÔNG BỊ ẨN */
+    @media (max-width: 768px) {
         ::-webkit-scrollbar {
-            width: 35px !important; /* Trên mobile làm to hơn nữa để dễ vuốt */
+            width: 35px !important;
         }
-        /* Buộc thanh cuộn luôn hiện diện trên mobile */
-        html, body, [data-testid="stAppViewContainer"] {
+        [data-testid="stAppViewContainer"] {
             overflow-y: scroll !important;
-            -webkit-overflow-scrolling: touch !important;
         }
-    }
-
-    /* Áp dụng cho mọi thành phần của Streamlit */
-    [data-testid="stSidebar"]::-webkit-scrollbar,
-    .main::-webkit-scrollbar,
-    .stApp::-webkit-scrollbar,
-    section.main::-webkit-scrollbar {
-        width: 32px !important;
-        display: block !important;
-    }
-
-    /* Cấu hình cho Firefox */
-    * {
-        scrollbar-width: thick !important;
-        scrollbar-color: #FFD700 #121212 !important;
     }
     </style>
     """,
