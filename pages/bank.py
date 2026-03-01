@@ -14,53 +14,62 @@ from deep_translator import GoogleTranslator
 st.markdown(
     """
     <style>
-    /* --- CẤU HÌNH CHO PC (Chrome, Edge, Safari) --- */
+    /* --- CẤU HÌNH TỔNG THỂ --- */
+    /* Tăng độ rộng rãnh lên 30px */
     ::-webkit-scrollbar {
-        width: 30px !important;        /* Tăng lên 30px cực đại */
-        height: 30px !important;       /* Cho thanh cuộn ngang */
+        width: 32px !important; 
+        height: 32px !important;
         display: block !important;
     }
 
-    /* --- CẤU HÌNH CHO MOBILE (iOS/Android) --- */
-    /* Buộc thanh cuộn luôn hiện diện trên các thiết bị cảm ứng */
-    html, body, [data-testid="stAppViewContainer"] {
-        overflow-y: scroll !important;
-        -webkit-overflow-scrolling: touch !important;
-    }
-
-    /* Rãnh trượt (Track) */
+    /* Rãnh trượt (Track) - Làm màu xám rất tối để làm nền */
     ::-webkit-scrollbar-track {
-        background: #1a1a1a !important;
-        border-left: 2px solid #333 !important;
+        background: #121212 !important;
+        border: none !important;
     }
 
-    /* Thanh trượt (Thumb) - Màu Vàng Chanh cực mạnh */
+    /* THANH TRƯỢT CHÍNH (Thumb) - ĐÃ FIX LỖI "LỌT THỎM" */
     ::-webkit-scrollbar-thumb {
-        background: #CCFF00 !important; /* Màu Lime/Vàng chanh cực sáng */
-        border-radius: 0px !important;  /* Để vuông vức cho cảm giác to hơn */
-        border: 5px solid #1a1a1a !important; /* Tạo viền đen dày để làm nổi bật màu vàng */
-        box-shadow: inset 0 0 10px rgba(0,0,0,0.5) !important;
+        background-color: #FFD700 !important; /* Vàng đậm rực rỡ */
+        /* Loại bỏ border dày hoặc dùng border cùng màu vàng để tăng kích thước */
+        border: 2px solid #FFD700 !important; 
+        border-radius: 4px !important;
+        /* Hiệu ứng đổ bóng nội khối để tạo cảm giác dày dặn */
+        box-shadow: inset 0 0 6px rgba(0,0,0,0.3) !important;
     }
 
-    /* Khi di chuột hoặc chạm vào */
+    /* Hiệu ứng khi di chuột/chạm: Chuyển sang Vàng Chanh sáng hơn */
     ::-webkit-scrollbar-thumb:hover, 
     ::-webkit-scrollbar-thumb:active {
-        background: #ffffff !important; /* Chuyển trắng hoàn toàn khi chạm vào */
+        background-color: #ADFF2F !important; 
+        border-color: #ADFF2F !important;
     }
 
-    /* --- ÁP DỤNG RIÊNG CHO CÁC KHUNG NỘI DUNG CỦA STREAMLIT --- */
+    /* --- HIỂN THỊ TRÊN MOBILE --- */
+    @media only screen and (max-width: 768px) {
+        ::-webkit-scrollbar {
+            width: 35px !important; /* Trên mobile làm to hơn nữa để dễ vuốt */
+        }
+        /* Buộc thanh cuộn luôn hiện diện trên mobile */
+        html, body, [data-testid="stAppViewContainer"] {
+            overflow-y: scroll !important;
+            -webkit-overflow-scrolling: touch !important;
+        }
+    }
+
+    /* Áp dụng cho mọi thành phần của Streamlit */
     [data-testid="stSidebar"]::-webkit-scrollbar,
     .main::-webkit-scrollbar,
     .stApp::-webkit-scrollbar,
     section.main::-webkit-scrollbar {
-        width: 30px !important;
+        width: 32px !important;
         display: block !important;
     }
 
-    /* Cho Firefox */
+    /* Cấu hình cho Firefox */
     * {
         scrollbar-width: thick !important;
-        scrollbar-color: #CCFF00 #1a1a1a !important;
+        scrollbar-color: #FFD700 #121212 !important;
     }
     </style>
     """,
