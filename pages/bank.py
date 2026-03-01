@@ -14,48 +14,53 @@ from deep_translator import GoogleTranslator
 st.markdown(
     """
     <style>
-    /* 1. ÁP DỤNG CHO TOÀN BỘ TRÌNH DUYỆT - ĐẢM BẢO LUÔN HIỆN DIỆN */
-    /* Độ rộng cực lớn (24px) để dễ bấm trên PC */
+    /* --- CẤU HÌNH CHO PC (Chrome, Edge, Safari) --- */
     ::-webkit-scrollbar {
-        width: 24px !important;
-        height: 24px !important;
+        width: 30px !important;        /* Tăng lên 30px cực đại */
+        height: 30px !important;       /* Cho thanh cuộn ngang */
         display: block !important;
     }
 
-    /* 2. PHẦN RÃNH TRƯỢT (TRACK) */
+    /* --- CẤU HÌNH CHO MOBILE (iOS/Android) --- */
+    /* Buộc thanh cuộn luôn hiện diện trên các thiết bị cảm ứng */
+    html, body, [data-testid="stAppViewContainer"] {
+        overflow-y: scroll !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    /* Rãnh trượt (Track) */
     ::-webkit-scrollbar-track {
-        background: #1e1e1e !important; /* Nền tối để làm nổi bật thanh trượt */
+        background: #1a1a1a !important;
         border-left: 2px solid #333 !important;
     }
 
-    /* 3. THANH TRƯỢT CHÍNH (THUMB) - LUÔN LÀ MÀU VÀNG */
+    /* Thanh trượt (Thumb) - Màu Vàng Chanh cực mạnh */
     ::-webkit-scrollbar-thumb {
-        background-color: #FFD700 !important; /* Vàng Gold nguyên bản */
-        background-image: linear-gradient(45deg, #FFD700 25%, #ffeb3b 50%, #FFD700 75%) !important;
-        border-radius: 4px !important;
-        border: 4px solid #1e1e1e !important; /* Tạo khoảng trống để thanh vàng nổi hẳn lên */
-        box-shadow: 0 0 10px rgba(255, 215, 0, 0.8) !important; /* Hiệu ứng phát sáng nhẹ để dễ thấy */
+        background: #CCFF00 !important; /* Màu Lime/Vàng chanh cực sáng */
+        border-radius: 0px !important;  /* Để vuông vức cho cảm giác to hơn */
+        border: 5px solid #1a1a1a !important; /* Tạo viền đen dày để làm nổi bật màu vàng */
+        box-shadow: inset 0 0 10px rgba(0,0,0,0.5) !important;
     }
 
-    /* 4. GIỮ MÀU KHI DI CHUỘT HOẶC KÉO (HOVER/ACTIVE) */
+    /* Khi di chuột hoặc chạm vào */
     ::-webkit-scrollbar-thumb:hover, 
     ::-webkit-scrollbar-thumb:active {
-        background-color: #ffffff !important; /* Đổi sang Trắng khi đang chọn để phản hồi trực quan */
-        background-image: none !important;
-        box-shadow: 0 0 20px rgba(255, 255, 255, 1) !important;
+        background: #ffffff !important; /* Chuyển trắng hoàn toàn khi chạm vào */
     }
 
-    /* 5. FIX ĐẶC BIỆT CHO STREAMLIT (Vùng Sidebar và Main Content) */
+    /* --- ÁP DỤNG RIÊNG CHO CÁC KHUNG NỘI DUNG CỦA STREAMLIT --- */
     [data-testid="stSidebar"]::-webkit-scrollbar,
     .main::-webkit-scrollbar,
-    .stApp::-webkit-scrollbar {
-        width: 24px !important;
+    .stApp::-webkit-scrollbar,
+    section.main::-webkit-scrollbar {
+        width: 30px !important;
+        display: block !important;
     }
-    
-    /* Đối với Firefox */
+
+    /* Cho Firefox */
     * {
         scrollbar-width: thick !important;
-        scrollbar-color: #FFD700 #1e1e1e !important;
+        scrollbar-color: #CCFF00 #1a1a1a !important;
     }
     </style>
     """,
@@ -1932,7 +1937,7 @@ if bank_choice != "----":
             st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
             col_all_bank, col_test = st.columns(2)
             with col_all_bank:
-                if st.button("📖 Hiển thị toàn bộ ngân hàng", key="btn_show_all"):
+                if st.button("📖 Hiển thị toàn bộ phụ lục", key="btn_show_all"):
                     st.session_state.current_mode = "all"
                     st.session_state.active_translation_key = None # Reset dịch Q&A
                     st.session_state.active_passage_translation = None # Reset dịch Passage
