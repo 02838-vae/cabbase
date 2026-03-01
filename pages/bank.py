@@ -1933,7 +1933,8 @@ if bank_choice != "----":
             st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
             col_all_bank, col_test = st.columns(2)
             with col_all_bank:
-                if st.button("📖 Hiển thị toàn bộ phụ lục", key="btn_show_all"):
+                btn_all_label = "📖 Hiển thị toàn bộ phụ lục" if is_docwise else "📖 Hiển thị toàn bộ Ngân hàng"
+                if st.button(btn_all_label, key="btn_show_all"):
                     st.session_state.current_mode = "all"
                     st.session_state.active_translation_key = None # Reset dịch Q&A
                     st.session_state.active_passage_translation = None # Reset dịch Passage
