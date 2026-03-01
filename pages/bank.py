@@ -11,14 +11,6 @@ import os
 import random 
 from deep_translator import GoogleTranslator
 
-Chào bạn, tôi đã hiểu vấn đề. Nguyên nhân là do các trình duyệt (Chrome, Edge) thường ưu tiên màu sắc mặc định của hệ thống cho thanh cuộn khi người dùng đang tương tác sâu (như chọn giá trị trong dropdown hoặc khi nội dung trang thay đổi).
-
-Để thanh cuộn luôn luôn hiện màu vàng sáng, to rõ và không bị mất màu khi bạn thao tác chọn Ngân hàng, bạn cần sử dụng thuộc tính !important một cách triệt để và bổ sung thêm các thuộc tính cho các vùng chứa nội dung của Streamlit.
-
-Bạn hãy thay thế đoạn mã cũ bằng đoạn mã "Siêu hiển thị & Chống ghi đè" này vào đầu file bank (7).py:
-
-Python
-
 st.markdown(
     """
     <style>
