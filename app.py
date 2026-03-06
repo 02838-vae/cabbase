@@ -118,18 +118,31 @@ div.block-container {{
     transition: opacity 0.5s ease-out;
 }}
 
-/* Background hiện ngay không cần class toggle */
+/* Background dùng ::before để filter không làm mờ các phần tử con */
 .stApp {{
-    background-image: var(--main-bg-url-pc) !important;
-    background-size: cover !important;
-    background-position: center !important;
-    background-attachment: fixed !important;
+    position: relative !important;
+    background: none !important;
+}}
+
+.stApp::before {{
+    content: '';
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-image: var(--main-bg-url-pc);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%);
+    z-index: 0;
+    pointer-events: none;
 }}
 
 @media (max-width: 768px) {{
-    .stApp {{
-        background-image: var(--main-bg-url-mobile) !important;
+    .stApp::before {{
+        background-image: var(--main-bg-url-mobile);
     }}
     .reveal-grid {{
         grid-template-columns: repeat(10, 1fr);
