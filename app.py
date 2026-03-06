@@ -93,10 +93,30 @@ div.block-container {{
     cursor: default !important; 
 }}
 
+/* Logo cho music player */
 .stApp {{
-    --main-bg-url-pc: url('data:image/jpeg;base64,{bg_pc_base64}');
-    --main-bg-url-mobile: url('data:image/jpeg;base64,{bg_mobile_base64}');
     --logo-bg-url: url('data:image/jpeg;base64,{logo_base64}');
+}}
+
+/* === BACKGROUND: nhắm thẳng vào tất cả container của Streamlit === */
+body,
+.stApp,
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"],
+section.main {{
+    background-image: url('data:image/jpeg;base64,{bg_pc_base64}') !important;
+    background-size: cover !important;
+    background-position: center center !important;
+    background-repeat: no-repeat !important;
+    background-attachment: fixed !important;
+    background-color: transparent !important;
+}}
+
+/* Xóa background trắng mặc định của các block bên trong */
+[data-testid="stAppViewContainer"] > div,
+[data-testid="stMain"] > div,
+.block-container {{
+    background: transparent !important;
 }}
 
 .reveal-grid {{
@@ -113,36 +133,18 @@ div.block-container {{
 }}
 
 .grid-cell {{
-    background-color: white;
+    background-color: #111;
     opacity: 1;
     transition: opacity 0.5s ease-out;
 }}
 
-/* Background dùng ::before để filter không làm mờ các phần tử con */
-.stApp {{
-    position: relative !important;
-    background: none !important;
-}}
-
-.stApp::before {{
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    background-image: var(--main-bg-url-pc);
-    background-size: cover;
-    background-position: center;
-    background-repeat: no-repeat;
-    filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%);
-    z-index: 0;
-    pointer-events: none;
-}}
-
 @media (max-width: 768px) {{
-    .stApp::before {{
-        background-image: var(--main-bg-url-mobile);
+    body,
+    .stApp,
+    [data-testid="stAppViewContainer"],
+    [data-testid="stMain"],
+    section.main {{
+        background-image: url('data:image/jpeg;base64,{bg_mobile_base64}') !important;
     }}
     .reveal-grid {{
         grid-template-columns: repeat(10, 1fr);
