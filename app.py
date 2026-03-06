@@ -118,18 +118,18 @@ div.block-container {{
     transition: opacity 0.5s ease-out;
 }}
 
-.main-content-revealed {{
-    background-image: var(--main-bg-url-pc);
-    background-size: cover;
-    background-position: center;
-    background-attachment: fixed;
+/* Background hiện ngay không cần class toggle */
+.stApp {{
+    background-image: var(--main-bg-url-pc) !important;
+    background-size: cover !important;
+    background-position: center !important;
+    background-attachment: fixed !important;
     filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%);
-    transition: filter 2s ease-out;
 }}
 
 @media (max-width: 768px) {{
-    .main-content-revealed {{
-        background-image: var(--main-bg-url-mobile);
+    .stApp {{
+        background-image: var(--main-bg-url-mobile) !important;
     }}
     .reveal-grid {{
         grid-template-columns: repeat(10, 1fr);
@@ -166,11 +166,11 @@ div.block-container {{
     z-index: 20;
     pointer-events: none;
     opacity: 0;
-    transition: opacity 2s;
+    animation: fadeInUI 1.5s ease-out 2.5s forwards;
 }}
 
-.video-finished #main-title-container {{
-    opacity: 1;
+@keyframes fadeInUI {{
+    to {{ opacity: 1; }}
 }}
 
 #main-title-container h1 {{
@@ -245,7 +245,11 @@ div.block-container {{
     z-index: 999;
     opacity: 0;
     transform: translateY(100px);
-    transition: opacity 1s ease-out 2s, transform 1s ease-out 2s;
+    animation: slideUpMusic 1s ease-out 3s forwards;
+}}
+
+@keyframes slideUpMusic {{
+    to {{ opacity: 1; transform: translateY(0); }}
 }}
 
 #music-player-container::before {{
@@ -389,13 +393,12 @@ div.block-container {{
     padding: 0 80px;
     z-index: 10000;
     opacity: 0;
-    transition: opacity 1s ease-out;
     pointer-events: none;
+    animation: fadeInNav 1s ease-out 3s forwards;
 }}
 
-.video-finished .nav-buttons-wrapper {{
-    opacity: 1;
-    pointer-events: all;
+@keyframes fadeInNav {{
+    to {{ opacity: 1; pointer-events: all; }}
 }}
 
 /* Ẩn columns và elements mặc định của Streamlit */
@@ -543,12 +546,6 @@ div.block-container {{
 
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# Chuẩn bị music sources JS
-if len(music_files) > 0:
-    music_sources_js_str = ",\n\t\t\t".join([f"'{url}'" for url in music_files])
-else:
-    music_sources_js_str = ""
-
 # --- HIỆU ỨNG REVEAL VÀ NỘI DUNG CHÍNH ---
 
 grid_cells_html = ""
@@ -561,56 +558,18 @@ reveal_grid_html = f"""
 </div>
 <script>
 (function() {{
-    // Trigger reveal effect immediately on load
     function startReveal() {{
-        const stApp = window.parent.document.querySelector('.stApp');
-        if (stApp) {{
-            stApp.classList.add('video-finished', 'main-content-revealed');
-        }}
-        const revealGrid = window.parent.document.querySelector('.reveal-grid');
+        // Script chạy trong cùng document Streamlit, không cần window.parent
+        const revealGrid = document.getElementById('reveal-grid-main');
         if (!revealGrid) {{ return; }}
         const cells = revealGrid.querySelectorAll('.grid-cell');
         const shuffledCells = Array.from(cells).sort(() => Math.random() - 0.5);
         shuffledCells.forEach((cell, index) => {{
             setTimeout(() => {{ cell.style.opacity = 0; }}, index * 10);
         }});
-        setTimeout(() => {{ revealGrid.remove(); }}, shuffledCells.length * 10 + 1000);
-        setTimeout(initMusicPlayer, 200);
-    }}
-
-    function initMusicPlayer() {{
-        const musicSources = [{music_sources_js_str}];
-        if (musicSources.length === 0) return;
-        let currentTrack = 0;
-        let isPlaying = false;
-        const audio = new Audio();
-        audio.volume = 0.3;
-        const playPauseBtn = window.parent.document.getElementById('play-pause-btn');
-        const prevBtn = window.parent.document.getElementById('prev-btn');
-        const nextBtn = window.parent.document.getElementById('next-btn');
-        const progressBar = window.parent.document.getElementById('progress-bar');
-        const progressContainer = window.parent.document.getElementById('progress-container');
-        const currentTimeEl = window.parent.document.getElementById('current-time');
-        const durationEl = window.parent.document.getElementById('duration');
-        if (!playPauseBtn) return;
-        function loadTrack(index) {{ audio.src = musicSources[index]; audio.load(); }}
-        function togglePlayPause() {{
-            if (isPlaying) {{ audio.pause(); playPauseBtn.textContent = '▶'; }}
-            else {{ audio.play().catch(e => {{}}); playPauseBtn.textContent = '⏸'; }}
-            isPlaying = !isPlaying;
-        }}
-        function nextTrack() {{ currentTrack = (currentTrack + 1) % musicSources.length; loadTrack(currentTrack); if (isPlaying) audio.play().catch(e => {{}}); }}
-        function prevTrack() {{ currentTrack = (currentTrack - 1 + musicSources.length) % musicSources.length; loadTrack(currentTrack); if (isPlaying) audio.play().catch(e => {{}}); }}
-        function formatTime(s) {{ if (isNaN(s)) return '0:00'; return Math.floor(s/60)+':'+Math.floor(s%60).toString().padStart(2,'0'); }}
-        audio.addEventListener('timeupdate', () => {{ progressBar.style.width=(audio.currentTime/audio.duration*100)+'%'; currentTimeEl.textContent=formatTime(audio.currentTime); }});
-        audio.addEventListener('loadedmetadata', () => {{ durationEl.textContent=formatTime(audio.duration); }});
-        audio.addEventListener('ended', nextTrack);
-        audio.addEventListener('error', nextTrack);
-        playPauseBtn.addEventListener('click', togglePlayPause);
-        nextBtn.addEventListener('click', nextTrack);
-        prevBtn.addEventListener('click', prevTrack);
-        if (progressContainer) progressContainer.addEventListener('click', (e) => {{ const r=progressContainer.getBoundingClientRect(); audio.currentTime=(e.clientX-r.left)/r.width*audio.duration; }});
-        loadTrack(0);
+        setTimeout(() => {{
+            revealGrid.style.display = 'none';
+        }}, shuffledCells.length * 10 + 600);
     }}
 
     if (document.readyState === 'loading') {{
@@ -650,6 +609,53 @@ if len(music_files) > 0:
     </div>
 </div>
 """, unsafe_allow_html=True)
+
+# Music player JS dùng iframe thật để window.parent hoạt động đúng
+if len(music_files) > 0:
+    music_sources_js_str = ",".join([f"'{url}'" for url in music_files])
+    st.components.v1.html(f"""
+<script>
+(function() {{
+    function initMusicPlayer() {{
+        const musicSources = [{music_sources_js_str}];
+        if (musicSources.length === 0) return;
+        let currentTrack = 0;
+        let isPlaying = false;
+        const audio = new Audio();
+        audio.volume = 0.3;
+        const doc = window.parent.document;
+        const playPauseBtn = doc.getElementById('play-pause-btn');
+        const prevBtn = doc.getElementById('prev-btn');
+        const nextBtn = doc.getElementById('next-btn');
+        const progressBar = doc.getElementById('progress-bar');
+        const progressContainer = doc.getElementById('progress-container');
+        const currentTimeEl = doc.getElementById('current-time');
+        const durationEl = doc.getElementById('duration');
+        if (!playPauseBtn) return;
+        function loadTrack(index) {{ audio.src = musicSources[index]; audio.load(); }}
+        function togglePlayPause() {{
+            if (isPlaying) {{ audio.pause(); playPauseBtn.textContent = '▶'; }}
+            else {{ audio.play().catch(e => {{}}); playPauseBtn.textContent = '⏸'; }}
+            isPlaying = !isPlaying;
+        }}
+        function nextTrack() {{ currentTrack = (currentTrack + 1) % musicSources.length; loadTrack(currentTrack); if (isPlaying) audio.play().catch(e => {{}}); }}
+        function prevTrack() {{ currentTrack = (currentTrack - 1 + musicSources.length) % musicSources.length; loadTrack(currentTrack); if (isPlaying) audio.play().catch(e => {{}}); }}
+        function formatTime(s) {{ if (isNaN(s)) return '0:00'; return Math.floor(s/60)+':'+Math.floor(s%60).toString().padStart(2,'0'); }}
+        audio.addEventListener('timeupdate', () => {{ if(progressBar) progressBar.style.width=(audio.currentTime/audio.duration*100)+'%'; if(currentTimeEl) currentTimeEl.textContent=formatTime(audio.currentTime); }});
+        audio.addEventListener('loadedmetadata', () => {{ if(durationEl) durationEl.textContent=formatTime(audio.duration); }});
+        audio.addEventListener('ended', nextTrack);
+        audio.addEventListener('error', nextTrack);
+        playPauseBtn.addEventListener('click', togglePlayPause);
+        if(nextBtn) nextBtn.addEventListener('click', nextTrack);
+        if(prevBtn) prevBtn.addEventListener('click', prevTrack);
+        if (progressContainer) progressContainer.addEventListener('click', (e) => {{ const r=progressContainer.getBoundingClientRect(); audio.currentTime=(e.clientX-r.left)/r.width*audio.duration; }});
+        loadTrack(0);
+    }}
+    // Đợi DOM của parent load xong
+    setTimeout(initMusicPlayer, 500);
+}})();
+</script>
+""", height=0)
 
 # --- NAVIGATION BUTTONS (SỬA LẠI LOGIC NAVIGATION) ---
 st.markdown("""
