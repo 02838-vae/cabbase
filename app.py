@@ -98,25 +98,16 @@ div.block-container {{
     --logo-bg-url: url('data:image/jpeg;base64,{logo_base64}');
 }}
 
-/* === BACKGROUND: nhắm thẳng vào tất cả container của Streamlit === */
-body,
-.stApp,
+/* Xóa background mặc định - JS sẽ set background */
+body, .stApp,
 [data-testid="stAppViewContainer"],
 [data-testid="stMain"],
-section.main {{
-    background-image: url('data:image/jpeg;base64,{bg_pc_base64}') !important;
-    background-size: cover !important;
-    background-position: center center !important;
-    background-repeat: no-repeat !important;
-    background-attachment: fixed !important;
-    background-color: transparent !important;
-}}
-
-/* Xóa background trắng mặc định của các block bên trong */
+section.main,
 [data-testid="stAppViewContainer"] > div,
 [data-testid="stMain"] > div,
 .block-container {{
-    background: transparent !important;
+    background-color: transparent !important;
+    background-image: none !important;
 }}
 
 .reveal-grid {{
@@ -596,6 +587,52 @@ reveal_grid_html = f"""
 </script>
 """
 st.markdown(reveal_grid_html, unsafe_allow_html=True)
+
+# --- INJECT BACKGROUND QUA JS (cách duy nhất bypass Streamlit theme) ---
+st.components.v1.html(f"""
+<script>
+(function() {{
+    function applyBackground() {{
+        const bgPc = 'data:image/jpeg;base64,{bg_pc_base64}';
+        const bgMobile = 'data:image/jpeg;base64,{bg_mobile_base64}';
+        const isMobile = window.parent.innerWidth <= 768;
+        const bgUrl = isMobile ? bgMobile : bgPc;
+
+        const targets = [
+            window.parent.document.body,
+            window.parent.document.querySelector('.stApp'),
+            window.parent.document.querySelector('[data-testid="stAppViewContainer"]'),
+            window.parent.document.querySelector('[data-testid="stMain"]'),
+            window.parent.document.querySelector('section.main'),
+        ];
+
+        targets.forEach(el => {{
+            if (!el) return;
+            el.style.setProperty('background-image', 'url(' + bgUrl + ')', 'important');
+            el.style.setProperty('background-size', 'cover', 'important');
+            el.style.setProperty('background-position', 'center center', 'important');
+            el.style.setProperty('background-repeat', 'no-repeat', 'important');
+            el.style.setProperty('background-attachment', 'fixed', 'important');
+            el.style.setProperty('background-color', 'transparent', 'important');
+        }});
+
+        // Xóa background trắng của các div con
+        const innerDivs = window.parent.document.querySelectorAll(
+            '[data-testid="stAppViewContainer"] > div, [data-testid="stMain"] > div, .block-container'
+        );
+        innerDivs.forEach(el => {{
+            el.style.setProperty('background', 'transparent', 'important');
+        }});
+    }}
+
+    // Chạy ngay và retry vài lần để chắc chắn DOM đã render
+    applyBackground();
+    setTimeout(applyBackground, 100);
+    setTimeout(applyBackground, 500);
+    setTimeout(applyBackground, 1000);
+}})();
+</script>
+""", height=0)
 
 # --- NỘI DUNG CHÍNH (TIÊU ĐỀ) ---
 main_title_text = "TỔ BẢO DƯỠNG SỐ 1"
