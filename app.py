@@ -588,48 +588,44 @@ reveal_grid_html = f"""
 """
 st.markdown(reveal_grid_html, unsafe_allow_html=True)
 
-# --- INJECT BACKGROUND QUA JS (cách duy nhất bypass Streamlit theme) ---
+# --- INJECT BACKGROUND: div fixed + style tag vào head ---
 st.components.v1.html(f"""
 <script>
 (function() {{
-    function applyBackground() {{
-        const bgPc = 'data:image/jpeg;base64,{bg_pc_base64}';
-        const bgMobile = 'data:image/jpeg;base64,{bg_mobile_base64}';
+    function injectBackground() {{
+        const doc = window.parent.document;
         const isMobile = window.parent.innerWidth <= 768;
-        const bgUrl = isMobile ? bgMobile : bgPc;
+        const b64 = isMobile ? '{bg_mobile_base64}' : '{bg_pc_base64}';
+        const imgUrl = 'data:image/jpeg;base64,' + b64;
 
-        const targets = [
-            window.parent.document.body,
-            window.parent.document.querySelector('.stApp'),
-            window.parent.document.querySelector('[data-testid="stAppViewContainer"]'),
-            window.parent.document.querySelector('[data-testid="stMain"]'),
-            window.parent.document.querySelector('section.main'),
-        ];
+        // 1. Inject div background cố định vào body (không bị override bởi Streamlit)
+        let bgDiv = doc.getElementById('__st_bg__');
+        if (!bgDiv) {{
+            bgDiv = doc.createElement('div');
+            bgDiv.id = '__st_bg__';
+            doc.body.insertBefore(bgDiv, doc.body.firstChild);
+        }}
+        bgDiv.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:100vh;' +
+            'background:url(' + imgUrl + ') center/cover no-repeat;' +
+            'filter:sepia(60%) grayscale(20%) brightness(85%) contrast(110%);' +
+            'z-index:0;pointer-events:none;';
 
-        targets.forEach(el => {{
-            if (!el) return;
-            el.style.setProperty('background-image', 'url(' + bgUrl + ')', 'important');
-            el.style.setProperty('background-size', 'cover', 'important');
-            el.style.setProperty('background-position', 'center center', 'important');
-            el.style.setProperty('background-repeat', 'no-repeat', 'important');
-            el.style.setProperty('background-attachment', 'fixed', 'important');
-            el.style.setProperty('background-color', 'transparent', 'important');
-        }});
-
-        // Xóa background trắng của các div con
-        const innerDivs = window.parent.document.querySelectorAll(
-            '[data-testid="stAppViewContainer"] > div, [data-testid="stMain"] > div, .block-container'
-        );
-        innerDivs.forEach(el => {{
-            el.style.setProperty('background', 'transparent', 'important');
-        }});
+        // 2. Làm trong suốt tất cả Streamlit containers
+        const styleId = '__st_bg_style__';
+        let s = doc.getElementById(styleId);
+        if (!s) {{ s = doc.createElement('style'); s.id = styleId; doc.head.appendChild(s); }}
+        s.textContent =
+            'body,.stApp,[data-testid="stAppViewContainer"],' +
+            '[data-testid="stMain"],[data-testid="stBottom"],' +
+            'section.main,.block-container,' +
+            '[data-testid="stHeader"],[data-testid="stDecoration"]' +
+            '{{background:transparent!important;background-color:transparent!important;background-image:none!important;}}';
     }}
 
-    // Chạy ngay và retry vài lần để chắc chắn DOM đã render
-    applyBackground();
-    setTimeout(applyBackground, 100);
-    setTimeout(applyBackground, 500);
-    setTimeout(applyBackground, 1000);
+    injectBackground();
+    setTimeout(injectBackground, 100);
+    setTimeout(injectBackground, 500);
+    setTimeout(injectBackground, 1500);
 }})();
 </script>
 """, height=0)
