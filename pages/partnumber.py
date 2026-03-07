@@ -11,10 +11,8 @@ st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1 - Tra Cứu PN", layou
 # --- HÀM HỖ TRỢ ---
 def get_base64_encoded_file(file_path):
     """Mã hóa file ảnh sang base64."""
-    # Sửa đường dẫn để tìm file trong thư mục pages/ hoặc thư mục gốc
     path_to_check = file_path
     if "pages/" not in path_to_check:
-        # Thử tìm trong thư mục gốc nếu nó là logo.jpg
         if not os.path.exists(path_to_check):
             path_to_check = os.path.join(os.path.dirname(__file__), file_path)
     
@@ -31,7 +29,6 @@ def load_and_clean(excel_file, sheet):
     """Tải và làm sạch dữ liệu từ sheet Excel."""
     
     try:
-        # Đường dẫn file excel, giả định nó nằm trong thư mục pages/
         excel_path = os.path.join(os.path.dirname(__file__), excel_file.replace("pages/", ""))
         
         df = pd.read_excel(excel_path, sheet_name=sheet)
@@ -48,12 +45,12 @@ def load_and_clean(excel_file, sheet):
 
 # --- BIẾN VÀ ĐƯỜNG DẪN ---
 CHOOSE_PROMPT = "-- CHỌN --"
-excel_file = "pages/A787.xlsx" # Giả định file excel nằm cùng cấp với thư mục pages/
+excel_file = "pages/A787.xlsx"
 
 try:
-    # Cần đảm bảo các file này nằm trong thư mục 'pages/'
-    pn_bg_pc_base64 = get_base64_encoded_file("pages/PN_PC.jpg")
-    pn_bg_mobile_base64 = get_base64_encoded_file("pages/PN_mobile.jpg")
+    pn_bg_pc_base64 = get_base64_encoded_file("pages/PC.jpg")
+    pn_bg_mobile_base64 = get_base64_encoded_file("pages/mobile.jpg")
+    logo_base64 = get_base64_encoded_file("pages/logo.jpg")
 except Exception as e:
     st.error(f"❌ Lỗi khi đọc file ảnh nền: {str(e)}")
     st.stop()
@@ -73,82 +70,24 @@ hide_streamlit_style = f"""
 }}
 
 .stApp {{
-    background: url("data:image/jpeg;base64,{pn_bg_pc_base64}") no-repeat center top fixed !important;
-    background-size: cover !important;
+    background: url("data:image/jpeg;base64,{pn_bg_pc_base64}") no-repeat center center fixed !important;
+    background-size: 100% 100% !important;
     font-family: 'Oswald', sans-serif !important;
     filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) !important;
 }}
 
 .main > div:first-child {{
-    padding-top: 350px !important;
+    padding-top: 20px !important;
     padding-left: 20px;
     padding-right: 20px;
 }}
 
 @media (max-width: 768px) {{
     .stApp {{
-        background: url("data:image/jpeg;base64,{pn_bg_mobile_base64}") no-repeat center top scroll !important;
-        background-size: cover !important;
+        background: url("data:image/jpeg;base64,{pn_bg_mobile_base64}") no-repeat center center fixed !important;
+        background-size: 100% 100% !important;
     }}
-    .main > div:first-child {{ padding-top: 200px !important; }}
-}}
-
-/* ✅ KEYFRAMES CHO TIÊU ĐỀ CHẠY - GIỐNG TRANG CHÍNH */
-@keyframes scrollText {{
-    0% {{ transform: translate(100vw, 0); }}
-    100% {{ transform: translate(-100%, 0); }}
-}}
-
-@keyframes colorShift {{
-    0% {{ background-position: 0% 50%; }}
-    50% {{ background-position: 100% 50%; }}
-    100% {{ background-position: 0% 50%; }}
-}}
-
-/* ✅ TIÊU ĐỀ CHẠY - GIỐNG Y HỆT TRANG CHÍNH */
-#main-title-container {{
-    position: fixed;
-    top: 5vh;
-    left: 0;
-    width: 100%;
-    height: 10vh;
-    overflow: hidden;
-    z-index: 20;
-    pointer-events: none;
-    opacity: 1;
-    transition: opacity 2s;
-}}
-
-#main-title-container h1 {{
-    font-family: 'Playfair Display', serif;
-    font-size: 3.5vw;
-    margin: 0;
-    font-weight: 900;
-    font-feature-settings: "lnum" 1;
-    letter-spacing: 5px;
-    white-space: nowrap;
-    display: inline-block;
-    animation: scrollText 15s linear infinite;
-    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
-    background-size: 400% 400%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-    animation: colorShift 10s ease infinite, scrollText 15s linear infinite;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-}}
-
-@media (max-width: 768px) {{
-    #main-title-container {{
-        height: 8vh;
-        width: 100%;
-        left: 0;
-    }}
-    
-    #main-title-container h1 {{
-        font-size: 6.5vw;
-        animation-duration: 8s;
-    }}
+    .main > div:first-child {{ padding-top: 10px !important; }}
 }}
 
 /* ✅ NÚT VỀ TRANG CHỦ - FIXED */
@@ -181,10 +120,32 @@ a#manual-home-btn:hover {{
     transform: scale(1.05);
 }}
 
+/* ✅ LOGO */
+#logo-container {{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 10px;
+    margin-bottom: 10px;
+}}
+
+#logo-container img {{
+    height: 120px;
+    width: auto;
+    object-fit: contain;
+}}
+
+@media (max-width: 768px) {{
+    #logo-container img {{
+        height: auto;
+        max-width: 60vw;
+    }}
+}}
+
 /* ✅ TIÊU ĐỀ PHỤ TĨNH */
 #sub-static-title {{
     position: static;
-    margin-top: 20px;
+    margin-top: 10px;
     margin-bottom: 30px;
     z-index: 90;
     background: transparent !important;
@@ -280,7 +241,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- LOGIC CHÍNH ---
 
-# ✅ NÚT VỀ TRANG CHỦ - BỎ HIỆU ỨNG REVEAL VÀ VIDEO
+# ✅ NÚT VỀ TRANG CHỦ
 st.markdown("""
 <div id="back-to-home-btn-container">
     <a id="manual-home-btn" href="/?skip_intro=1" target="_self">
@@ -289,12 +250,10 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
+# --- ✅ LOGO Ở GIỮA TRANG ---
+st.markdown(f'<div id="logo-container"><img src="data:image/jpeg;base64,{logo_base64}" alt="Logo" /></div>', unsafe_allow_html=True)
 
-# --- ✅ HIỂN THỊ TIÊU ĐỀ CHẠY GIỐNG TRANG CHÍNH ---
-main_title_text = "Tổ Bảo Dưỡng Số 1"
-st.markdown(f'<div id="main-title-container"><h1>{main_title_text}</h1></div>', unsafe_allow_html=True)
-
-# --- TIÊU ĐỀ PHỤ - ĐẨY XUỐNG THẤP HƠN ---
+# --- TIÊU ĐỀ PHỤ ---
 st.markdown('<div id="sub-static-title"><h2>TRA CỨU PART NUMBER</h2></div>', unsafe_allow_html=True)
 
 # --- DROPDOWN & XỬ LÝ DỮ LIỆU ---
