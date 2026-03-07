@@ -16,11 +16,12 @@ def get_base64(file_path):
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode("utf-8")
 
+bg_gif   = get_base64("aircraft.gif")
 bg_pc    = get_base64("cabbase.jpg")
 bg_mobile = get_base64("mobile.jpg")
 
-if not bg_pc or not bg_mobile:
-    st.error("Thiếu file ảnh nền (cabbase.jpg hoặc mobile.jpg)")
+if not bg_gif and not bg_pc:
+    st.error("Thiếu file ảnh nền (aircraft.gif hoặc cabbase.jpg)")
     st.stop()
 
 # --- TOÀN BỘ GIAO DIỆN QUA st.components để tránh Streamlit override ---
@@ -41,17 +42,16 @@ st.components.v1.html(f"""
   #bg {{
     position: fixed;
     inset: 0;
-    background-image: url('data:image/jpeg;base64,{bg_pc}');
-    background-size: cover;
-    background-position: center;
-    filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%);
     z-index: 0;
+    overflow: hidden;
   }}
 
-  @media (max-width: 768px) {{
-    #bg {{
-      background-image: url('data:image/jpeg;base64,{bg_mobile}');
-    }}
+  #bg img {{
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center;
+    filter: sepia(60%) grayscale(20%) brightness(85%) contrast(110%);
   }}
 
   #content {{
@@ -177,7 +177,7 @@ st.components.v1.html(f"""
 </style>
 </head>
 <body>
-  <div id="bg"></div>
+  <div id="bg"><img src="data:image/gif;base64,{bg_gif}" alt=""/></div>
   <div id="content">
     <div class="btn-wrap">
       <a class="btn" href="/partnumber" target="_self">
