@@ -73,13 +73,77 @@ st.components.v1.html(f"""
     }}
   }}
 
+  /* Wrapper để chứa hiệu ứng ánh sáng chạy vòng */
+  .btn-wrap {{
+    position: relative;
+    border-radius: 9999px;
+    padding: 2px; /* độ dày viền sáng */
+    min-width: 260px;
+    overflow: hidden;
+  }}
+
+  /* Ánh sáng vàng chạy vòng quanh */
+  .btn-wrap::before {{
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 9999px;
+    background: conic-gradient(
+      from var(--angle, 0deg),
+      transparent 0deg,
+      transparent 60deg,
+      #ffd700 90deg,
+      #fff8a0 110deg,
+      #ffd700 130deg,
+      transparent 160deg,
+      transparent 360deg
+    );
+    animation: spin-light 2.5s linear infinite;
+    z-index: 0;
+  }}
+
+  @property --angle {{
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+  }}
+
+  @keyframes spin-light {{
+    to {{ --angle: 360deg; }}
+  }}
+
+  /* Fallback cho browser không hỗ trợ @property */
+  @supports not (background: conic-gradient(from 0deg, red, blue)) {{
+    .btn-wrap::before {{
+      animation: spin-fallback 2.5s linear infinite;
+      background: linear-gradient(90deg, transparent, #ffd700, transparent);
+    }}
+    @keyframes spin-fallback {{
+      0%   {{ transform: rotate(0deg) scale(2); }}
+      100% {{ transform: rotate(360deg) scale(2); }}
+    }}
+  }}
+
+  /* Nền đen bên trong che phần giữa, chỉ lộ viền sáng */
+  .btn-wrap::after {{
+    content: '';
+    position: absolute;
+    inset: 2px;
+    border-radius: 9999px;
+    background: hsla(0,0%,10%,1);
+    z-index: 1;
+  }}
+
   .btn {{
+    position: relative;
+    z-index: 2;
     display: flex;
     align-items: center;
+    justify-content: center;
     gap: 12px;
     padding: 1rem 2rem;
     border-radius: 9999px;
-    background: hsla(0,0%,12%,1);
+    background: transparent;
     border: none;
     cursor: pointer;
     text-decoration: none;
@@ -88,16 +152,17 @@ st.components.v1.html(f"""
     font-weight: 600;
     letter-spacing: 1px;
     font-family: sans-serif;
-    box-shadow: inset 0 0.5px rgba(255,255,255,0.3), 0 4px 15px rgba(0,0,0,0.5);
+    width: 100%;
     transition: all 0.3s ease;
-    min-width: 260px;
-    justify-content: center;
   }}
 
-  .btn:hover {{
-    background: hsla(0,0%,22%,1);
-    box-shadow: 0 0 20px 6px rgba(255,215,0,0.4), inset 0 0.5px rgba(255,255,255,0.3);
-    transform: scale(1.05);
+  .btn-wrap:hover .btn {{
+    color: #ffd700;
+    text-shadow: 0 0 10px rgba(255,215,0,0.7);
+  }}
+
+  .btn-wrap:hover::before {{
+    animation-duration: 1.2s;
   }}
 
   .btn svg {{
@@ -106,25 +171,30 @@ st.components.v1.html(f"""
   }}
 
   @media (max-width: 768px) {{
-    .btn {{ width: 100%; min-width: unset; padding: 0.9rem 1.5rem; }}
+    .btn-wrap {{ width: 100%; min-width: unset; }}
+    .btn {{ padding: 0.9rem 1.5rem; }}
   }}
 </style>
 </head>
 <body>
   <div id="bg"></div>
   <div id="content">
-    <a class="btn" href="/partnumber" target="_self">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
-      </svg>
-      TRA CỨU PART NUMBER
-    </a>
-    <a class="btn" href="/bank" target="_self">
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
-      </svg>
-      NGÂN HÀNG TRẮC NGHIỆM
-    </a>
+    <div class="btn-wrap">
+      <a class="btn" href="/partnumber" target="_self">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
+        </svg>
+        TRA CỨU PART NUMBER
+      </a>
+    </div>
+    <div class="btn-wrap">
+      <a class="btn" href="/bank" target="_self">
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75L11.25 15 15 9.75M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+        </svg>
+        NGÂN HÀNG TRẮC NGHIỆM
+      </a>
+    </div>
   </div>
 </body>
 </html>
