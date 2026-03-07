@@ -72,7 +72,7 @@ st.components.v1.html(f"""
   }}
 
   #logo img {{
-    height: 140px;
+    height: 120px;
     width: auto;
     object-fit: contain;
     filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
@@ -301,3 +301,4 @@ iframe {
 }
 </style>
 """, unsafe_allow_html=True)
+
