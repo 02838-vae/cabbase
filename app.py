@@ -16,11 +16,11 @@ def get_base64(file_path):
     with open(path, "rb") as f:
         return base64.b64encode(f.read()).decode("utf-8")
 
-bg_pc_gif  = get_base64("PC.gif")
-bg_mob_gif = get_base64("mobile.gif")
+bg_pc_jpg  = get_base64("PC.jpg")
+bg_mob_jpg = get_base64("mobile.jpg")
 
-if not bg_pc_gif or not bg_mob_gif:
-    st.error("Thiếu file GIF nền (PC.gif hoặc mobile.gif)")
+if not bg_pc_jpg or not bg_mob_jpg:
+    st.error("Thiếu file ảnh nền (PC.jpg hoặc mobile.jpg)")
     st.stop()
 
 # --- TOÀN BỘ GIAO DIỆN QUA st.components để tránh Streamlit override ---
@@ -185,8 +185,8 @@ st.components.v1.html(f"""
 </head>
 <body>
   <div id="bg">
-    <img class="pc"  src="data:image/gif;base64,{bg_pc_gif}"  alt=""/>
-    <img class="mob" src="data:image/gif;base64,{bg_mob_gif}" alt=""/>
+    <img class="pc"  src="data:image/jpeg;base64,{bg_pc_jpg}"  alt=""/>
+    <img class="mob" src="data:image/jpeg;base64,{bg_mob_jpg}" alt=""/>
   </div>
   <div id="content">
     <div class="btn-wrap">
