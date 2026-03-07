@@ -132,6 +132,7 @@ st.components.v1.html(f"""
   }}
 
   /* Nền đen bên trong che phần giữa, chỉ lộ viền sáng */
+  /* Nền tối bên trong */
   .btn-wrap::after {{
     content: '';
     position: absolute;
@@ -141,6 +142,7 @@ st.components.v1.html(f"""
     z-index: 1;
   }}
 
+  /* Ánh sáng quét qua - shimmer effect */
   .btn {{
     position: relative;
     z-index: 2;
@@ -161,6 +163,43 @@ st.components.v1.html(f"""
     font-family: sans-serif;
     width: 100%;
     transition: all 0.3s ease;
+    overflow: hidden;
+  }}
+
+  /* Tia sáng quét qua */
+  .btn::before {{
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -120%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(
+      105deg,
+      transparent 20%,
+      rgba(255, 255, 255, 0.08) 40%,
+      rgba(255, 215, 0, 0.18) 50%,
+      rgba(255, 255, 255, 0.08) 60%,
+      transparent 80%
+    );
+    transform: skewX(-15deg);
+    animation: shimmer 4s ease-in-out infinite;
+    z-index: 3;
+    pointer-events: none;
+    border-radius: 9999px;
+  }}
+
+  /* Delay khác nhau cho 2 button */
+  .btn-wrap:nth-child(2) .btn::before {{
+    animation-delay: 2s;
+  }}
+
+  @keyframes shimmer {{
+    0%   {{ left: -120%; opacity: 0; }}
+    10%  {{ opacity: 1; }}
+    60%  {{ left: 130%; opacity: 1; }}
+    61%  {{ opacity: 0; }}
+    100% {{ left: 130%; opacity: 0; }}
   }}
 
   .btn-wrap:hover .btn {{
