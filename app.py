@@ -18,6 +18,7 @@ def get_base64(file_path):
 
 bg_pc_jpg  = get_base64("PC.jpg")
 bg_mob_jpg = get_base64("mobile.jpg")
+logo_b64   = get_base64("logo.jpg") or ""
 
 if not bg_pc_jpg or not bg_mob_jpg:
     st.error("Thiếu file ảnh nền (PC.jpg hoặc mobile.jpg)")
@@ -59,6 +60,28 @@ st.components.v1.html(f"""
   @media (max-width: 768px) {{
     #bg img.pc  {{ display: none; }}
     #bg img.mob {{ display: block; }}
+  }}
+
+  #logo {{
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 20;
+    text-align: center;
+  }}
+
+  #logo img {{
+    height: 80px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
+    border-radius: 8px;
+  }}
+
+  @media (max-width: 768px) {{
+    #logo img {{ height: 55px; }}
+    #logo {{ top: 15px; }}
   }}
 
   #content {{
@@ -227,6 +250,7 @@ st.components.v1.html(f"""
     <img class="pc"  src="data:image/jpeg;base64,{bg_pc_jpg}"  alt=""/>
     <img class="mob" src="data:image/jpeg;base64,{bg_mob_jpg}" alt=""/>
   </div>
+  <div id="logo"><img src="data:image/jpeg;base64,{logo_b64}" alt="Logo"/></div>
   <div id="content">
     <div class="btn-wrap">
       <a class="btn" href="/partnumber" target="_self">
