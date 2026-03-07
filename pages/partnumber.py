@@ -155,10 +155,11 @@ a#manual-home-btn:hover {{
 #sub-static-title h2 {{
     font-family: 'Playfair Display', serif;
     font-size: 2rem;
-    color: #FFEA00;
+    color: #E0F2FE;
     text-align: center;
-    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8);
+    text-shadow: 0 0 12px rgba(56,189,248,0.6), 0 0 25px rgba(56,189,248,0.3);
     margin-bottom: 20px;
+    letter-spacing: 3px;
 }}
 
 .result-title h3 {{
