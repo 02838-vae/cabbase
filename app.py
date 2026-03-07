@@ -247,7 +247,7 @@ st.components.v1.html(f"""
   </div>
 </body>
 </html>
-""", height=800, scrolling=False)
+""", height=1080, scrolling=False)
 
 # Ẩn toàn bộ UI mặc định của Streamlit
 st.markdown("""
@@ -257,7 +257,22 @@ st.markdown("""
 .block-container, section.main, .main {
     padding: 0 !important; margin: 0 !important;
     background: transparent !important;
+    height: 100vh !important;
+    min-height: 100vh !important;
+    overflow: hidden !important;
 }
-iframe { border: none !important; }
+html, body {
+    height: 100% !important;
+    overflow: hidden !important;
+    background: #000 !important;
+}
+iframe {
+    border: none !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+}
 </style>
 """, unsafe_allow_html=True)
