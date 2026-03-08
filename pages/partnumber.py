@@ -253,15 +253,6 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- LOGIC CHÍNH ---
 
-# ✅ NÚT VỀ TRANG CHỦ
-st.markdown("""
-<div id="back-to-home-btn-container">
-    <a id="manual-home-btn" href="/?skip_intro=1" target="_self">
-        🏠 Về Trang Chủ
-    </a>
-</div>
-""", unsafe_allow_html=True)
-
 # --- ✅ LOGO Ở GIỮA TRANG ---
 st.markdown(f'<div id="logo-container"><img src="data:image/jpeg;base64,{logo_base64}" alt="Logo" /></div>', unsafe_allow_html=True)
 
