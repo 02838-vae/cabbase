@@ -1443,8 +1443,10 @@ html, body, .stApp {{
     margin-bottom: 30px; text-align: center;
 }}
 #sub-static-title h2, .result-title h3 {{
-    font-family: 'Playfair Display', serif;
+    font-family: 'Oswald', sans-serif;
     font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 3px;
     color: #FFEA00;
     text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8);
 }}
@@ -1453,10 +1455,10 @@ html, body, .stApp {{
 
 /* Tiêu đề Paragraph X . (In đậm, màu cam) */
 .paragraph-title {{
-    font-family: 'Playfair Display', serif;
+    font-family: 'Oswald', sans-serif;
     font-size: 1.8rem;
-    font-weight: 900;
-    color: #FFA500; /* Màu cam nổi bật */
+    font-weight: 700;
+    color: #FFA500;
     text-shadow: 0 0 8px rgba(255, 165, 0, 0.5);
     margin-top: 20px;
     margin-bottom: 10px;
@@ -1464,6 +1466,7 @@ html, body, .stApp {{
     background-color: rgba(30, 30, 30, 0.8);
     border-radius: 8px;
     display: inline-block;
+    letter-spacing: 2px;
 }}
 
 /* Nội dung đoạn văn (Giữ nguyên bố cục xuống dòng) */
@@ -1634,7 +1637,10 @@ div[data-testid="stCheckbox"] div,
     color: #FFEA00 !important;
 }}
 
-div.stSelectbox label p {{
+/* SELECTBOX - LABEL TIÊU ĐỀ */
+div.stSelectbox label p,
+div.stSelectbox label span,
+div.stSelectbox label {{
     color: #00FF00 !important;
     font-size: 1.25rem !important;
     font-family: 'Oswald', sans-serif !important;
@@ -1642,10 +1648,32 @@ div.stSelectbox label p {{
     text-shadow: 0 0 5px rgba(0,255,0,0.5);
 }}
 
+/* SELECTBOX - KHUNG CHỌN */
 .stSelectbox div[data-baseweb="select"] {{
     background-color: rgba(0, 0, 0, 0.7) !important;
     border: 1px solid #00FF00 !important;
     border-radius: 8px !important;
+}}
+
+/* SELECTBOX - NỘI DUNG ĐANG HIỂN THỊ (giá trị đã chọn) */
+.stSelectbox div[data-baseweb="select"] *,
+.stSelectbox div[data-baseweb="select"] span,
+.stSelectbox div[data-baseweb="select"] div,
+.stSelectbox div[data-baseweb="select"] input {{
+    font-family: 'Oswald', sans-serif !important;
+    color: #FFFFFF !important;
+    font-size: 1.1rem !important;
+}}
+
+/* SELECTBOX - DROPDOWN LIST OPTIONS */
+[data-baseweb="popover"] *,
+[data-baseweb="menu"] *,
+[role="listbox"] *,
+[role="option"] *,
+li[role="option"],
+li[role="option"] * {{
+    font-family: 'Oswald', sans-serif !important;
+    font-size: 1.1rem !important;
 }}
 
 /* STYLE CHO KHUNG DỊCH - ÁP DỤNG CHO CẢ PC & MOBILE */
@@ -1682,8 +1710,9 @@ div[data-testid="stAlert"] strong {{
     /* Chỉnh kích thước tiêu đề trên mobile - FIX HIỂN THỊ ĐẦY ĐỦ */
     #sub-static-title h2, 
     .result-title h3 {{
-        font-size: 1.1rem !important; /* NHỎ HƠN ĐỂ VỪA 1 HÀNG */
-        white-space: normal !important; /* CHO PHÉP XUỐNG DÒNG */
+        font-size: 1.1rem !important;
+        font-family: 'Oswald', sans-serif !important;
+        white-space: normal !important;
         overflow: visible !important;
         text-overflow: clip !important;
         padding: 0 10px !important;
