@@ -251,28 +251,15 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- LOGIC CHÍNH ---
 
-# ✅ NÚT VỀ TRANG CHỦ - BỎ HIỆU ỨNG REVEAL VÀ VIDEO
-st.markdown("""
-<div id="back-to-home-btn-container">
-    <a id="manual-home-btn" href="/?skip_intro=1" target="_self">
-        🏠 Về Trang Chủ
-    </a>
-</div>
-""", unsafe_allow_html=True)
-
-# --- ✅ LOGO Ở TRÊN CÙNG, GIỮA TRANG ---
+# ✅ BANNER NỀN CỐ ĐỊNH + LOGO GIỮA
 st.markdown(f"""
+<div id="bg-banner"></div>
 <div id="logo-container">
     <img src="data:image/jpeg;base64,{logo_base64}" alt="Logo" />
 </div>
 """, unsafe_allow_html=True)
 
-
-# --- ✅ HIỂN THỊ TIÊU ĐỀ CHẠY GIỐNG TRANG CHÍNH ---
-main_title_text = "Tổ Bảo Dưỡng Số 1"
-st.markdown(f'<div id="main-title-container"><h1>{main_title_text}</h1></div>', unsafe_allow_html=True)
-
-# --- TIÊU ĐỀ PHỤ - ĐẨY XUỐNG THẤP HƠN ---
+# --- TIÊU ĐỀ TRA CỨU PART NUMBER ---
 st.markdown('<div id="sub-static-title"><h2>TRA CỨU PART NUMBER</h2></div>', unsafe_allow_html=True)
 
 # --- DROPDOWN & XỬ LÝ DỮ LIỆU ---
