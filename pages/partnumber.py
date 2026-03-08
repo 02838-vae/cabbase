@@ -75,8 +75,12 @@ hide_streamlit_style = f"""
 .stApp {{
     background: url("data:image/jpeg;base64,{pn_bg_pc_base64}") no-repeat center center fixed !important;
     background-size: 100% 100% !important;
-    font-family: 'Oswald', sans-serif !important;
+    font-family: 'Rye', serif !important;
     filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) !important;
+}}
+
+* {{
+    font-family: 'Rye', serif !important;
 }}
 
 .main > div:first-child {{
@@ -111,7 +115,7 @@ a#manual-home-btn {{
     font-size: 16px;
     transition: all 0.3s;
     cursor: pointer;
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Rye', serif;
     text-decoration: none;
     display: inline-block;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
@@ -166,12 +170,13 @@ a#manual-home-btn:hover {{
 }}
 
 .result-title h3 {{
-    font-family: 'Playfair Display', serif;
+    font-family: 'Rye', serif;
     font-size: 2rem;
-    color: #FFEA00;
+    color: #C8A96E;
     text-align: center;
-    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8);
+    text-shadow: 2px 2px 0px #3B1F0A, 0 0 18px rgba(180,130,60,0.45);
     margin-bottom: 20px;
+    letter-spacing: 4px;
 }}
 
 @media (max-width: 768px) {{
@@ -183,42 +188,45 @@ a#manual-home-btn:hover {{
 
 /* --- CSS CHO DROPDOWN & BẢNG KẾT QUẢ --- */
 div.stSelectbox label p, div[data-testid*="column"] label p {{
-    color: #00FF00 !important;
-    font-size: 1.25rem !important;
-    font-weight: bold;
-    text-shadow: 0 0 5px rgba(0,255,0,0.5);
+    color: #C8A96E !important;
+    font-size: 1.1rem !important;
+    font-family: 'Rye', serif !important;
+    font-weight: normal;
+    text-shadow: 1px 1px 0px #3B1F0A;
 }}
 
 .stSelectbox div[data-baseweb="select"] {{
-    background-color: rgba(0, 0, 0, 0.7);
-    border: 1px solid #00FF00;
+    background-color: rgba(30, 15, 5, 0.75);
+    border: 1px solid #C8A96E;
     border-radius: 8px;
 }}
 
 .stSelectbox div[data-baseweb="select"] div[data-testid="stTextInput"] {{
-    color: #FFFFFF !important;
+    color: #F5DEB3 !important;
+    font-family: 'Rye', serif !important;
 }}
 
 .custom-table th {{
-    background-color: #1E8449 !important;
-    color: #FFFFFF !important;
+    background-color: #5C3310 !important;
+    color: #F5DEB3 !important;
     padding: 14px;
-    border: 2px solid #2ECC71;
-    font-size: 1.1rem;
-    font-weight: bold;
+    border: 2px solid #C8A96E;
+    font-size: 1rem;
+    font-weight: normal;
     text-align: center !important;
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Rye', serif;
+    letter-spacing: 2px;
 }}
 
 .custom-table td {{
     padding: 12px;
     text-align: center !important;
-    border: 1px solid #333333;
+    border: 1px solid #C8A96E;
     vertical-align: middle;
-    font-size: 1rem;
-    color: #000000;
-    background-color: #FFFFFF !important;
-    font-family: Arial, sans-serif;
+    font-size: 0.9rem;
+    color: #2B1500;
+    background-color: #FDF3E3 !important;
+    font-family: 'Rye', serif;
 }}
 
 .table-container {{
