@@ -1344,6 +1344,7 @@ html, body, .stApp {{
     padding: 0 !important;
     overflow: auto;
     position: relative;
+    font-family: 'Oswald', sans-serif !important;
 }}
 
 /* BACKGROUND */
@@ -1382,34 +1383,6 @@ html, body, .stApp {{
 /* Ẩn UI */
 #MainMenu, footer, header {{visibility: hidden; height: 0;}}
 [data-testid="stHeader"] {{display: none;}}
-
-/* BUTTON HOME */
-#back-to-home-btn-container {{
-    position: fixed;
-    top: 10px; left: 10px; 
-    width: auto !important; z-index: 1500; 
-    display: inline-block;
-}}
-a#manual-home-btn {{
-    background-color: rgba(0, 0, 0, 0.85);
-    color: #FFEA00;
-    border: 2px solid #FFEA00;
-    padding: 5px 10px;
-    border-radius: 8px; 
-    font-weight: bold;
-    font-size: 14px; 
-    transition: all 0.3s;
-    font-family: 'Oswald', sans-serif;
-    text-decoration: none;
-    display: inline-block; 
-    white-space: nowrap;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-}}
-a#manual-home-btn:hover {{
-    background-color: #FFEA00;
-    color: black;
-    transform: scale(1.05);
-}}
 
 /* TITLE CHÍNH */
 #main-title-container {{
@@ -1473,7 +1446,7 @@ a#manual-home-btn:hover {{
     font-family: 'Playfair Display', serif;
     font-size: 2rem;
     color: #FFEA00;
-    text-shadow: 0 0 15px #FFEA00;
+    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8);
 }}
 
 /* === BỔ SUNG CSS CHO ĐOẠN VĂN (PL3) === */
@@ -1569,7 +1542,18 @@ a#manual-home-btn:hover {{
 }}
 
 div[data-testid="stMarkdownContainer"] p {{
-    font-size: 22px !important; 
+    font-size: 22px !important;
+    font-family: 'Oswald', sans-serif !important;
+}}
+
+/* GIỮ NGUYÊN font câu hỏi và đáp án - KHÔNG dùng Oswald */
+.bank-question-text,
+.bank-question-text * {{
+    font-family: 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif !important;
+}}
+.paragraph-content-box,
+.paragraph-content-box * {{
+    font-family: 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif !important;
 }}
 
 /* STYLE NÚT ACTION (ĐẸP VÀ BÓNG BẨY) */
@@ -1651,9 +1635,17 @@ div[data-testid="stCheckbox"] div,
 }}
 
 div.stSelectbox label p {{
-    color: #33FF33 !important;
+    color: #00FF00 !important;
     font-size: 1.25rem !important;
     font-family: 'Oswald', sans-serif !important;
+    font-weight: bold;
+    text-shadow: 0 0 5px rgba(0,255,0,0.5);
+}}
+
+.stSelectbox div[data-baseweb="select"] {{
+    background-color: rgba(0, 0, 0, 0.7) !important;
+    border: 1px solid #00FF00 !important;
+    border-radius: 8px !important;
 }}
 
 /* STYLE CHO KHUNG DỊCH - ÁP DỤNG CHO CẢ PC & MOBILE */
@@ -1683,7 +1675,6 @@ div[data-testid="stAlert"] strong {{
 
 /* MOBILE RESPONSIVE */
 @media (max-width: 768px) {{
-    #back-to-home-btn-container {{ top: 5px; left: 5px; }}
     #main-title-container {{ height: 100px; padding-top: 10px; }}
     #main-title-container h1 {{ font-size: 8vw; line-height: 1.5 !important; }}
     .main > div:first-child {{ padding-top: 20px !important; }}
@@ -1737,12 +1728,6 @@ st.markdown(f"""
     <img src="data:image/jpeg;base64,{img_logo_base64}" alt="Logo" />
 </div>
 <div id="header-content-wrapper">
-    <div id="back-to-home-btn-container">
-        <a id="manual-home-btn" 
-           href="/?skip_intro=1" 
-           onclick="window.location.href = this.href; return false;" 
-           target="_self">🏠 Về Trang Chủ</a>
-    </div>
     <div id="main-title-container"></div>
 </div>
 """, unsafe_allow_html=True)
