@@ -1655,17 +1655,17 @@ div.stSelectbox label p,
 div.stSelectbox label span,
 div.stSelectbox label,
 div[data-testid*="column"] label p {{
-    color: #00FF00 !important;
+    color: #FFEA00 !important;
     font-size: 1.25rem !important;
     font-family: 'Rye', cursive !important;
     font-weight: bold;
-    text-shadow: 0 0 5px rgba(0,255,0,0.5);
+    text-shadow: 0 0 5px rgba(255,234,0,0.5);
 }}
 
 /* SELECTBOX - KHUNG CHỌN */
 .stSelectbox div[data-baseweb="select"] {{
     background-color: rgba(0, 0, 0, 0.7) !important;
-    border: 1px solid #00FF00 !important;
+    border: 1px solid #FFEA00 !important;
     border-radius: 8px !important;
 }}
 
