@@ -73,47 +73,76 @@ hide_streamlit_style = f"""
     z-index: 10 !important;
 }}
 
-/* ✅ BACKGROUND PC: ảnh PC.jpg, fixed, full màn hình, height 120px banner cố định */
+/* ✅ BACKGROUND - màu nền tối làm fallback */
 .stApp {{
     background-color: #1a1a2e !important;
     font-family: 'Oswald', sans-serif !important;
 }}
 
-/* Banner ảnh nền PC cố định trên cùng, height 120px */
+/* ✅ BANNER NỀN PC - fixed, height 120px */
 #bg-banner {{
     position: fixed;
     top: 0;
     left: 0;
-    width: 100%;
+    width: 100vw;
     height: 120px;
-    background: url("data:image/jpeg;base64,{pn_bg_pc_base64}") no-repeat center center;
-    background-size: cover;
+    background-image: url("data:image/jpeg;base64,{pn_bg_pc_base64}");
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-size: 100% 100%;
     z-index: 50;
 }}
 
-/* Trên mobile: dùng mobile.jpg */
+/* ✅ MOBILE: mobile.jpg full chiều rộng, height 120px */
 @media (max-width: 768px) {{
     #bg-banner {{
-        background: url("data:image/jpeg;base64,{pn_bg_mobile_base64}") no-repeat center center;
-        background-size: cover;
+        background-image: url("data:image/jpeg;base64,{pn_bg_mobile_base64}");
+        background-repeat: no-repeat;
+        background-position: center center;
+        background-size: 100% 100%;
         height: 120px;
+        width: 100vw;
     }}
 }}
 
 /* Đẩy nội dung xuống dưới banner */
 .main > div:first-child {{
-    padding-top: 140px !important;
+    padding-top: 150px !important;
     padding-left: 20px;
     padding-right: 20px;
 }}
 
-/* ✅ LOGO Ở TRÊN CÙNG, GIỮA BANNER */
+/* ✅ KEYFRAMES ÁNH SÁNG VÀNG CHẠY VÒNG QUANH */
+@keyframes borderGlow {{
+    0%   {{ box-shadow: 4px 0 16px 4px #FFD700, 0 0 0 3px #FFD700; border-color: #FFD700; }}
+    25%  {{ box-shadow: 0 4px 16px 4px #FFA500, 0 0 0 3px #FFA500; border-color: #FFA500; }}
+    50%  {{ box-shadow: -4px 0 16px 4px #FFEA00, 0 0 0 3px #FFEA00; border-color: #FFEA00; }}
+    75%  {{ box-shadow: 0 -4px 16px 4px #FF8C00, 0 0 0 3px #FF8C00; border-color: #FF8C00; }}
+    100% {{ box-shadow: 4px 0 16px 4px #FFD700, 0 0 0 3px #FFD700; border-color: #FFD700; }}
+}}
+
+@keyframes rotateBorder {{
+    0%   {{ background-position: 0% 50%; }}
+    50%  {{ background-position: 100% 50%; }}
+    100% {{ background-position: 0% 50%; }}
+}}
+
+@keyframes glowPulse {{
+    0%, 100% {{
+        filter: drop-shadow(0 0 8px #FFD700) drop-shadow(0 0 20px #FFD700) drop-shadow(0 0 40px #FFA500);
+    }}
+    50% {{
+        filter: drop-shadow(0 0 16px #FFEA00) drop-shadow(0 0 40px #FFEA00) drop-shadow(0 0 70px #FF8C00);
+    }}
+}}
+
+/* ✅ LOGO - fixed trên cùng, giữa trang */
 #logo-container {{
     position: fixed;
     top: 0;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 100;
+    z-index: 200;
     text-align: center;
     height: 120px;
     display: flex;
@@ -122,16 +151,68 @@ hide_streamlit_style = f"""
     pointer-events: none;
 }}
 
+/* Khung viền logo với ánh sáng vàng chạy vòng */
+#logo-frame {{
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 5px;
+    border-radius: 14px;
+    border: 3px solid #FFD700;
+    animation: borderGlow 2s linear infinite;
+    background: rgba(0,0,0,0.35);
+}}
+
+/* Vòng sáng xoay bằng pseudo conic-gradient qua JS thay thế */
+#logo-frame::before {{
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 16px;
+    background: conic-gradient(
+        from 0deg,
+        transparent 0deg,
+        #FFD700 60deg,
+        #FFEA00 90deg,
+        #FFA500 120deg,
+        transparent 180deg,
+        transparent 360deg
+    );
+    animation: spin 1.8s linear infinite;
+    z-index: -1;
+}}
+
+#logo-frame::after {{
+    content: '';
+    position: absolute;
+    inset: 2px;
+    border-radius: 12px;
+    background: rgba(0,0,0,0.5);
+    z-index: -1;
+}}
+
+@keyframes spin {{
+    from {{ transform: rotate(0deg); }}
+    to   {{ transform: rotate(360deg); }}
+}}
+
 #logo-container img {{
-    height: 90px;
+    height: 100px;
     width: auto;
     object-fit: contain;
-    filter: drop-shadow(0 2px 10px rgba(0,0,0,0.8));
+    border-radius: 10px;
+    display: block;
+    position: relative;
+    z-index: 1;
 }}
 
 @media (max-width: 768px) {{
     #logo-container img {{
-        height: 65px;
+        height: 75px;
+    }}
+    #logo-frame {{
+        border-radius: 10px;
     }}
 }}
 
@@ -198,6 +279,7 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
 
 /* Nội dung bên trong dropdown */
 div[data-baseweb="select"] span,
+
 div[data-baseweb="select"] div {{
     font-family: 'Rye', cursive !important;
     color: #FFFFFF !important;
@@ -251,11 +333,13 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- LOGIC CHÍNH ---
 
-# ✅ BANNER NỀN CỐ ĐỊNH + LOGO GIỮA
+# ✅ BANNER NỀN CỐ ĐỊNH + LOGO GIỮA CÓ VIỀN SÁNG VÀNG XOAY
 st.markdown(f"""
 <div id="bg-banner"></div>
 <div id="logo-container">
-    <img src="data:image/jpeg;base64,{logo_base64}" alt="Logo" />
+    <div id="logo-frame">
+        <img src="data:image/jpeg;base64,{logo_base64}" alt="Logo" />
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
