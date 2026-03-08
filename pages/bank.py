@@ -1314,10 +1314,12 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
 # ====================================================
 st.set_page_config(page_title="Ngân hàng trắc nghiệm", layout="wide")
 
-PC_IMAGE_FILE = "bank_PC.jpg"
-MOBILE_IMAGE_FILE = "bank_mobile.jpg"
+PC_IMAGE_FILE = "PC.jpg"
+MOBILE_IMAGE_FILE = "mobile.jpg"
+LOGO_IMAGE_FILE = "logo.jpg"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
 img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
+img_logo_base64 = get_base64_encoded_file(LOGO_IMAGE_FILE)
 
 # === CSS CẬP NHẬT CHO ĐOẠN VĂN (PARAGRAPH) ===
 css_style = f"""
@@ -1415,23 +1417,39 @@ a#manual-home-btn:hover {{
     height: 120px; overflow: hidden;
     pointer-events: none;
     background-color: transparent; padding-top: 20px; z-index: 1200; 
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }}
-#main-title-container h1 {{
-    visibility: visible !important;
-    height: auto !important;
-    font-family: 'Playfair Display', serif;
-    font-size: 5vh; 
-    margin: 0; padding: 10px 0;
-    font-weight: 900; letter-spacing: 5px; white-space: nowrap;
-    display: inline-block;
-    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
-    background-size: 400% 400%;
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; color: transparent;
-    animation: scrollRight 15s linear infinite, colorShift 8s ease infinite;
-    text-shadow: 2px 2px 8px rgba(255, 255, 255, 0.3);
-    position: absolute;
-    left: 0; top: 5px; 
-    line-height: 1.5 !important;
+
+/* LOGO */
+#logo-container {{
+    position: fixed;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2000;
+    width: 100%;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}}
+#logo-container img {{
+    max-height: 110px;
+    width: auto;
+    object-fit: contain;
+}}
+
+@media (max-width: 767px) {{
+    #logo-container {{
+        height: auto;
+        padding: 8px 0;
+    }}
+    #logo-container img {{
+        max-height: 70px;
+    }}
 }}
 
 /* Số 1 */
@@ -1714,7 +1732,10 @@ st.markdown(css_style, unsafe_allow_html=True)
 # ====================================================
 # 🧭 HEADER & BODY
 # ====================================================
-st.markdown("""
+st.markdown(f"""
+<div id="logo-container">
+    <img src="data:image/jpeg;base64,{img_logo_base64}" alt="Logo" />
+</div>
 <div id="header-content-wrapper">
     <div id="back-to-home-btn-container">
         <a id="manual-home-btn" 
@@ -1722,7 +1743,7 @@ st.markdown("""
            onclick="window.location.href = this.href; return false;" 
            target="_self">🏠 Về Trang Chủ</a>
     </div>
-    <div id="main-title-container"><h1>Tổ Bảo Dưỡng Số <span class="number-one">1</span></h1></div>
+    <div id="main-title-container"></div>
 </div>
 """, unsafe_allow_html=True)
 
