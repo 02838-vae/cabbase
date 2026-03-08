@@ -6,7 +6,7 @@ import base64
 import os
 
 # --- CẤU HÌNH ---
-st.set_page_config(page_title="Tra Cứu PN", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1 - Tra Cứu PN", layout="wide", initial_sidebar_state="collapsed")
 
 # --- HÀM HỖ TRỢ ---
 def get_base64_encoded_file(file_path):
@@ -52,9 +52,8 @@ excel_file = "pages/A787.xlsx" # Giả định file excel nằm cùng cấp vớ
 
 try:
     # Cần đảm bảo các file này nằm trong thư mục 'pages/'
-    pn_bg_pc_base64 = get_base64_encoded_file("pages/PC.jpg")
-    pn_bg_mobile_base64 = get_base64_encoded_file("pages/mobile.jpg")
-    logo_base64 = get_base64_encoded_file("pages/logo.jpg")
+    pn_bg_pc_base64 = get_base64_encoded_file("pages/PN_PC.jpg")
+    pn_bg_mobile_base64 = get_base64_encoded_file("pages/PN_mobile.jpg")
 except Exception as e:
     st.error(f"❌ Lỗi khi đọc file ảnh nền: {str(e)}")
     st.stop()
@@ -62,7 +61,7 @@ except Exception as e:
 # --- CSS ---
 hide_streamlit_style = f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Rye&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap');
 #MainMenu, footer, header {{visibility: hidden;}}
 
@@ -73,245 +72,177 @@ hide_streamlit_style = f"""
     z-index: 10 !important;
 }}
 
-/* ✅ BACKGROUND - màu nền tối làm fallback */
 .stApp {{
-    background-color: #1a1a2e !important;
+    background: url("data:image/jpeg;base64,{pn_bg_pc_base64}") no-repeat center top fixed !important;
+    background-size: cover !important;
     font-family: 'Oswald', sans-serif !important;
+    filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) !important;
 }}
 
-/* ✅ BANNER NỀN PC - fixed, full màn hình */
-#bg-banner {{
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 120px;
-    background-image: url("data:image/jpeg;base64,{pn_bg_pc_base64}");
-    background-repeat: no-repeat;
-    background-position: center center;
-    background-size: cover;
-    z-index: 50;
-}}
-
-/* ✅ MOBILE: mobile.jpg full chiều ngang VÀ dọc trong banner */
-@media (max-width: 768px) {{
-    #bg-banner {{
-        background-image: url("data:image/jpeg;base64,{pn_bg_mobile_base64}");
-        background-repeat: no-repeat;
-        background-position: center center;
-        background-size: cover;
-        height: 120px;
-        width: 100vw;
-        left: 0;
-        right: 0;
-    }}
-    /* Ép Streamlit không tạo margin/padding làm lệch */
-    section[data-testid="stAppViewContainer"] > div:first-child {{
-        padding-left: 0 !important;
-        padding-right: 0 !important;
-    }}
-}}
-
-/* Đẩy nội dung xuống dưới banner */
 .main > div:first-child {{
-    padding-top: 150px !important;
+    padding-top: 350px !important;
     padding-left: 20px;
     padding-right: 20px;
 }}
 
-/* ✅ KEYFRAMES: tia sáng chạy dọc theo viền khung bo tròn */
-@keyframes runLight {{
-    0%   {{ stroke-dashoffset: 1000; }}
-    100% {{ stroke-dashoffset: 0; }}
+@media (max-width: 768px) {{
+    .stApp {{
+        background: url("data:image/jpeg;base64,{pn_bg_mobile_base64}") no-repeat center top scroll !important;
+        background-size: cover !important;
+    }}
+    .main > div:first-child {{ padding-top: 200px !important; }}
 }}
 
-@keyframes spin {{
-    from {{ transform: rotate(0deg); }}
-    to   {{ transform: rotate(360deg); }}
+/* ✅ KEYFRAMES CHO TIÊU ĐỀ CHẠY - GIỐNG TRANG CHÍNH */
+@keyframes scrollText {{
+    0% {{ transform: translate(100vw, 0); }}
+    100% {{ transform: translate(-100%, 0); }}
 }}
 
-/* ✅ LOGO - fixed trên cùng, giữa trang */
-#logo-container {{
+@keyframes colorShift {{
+    0% {{ background-position: 0% 50%; }}
+    50% {{ background-position: 100% 50%; }}
+    100% {{ background-position: 0% 50%; }}
+}}
+
+/* ✅ TIÊU ĐỀ CHẠY - GIỐNG Y HỆT TRANG CHÍNH */
+#main-title-container {{
     position: fixed;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 200;
-    text-align: center;
-    height: 120px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    top: 5vh;
+    left: 0;
+    width: 100%;
+    height: 10vh;
+    overflow: hidden;
+    z-index: 20;
     pointer-events: none;
+    opacity: 1;
+    transition: opacity 2s;
 }}
 
-/* Khung bọc ngoài logo */
-#logo-frame {{
-    position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 6px;
-    border-radius: 18px;
-    background: rgba(0,0,0,0.4);
-    /* Viền nền tĩnh mờ */
-    outline: 2px solid rgba(255, 215, 0, 0.3);
-}}
-
-/* Lớp conic-gradient xoay tạo tia sáng chạy vòng quanh viền bo tròn */
-#logo-frame::before {{
-    content: '';
-    position: absolute;
-    inset: -3px;
-    border-radius: 21px;
-    padding: 3px;
-    background: conic-gradient(
-        from 0deg,
-        transparent  0deg,
-        transparent 60deg,
-        #FFA500     80deg,
-        #FFD700     90deg,
-        #FFFF00    100deg,
-        #FFD700    110deg,
-        #FFA500    120deg,
-        transparent 140deg,
-        transparent 360deg
-    );
-    -webkit-mask:
-        linear-gradient(#fff 0 0) content-box,
-        linear-gradient(#fff 0 0);
-    -webkit-mask-composite: xor;
-    mask-composite: exclude;
-    animation: spin 2s linear infinite;
-}}
-
-/* Glow mờ phía sau */
-#logo-frame::after {{
-    content: '';
-    position: absolute;
-    inset: -6px;
-    border-radius: 24px;
-    background: conic-gradient(
-        from 0deg,
-        transparent  0deg,
-        transparent 60deg,
-        rgba(255,200,0,0.15) 80deg,
-        rgba(255,220,0,0.35) 90deg,
-        rgba(255,200,0,0.15) 100deg,
-        transparent 130deg,
-        transparent 360deg
-    );
-    animation: spin 2s linear infinite;
-    filter: blur(4px);
-    z-index: -1;
-}}
-
-#logo-container img {{
-    height: 100px;
-    width: auto;
-    object-fit: contain;
-    border-radius: 14px;
-    display: block;
-    position: relative;
-    z-index: 1;
+#main-title-container h1 {{
+    font-family: 'Playfair Display', serif;
+    font-size: 3.5vw;
+    margin: 0;
+    font-weight: 900;
+    font-feature-settings: "lnum" 1;
+    letter-spacing: 5px;
+    white-space: nowrap;
+    display: inline-block;
+    animation: scrollText 15s linear infinite;
+    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
+    background-size: 400% 400%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+    animation: colorShift 10s ease infinite, scrollText 15s linear infinite;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
 }}
 
 @media (max-width: 768px) {{
-    #logo-container img {{
-        height: 75px;
-        border-radius: 10px;
+    #main-title-container {{
+        height: 8vh;
+        width: 100%;
+        left: 0;
     }}
-    #logo-frame {{
-        border-radius: 14px;
-    }}
-    #logo-frame::before {{
-        border-radius: 17px;
-    }}
-    #logo-frame::after {{
-        border-radius: 20px;
+    
+    #main-title-container h1 {{
+        font-size: 6.5vw;
+        animation-duration: 8s;
     }}
 }}
 
-/* ✅ TIÊU ĐỀ PHỤ - FONT CAO BỒI (Rye) */
+/* ✅ NÚT VỀ TRANG CHỦ - FIXED */
+#back-to-home-btn-container {{
+    position: fixed;
+    top: 15px;
+    left: 15px;
+    z-index: 1001;
+}}
+
+a#manual-home-btn {{
+    background-color: rgba(0, 0, 0, 0.85);
+    color: #FFEA00;
+    border: 2px solid #FFEA00;
+    padding: 10px 20px;
+    border-radius: 8px;
+    font-weight: bold;
+    font-size: 16px;
+    transition: all 0.3s;
+    cursor: pointer;
+    font-family: 'Oswald', sans-serif;
+    text-decoration: none;
+    display: inline-block;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
+}}
+
+a#manual-home-btn:hover {{
+    background-color: #FFEA00;
+    color: black;
+    transform: scale(1.05);
+}}
+
+/* ✅ TIÊU ĐỀ PHỤ TĨNH */
 #sub-static-title {{
     position: static;
-    margin-top: 10px;
-    margin-bottom: 25px;
+    margin-top: 20px;
+    margin-bottom: 30px;
     z-index: 90;
     background: transparent !important;
     text-align: center;
 }}
 
 #sub-static-title h2 {{
-    font-family: 'Rye', cursive !important;
-    font-size: 2.2rem;
-    color: #FFEA00;
-    text-align: center;
-    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8), 2px 2px 4px rgba(0,0,0,0.9);
-    margin-bottom: 20px;
-    letter-spacing: 3px;
-}}
-
-/* ✅ TIÊU ĐỀ KẾT QUẢ - FONT CAO BỒI (Rye) */
-.result-title h3 {{
-    font-family: 'Rye', cursive !important;
+    font-family: 'Playfair Display', serif;
     font-size: 2rem;
     color: #FFEA00;
     text-align: center;
-    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8), 2px 2px 4px rgba(0,0,0,0.9);
+    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8);
     margin-bottom: 20px;
-    letter-spacing: 2px;
+}}
+
+.result-title h3 {{
+    font-family: 'Playfair Display', serif;
+    font-size: 2rem;
+    color: #FFEA00;
+    text-align: center;
+    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8);
+    margin-bottom: 20px;
 }}
 
 @media (max-width: 768px) {{
-    #sub-static-title h2 {{
-        font-size: 1.3rem;
-        letter-spacing: 1px;
-    }}
-    .result-title h3 {{
+    #sub-static-title h2, .result-title h3 {{
         font-size: 1.2rem;
+        white-space: nowrap;
     }}
 }}
 
-/* --- CSS CHO DROPDOWN LABEL - FONT CAO BỒI --- */
+/* --- CSS CHO DROPDOWN & BẢNG KẾT QUẢ --- */
 div.stSelectbox label p, div[data-testid*="column"] label p {{
-    color: #FFD700 !important;
-    font-size: 1.1rem !important;
+    color: #00FF00 !important;
+    font-size: 1.25rem !important;
     font-weight: bold;
-    font-family: 'Rye', cursive !important;
-    text-shadow: 0 0 6px rgba(255,215,0,0.7), 1px 1px 3px rgba(0,0,0,0.9);
+    text-shadow: 0 0 5px rgba(0,255,0,0.5);
 }}
 
 .stSelectbox div[data-baseweb="select"] {{
-    background-color: rgba(0, 0, 0, 0.75);
-    border: 1px solid #FFD700;
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 1px solid #00FF00;
     border-radius: 8px;
 }}
 
 .stSelectbox div[data-baseweb="select"] div[data-testid="stTextInput"] {{
     color: #FFFFFF !important;
-    font-family: 'Rye', cursive !important;
 }}
 
-/* Nội dung bên trong dropdown */
-div[data-baseweb="select"] span,
-
-div[data-baseweb="select"] div {{
-    font-family: 'Rye', cursive !important;
-    color: #FFFFFF !important;
-}}
-
-/* ✅ BẢNG KẾT QUẢ */
 .custom-table th {{
     background-color: #1E8449 !important;
     color: #FFFFFF !important;
     padding: 14px;
     border: 2px solid #2ECC71;
-    font-size: 1.05rem;
+    font-size: 1.1rem;
     font-weight: bold;
     text-align: center !important;
-    font-family: 'Rye', cursive !important;
-    letter-spacing: 1px;
+    font-family: 'Oswald', sans-serif;
 }}
 
 .custom-table td {{
@@ -349,17 +280,21 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- LOGIC CHÍNH ---
 
-# ✅ BANNER NỀN CỐ ĐỊNH + LOGO GIỮA CÓ VIỀN SÁNG VÀNG XOAY
-st.markdown(f"""
-<div id="bg-banner"></div>
-<div id="logo-container">
-    <div id="logo-frame">
-        <img src="data:image/jpeg;base64,{logo_base64}" alt="Logo" />
-    </div>
+# ✅ NÚT VỀ TRANG CHỦ - BỎ HIỆU ỨNG REVEAL VÀ VIDEO
+st.markdown("""
+<div id="back-to-home-btn-container">
+    <a id="manual-home-btn" href="/?skip_intro=1" target="_self">
+        🏠 Về Trang Chủ
+    </a>
 </div>
 """, unsafe_allow_html=True)
 
-# --- TIÊU ĐỀ TRA CỨU PART NUMBER ---
+
+# --- ✅ HIỂN THỊ TIÊU ĐỀ CHẠY GIỐNG TRANG CHÍNH ---
+main_title_text = "Tổ Bảo Dưỡng Số 1"
+st.markdown(f'<div id="main-title-container"><h1>{main_title_text}</h1></div>', unsafe_allow_html=True)
+
+# --- TIÊU ĐỀ PHỤ - ĐẨY XUỐNG THẤP HƠN ---
 st.markdown('<div id="sub-static-title"><h2>TRA CỨU PART NUMBER</h2></div>', unsafe_allow_html=True)
 
 # --- DROPDOWN & XỬ LÝ DỮ LIỆU ---
