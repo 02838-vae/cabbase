@@ -1441,7 +1441,7 @@ html, body, .stApp {{
     font-weight: 700;
     letter-spacing: 4px;
     color: #C29954;
-    text-shadow: 0 0 15px #C29954, 0 0 30px rgba(194,153,84,0.8);
+    text-shadow: none;
     margin: 0;
 }}
 
@@ -1659,7 +1659,7 @@ div[data-testid*="column"] label p {{
     font-size: 1.25rem !important;
     font-family: 'Rye', cursive !important;
     font-weight: bold;
-    text-shadow: 0 0 5px rgba(194,153,84,0.5);
+    text-shadow: none;
 }}
 
 /* SELECTBOX - KHUNG CHỌN */
