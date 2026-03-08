@@ -1790,6 +1790,14 @@ st.markdown(f"""
 </div>
 """, unsafe_allow_html=True)
 
+st.markdown("""
+<div style="text-align: center; margin-top: 10px; margin-bottom: 20px;">
+    <span style="font-family: 'Rye', cursive; font-size: 1.25rem; font-weight: bold; color: #D4AA70;">
+        NGÂN HÀNG TRẮC NGHIỆM
+    </span>
+</div>
+""", unsafe_allow_html=True)
+
 if "current_group_idx" not in st.session_state: st.session_state.current_group_idx = 0
 if "submitted" not in st.session_state: st.session_state.submitted = False
 if "current_mode" not in st.session_state: st.session_state.current_mode = "group"
