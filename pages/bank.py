@@ -1345,6 +1345,7 @@ html, body, .stApp {{
     overflow: auto;
     position: relative;
     font-family: 'Rye', cursive !important;
+    color: #FFEA00 !important;
 }}
 
 /* BACKGROUND */
@@ -1558,6 +1559,7 @@ html, body, .stApp {{
 div[data-testid="stMarkdownContainer"] p {{
     font-size: 22px !important;
     font-family: 'Rye', cursive !important;
+    color: #FFEA00 !important;
 }}
 
 /* GIỮ NGUYÊN font câu hỏi và đáp án - KHÔNG dùng Oswald */
@@ -1573,7 +1575,7 @@ div[data-testid="stMarkdownContainer"] p {{
 /* STYLE NÚT ACTION (ĐẸP VÀ BÓNG BẨY) */
 .stButton>button {{
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-    color: #ffffff !important;
+    color: #FFEA00 !important;
     border-radius: 12px !important;
     font-size: 1.2em !important;
     font-weight: 700 !important;
@@ -1652,17 +1654,17 @@ div[data-testid="stCheckbox"] div,
 div.stSelectbox label p,
 div.stSelectbox label span,
 div.stSelectbox label {{
-    color: #DAA520 !important;
+    color: #FFEA00 !important;
     font-size: 1.25rem !important;
     font-family: 'Rye', cursive !important;
     font-weight: bold;
-    text-shadow: 0 0 5px rgba(184,134,11,0.5);
+    text-shadow: 0 0 5px rgba(255,234,0,0.4);
 }}
 
 /* SELECTBOX - KHUNG CHỌN */
 .stSelectbox div[data-baseweb="select"] {{
-    background-color: rgba(0, 0, 0, 0.7) !important;
-    border: 1px solid #DAA520 !important;
+    background-color: rgba(0, 0, 0, 0.75) !important;
+    border: 1px solid #FFEA00 !important;
     border-radius: 8px !important;
 }}
 
@@ -1672,19 +1674,33 @@ div.stSelectbox label {{
 .stSelectbox div[data-baseweb="select"] div,
 .stSelectbox div[data-baseweb="select"] input {{
     font-family: 'Rye', cursive !important;
-    color: #FFFFFF !important;
+    color: #FFEA00 !important;
     font-size: 1.1rem !important;
+    background-color: transparent !important;
 }}
 
-/* SELECTBOX - DROPDOWN LIST OPTIONS */
+/* SELECTBOX - DROPDOWN LIST OPTIONS (nền tối, chữ vàng) */
+[data-baseweb="popover"],
 [data-baseweb="popover"] *,
+[data-baseweb="menu"],
 [data-baseweb="menu"] *,
+[role="listbox"],
 [role="listbox"] *,
+[role="option"],
 [role="option"] *,
 li[role="option"],
 li[role="option"] * {{
     font-family: 'Rye', cursive !important;
     font-size: 1.1rem !important;
+    color: #FFEA00 !important;
+    background-color: rgba(20, 20, 20, 0.97) !important;
+}}
+
+/* Hover option */
+[role="option"]:hover,
+[role="option"]:hover * {{
+    background-color: rgba(255, 234, 0, 0.15) !important;
+    color: #FFFFFF !important;
 }}
 
 /* STYLE CHO KHUNG DỊCH - ÁP DỤNG CHO CẢ PC & MOBILE */
@@ -1695,22 +1711,41 @@ div[data-testid="stAlert"] {{
     box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3) !important;
 }}
 
+/* ============================================================
+   GLOBAL: Tất cả text UI (trừ câu hỏi/đáp án) → #FFEA00
+   ============================================================ */
+
+/* Streamlit general text, labels, warnings, info */
+.stApp p, .stApp span, .stApp div,
+.stApp label, .stApp h1, .stApp h2, .stApp h3,
+.stApp h4, .stApp h5, .stApp h6,
+[data-testid="stText"],
+[data-testid="stMarkdownContainer"] *,
+[data-testid="stWidgetLabel"] *,
+[data-testid="stWidgetLabel"],
+div[data-testid="stNotification"] *,
+.stWarning *, .stInfo *, .stError *,
+.stSuccess * {{
+    color: #FFEA00 !important;
+    font-family: 'Rye', cursive !important;
+}}
+
+/* Ngoại lệ: câu hỏi và đáp án giữ màu riêng */
+.bank-question-text, .bank-question-text * {{ color: #FF8C00 !important; }}
+.bank-answer-text {{ color: #FFFFFF !important; }}
+.stRadio label, .stRadio label span,
+.stRadio label p, .stRadio label div {{ color: #FFFFFF !important; }}
+.paragraph-content-box, .paragraph-content-box * {{ color: #F0F0F0 !important; }}
+
+/* Ngoại lệ: đáp án đúng/sai vẫn giữ màu xanh/đỏ */
 div[data-testid="stAlert"] *,
 div[data-testid="stAlert"] p,
 div[data-testid="stAlert"] strong,
 div[data-testid="stAlert"] em,
 div[data-testid="stAlert"] li,
 div[data-testid="stAlert"] span,
-div[data-testid="stAlert"] div {{
-    color: #FFFFFF !important;
-    font-size: 18px !important;
-    line-height: 1.6 !important;
-}}
-
-div[data-testid="stAlert"] strong {{
-    color: #FFD700 !important;
-    font-weight: 900 !important;
-}}
+div[data-testid="stAlert"] div {{ color: #FFFFFF !important; }}
+div[data-testid="stAlert"] strong {{ color: #FFD700 !important; }}
 
 /* MOBILE RESPONSIVE */
 @media (max-width: 768px) {{
