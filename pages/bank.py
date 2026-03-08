@@ -1926,17 +1926,15 @@ if bank_choice != "----":
             })
         
         groups = [g['label'] for g in custom_groups]
-        st.session_state.group_mode_title = "Luyện tập theo đoạn văn (2 đoạn/nhóm)"
+        # Mặc định luôn chọn nhóm đầu tiên (Paragraph 1 & 2) khi vào PL3/PL4
+        if st.session_state.current_group_idx >= len(groups):
+            st.session_state.current_group_idx = 0
     else:
         # Nhóm câu hỏi theo số lượng (30 câu/nhóm) cho các ngân hàng khác
         groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
-        st.session_state.group_mode_title = f"Luyện tập theo nhóm ({group_size} câu/nhóm)"
         
     # --- MODE: GROUP ---
     if st.session_state.current_mode == "group":
-        # Cập nhật tiêu đề nhóm câu hỏi
-        st.markdown(f'<div class="result-title" style="margin-top: 0px;"><h3>{st.session_state.group_mode_title}</h3></div>', unsafe_allow_html=True)
-        
         if total > 0:
             if st.session_state.current_group_idx >= len(groups): st.session_state.current_group_idx = 0
             selected = st.selectbox("Chọn nhóm câu:", groups, index=st.session_state.current_group_idx, key="group_selector")
