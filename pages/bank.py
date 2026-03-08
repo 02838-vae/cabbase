@@ -1440,8 +1440,8 @@ html, body, .stApp {{
     font-size: 2.8rem;
     font-weight: 700;
     letter-spacing: 4px;
-    color: #FFEA00;
-    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8);
+    color: #C29954;
+    text-shadow: 0 0 15px #C29954, 0 0 30px rgba(194,153,84,0.8);
     margin: 0;
 }}
 
@@ -1655,17 +1655,17 @@ div.stSelectbox label p,
 div.stSelectbox label span,
 div.stSelectbox label,
 div[data-testid*="column"] label p {{
-    color: #FFB300 !important;
+    color: #C29954 !important;
     font-size: 1.25rem !important;
     font-family: 'Rye', cursive !important;
     font-weight: bold;
-    text-shadow: 0 0 5px rgba(255,179,0,0.5);
+    text-shadow: 0 0 5px rgba(194,153,84,0.5);
 }}
 
 /* SELECTBOX - KHUNG CHỌN */
 .stSelectbox div[data-baseweb="select"] {{
     background-color: rgba(0, 0, 0, 0.7) !important;
-    border: 1px solid #FFB300 !important;
+    border: 1px solid #C29954 !important;
     border-radius: 8px !important;
 }}
 
