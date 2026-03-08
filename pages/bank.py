@@ -1410,10 +1410,62 @@ html, body, .stApp {{
     justify-content: center;
     pointer-events: none;
 }}
-#logo-container img {{
+
+/* Wrapper viền sáng chạy vòng quanh logo */
+#logo-wrap {{
+    position: relative;
+    border-radius: 12px;
+    padding: 3px;
+    display: inline-block;
+    overflow: hidden;
+}}
+
+@property --logo-angle {{
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}}
+
+@keyframes logo-spin-light {{
+    to {{ --logo-angle: 360deg; }}
+}}
+
+#logo-wrap::before {{
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    background: conic-gradient(
+        from var(--logo-angle, 0deg),
+        transparent 0deg,
+        transparent 60deg,
+        #ffd700 90deg,
+        #fff8a0 110deg,
+        #ffd700 130deg,
+        transparent 160deg,
+        transparent 360deg
+    );
+    animation: logo-spin-light 2.5s linear infinite;
+    z-index: 0;
+}}
+
+#logo-wrap::after {{
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 10px;
+    background: rgba(10, 10, 10, 0.85);
+    z-index: 1;
+}}
+
+#logo-wrap img {{
+    position: relative;
+    z-index: 2;
     max-height: 110px;
     width: auto;
     object-fit: contain;
+    border-radius: 8px;
+    display: block;
 }}
 
 @media (max-width: 767px) {{
@@ -1421,7 +1473,7 @@ html, body, .stApp {{
         height: auto;
         padding: 8px 0;
     }}
-    #logo-container img {{
+    #logo-wrap img {{
         max-height: 70px;
     }}
 }}
@@ -1787,7 +1839,9 @@ st.markdown(css_style, unsafe_allow_html=True)
 # ====================================================
 st.markdown(f"""
 <div id="logo-container">
-    <img src="data:image/jpeg;base64,{img_logo_base64}" alt="Logo" />
+    <div id="logo-wrap">
+        <img src="data:image/jpeg;base64,{img_logo_base64}" alt="Logo" />
+    </div>
 </div>
 <div id="header-content-wrapper">
     <div id="main-title-container"></div>
@@ -1796,7 +1850,7 @@ st.markdown(f"""
 
 st.markdown("""
 <div id="bank-main-title" style="text-align: center; margin-top: -10px; margin-bottom: 10px;">
-    <span style="font-family: 'Rye', cursive; font-size: 2rem; font-weight: bold; color: #D4AA70;">
+    <span style="font-family: 'Rye', cursive; font-size: 2.4rem; font-weight: 900; color: #D4AA70; letter-spacing: 3px;">
         NGÂN HÀNG TRẮC NGHIỆM
     </span>
 </div>
