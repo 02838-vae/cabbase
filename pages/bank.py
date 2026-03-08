@@ -1425,33 +1425,48 @@ html, body, .stApp {{
     }}
 }}
 
-/* Số 1 */
-.number-one {{
-    font-family: 'Rye', cursive !important;
-    font-size: 1em !important; 
+/* === BỔ SUNG CSS CHO ĐOẠN VĂN (PL3) === */
+#sub-static-title {{
+    position: fixed;
+    top: 120px;
+    left: 0;
+    width: 100%;
+    z-index: 1900;
+    text-align: center;
+    margin: 0;
+    padding: 6px 0;
+    pointer-events: none;
+    background: transparent;
+}}
+#sub-static-title h2 {{
+    font-family: 'Rye', cursive;
+    font-size: 2.8rem;
     font-weight: 700;
-    display: inline-block;
+    letter-spacing: 4px;
+    color: #B8860B;
+    text-shadow: 0 0 12px #DAA520, 0 2px 4px rgba(0,0,0,0.8), 0 0 30px rgba(184,134,11,0.6);
+    margin: 0;
 }}
 
-.main > div:first-child {{
-    padding-top: 40px !important; padding-bottom: 2rem !important;
+/* RESULT TITLE */
+.result-title {{
+    margin-top: 30px;
+    margin-bottom: 30px;
+    text-align: center;
 }}
-
-/* SUB-TITLE & RESULT TITLE */
-#sub-static-title, .result-title {{
-    margin-top: 150px;
-    margin-bottom: 30px; text-align: center;
-}}
-#sub-static-title h2, .result-title h3 {{
+.result-title h3 {{
     font-family: 'Rye', cursive;
     font-size: 2rem;
     font-weight: 700;
     letter-spacing: 3px;
-    color: #FFEA00;
-    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8);
+    color: #B8860B;
+    text-shadow: 0 0 12px #DAA520, 0 0 30px rgba(184,134,11,0.6);
 }}
 
-/* === BỔ SUNG CSS CHO ĐOẠN VĂN (PL3) === */
+/* Đẩy nội dung chính xuống để không bị che bởi logo + sub-title */
+.main > div:first-child {{
+    padding-top: 200px !important; padding-bottom: 2rem !important;
+}}
 
 /* Tiêu đề Paragraph X . (In đậm, màu cam) */
 .paragraph-title {{
@@ -1641,17 +1656,17 @@ div[data-testid="stCheckbox"] div,
 div.stSelectbox label p,
 div.stSelectbox label span,
 div.stSelectbox label {{
-    color: #00FF00 !important;
+    color: #DAA520 !important;
     font-size: 1.25rem !important;
     font-family: 'Rye', cursive !important;
     font-weight: bold;
-    text-shadow: 0 0 5px rgba(0,255,0,0.5);
+    text-shadow: 0 0 5px rgba(184,134,11,0.5);
 }}
 
 /* SELECTBOX - KHUNG CHỌN */
 .stSelectbox div[data-baseweb="select"] {{
     background-color: rgba(0, 0, 0, 0.7) !important;
-    border: 1px solid #00FF00 !important;
+    border: 1px solid #DAA520 !important;
     border-radius: 8px !important;
 }}
 
@@ -1705,12 +1720,13 @@ div[data-testid="stAlert"] strong {{
 @media (max-width: 768px) {{
     #main-title-container {{ height: 100px; padding-top: 10px; }}
     #main-title-container h1 {{ font-size: 8vw; line-height: 1.5 !important; }}
-    .main > div:first-child {{ padding-top: 20px !important; }}
+    .main > div:first-child {{ padding-top: 170px !important; }}
+    #sub-static-title {{ top: 75px; }}
     
-    /* Chỉnh kích thước tiêu đề trên mobile - FIX HIỂN THỊ ĐẦY ĐỦ */
+    /* Chỉnh kích thước tiêu đề trên mobile */
     #sub-static-title h2, 
     .result-title h3 {{
-        font-size: 1.1rem !important;
+        font-size: 1.3rem !important;
         font-family: 'Rye', cursive !important;
         white-space: normal !important;
         overflow: visible !important;
@@ -1774,6 +1790,7 @@ if 'active_passage_translation' not in st.session_state: st.session_state.active
 if 'passage_translations_cache' not in st.session_state: st.session_state.passage_translations_cache = {} # CACHE DỊCH ĐOẠN VĂN
 if 'current_passage_id_displayed' not in st.session_state: st.session_state.current_passage_id_displayed = None 
 if 'group_mode_title' not in st.session_state: st.session_state.group_mode_title = "Luyện tập theo nhóm (30 câu/nhóm)"
+if 'last_source' not in st.session_state: st.session_state.last_source = ""
 
 # CẬP NHẬT LIST NGÂN HÀNG
 BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật VAECO", "Ngân hàng Docwise"]
@@ -1926,8 +1943,11 @@ if bank_choice != "----":
             })
         
         groups = [g['label'] for g in custom_groups]
-        # Mặc định luôn chọn nhóm đầu tiên (Paragraph 1 & 2) khi vào PL3/PL4
-        if st.session_state.current_group_idx >= len(groups):
+        # Reset về Paragraph 1&2 khi mới chuyển sang PL3/PL4
+        if st.session_state.get('last_source', '') != source:
+            st.session_state.current_group_idx = 0
+            st.session_state.last_source = source
+        elif st.session_state.current_group_idx >= len(groups):
             st.session_state.current_group_idx = 0
     else:
         # Nhóm câu hỏi theo số lượng (30 câu/nhóm) cho các ngân hàng khác
