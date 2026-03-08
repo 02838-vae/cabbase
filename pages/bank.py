@@ -1345,7 +1345,7 @@ html, body, .stApp {{
     overflow: auto;
     position: relative;
     font-family: 'Rye', cursive !important;
-    color: #FFEA00 !important;
+    color: #FFFFE0 !important;
 }}
 
 /* BACKGROUND */
@@ -1559,7 +1559,7 @@ html, body, .stApp {{
 div[data-testid="stMarkdownContainer"] p {{
     font-size: 22px !important;
     font-family: 'Rye', cursive !important;
-    color: #FFEA00 !important;
+    color: #FFFFE0 !important;
 }}
 
 /* GIỮ NGUYÊN font câu hỏi và đáp án - KHÔNG dùng Oswald */
@@ -1575,7 +1575,7 @@ div[data-testid="stMarkdownContainer"] p {{
 /* STYLE NÚT ACTION (ĐẸP VÀ BÓNG BẨY) */
 .stButton>button {{
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
-    color: #FFEA00 !important;
+    color: #FFFFE0 !important;
     border-radius: 12px !important;
     font-size: 1.2em !important;
     font-weight: 700 !important;
@@ -1614,7 +1614,7 @@ div[data-testid="stCheckbox"] div,
 .stCheckbox label,
 .stCheckbox p,
 .stCheckbox span {{
-    color: #FFEA00 !important;
+    color: #FFFFE0 !important;
     font-size: 20px !important;
     font-weight: 700 !important;
 }}
@@ -1625,7 +1625,7 @@ div[data-testid="stCheckbox"] div,
     padding: 0;
     margin: 0;
     line-height: 1 !important;
-    color: #FFEA00 !important;
+    color: #FFFFE0 !important;
 }}
 .stToggle label,
 .stToggle label span,
@@ -1634,7 +1634,7 @@ div[data-testid="stCheckbox"] div,
 .stToggle label > div[data-testid="stMarkdownContainer"] p,
 .stToggle label > div[data-testid="stMarkdownContainer"] span,
 .stToggle label * {{
-    color: #FFEA00 !important;
+    color: #FFFFE0 !important;
     font-size: 20px !important;
     font-weight: 700 !important;
 }}
@@ -1647,14 +1647,14 @@ div[data-testid="stCheckbox"] div,
     color: inherit !important;
 }}
 .stToggle [data-testid="stMarkdownContainer"] > p {{
-    color: #FFEA00 !important;
+    color: #FFFFE0 !important;
 }}
 
 /* SELECTBOX - LABEL TIÊU ĐỀ */
 div.stSelectbox label p,
 div.stSelectbox label span,
 div.stSelectbox label {{
-    color: #FFEA00 !important;
+    color: #FFFFE0 !important;
     font-size: 1.25rem !important;
     font-family: 'Rye', cursive !important;
     font-weight: bold;
@@ -1664,7 +1664,7 @@ div.stSelectbox label {{
 /* SELECTBOX - KHUNG CHỌN */
 .stSelectbox div[data-baseweb="select"] {{
     background-color: rgba(0, 0, 0, 0.75) !important;
-    border: 1px solid #FFEA00 !important;
+    border: 1px solid #FFFFE0 !important;
     border-radius: 8px !important;
 }}
 
@@ -1674,12 +1674,12 @@ div.stSelectbox label {{
 .stSelectbox div[data-baseweb="select"] div,
 .stSelectbox div[data-baseweb="select"] input {{
     font-family: 'Rye', cursive !important;
-    color: #FFEA00 !important;
+    color: #000000 !important;
     font-size: 1.1rem !important;
-    background-color: transparent !important;
+    background-color: rgba(255, 255, 220, 0.95) !important;
 }}
 
-/* SELECTBOX - DROPDOWN LIST OPTIONS (nền tối, chữ vàng) */
+/* SELECTBOX - DROPDOWN LIST OPTIONS (nền sáng, chữ đen) */
 [data-baseweb="popover"],
 [data-baseweb="popover"] *,
 [data-baseweb="menu"],
@@ -1692,15 +1692,15 @@ li[role="option"],
 li[role="option"] * {{
     font-family: 'Rye', cursive !important;
     font-size: 1.1rem !important;
-    color: #FFEA00 !important;
-    background-color: rgba(20, 20, 20, 0.97) !important;
+    color: #000000 !important;
+    background-color: rgba(255, 255, 220, 0.98) !important;
 }}
 
 /* Hover option */
 [role="option"]:hover,
 [role="option"]:hover * {{
-    background-color: rgba(255, 234, 0, 0.15) !important;
-    color: #FFFFFF !important;
+    background-color: rgba(184, 134, 11, 0.3) !important;
+    color: #000000 !important;
 }}
 
 /* STYLE CHO KHUNG DỊCH - ÁP DỤNG CHO CẢ PC & MOBILE */
@@ -1712,7 +1712,7 @@ div[data-testid="stAlert"] {{
 }}
 
 /* ============================================================
-   GLOBAL: Tất cả text UI (trừ câu hỏi/đáp án) → #FFEA00
+   GLOBAL: Tất cả text UI (trừ câu hỏi/đáp án) → #FFFFE0
    ============================================================ */
 
 /* Streamlit general text, labels, warnings, info */
@@ -1726,7 +1726,7 @@ div[data-testid="stAlert"] {{
 div[data-testid="stNotification"] *,
 .stWarning *, .stInfo *, .stError *,
 .stSuccess * {{
-    color: #FFEA00 !important;
+    color: #FFFFE0 !important;
     font-family: 'Rye', cursive !important;
 }}
 
