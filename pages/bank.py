@@ -1660,7 +1660,7 @@ div[data-testid*="column"] label p {{
     font-family: 'Rye', cursive !important;
     color: #000000 !important;
     font-size: 1.1rem !important;
-    background-color: rgba(255, 255, 220, 0.95) !important;
+    background-color: #FFFFFF !important;
 }}
 
 /* SELECTBOX - DROPDOWN LIST OPTIONS (nền sáng, chữ đen) */
@@ -1677,7 +1677,7 @@ li[role="option"] * {{
     font-family: 'Rye', cursive !important;
     font-size: 1.1rem !important;
     color: #000000 !important;
-    background-color: rgba(255, 255, 220, 0.98) !important;
+    background-color: #FFFFFF !important;
 }}
 
 /* Hover option */
@@ -1701,8 +1701,7 @@ div[data-testid="stAlert"] {{
 
 /* Streamlit general text, labels, warnings, info */
 .stApp p, .stApp span, .stApp div,
-.stApp label, .stApp h1, .stApp h2, .stApp h3,
-.stApp h4, .stApp h5, .stApp h6,
+.stApp label,
 [data-testid="stText"],
 [data-testid="stMarkdownContainer"] *,
 [data-testid="stWidgetLabel"] *,
@@ -1712,6 +1711,11 @@ div[data-testid="stNotification"] *,
 .stSuccess * {{
     color: #FFFFE0 !important;
     font-family: 'Rye', cursive !important;
+}}
+
+/* Ngoại lệ: tiêu đề chính giữ màu riêng */
+#bank-main-title span {{
+    color: #D4AA70 !important;
 }}
 
 /* Ngoại lệ: câu hỏi và đáp án giữ màu riêng */
@@ -1791,8 +1795,8 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 st.markdown("""
-<div style="text-align: center; margin-top: 10px; margin-bottom: 20px;">
-    <span style="font-family: 'Rye', cursive; font-size: 1.25rem; font-weight: bold; color: #D4AA70;">
+<div id="bank-main-title" style="text-align: center; margin-top: -10px; margin-bottom: 10px;">
+    <span style="font-family: 'Rye', cursive; font-size: 2rem; font-weight: bold; color: #D4AA70;">
         NGÂN HÀNG TRẮC NGHIỆM
     </span>
 </div>
