@@ -1427,23 +1427,6 @@ html, body, .stApp {{
 }}
 
 /* === BỔ SUNG CSS CHO ĐOẠN VĂN (PL3) === */
-#sub-static-title {{
-    position: static;
-    margin-top: 10px;
-    margin-bottom: 20px;
-    text-align: center;
-    padding: 6px 0;
-    background: transparent;
-}}
-#sub-static-title h2 {{
-    font-family: 'Rye', cursive;
-    font-size: 2.8rem;
-    font-weight: 700;
-    letter-spacing: 4px;
-    color: #C8A84B;
-    text-shadow: none;
-    margin: 0;
-}}
 
 /* RESULT TITLE */
 .result-title {{
@@ -1755,7 +1738,6 @@ div[data-testid="stAlert"] strong {{ color: #FFD700 !important; }}
     .main > div:first-child {{ padding-top: 90px !important; }}
     
     /* Chỉnh kích thước tiêu đề trên mobile */
-    #sub-static-title h2, 
     .result-title h3 {{
         font-size: 1.3rem !important;
         font-family: 'Rye', cursive !important;
@@ -1807,8 +1789,6 @@ st.markdown(f"""
     <div id="main-title-container"></div>
 </div>
 """, unsafe_allow_html=True)
-
-st.markdown('<div id="sub-static-title"><h2>NGÂN HÀNG TRẮC NGHIỆM</h2></div>', unsafe_allow_html=True)
 
 if "current_group_idx" not in st.session_state: st.session_state.current_group_idx = 0
 if "submitted" not in st.session_state: st.session_state.submitted = False
