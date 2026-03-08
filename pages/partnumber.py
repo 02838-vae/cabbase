@@ -54,6 +54,7 @@ try:
     # Cần đảm bảo các file này nằm trong thư mục 'pages/'
     pn_bg_pc_base64 = get_base64_encoded_file("pages/PN_PC.jpg")
     pn_bg_mobile_base64 = get_base64_encoded_file("pages/PN_mobile.jpg")
+    logo_base64 = get_base64_encoded_file("pages/logo.jpg")
 except Exception as e:
     st.error(f"❌ Lỗi khi đọc file ảnh nền: {str(e)}")
     st.stop()
@@ -274,6 +275,34 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }}
 
+/* ✅ LOGO Ở TRÊN CÙNG, GIỮA TRANG */
+#logo-container {{
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    text-align: center;
+    pointer-events: none;
+}}
+
+#logo-container img {{
+    height: 70px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.7));
+    border-radius: 8px;
+}}
+
+@media (max-width: 768px) {{
+    #logo-container img {{
+        height: 45px;
+    }}
+    #logo-container {{
+        top: 8px;
+    }}
+}}
+
 </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
@@ -286,6 +315,13 @@ st.markdown("""
     <a id="manual-home-btn" href="/?skip_intro=1" target="_self">
         🏠 Về Trang Chủ
     </a>
+</div>
+""", unsafe_allow_html=True)
+
+# --- ✅ LOGO Ở TRÊN CÙNG, GIỮA TRANG ---
+st.markdown(f"""
+<div id="logo-container">
+    <img src="data:image/jpeg;base64,{logo_base64}" alt="Logo" />
 </div>
 """, unsafe_allow_html=True)
 
