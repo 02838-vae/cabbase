@@ -54,7 +54,6 @@ try:
     # Cần đảm bảo các file này nằm trong thư mục 'pages/'
     pn_bg_pc_base64 = get_base64_encoded_file("pages/PN_PC.jpg")
     pn_bg_mobile_base64 = get_base64_encoded_file("pages/PN_mobile.jpg")
-    img_logo_base64 = get_base64_encoded_file("pages/logo.jpg")
 except Exception as e:
     st.error(f"❌ Lỗi khi đọc file ảnh nền: {str(e)}")
     st.stop()
@@ -81,99 +80,9 @@ hide_streamlit_style = f"""
 }}
 
 .main > div:first-child {{
-    padding-top: 420px !important;
+    padding-top: 350px !important;
     padding-left: 20px;
     padding-right: 20px;
-}}
-
-/* ===== LOGO VỚI VIỀN SÁNG VÀNG CHẠY VÒNG ===== */
-@keyframes rotateBorder {{
-    0%   {{ transform: rotate(0deg); }}
-    100% {{ transform: rotate(360deg); }}
-}}
-
-@keyframes logoPulse {{
-    0%, 100% {{ box-shadow: 0 0 18px 4px rgba(255, 215, 0, 0.7), 0 0 40px 10px rgba(255, 165, 0, 0.4); }}
-    50%       {{ box-shadow: 0 0 32px 8px rgba(255, 234, 0, 1),   0 0 70px 20px rgba(255, 200, 0, 0.6); }}
-}}
-
-#logo-container {{
-    position: fixed;
-    top: 0;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 3000;
-    width: 160px;
-    height: 160px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    pointer-events: none;
-}}
-
-#logo-container::before {{
-    content: "";
-    position: absolute;
-    inset: -5px;
-    border-radius: 50%;
-    background: conic-gradient(
-        #FFD700 0deg,
-        #FFF176 60deg,
-        #FF8C00 120deg,
-        transparent 160deg,
-        transparent 200deg,
-        #FFD700 240deg,
-        #FFF9C4 300deg,
-        #FFD700 360deg
-    );
-    animation: rotateBorder 2.5s linear infinite;
-    z-index: -1;
-}}
-
-#logo-container::after {{
-    content: "";
-    position: absolute;
-    inset: -3px;
-    border-radius: 50%;
-    background: conic-gradient(
-        transparent 0deg,
-        #FFD700 80deg,
-        #FFEA00 140deg,
-        transparent 180deg,
-        transparent 260deg,
-        #FFA500 320deg,
-        transparent 360deg
-    );
-    animation: rotateBorder 1.8s linear infinite reverse;
-    z-index: -1;
-    opacity: 0.8;
-}}
-
-#logo-container img {{
-    width: 140px;
-    height: 140px;
-    object-fit: cover;
-    border-radius: 50%;
-    border: 4px solid #000;
-    animation: logoPulse 2s ease-in-out infinite;
-    display: block;
-    position: relative;
-    z-index: 1;
-    background: #000;
-}}
-
-@media (max-width: 768px) {{
-    #logo-container {{
-        width: 100px;
-        height: 100px;
-    }}
-    #logo-container img {{
-        width: 88px;
-        height: 88px;
-    }}
-    .main > div:first-child {{
-        padding-top: 280px !important;
-    }}
 }}
 
 @media (max-width: 768px) {{
@@ -199,7 +108,7 @@ hide_streamlit_style = f"""
 /* ✅ TIÊU ĐỀ CHẠY - GIỐNG Y HỆT TRANG CHÍNH */
 #main-title-container {{
     position: fixed;
-    top: 16vh;
+    top: 5vh;
     left: 0;
     width: 100%;
     height: 10vh;
@@ -380,13 +289,6 @@ st.markdown("""
 </div>
 """, unsafe_allow_html=True)
 
-
-# --- ✅ LOGO VỚI ÁNH SÁNG VÀNG CHẠY VÒNG ---
-st.markdown(f"""
-<div id="logo-container">
-    <img src="data:image/jpeg;base64,{img_logo_base64}" alt="Logo" />
-</div>
-""", unsafe_allow_html=True)
 
 # --- ✅ HIỂN THỊ TIÊU ĐỀ CHẠY GIỐNG TRANG CHÍNH ---
 main_title_text = "Tổ Bảo Dưỡng Số 1"
