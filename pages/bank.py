@@ -31,27 +31,25 @@ def get_base64_encoded_file(file_path):
 
 # Mã hóa các file media chính (bắt buộc)
 try:
-    audio_base64 = get_base64_encoded_file("plane_fly.mp3")
-    bg_pc_base64 = get_base64_encoded_file("cabbase.jpg") 
+    bg_pc_base64 = get_base64_encoded_file("PC.jpg")
     bg_mobile_base64 = get_base64_encoded_file("mobile.jpg")
     logo_base64 = get_base64_encoded_file("logo.jpg")
 
     missing_files = []
-    if not audio_base64: missing_files.append("plane_fly.mp3")
-    if not bg_pc_base64: missing_files.append("cabbase.jpg")
+    if not bg_pc_base64: missing_files.append("PC.jpg")
     if not bg_mobile_base64: missing_files.append("mobile.jpg")
 
     if missing_files:
         st.error(f"⚠️ Thiếu các file media cần thiết hoặc file rỗng. Vui lòng kiểm tra lại các file sau trong thư mục:")
         st.write(" - " + "\n - ".join(missing_files))
         st.stop()
-        
+
 except Exception as e:
     st.error(f"❌ Lỗi khi đọc file: {str(e)}")
     st.stop()
 
 if not 'logo_base64' in locals() or not logo_base64:
-    logo_base64 = "" 
+    logo_base64 = ""
 
 # --- CẤU HÌNH NHẠC NỀN ---
 BASE_MUSIC_URL = "https://raw.githubusercontent.com/02838-vae/cabbase/main/"
@@ -60,15 +58,14 @@ music_files = [f"{BASE_MUSIC_URL}background{i}.mp3" for i in range(1, 7)]
 
 # --- PHẦN 1: NHÚNG FONT VÀ CSS CHÍNH ---
 font_links = """
-<link href="https://fonts.googleapis.com/css2?family=Sacramento&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Rye&display=swap" rel="stylesheet">
 """
 st.markdown(font_links, unsafe_allow_html=True)
 
 # --- PHẦN 2: CSS CHÍNH (STREAMLIT APP) ---
 hide_streamlit_style = f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Sacramento&family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rye&display=swap');
 
 /* Ẩn các thành phần mặc định của Streamlit */
 #MainMenu, footer, header {{visibility: hidden;}}
@@ -84,13 +81,18 @@ div.block-container {{
     max-width: 100% !important;
 }}
 
+/* Áp dụng font Rye toàn trang, trừ câu hỏi và đáp án */
+*:not(.quiz-question):not(.quiz-question *):not(.quiz-option):not(.quiz-option *):not(.stRadio label):not(.stRadio label *) {{
+    font-family: 'Rye', serif !important;
+}}
+
 /* Chặn hành vi dblclick và chọn văn bản trên toàn bộ ứng dụng khi video đang chạy */
 .stApp.video-running * {{
     user-select: none;
     -webkit-user-select: none;
     -moz-user-select: none;
     -ms-user-select: none;
-    cursor: default !important; 
+    cursor: default !important;
 }}
 
 /* Logo cho music player */
@@ -131,30 +133,10 @@ body, .stApp, section.main,
 }}
 
 @media (max-width: 768px) {{
-    body,
-    .stApp,
-    [data-testid="stAppViewContainer"],
-    [data-testid="stMain"],
-    section.main {{
-        background-image: url('data:image/jpeg;base64,{bg_mobile_base64}') !important;
-    }}
     .reveal-grid {{
         grid-template-columns: repeat(10, 1fr);
         grid-template-rows: repeat(20, 1fr);
     }}
-}}
-
-/* Keyframes cho hiệu ứng chữ chạy đơn */
-@keyframes scrollText {{
-    0% {{ transform: translate(100vw, 0); }}
-    100% {{ transform: translate(-100%, 0); }}
-}}
-
-/* Keyframes cho hiệu ứng Đổi Màu Gradient */
-@keyframes colorShift {{
-    0% {{ background-position: 0% 50%; }}
-    50% {{ background-position: 100% 50%; }}
-    100% {{ background-position: 0% 50%; }}
 }}
 
 /* Keyframes xoay (bắt buộc phải có) */
@@ -162,54 +144,8 @@ body, .stApp, section.main,
     to {{ transform: translate(-50%, -50%) rotate(360deg); }}
 }}
 
-/* === TIÊU ĐỀ TRANG CHÍNH === */
-#main-title-container {{
-    position: fixed;
-    top: 5vh;
-    left: 0;
-    width: 100%;
-    height: 10vh;
-    overflow: hidden;
-    z-index: 20;
-    pointer-events: none;
-    opacity: 0;
-    animation: fadeInUI 1.5s ease-out 2.5s forwards;
-}}
-
 @keyframes fadeInUI {{
     to {{ opacity: 1; }}
-}}
-
-#main-title-container h1 {{
-    font-family: 'Playfair Display', serif;
-    font-size: 3.5vw;
-    margin: 0;
-    font-weight: 900;
-    font-feature-settings: "lnum" 1;
-    letter-spacing: 5px;
-    white-space: nowrap;
-    display: inline-block;
-    animation: scrollText 15s linear infinite;
-    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
-    background-size: 400% 400%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-    animation: colorShift 10s ease infinite, scrollText 15s linear infinite;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-}}
-
-@media (max-width: 768px) {{
-    #main-title-container {{
-        height: 8vh;
-        width: 100%;
-        left: 0;
-    }}
-    
-    #main-title-container h1 {{
-        font-size: 6.5vw;
-        animation-duration: 8s;
-    }}
 }}
 
 /* 🌟 KEYFRAMES: HIỆU ỨNG TỎA SÁNG MÀU NGẪU NHIÊN */
@@ -217,25 +153,48 @@ body, .stApp, section.main,
     0%, 57.14%, 100% {{
         box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.3);
     }}
-    
     0% {{
         box-shadow: 0 0 10px 4px rgba(255, 0, 0, 0.9), 0 0 20px 8px rgba(255, 0, 0, 0.6), inset 0 0 5px 2px rgba(255, 0, 0, 0.9);
     }}
-    
-    14.28% {{ 
+    14.28% {{
         box-shadow: 0 0 10px 4px rgba(0, 255, 0, 0.9), 0 0 20px 8px rgba(0, 255, 0, 0.6), inset 0 0 5px 2px rgba(0, 255, 0, 0.9);
     }}
-    
-    28.56% {{ 
+    28.56% {{
         box-shadow: 0 0 10px 4px rgba(0, 0, 255, 0.9), 0 0 20px 8px rgba(0, 0, 255, 0.6), inset 0 0 5px 2px rgba(0, 0, 255, 0.9);
     }}
-
-    42.84% {{ 
+    42.84% {{
         box-shadow: 0 0 10px 4px rgba(255, 255, 0, 0.9), 0 0 20px 8px rgba(255, 255, 0, 0.6), inset 0 0 5px 2px rgba(255, 255, 0, 0.9);
     }}
-    
-    57.14% {{ 
+    57.14% {{
         box-shadow: 0 0 10px 4px rgba(255, 0, 255, 0.9), 0 0 20px 8px rgba(255, 0, 255, 0.6), inset 0 0 5px 2px rgba(255, 0, 255, 0.9);
+    }}
+}}
+
+/* === LOGO === */
+#bank-logo-container {{
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    text-align: center;
+    pointer-events: none;
+}}
+
+#bank-logo-container img {{
+    height: 120px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
+}}
+
+@media (max-width: 768px) {{
+    #bank-logo-container img {{
+        height: auto;
+        max-width: 55vw;
+    }}
+    #bank-logo-container {{
+        top: 12px;
     }}
 }}
 
@@ -244,9 +203,9 @@ body, .stApp, section.main,
     position: fixed;
     bottom: 20px;
     right: 20px;
-    width: 350px; 
-    padding: 8px 16px; 
-    background: rgba(0, 0, 0, 0.7); 
+    width: 350px;
+    padding: 8px 16px;
+    background: rgba(0, 0, 0, 0.7);
     border-radius: 12px;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
     z-index: 999;
@@ -264,34 +223,24 @@ body, .stApp, section.main,
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
     margin: -3px;
     width: calc(100% + 6px);
     height: calc(100% + 6px);
-    
     background-image: var(--logo-bg-url);
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
     filter: contrast(110%) brightness(90%);
-    opacity: 0.4; 
-    z-index: -1; 
-    
+    opacity: 0.4;
+    z-index: -1;
     border-radius: 12px;
-    
-    box-sizing: border-box; 
+    box-sizing: border-box;
     animation: glow-random-color 7s linear infinite;
 }}
 
 #music-player-container * {{
     position: relative;
-    z-index: 5; 
-}}
-
-.video-finished #music-player-container {{
-    opacity: 1;
-    transform: translateY(0);
+    z-index: 5;
 }}
 
 #music-player-container .controls,
@@ -305,14 +254,14 @@ body, .stApp, section.main,
     align-items: center;
     justify-content: center;
     gap: 8px;
-    margin-bottom: 6px; 
+    margin-bottom: 6px;
 }}
 
 #music-player-container .control-btn {{
     background: rgba(255, 255, 255, 0.2);
-    border: 2px solid #FFFFFF; 
+    border: 2px solid #FFFFFF;
     color: #FFD700;
-    width: 32px; 
+    width: 32px;
     height: 32px;
     border-radius: 50%;
     cursor: pointer;
@@ -329,21 +278,21 @@ body, .stApp, section.main,
 }}
 
 #music-player-container .control-btn.play-pause {{
-    width: 40px; 
+    width: 40px;
     height: 40px;
     font-size: 18px;
 }}
 
 #music-player-container .progress-container {{
     width: 100%;
-    height: 5px; 
+    height: 5px;
     background: rgba(0, 0, 0, 0.5);
     border-radius: 3px;
     cursor: pointer;
-    margin-bottom: 4px; 
+    margin-bottom: 4px;
     position: relative;
     overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.4); 
+    border: 1px solid rgba(255, 255, 255, 0.4);
 }}
 
 #music-player-container .progress-bar {{
@@ -358,7 +307,7 @@ body, .stApp, section.main,
     display: flex;
     justify-content: space-between;
     color: rgba(255, 255, 255, 1);
-    font-size: 10px; 
+    font-size: 10px;
     font-family: monospace;
 }}
 
@@ -387,7 +336,6 @@ body, .stApp, section.main,
 /* === CSS CHO NAVIGATION BUTTONS (FIXED) === */
 /* ================================================ */
 
-/* Container chứa buttons */
 .nav-buttons-wrapper {{
     position: fixed;
     top: 50%;
@@ -408,7 +356,6 @@ body, .stApp, section.main,
     to {{ opacity: 1; pointer-events: all; }}
 }}
 
-/* Ẩn columns và elements mặc định của Streamlit */
 .nav-buttons-wrapper .stColumn {{
     display: contents !important;
 }}
@@ -417,7 +364,6 @@ body, .stApp, section.main,
     display: contents !important;
 }}
 
-/* Reset CSS cho thẻ a trong page_link */
 .nav-buttons-wrapper a {{
     all: unset;
     display: flex !important;
@@ -431,20 +377,16 @@ body, .stApp, section.main,
     border-radius: 9999px;
     min-width: 280px;
     text-decoration: none;
-    
-    /* Button variables */
     --black-700: hsla(0, 0%, 12%, 1);
     --border_radius: 9999px;
     --transtion: 0.3s ease-in-out;
     --active: 0;
     --hover-color: hsl(40, 60%, 85%);
     --text-color: hsl(0, 0%, 100%);
-    
     transform: scale(calc(1 + (var(--active, 0) * 0.2)));
     transition: transform var(--transtion);
 }}
 
-/* Background đen của button */
 .nav-buttons-wrapper a::before {{
     content: "";
     position: absolute;
@@ -455,16 +397,15 @@ body, .stApp, section.main,
     height: 100%;
     background-color: var(--black-700);
     border-radius: var(--border_radius);
-    box-shadow: 
-        inset 0 0.5px hsl(0, 0%, 100%), 
-        inset 0 -1px 2px 0 hsl(0, 0%, 0%), 
-        0px 4px 10px -4px hsla(0, 0%, 0%, calc(1 - var(--active, 0))), 
+    box-shadow:
+        inset 0 0.5px hsl(0, 0%, 100%),
+        inset 0 -1px 2px 0 hsl(0, 0%, 0%),
+        0px 4px 10px -4px hsla(0, 0%, 0%, calc(1 - var(--active, 0))),
         0 0 0 calc(var(--active, 0) * 0.375rem) var(--hover-color);
     transition: all var(--transtion);
     z-index: 0;
 }}
 
-/* Hiệu ứng sáng bên trong khi hover */
 .nav-buttons-wrapper a::after {{
     content: "";
     position: absolute;
@@ -474,9 +415,9 @@ body, .stApp, section.main,
     width: 90%;
     height: 90%;
     background-color: hsla(40, 60%, 85%, 0.75);
-    background-image: 
-        radial-gradient(at 51% 89%, hsla(45, 60%, 90%, 1) 0px, transparent 50%), 
-        radial-gradient(at 100% 100%, hsla(35, 60%, 80%, 1) 0px, transparent 50%), 
+    background-image:
+        radial-gradient(at 51% 89%, hsla(45, 60%, 90%, 1) 0px, transparent 50%),
+        radial-gradient(at 100% 100%, hsla(35, 60%, 80%, 1) 0px, transparent 50%),
         radial-gradient(at 22% 91%, hsla(35, 60%, 80%, 1) 0px, transparent 50%);
     background-position: top;
     opacity: var(--active, 0);
@@ -485,20 +426,18 @@ body, .stApp, section.main,
     z-index: 2;
 }}
 
-/* Hover state */
 .nav-buttons-wrapper a:hover,
 .nav-buttons-wrapper a:focus-visible {{
     --active: 1;
     box-shadow: 0 0 15px 5px var(--hover-color), 0 0 0 0.375rem var(--hover-color);
 }}
 
-/* Text styling */
 .nav-buttons-wrapper a span {{
     position: relative;
     z-index: 10;
     background-image: linear-gradient(
-        90deg, 
-        var(--text-color) 0%, 
+        90deg,
+        var(--text-color) 0%,
         hsla(0, 0%, 100%, var(--active, 0.5)) 120%
     );
     background-clip: text;
@@ -511,9 +450,9 @@ body, .stApp, section.main,
     text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
     font-size: 1.1rem;
     line-height: 1.1rem;
+    font-family: 'Rye', serif !important;
 }}
 
-/* SVG icon styling */
 .nav-buttons-wrapper a svg {{
     position: relative;
     z-index: 10;
@@ -523,7 +462,6 @@ body, .stApp, section.main,
     flex-shrink: 0;
 }}
 
-/* Mobile responsive */
 @media (max-width: 768px) {{
     .nav-buttons-wrapper {{
         bottom: 120px;
@@ -536,13 +474,11 @@ body, .stApp, section.main,
         gap: 15px;
         padding: 0;
     }}
-    
     .nav-buttons-wrapper a {{
         width: 100%;
         min-width: unset;
         padding: 0.8rem 1.5rem;
     }}
-    
     .nav-buttons-wrapper a svg {{
         width: 1.5rem;
         height: 1.5rem;
@@ -641,14 +577,8 @@ st.components.v1.html(f"""
 </script>
 """, height=0)
 
-# --- NỘI DUNG CHÍNH (TIÊU ĐỀ) ---
-main_title_text = "TỔ BẢO DƯỠNG SỐ 1"
-
-st.markdown(f"""
-<div id="main-title-container">
-    <h1>{main_title_text}</h1>
-</div>
-""", unsafe_allow_html=True)
+# --- LOGO Ở TRÊN CÙNG GIỮA TRANG ---
+st.markdown(f'<div id="bank-logo-container"><img src="data:image/jpeg;base64,{logo_base64}" alt="Logo"/></div>', unsafe_allow_html=True)
 
 # --- MUSIC PLAYER ---
 if len(music_files) > 0:
