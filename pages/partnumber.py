@@ -79,7 +79,7 @@ hide_streamlit_style = f"""
     font-family: 'Oswald', sans-serif !important;
 }}
 
-/* ✅ BANNER NỀN PC - fixed, height 120px */
+/* ✅ BANNER NỀN PC - fixed, full màn hình */
 #bg-banner {{
     position: fixed;
     top: 0;
@@ -89,19 +89,26 @@ hide_streamlit_style = f"""
     background-image: url("data:image/jpeg;base64,{pn_bg_pc_base64}");
     background-repeat: no-repeat;
     background-position: center center;
-    background-size: 100% 100%;
+    background-size: cover;
     z-index: 50;
 }}
 
-/* ✅ MOBILE: mobile.jpg full chiều rộng, height 120px */
+/* ✅ MOBILE: mobile.jpg full chiều ngang VÀ dọc trong banner */
 @media (max-width: 768px) {{
     #bg-banner {{
         background-image: url("data:image/jpeg;base64,{pn_bg_mobile_base64}");
         background-repeat: no-repeat;
         background-position: center center;
-        background-size: 100% 100%;
+        background-size: cover;
         height: 120px;
         width: 100vw;
+        left: 0;
+        right: 0;
+    }}
+    /* Ép Streamlit không tạo margin/padding làm lệch */
+    section[data-testid="stAppViewContainer"] > div:first-child {{
+        padding-left: 0 !important;
+        padding-right: 0 !important;
     }}
 }}
 
@@ -112,28 +119,15 @@ hide_streamlit_style = f"""
     padding-right: 20px;
 }}
 
-/* ✅ KEYFRAMES ÁNH SÁNG VÀNG CHẠY VÒNG QUANH */
-@keyframes borderGlow {{
-    0%   {{ box-shadow: 4px 0 16px 4px #FFD700, 0 0 0 3px #FFD700; border-color: #FFD700; }}
-    25%  {{ box-shadow: 0 4px 16px 4px #FFA500, 0 0 0 3px #FFA500; border-color: #FFA500; }}
-    50%  {{ box-shadow: -4px 0 16px 4px #FFEA00, 0 0 0 3px #FFEA00; border-color: #FFEA00; }}
-    75%  {{ box-shadow: 0 -4px 16px 4px #FF8C00, 0 0 0 3px #FF8C00; border-color: #FF8C00; }}
-    100% {{ box-shadow: 4px 0 16px 4px #FFD700, 0 0 0 3px #FFD700; border-color: #FFD700; }}
+/* ✅ KEYFRAMES: tia sáng chạy dọc theo viền khung bo tròn */
+@keyframes runLight {{
+    0%   {{ stroke-dashoffset: 1000; }}
+    100% {{ stroke-dashoffset: 0; }}
 }}
 
-@keyframes rotateBorder {{
-    0%   {{ background-position: 0% 50%; }}
-    50%  {{ background-position: 100% 50%; }}
-    100% {{ background-position: 0% 50%; }}
-}}
-
-@keyframes glowPulse {{
-    0%, 100% {{
-        filter: drop-shadow(0 0 8px #FFD700) drop-shadow(0 0 20px #FFD700) drop-shadow(0 0 40px #FFA500);
-    }}
-    50% {{
-        filter: drop-shadow(0 0 16px #FFEA00) drop-shadow(0 0 40px #FFEA00) drop-shadow(0 0 70px #FF8C00);
-    }}
+@keyframes spin {{
+    from {{ transform: rotate(0deg); }}
+    to   {{ transform: rotate(360deg); }}
 }}
 
 /* ✅ LOGO - fixed trên cùng, giữa trang */
@@ -151,57 +145,72 @@ hide_streamlit_style = f"""
     pointer-events: none;
 }}
 
-/* Khung viền logo với ánh sáng vàng chạy vòng */
+/* Khung bọc ngoài logo */
 #logo-frame {{
     position: relative;
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    padding: 5px;
-    border-radius: 14px;
-    border: 3px solid #FFD700;
-    animation: borderGlow 2s linear infinite;
-    background: rgba(0,0,0,0.35);
+    padding: 6px;
+    border-radius: 18px;
+    background: rgba(0,0,0,0.4);
+    /* Viền nền tĩnh mờ */
+    outline: 2px solid rgba(255, 215, 0, 0.3);
 }}
 
-/* Vòng sáng xoay bằng pseudo conic-gradient qua JS thay thế */
+/* Lớp conic-gradient xoay tạo tia sáng chạy vòng quanh viền bo tròn */
 #logo-frame::before {{
     content: '';
     position: absolute;
-    inset: -4px;
-    border-radius: 16px;
+    inset: -3px;
+    border-radius: 21px;
+    padding: 3px;
     background: conic-gradient(
         from 0deg,
-        transparent 0deg,
-        #FFD700 60deg,
-        #FFEA00 90deg,
-        #FFA500 120deg,
-        transparent 180deg,
+        transparent  0deg,
+        transparent 60deg,
+        #FFA500     80deg,
+        #FFD700     90deg,
+        #FFFF00    100deg,
+        #FFD700    110deg,
+        #FFA500    120deg,
+        transparent 140deg,
         transparent 360deg
     );
-    animation: spin 1.8s linear infinite;
-    z-index: -1;
+    -webkit-mask:
+        linear-gradient(#fff 0 0) content-box,
+        linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    animation: spin 2s linear infinite;
 }}
 
+/* Glow mờ phía sau */
 #logo-frame::after {{
     content: '';
     position: absolute;
-    inset: 2px;
-    border-radius: 12px;
-    background: rgba(0,0,0,0.5);
+    inset: -6px;
+    border-radius: 24px;
+    background: conic-gradient(
+        from 0deg,
+        transparent  0deg,
+        transparent 60deg,
+        rgba(255,200,0,0.15) 80deg,
+        rgba(255,220,0,0.35) 90deg,
+        rgba(255,200,0,0.15) 100deg,
+        transparent 130deg,
+        transparent 360deg
+    );
+    animation: spin 2s linear infinite;
+    filter: blur(4px);
     z-index: -1;
-}}
-
-@keyframes spin {{
-    from {{ transform: rotate(0deg); }}
-    to   {{ transform: rotate(360deg); }}
 }}
 
 #logo-container img {{
     height: 100px;
     width: auto;
     object-fit: contain;
-    border-radius: 10px;
+    border-radius: 14px;
     display: block;
     position: relative;
     z-index: 1;
@@ -210,9 +219,16 @@ hide_streamlit_style = f"""
 @media (max-width: 768px) {{
     #logo-container img {{
         height: 75px;
+        border-radius: 10px;
     }}
     #logo-frame {{
-        border-radius: 10px;
+        border-radius: 14px;
+    }}
+    #logo-frame::before {{
+        border-radius: 17px;
+    }}
+    #logo-frame::after {{
+        border-radius: 20px;
     }}
 }}
 
