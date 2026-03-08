@@ -1325,8 +1325,8 @@ img_logo_base64 = get_base64_encoded_file(LOGO_IMAGE_FILE)
 css_style = f"""
 <style>
 /* Đã thống nhất font nội dung là Oswald, tiêu đề là Playfair Display */
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rye&display=swap');
+
 @keyframes colorShift {{
     0% {{ background-position: 0% 50%; }}
     50% {{ background-position: 100% 50%; }}
@@ -1344,7 +1344,7 @@ html, body, .stApp {{
     padding: 0 !important;
     overflow: auto;
     position: relative;
-    font-family: 'Oswald', sans-serif !important;
+    font-family: 'Rye', cursive !important;
 }}
 
 /* BACKGROUND */
@@ -1427,7 +1427,7 @@ html, body, .stApp {{
 
 /* Số 1 */
 .number-one {{
-    font-family: 'Oswald', sans-serif !important;
+    font-family: 'Rye', cursive !important;
     font-size: 1em !important; 
     font-weight: 700;
     display: inline-block;
@@ -1443,7 +1443,7 @@ html, body, .stApp {{
     margin-bottom: 30px; text-align: center;
 }}
 #sub-static-title h2, .result-title h3 {{
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Rye', cursive;
     font-size: 2rem;
     font-weight: 700;
     letter-spacing: 3px;
@@ -1455,7 +1455,7 @@ html, body, .stApp {{
 
 /* Tiêu đề Paragraph X . (In đậm, màu cam) */
 .paragraph-title {{
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Rye', cursive;
     font-size: 1.8rem;
     font-weight: 700;
     color: #FFA500;
@@ -1506,7 +1506,7 @@ html, body, .stApp {{
 
 /* STYLE ĐÁP ÁN - PC (TRẮNG ĐẬM HƠN) */
 .bank-answer-text {{
-    font-family: 'Oswald', sans-serif !important;
+    font-family: 'Rye', cursive !important;
     font-weight: 900 !important;
     font-size: 22px !important; 
     padding: 5px 15px;
@@ -1522,7 +1522,7 @@ html, body, .stApp {{
     color: #FFFFFF !important;
     font-size: 22px !important; 
     font-weight: 900 !important; /* ĐẬM HƠN */
-    font-family: 'Oswald', sans-serif !important;
+    font-family: 'Rye', cursive !important;
     padding: 2px 12px;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9) !important; /* SHADOW ĐẬM HƠN */
     background-color: transparent !important;
@@ -1546,7 +1546,7 @@ html, body, .stApp {{
 
 div[data-testid="stMarkdownContainer"] p {{
     font-size: 22px !important;
-    font-family: 'Oswald', sans-serif !important;
+    font-family: 'Rye', cursive !important;
 }}
 
 /* GIỮ NGUYÊN font câu hỏi và đáp án - KHÔNG dùng Oswald */
@@ -1566,7 +1566,7 @@ div[data-testid="stMarkdownContainer"] p {{
     border-radius: 12px !important;
     font-size: 1.2em !important;
     font-weight: 700 !important;
-    font-family: 'Oswald', sans-serif !important; 
+    font-family: 'Rye', cursive !important; 
     border: 2px solid rgba(255, 255, 255, 0.3) !important;
     padding: 12px 24px !important;
     width: 100% !important;
@@ -1643,7 +1643,7 @@ div.stSelectbox label span,
 div.stSelectbox label {{
     color: #00FF00 !important;
     font-size: 1.25rem !important;
-    font-family: 'Oswald', sans-serif !important;
+    font-family: 'Rye', cursive !important;
     font-weight: bold;
     text-shadow: 0 0 5px rgba(0,255,0,0.5);
 }}
@@ -1660,7 +1660,7 @@ div.stSelectbox label {{
 .stSelectbox div[data-baseweb="select"] span,
 .stSelectbox div[data-baseweb="select"] div,
 .stSelectbox div[data-baseweb="select"] input {{
-    font-family: 'Oswald', sans-serif !important;
+    font-family: 'Rye', cursive !important;
     color: #FFFFFF !important;
     font-size: 1.1rem !important;
 }}
@@ -1672,7 +1672,7 @@ div.stSelectbox label {{
 [role="option"] *,
 li[role="option"],
 li[role="option"] * {{
-    font-family: 'Oswald', sans-serif !important;
+    font-family: 'Rye', cursive !important;
     font-size: 1.1rem !important;
 }}
 
@@ -1711,7 +1711,7 @@ div[data-testid="stAlert"] strong {{
     #sub-static-title h2, 
     .result-title h3 {{
         font-size: 1.1rem !important;
-        font-family: 'Oswald', sans-serif !important;
+        font-family: 'Rye', cursive !important;
         white-space: normal !important;
         overflow: visible !important;
         text-overflow: clip !important;
