@@ -1440,8 +1440,8 @@ html, body, .stApp {{
     font-size: 2.8rem;
     font-weight: 700;
     letter-spacing: 4px;
-    color: #B8860B;
-    text-shadow: 0 0 12px #DAA520, 0 2px 4px rgba(0,0,0,0.8), 0 0 30px rgba(184,134,11,0.6);
+    color: #FFEA00;
+    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8);
     margin: 0;
 }}
 
@@ -1456,8 +1456,8 @@ html, body, .stApp {{
     font-size: 2rem;
     font-weight: 700;
     letter-spacing: 3px;
-    color: #B8860B;
-    text-shadow: 0 0 12px #DAA520, 0 0 30px rgba(184,134,11,0.6);
+    color: #FFEA00;
+    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8);
 }}
 
 /* Đẩy nội dung chính xuống để không bị che bởi logo */
@@ -1653,18 +1653,19 @@ div[data-testid="stCheckbox"] div,
 /* SELECTBOX - LABEL TIÊU ĐỀ */
 div.stSelectbox label p,
 div.stSelectbox label span,
-div.stSelectbox label {{
-    color: #FFFFE0 !important;
+div.stSelectbox label,
+div[data-testid*="column"] label p {{
+    color: #00FF00 !important;
     font-size: 1.25rem !important;
     font-family: 'Rye', cursive !important;
     font-weight: bold;
-    text-shadow: 0 0 5px rgba(255,234,0,0.4);
+    text-shadow: 0 0 5px rgba(0,255,0,0.5);
 }}
 
 /* SELECTBOX - KHUNG CHỌN */
 .stSelectbox div[data-baseweb="select"] {{
-    background-color: rgba(0, 0, 0, 0.75) !important;
-    border: 1px solid #FFFFE0 !important;
+    background-color: rgba(0, 0, 0, 0.7) !important;
+    border: 1px solid #00FF00 !important;
     border-radius: 8px !important;
 }}
 
