@@ -52,8 +52,8 @@ excel_file = "pages/A787.xlsx" # Giả định file excel nằm cùng cấp vớ
 
 try:
     # Cần đảm bảo các file này nằm trong thư mục 'pages/'
-    pn_bg_pc_base64 = get_base64_encoded_file("pages/PN_PC.jpg")
-    pn_bg_mobile_base64 = get_base64_encoded_file("pages/PN_mobile.jpg")
+    pn_bg_pc_base64 = get_base64_encoded_file("pages/PC.jpg")
+    pn_bg_mobile_base64 = get_base64_encoded_file("pages/mobile.jpg")
     logo_base64 = get_base64_encoded_file("pages/logo.jpg")
 except Exception as e:
     st.error(f"❌ Lỗi khi đọc file ảnh nền: {str(e)}")
@@ -62,7 +62,7 @@ except Exception as e:
 # --- CSS ---
 hide_streamlit_style = f"""
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rye&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap');
 #MainMenu, footer, header {{visibility: hidden;}}
 
@@ -73,177 +73,147 @@ hide_streamlit_style = f"""
     z-index: 10 !important;
 }}
 
+/* ✅ BACKGROUND PC: ảnh PC.jpg, fixed, full màn hình, height 120px banner cố định */
 .stApp {{
-    background: url("data:image/jpeg;base64,{pn_bg_pc_base64}") no-repeat center top fixed !important;
-    background-size: cover !important;
+    background-color: #1a1a2e !important;
     font-family: 'Oswald', sans-serif !important;
-    filter: sepia(0.1) brightness(0.95) contrast(1.05) saturate(1.1) !important;
 }}
 
+/* Banner ảnh nền PC cố định trên cùng, height 120px */
+#bg-banner {{
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 120px;
+    background: url("data:image/jpeg;base64,{pn_bg_pc_base64}") no-repeat center center;
+    background-size: cover;
+    z-index: 50;
+}}
+
+/* Trên mobile: dùng mobile.jpg */
+@media (max-width: 768px) {{
+    #bg-banner {{
+        background: url("data:image/jpeg;base64,{pn_bg_mobile_base64}") no-repeat center center;
+        background-size: cover;
+        height: 120px;
+    }}
+}}
+
+/* Đẩy nội dung xuống dưới banner */
 .main > div:first-child {{
-    padding-top: 350px !important;
+    padding-top: 140px !important;
     padding-left: 20px;
     padding-right: 20px;
 }}
 
-@media (max-width: 768px) {{
-    .stApp {{
-        background: url("data:image/jpeg;base64,{pn_bg_mobile_base64}") no-repeat center top scroll !important;
-        background-size: cover !important;
-    }}
-    .main > div:first-child {{ padding-top: 200px !important; }}
-}}
-
-/* ✅ KEYFRAMES CHO TIÊU ĐỀ CHẠY - GIỐNG TRANG CHÍNH */
-@keyframes scrollText {{
-    0% {{ transform: translate(100vw, 0); }}
-    100% {{ transform: translate(-100%, 0); }}
-}}
-
-@keyframes colorShift {{
-    0% {{ background-position: 0% 50%; }}
-    50% {{ background-position: 100% 50%; }}
-    100% {{ background-position: 0% 50%; }}
-}}
-
-/* ✅ TIÊU ĐỀ CHẠY - GIỐNG Y HỆT TRANG CHÍNH */
-#main-title-container {{
+/* ✅ LOGO Ở TRÊN CÙNG, GIỮA BANNER */
+#logo-container {{
     position: fixed;
-    top: 5vh;
-    left: 0;
-    width: 100%;
-    height: 10vh;
-    overflow: hidden;
-    z-index: 20;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    text-align: center;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     pointer-events: none;
-    opacity: 1;
-    transition: opacity 2s;
 }}
 
-#main-title-container h1 {{
-    font-family: 'Playfair Display', serif;
-    font-size: 3.5vw;
-    margin: 0;
-    font-weight: 900;
-    font-feature-settings: "lnum" 1;
-    letter-spacing: 5px;
-    white-space: nowrap;
-    display: inline-block;
-    animation: scrollText 15s linear infinite;
-    background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3);
-    background-size: 400% 400%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    color: transparent;
-    animation: colorShift 10s ease infinite, scrollText 15s linear infinite;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+#logo-container img {{
+    height: 90px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 10px rgba(0,0,0,0.8));
 }}
 
 @media (max-width: 768px) {{
-    #main-title-container {{
-        height: 8vh;
-        width: 100%;
-        left: 0;
-    }}
-    
-    #main-title-container h1 {{
-        font-size: 6.5vw;
-        animation-duration: 8s;
+    #logo-container img {{
+        height: 65px;
     }}
 }}
 
-/* ✅ NÚT VỀ TRANG CHỦ - FIXED */
-#back-to-home-btn-container {{
-    position: fixed;
-    top: 15px;
-    left: 15px;
-    z-index: 1001;
-}}
-
-a#manual-home-btn {{
-    background-color: rgba(0, 0, 0, 0.85);
-    color: #FFEA00;
-    border: 2px solid #FFEA00;
-    padding: 10px 20px;
-    border-radius: 8px;
-    font-weight: bold;
-    font-size: 16px;
-    transition: all 0.3s;
-    cursor: pointer;
-    font-family: 'Oswald', sans-serif;
-    text-decoration: none;
-    display: inline-block;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-}}
-
-a#manual-home-btn:hover {{
-    background-color: #FFEA00;
-    color: black;
-    transform: scale(1.05);
-}}
-
-/* ✅ TIÊU ĐỀ PHỤ TĨNH */
+/* ✅ TIÊU ĐỀ PHỤ - FONT CAO BỒI (Rye) */
 #sub-static-title {{
     position: static;
-    margin-top: 20px;
-    margin-bottom: 30px;
+    margin-top: 10px;
+    margin-bottom: 25px;
     z-index: 90;
     background: transparent !important;
     text-align: center;
 }}
 
 #sub-static-title h2 {{
-    font-family: 'Playfair Display', serif;
-    font-size: 2rem;
+    font-family: 'Rye', cursive !important;
+    font-size: 2.2rem;
     color: #FFEA00;
     text-align: center;
-    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8);
+    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8), 2px 2px 4px rgba(0,0,0,0.9);
     margin-bottom: 20px;
+    letter-spacing: 3px;
 }}
 
+/* ✅ TIÊU ĐỀ KẾT QUẢ - FONT CAO BỒI (Rye) */
 .result-title h3 {{
-    font-family: 'Playfair Display', serif;
+    font-family: 'Rye', cursive !important;
     font-size: 2rem;
     color: #FFEA00;
     text-align: center;
-    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8);
+    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8), 2px 2px 4px rgba(0,0,0,0.9);
     margin-bottom: 20px;
+    letter-spacing: 2px;
 }}
 
 @media (max-width: 768px) {{
-    #sub-static-title h2, .result-title h3 {{
+    #sub-static-title h2 {{
+        font-size: 1.3rem;
+        letter-spacing: 1px;
+    }}
+    .result-title h3 {{
         font-size: 1.2rem;
-        white-space: nowrap;
     }}
 }}
 
-/* --- CSS CHO DROPDOWN & BẢNG KẾT QUẢ --- */
+/* --- CSS CHO DROPDOWN LABEL - FONT CAO BỒI --- */
 div.stSelectbox label p, div[data-testid*="column"] label p {{
-    color: #00FF00 !important;
-    font-size: 1.25rem !important;
+    color: #FFD700 !important;
+    font-size: 1.1rem !important;
     font-weight: bold;
-    text-shadow: 0 0 5px rgba(0,255,0,0.5);
+    font-family: 'Rye', cursive !important;
+    text-shadow: 0 0 6px rgba(255,215,0,0.7), 1px 1px 3px rgba(0,0,0,0.9);
 }}
 
 .stSelectbox div[data-baseweb="select"] {{
-    background-color: rgba(0, 0, 0, 0.7);
-    border: 1px solid #00FF00;
+    background-color: rgba(0, 0, 0, 0.75);
+    border: 1px solid #FFD700;
     border-radius: 8px;
 }}
 
 .stSelectbox div[data-baseweb="select"] div[data-testid="stTextInput"] {{
     color: #FFFFFF !important;
+    font-family: 'Rye', cursive !important;
 }}
 
+/* Nội dung bên trong dropdown */
+div[data-baseweb="select"] span,
+div[data-baseweb="select"] div {{
+    font-family: 'Rye', cursive !important;
+    color: #FFFFFF !important;
+}}
+
+/* ✅ BẢNG KẾT QUẢ */
 .custom-table th {{
     background-color: #1E8449 !important;
     color: #FFFFFF !important;
     padding: 14px;
     border: 2px solid #2ECC71;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     font-weight: bold;
     text-align: center !important;
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Rye', cursive !important;
+    letter-spacing: 1px;
 }}
 
 .custom-table td {{
@@ -273,34 +243,6 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
     margin: 0;
     border-collapse: collapse;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
-}}
-
-/* ✅ LOGO Ở TRÊN CÙNG, GIỮA TRANG */
-#logo-container {{
-    position: fixed;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 1000;
-    text-align: center;
-    pointer-events: none;
-}}
-
-#logo-container img {{
-    height: 70px;
-    width: auto;
-    object-fit: contain;
-    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.7));
-    border-radius: 8px;
-}}
-
-@media (max-width: 768px) {{
-    #logo-container img {{
-        height: 45px;
-    }}
-    #logo-container {{
-        top: 8px;
-    }}
 }}
 
 </style>
