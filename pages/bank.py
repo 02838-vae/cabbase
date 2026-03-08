@@ -1427,15 +1427,11 @@ html, body, .stApp {{
 
 /* === BỔ SUNG CSS CHO ĐOẠN VĂN (PL3) === */
 #sub-static-title {{
-    position: fixed;
-    top: 120px;
-    left: 0;
-    width: 100%;
-    z-index: 1900;
+    position: static;
+    margin-top: 10px;
+    margin-bottom: 20px;
     text-align: center;
-    margin: 0;
     padding: 6px 0;
-    pointer-events: none;
     background: transparent;
 }}
 #sub-static-title h2 {{
@@ -1463,9 +1459,9 @@ html, body, .stApp {{
     text-shadow: 0 0 12px #DAA520, 0 0 30px rgba(184,134,11,0.6);
 }}
 
-/* Đẩy nội dung chính xuống để không bị che bởi logo + sub-title */
+/* Đẩy nội dung chính xuống để không bị che bởi logo */
 .main > div:first-child {{
-    padding-top: 200px !important; padding-bottom: 2rem !important;
+    padding-top: 130px !important; padding-bottom: 2rem !important;
 }}
 
 /* Tiêu đề Paragraph X . (In đậm, màu cam) */
@@ -1720,8 +1716,7 @@ div[data-testid="stAlert"] strong {{
 @media (max-width: 768px) {{
     #main-title-container {{ height: 100px; padding-top: 10px; }}
     #main-title-container h1 {{ font-size: 8vw; line-height: 1.5 !important; }}
-    .main > div:first-child {{ padding-top: 170px !important; }}
-    #sub-static-title {{ top: 75px; }}
+    .main > div:first-child {{ padding-top: 90px !important; }}
     
     /* Chỉnh kích thước tiêu đề trên mobile */
     #sub-static-title h2, 
@@ -1791,6 +1786,7 @@ if 'passage_translations_cache' not in st.session_state: st.session_state.passag
 if 'current_passage_id_displayed' not in st.session_state: st.session_state.current_passage_id_displayed = None 
 if 'group_mode_title' not in st.session_state: st.session_state.group_mode_title = "Luyện tập theo nhóm (30 câu/nhóm)"
 if 'last_source' not in st.session_state: st.session_state.last_source = ""
+if 'group_selector_key' not in st.session_state: st.session_state.group_selector_key = 0
 
 # CẬP NHẬT LIST NGÂN HÀNG
 BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật VAECO", "Ngân hàng Docwise"]
@@ -1835,11 +1831,13 @@ if bank_choice != "----":
         if st.session_state.doc_selected != doc_selected_new:
             st.session_state.doc_selected = doc_selected_new
             st.session_state.current_group_idx = 0
+            st.session_state.group_selector_key += 1  # Clear cache widget group_selector
+            st.session_state.last_source = ""          # Reset để trigger khởi tạo nhóm mới
             st.session_state.submitted = False
             st.session_state.current_mode = "group"
             st.session_state.active_translation_key = None 
             st.session_state.active_passage_translation = None 
-            st.session_state.current_passage_id_displayed = None # Reset passage display
+            st.session_state.current_passage_id_displayed = None
             st.rerun()
 
         if st.session_state.doc_selected == "Phụ lục 1 : Ngữ pháp chung":
@@ -1943,7 +1941,7 @@ if bank_choice != "----":
             })
         
         groups = [g['label'] for g in custom_groups]
-        # Reset về Paragraph 1&2 khi mới chuyển sang PL3/PL4
+        # Khi mới chuyển sang PL3/PL4: mặc định Paragraph 1&2 (index 0)
         if st.session_state.get('last_source', '') != source:
             st.session_state.current_group_idx = 0
             st.session_state.last_source = source
@@ -1952,12 +1950,19 @@ if bank_choice != "----":
     else:
         # Nhóm câu hỏi theo số lượng (30 câu/nhóm) cho các ngân hàng khác
         groups = [f"Câu {i*group_size+1}-{min((i+1)*group_size, total)}" for i in range(math.ceil(total/group_size))]
+        if st.session_state.get('last_source', '') != source:
+            st.session_state.current_group_idx = 0
+            st.session_state.last_source = source
         
     # --- MODE: GROUP ---
     if st.session_state.current_mode == "group":
         if total > 0:
             if st.session_state.current_group_idx >= len(groups): st.session_state.current_group_idx = 0
-            selected = st.selectbox("Chọn nhóm câu:", groups, index=st.session_state.current_group_idx, key="group_selector")
+            selected = st.selectbox(
+                "Chọn nhóm câu:", groups,
+                index=st.session_state.current_group_idx,
+                key=f"group_selector_{st.session_state.group_selector_key}"
+            )
             
             # Xử lý khi chuyển nhóm câu
             new_idx = groups.index(selected)
