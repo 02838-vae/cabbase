@@ -1440,7 +1440,7 @@ html, body, .stApp {{
     font-size: 2.8rem;
     font-weight: 700;
     letter-spacing: 4px;
-    color: #C29954;
+    color: #C8A84B;
     text-shadow: none;
     margin: 0;
 }}
@@ -1655,7 +1655,7 @@ div.stSelectbox label p,
 div.stSelectbox label span,
 div.stSelectbox label,
 div[data-testid*="column"] label p {{
-    color: #C29954 !important;
+    color: #D4AA70 !important;
     font-size: 1.25rem !important;
     font-family: 'Rye', cursive !important;
     font-weight: bold;
