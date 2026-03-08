@@ -68,38 +68,25 @@ hide_streamlit_style = f"""
 }}
 
 .stApp {{
-    background-color: #1a1a2e !important;
+    background: url("data:image/jpeg;base64,{pn_bg_pc_base64}") no-repeat center top fixed !important;
+    background-size: cover !important;
     font-family: 'Oswald', sans-serif !important;
-}}
-
-/* Banner nền PC - full width, height 120px cố định */
-#banner-pc {{
-    display: block;
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 120px;
-    background: url("data:image/jpeg;base64,{pn_bg_pc_base64}") no-repeat center center;
-    background-size: cover;
-    z-index: 100;
 }}
 
 /* Banner nền mobile */
 @media (max-width: 768px) {{
-    #banner-pc {{
-        background: url("data:image/jpeg;base64,{pn_bg_mobile_base64}") no-repeat center center;
-        background-size: cover;
-        height: 120px;
+    .stApp {{
+        background: url("data:image/jpeg;base64,{pn_bg_mobile_base64}") no-repeat center top fixed !important;
+        background-size: cover !important;
     }}
 }}
 
-/* Logo căn giữa bên dưới banner */
+/* Logo căn giữa trên cùng */
 #logo-container {{
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: 130px;
+    margin-top: 20px;
     margin-bottom: 10px;
     z-index: 90;
 }}
@@ -108,7 +95,6 @@ hide_streamlit_style = f"""
     max-height: 120px;
     max-width: 80%;
     object-fit: contain;
-    filter: drop-shadow(0 4px 12px rgba(0,0,0,0.6));
 }}
 
 /* Đẩy nội dung chính xuống dưới banner + logo */
@@ -214,9 +200,6 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
 </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
-# --- BANNER NỀN CỐ ĐỊNH ---
-st.markdown('<div id="banner-pc"></div>', unsafe_allow_html=True)
 
 # --- LOGO Ở GIỮA, PHÍA TRÊN ---
 st.markdown(
