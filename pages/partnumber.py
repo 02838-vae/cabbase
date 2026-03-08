@@ -61,6 +61,7 @@ hide_streamlit_style = f"""
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Cinzel+Decorative:wght@400;700;900&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rye&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=IM+Fell+English:ital@0;1&display=swap');
 #MainMenu, footer, header {{visibility: hidden;}}
 
@@ -155,14 +156,13 @@ a#manual-home-btn:hover {{
 }}
 
 #sub-static-title h2 {{
-    font-family: 'Cinzel Decorative', serif;
-    font-size: 1.9rem;
-    font-weight: 700;
+    font-family: 'Rye', serif;
+    font-size: 2rem;
     color: #C8A96E;
     text-align: center;
     text-shadow: 2px 2px 0px #3B1F0A, 0 0 18px rgba(180,130,60,0.45);
     margin-bottom: 20px;
-    letter-spacing: 6px;
+    letter-spacing: 4px;
 }}
 
 .result-title h3 {{
