@@ -161,13 +161,13 @@ hr {{ display: none !important; }}
 }}
 #sub-static-title h2 {{
     font-size: 2rem;
-    color: #FFEA00;
+    color: #D4A843;
     text-align: center;
     margin-bottom: 20px;
 }}
 .result-title h3 {{
     font-size: 2rem;
-    color: #FFEA00;
+    color: #D4A843;
     text-align: center;
     margin-bottom: 20px;
 }}
@@ -181,13 +181,13 @@ hr {{ display: none !important; }}
 div.stSelectbox label p,
 div.stSelectbox label span,
 [data-testid="stSelectbox"] label p {{
-    color: #FFEA00 !important;
+    color: #D4A843 !important;
     font-size: 1.1rem !important;
     text-shadow: none !important;
 }}
 .stSelectbox div[data-baseweb="select"] {{
     background-color: rgba(0, 0, 0, 0.7) !important;
-    border: 1px solid #FFEA00 !important;
+    border: 1px solid #D4A843 !important;
     border-radius: 8px !important;
 }}
 .stSelectbox div[data-baseweb="select"] div,
