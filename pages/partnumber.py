@@ -55,40 +55,49 @@ except Exception as e:
 
 # --- CSS ---
 hide_streamlit_style = f"""
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rye&display=swap" rel="stylesheet">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap');
-@import url('https://fonts.googleapis.com/css2?family=Rye&display=swap');
 #MainMenu, footer, header {{visibility: hidden;}}
 
+/* ======== FONT RYE TOÀN TRANG ======== */
+html, body, .stApp, * {{
+    font-family: 'Rye', serif !important;
+}}
+
+/* ======== LAYOUT ======== */
 .main {{
     padding: 0 !important;
     margin: 0 !important;
     background-color: transparent !important;
 }}
-
 .block-container {{
     padding-top: 0 !important;
     padding-bottom: 0 !important;
     margin-top: 0 !important;
     max-width: 100% !important;
 }}
-
 section[data-testid="stMain"] > div:first-child {{
     padding-top: 0 !important;
 }}
-
 div[data-testid="stVerticalBlock"] {{
     gap: 0 !important;
 }}
+.main > div:first-child {{
+    padding-top: 0 !important;
+    padding-left: 20px;
+    padding-right: 20px;
+}}
+hr {{
+    display: none !important;
+}}
 
+/* ======== NỀN ======== */
 .stApp {{
     background: url("data:image/jpeg;base64,{pn_bg_pc_base64}") no-repeat center top fixed !important;
     background-size: cover !important;
-    font-family: 'Rye', serif !important;
 }}
-
-/* Banner nền mobile */
 @media (max-width: 768px) {{
     .stApp {{
         background: url("data:image/jpeg;base64,{pn_bg_mobile_base64}") no-repeat center top fixed !important;
@@ -96,7 +105,7 @@ div[data-testid="stVerticalBlock"] {{
     }}
 }}
 
-/* Logo căn giữa trên cùng */
+/* ======== LOGO ======== */
 #logo-container {{
     display: flex;
     justify-content: center;
@@ -104,8 +113,6 @@ div[data-testid="stVerticalBlock"] {{
     padding-top: 15px;
     margin-bottom: 10px;
 }}
-
-/* Wrapper ánh sáng vàng chạy vòng quanh logo */
 #logo-wrap {{
     position: relative;
     display: inline-flex;
@@ -116,13 +123,11 @@ div[data-testid="stVerticalBlock"] {{
     width: fit-content;
     isolation: isolate;
 }}
-
 @property --logo-angle {{
     syntax: '<angle>';
     initial-value: 0deg;
     inherits: false;
 }}
-
 #logo-wrap::before {{
     content: '';
     position: absolute;
@@ -130,22 +135,16 @@ div[data-testid="stVerticalBlock"] {{
     border-radius: 12px;
     background: conic-gradient(
         from var(--logo-angle, 0deg),
-        transparent 0deg,
-        transparent 60deg,
-        #ffd700 90deg,
-        #fff8a0 110deg,
-        #ffd700 130deg,
-        transparent 160deg,
-        transparent 360deg
+        transparent 0deg, transparent 60deg,
+        #ffd700 90deg, #fff8a0 110deg, #ffd700 130deg,
+        transparent 160deg, transparent 360deg
     );
     animation: logo-spin 2.5s linear infinite;
     z-index: -1;
 }}
-
 @keyframes logo-spin {{
     to {{ --logo-angle: 360deg; }}
 }}
-
 #logo-wrap img {{
     position: relative;
     z-index: 1;
@@ -156,25 +155,11 @@ div[data-testid="stVerticalBlock"] {{
     object-fit: contain;
     border-radius: 8px;
 }}
-
 @media (max-width: 768px) {{
-    #logo-wrap img {{
-        max-height: 55px;
-    }}
+    #logo-wrap img {{ max-height: 55px; }}
 }}
 
-.main > div:first-child {{
-    padding-top: 0 !important;
-    padding-left: 20px;
-    padding-right: 20px;
-}}
-
-/* Ẩn đường kẻ hr của Streamlit */
-hr {{
-    display: none !important;
-}}
-
-/* ✅ TIÊU ĐỀ PHỤ TĨNH */
+/* ======== TIÊU ĐỀ ======== */
 #sub-static-title {{
     position: static;
     margin-top: 10px;
@@ -183,25 +168,18 @@ hr {{
     background: transparent !important;
     text-align: center;
 }}
-
 #sub-static-title h2 {{
-    font-family: 'Rye', serif !important;
     font-size: 2rem;
     color: #FFEA00;
     text-align: center;
-    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8);
     margin-bottom: 20px;
 }}
-
 .result-title h3 {{
-    font-family: 'Rye', serif !important;
     font-size: 2rem;
     color: #FFEA00;
     text-align: center;
-    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8);
     margin-bottom: 20px;
 }}
-
 @media (max-width: 768px) {{
     #sub-static-title h2, .result-title h3 {{
         font-size: 1.1rem;
@@ -209,47 +187,39 @@ hr {{
     }}
 }}
 
-/* --- LABEL HỘP CHỌN --- */
-div.stSelectbox label,
+/* ======== LABEL HỘP CHỌN ======== */
 div.stSelectbox label p,
 div.stSelectbox label span,
-div[data-testid*="column"] label,
-div[data-testid*="column"] label p,
-div[data-testid*="column"] label span,
-[data-testid="stSelectbox"] label,
-[data-testid="stSelectbox"] label * {{
-    font-family: 'Rye', serif !important;
+[data-testid="stSelectbox"] label p {{
     color: #00FF00 !important;
     font-size: 1.1rem !important;
-    text-shadow: 0 0 5px rgba(0,255,0,0.5) !important;
+    text-shadow: none !important;
 }}
 
-/* --- KHUNG HỘP CHỌN --- */
+/* ======== KHUNG HỘP CHỌN ======== */
 .stSelectbox div[data-baseweb="select"] {{
     background-color: rgba(0, 0, 0, 0.7) !important;
     border: 1px solid #00FF00 !important;
     border-radius: 8px !important;
 }}
 
-/* --- NỘI DUNG HIỂN THỊ TRONG HỘP CHỌN (giá trị đang chọn) --- */
-.stSelectbox div[data-baseweb="select"] *,
-.stSelectbox [class*="valueContainer"] *,
-.stSelectbox [class*="singleValue"],
-.stSelectbox [class*="placeholder"],
-.stSelectbox [class*="Input"] input {{
-    font-family: 'Rye', serif !important;
+/* ======== NỘI DUNG TRONG HỘP CHỌN ======== */
+.stSelectbox div[data-baseweb="select"] div,
+.stSelectbox div[data-baseweb="select"] span,
+.stSelectbox div[data-baseweb="select"] input {{
     color: #FFFFFF !important;
+    text-shadow: none !important;
 }}
 
-/* --- DROPDOWN LIST KHI MỞ --- */
-[data-baseweb="popover"] *,
-[data-baseweb="menu"] *,
-[role="listbox"] *,
-[role="option"] * {{
+/* ======== DROPDOWN LIST ======== */
+[data-baseweb="popover"] li,
+[data-baseweb="menu"] li,
+[role="option"] {{
     font-family: 'Rye', serif !important;
+    text-shadow: none !important;
 }}
 
-/* --- BẢNG KẾT QUẢ --- */
+/* ======== BẢNG KẾT QUẢ ======== */
 .custom-table th {{
     background-color: #1E8449 !important;
     color: #FFFFFF !important;
@@ -258,9 +228,7 @@ div[data-testid*="column"] label span,
     font-size: 1.1rem;
     font-weight: bold;
     text-align: center !important;
-    font-family: 'Rye', serif !important;
 }}
-
 .custom-table td {{
     padding: 12px;
     text-align: center !important;
@@ -269,9 +237,7 @@ div[data-testid*="column"] label span,
     font-size: 1rem;
     color: #000000;
     background-color: #FFFFFF !important;
-    font-family: Arial, sans-serif;
 }}
-
 .table-container {{
     display: flex;
     justify-content: flex-start;
@@ -281,7 +247,6 @@ div[data-testid*="column"] label span,
     -webkit-overflow-scrolling: touch;
     padding-bottom: 15px;
 }}
-
 .custom-table {{
     min-width: 100%;
     width: max-content;
@@ -289,24 +254,9 @@ div[data-testid*="column"] label span,
     border-collapse: collapse;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.5);
 }}
-
 </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
-# --- INJECT FONT RYE TRỰC TIẾP QUA LINK TAG ---
-st.markdown("""
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Rye&display=swap" rel="stylesheet">
-<style>
-* {{ font-family: 'Rye', serif !important; }}
-p, span, div, li, a, button, input, select, option,
-[data-baseweb], [data-testid], label {{
-    font-family: 'Rye', serif !important;
-}}
-</style>
-""", unsafe_allow_html=True)
 
 # --- LOGO Ở GIỮA, PHÍA TRÊN ---
 st.markdown(
