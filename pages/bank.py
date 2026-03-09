@@ -1691,7 +1691,7 @@ div.stSelectbox label span,
 div.stSelectbox label,
 div[data-testid*="column"] label p {{
     color: #D4A843 !important;
-    font-size: 1.05rem !important;
+    font-size: 1.25rem !important;
     font-family: 'Rye', serif !important;
     font-weight: bold;
     text-shadow: none;
@@ -1805,7 +1805,7 @@ div[data-testid="stAlert"] strong {{ color: #FFD700 !important; }}
     div.stSelectbox label span,
     div.stSelectbox label,
     div[data-testid*="column"] label p {{
-        font-size: 0.8rem !important;
+        font-size: 0.9rem !important;
     }}
     
     /* Chỉnh kích thước tiêu đề trên mobile */
@@ -1865,8 +1865,8 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 st.markdown("""
-<div id="bank-main-title" style="text-align: center; margin-top: -10px; margin-bottom: 10px;">
-    <span style="font-family: 'Rye', serif; font-size: 2rem; font-weight: 900; color: #D4A843; letter-spacing: 3px;">
+<div id="bank-main-title" style="text-align: center; margin-top: -30px; margin-bottom: 10px;">
+    <span style="font-family: 'Rye', serif; font-size: 2.6rem; font-weight: 900; color: #D4A843; letter-spacing: 3px;">
         NGÂN HÀNG TRẮC NGHIỆM
     </span>
 </div>
