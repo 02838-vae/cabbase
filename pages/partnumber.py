@@ -61,10 +61,16 @@ hide_streamlit_style = f"""
 #MainMenu, footer, header {{visibility: hidden;}}
 
 .main {{
-    padding: 0;
-    margin: 0;
+    padding: 0 !important;
+    margin: 0 !important;
     background-color: transparent !important;
-    z-index: 10 !important;
+}}
+
+.block-container {{
+    padding-top: 0 !important;
+    padding-bottom: 0 !important;
+    margin-top: 0 !important;
+    max-width: 100% !important;
 }}
 
 .stApp {{
@@ -86,9 +92,8 @@ hide_streamlit_style = f"""
     display: flex;
     justify-content: center;
     align-items: center;
-    margin-top: 20px;
+    padding-top: 15px;
     margin-bottom: 10px;
-    z-index: 90;
 }}
 
 #logo-container img {{
@@ -98,7 +103,7 @@ hide_streamlit_style = f"""
 }}
 
 .main > div:first-child {{
-    padding-top: 0px !important;
+    padding-top: 0 !important;
     padding-left: 20px;
     padding-right: 20px;
 }}
