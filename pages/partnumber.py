@@ -153,7 +153,7 @@ hr {{ display: none !important; }}
 
 #sub-static-title {{
     position: static;
-    margin-top: 10px;
+    margin-top: 35px;
     margin-bottom: 30px;
     z-index: 90;
     background: transparent !important;
