@@ -97,11 +97,15 @@ hide_streamlit_style = f"""
     object-fit: contain;
 }}
 
-/* Đẩy nội dung chính xuống dưới banner + logo */
 .main > div:first-child {{
-    padding-top: 10px !important;
+    padding-top: 0px !important;
     padding-left: 20px;
     padding-right: 20px;
+}}
+
+/* Ẩn đường kẻ hr của Streamlit */
+hr {{
+    display: none !important;
 }}
 
 /* ✅ TIÊU ĐỀ PHỤ TĨNH */
@@ -273,7 +277,6 @@ if (aircraft_selected and zone_selected) and item_exists and (desc_selected or n
         df_filtered = df_filtered[df_filtered["ITEM"] == item].copy()
 
 st.markdown("</div>", unsafe_allow_html=True)
-st.markdown("---")
 
 # --- HIỂN THỊ KẾT QUẢ ---
 all_criteria_met = zone_selected and aircraft_selected and (desc_selected or not desc_exists) and (item_selected or not item_exists)
@@ -320,11 +323,9 @@ if zone_selected:
 
             st.markdown(''.join(html_parts), unsafe_allow_html=True)
         else:
-            st.markdown("---")
             st.warning("⚠️ **Không tìm thấy kết quả phù hợp** với các tiêu chí đã chọn.")
 
     elif not all_criteria_met:
-        st.markdown("---")
         prompt_text = "Zone"
         if zone_selected and not aircraft_selected and ac_exists:
             prompt_text = "Loại máy bay"
@@ -355,5 +356,4 @@ if zone_selected:
             """, unsafe_allow_html=True)
 
     else:
-        st.markdown("---")
         st.warning("⚠️ **Không có dữ liệu Part Number** trong Zone này.")
