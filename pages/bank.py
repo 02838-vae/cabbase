@@ -1766,8 +1766,17 @@ div[data-testid="stNotification"] *,
 }}
 
 /* Ngoại lệ: tiêu đề chính giữ màu riêng */
+#bank-main-title {{
+    margin-top: -40px !important;
+    margin-bottom: 10px !important;
+    text-align: center !important;
+}}
 #bank-main-title span {{
     color: #D4A843 !important;
+    font-size: 2.8rem !important;
+    font-family: 'Rye', serif !important;
+    font-weight: 900 !important;
+    letter-spacing: 3px !important;
 }}
 
 /* Ngoại lệ: câu hỏi và đáp án giữ màu riêng */
