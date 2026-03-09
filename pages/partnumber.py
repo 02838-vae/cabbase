@@ -185,7 +185,7 @@ hr {{
 }}
 
 #sub-static-title h2 {{
-    font-family: 'Rye', serif;
+    font-family: 'Rye', serif !important;
     font-size: 2rem;
     color: #FFEA00;
     text-align: center;
@@ -194,7 +194,7 @@ hr {{
 }}
 
 .result-title h3 {{
-    font-family: 'Rye', serif;
+    font-family: 'Rye', serif !important;
     font-size: 2rem;
     color: #FFEA00;
     text-align: center;
@@ -207,42 +207,49 @@ hr {{
         font-size: 1.1rem;
         white-space: nowrap;
     }}
-    div.stSelectbox label p, div[data-testid*="column"] label p {{
-        font-size: 1rem !important;
-    }}
 }}
 
-/* --- CSS CHO DROPDOWN & BẢNG KẾT QUẢ --- */
-div.stSelectbox label p, div[data-testid*="column"] label p {{
+/* --- LABEL HỘP CHỌN --- */
+div.stSelectbox label,
+div.stSelectbox label p,
+div.stSelectbox label span,
+div[data-testid*="column"] label,
+div[data-testid*="column"] label p,
+div[data-testid*="column"] label span,
+[data-testid="stSelectbox"] label,
+[data-testid="stSelectbox"] label * {{
+    font-family: 'Rye', serif !important;
     color: #00FF00 !important;
-    font-size: 1.25rem !important;
-    font-weight: bold;
-    font-family: 'Rye', serif !important;
-    text-shadow: 0 0 5px rgba(0,255,0,0.5);
+    font-size: 1.1rem !important;
+    text-shadow: 0 0 5px rgba(0,255,0,0.5) !important;
 }}
 
+/* --- KHUNG HỘP CHỌN --- */
 .stSelectbox div[data-baseweb="select"] {{
-    background-color: rgba(0, 0, 0, 0.7);
-    border: 1px solid #00FF00;
-    border-radius: 8px;
+    background-color: rgba(0, 0, 0, 0.7) !important;
+    border: 1px solid #00FF00 !important;
+    border-radius: 8px !important;
 }}
 
-/* Nội dung bên trong hộp chọn */
-.stSelectbox div[data-baseweb="select"] span,
-.stSelectbox div[data-baseweb="select"] div,
-.stSelectbox [data-testid="stSelectboxVirtualDropdown"] li,
-div[data-baseweb="popover"] li,
-div[data-baseweb="popover"] span,
-div[data-baseweb="menu"] li {{
+/* --- NỘI DUNG HIỂN THỊ TRONG HỘP CHỌN (giá trị đang chọn) --- */
+.stSelectbox div[data-baseweb="select"] *,
+.stSelectbox [class*="valueContainer"] *,
+.stSelectbox [class*="singleValue"],
+.stSelectbox [class*="placeholder"],
+.stSelectbox [class*="Input"] input {{
     font-family: 'Rye', serif !important;
     color: #FFFFFF !important;
 }}
 
-.stSelectbox div[data-baseweb="select"] div[data-testid="stTextInput"] {{
-    color: #FFFFFF !important;
+/* --- DROPDOWN LIST KHI MỞ --- */
+[data-baseweb="popover"] *,
+[data-baseweb="menu"] *,
+[role="listbox"] *,
+[role="option"] * {{
     font-family: 'Rye', serif !important;
 }}
 
+/* --- BẢNG KẾT QUẢ --- */
 .custom-table th {{
     background-color: #1E8449 !important;
     color: #FFFFFF !important;
@@ -251,7 +258,7 @@ div[data-baseweb="menu"] li {{
     font-size: 1.1rem;
     font-weight: bold;
     text-align: center !important;
-    font-family: 'Rye', serif;
+    font-family: 'Rye', serif !important;
 }}
 
 .custom-table td {{
@@ -286,6 +293,20 @@ div[data-baseweb="menu"] li {{
 </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+# --- INJECT FONT RYE TRỰC TIẾP QUA LINK TAG ---
+st.markdown("""
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Rye&display=swap" rel="stylesheet">
+<style>
+* {{ font-family: 'Rye', serif !important; }}
+p, span, div, li, a, button, input, select, option,
+[data-baseweb], [data-testid], label {{
+    font-family: 'Rye', serif !important;
+}}
+</style>
+""", unsafe_allow_html=True)
 
 # --- LOGO Ở GIỮA, PHÍA TRÊN ---
 st.markdown(
