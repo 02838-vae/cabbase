@@ -1491,8 +1491,8 @@ html, body, .stApp {{
     font-size: 2rem;
     font-weight: 700;
     letter-spacing: 3px;
-    color: #FFEA00;
-    text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8);
+    color: #D4A843;
+    text-shadow: 0 0 15px #D4A843, 0 0 30px rgba(212,168,67,0.8);
 }}
 
 /* Đẩy nội dung chính xuống để không bị che bởi logo */
@@ -1505,8 +1505,8 @@ html, body, .stApp {{
     font-family: 'Rye', cursive;
     font-size: 1.8rem;
     font-weight: 700;
-    color: #FFA500;
-    text-shadow: 0 0 8px rgba(255, 165, 0, 0.5);
+    color: #D4A843;
+    text-shadow: 0 0 8px rgba(212, 168, 67, 0.5);
     margin-top: 20px;
     margin-bottom: 10px;
     padding: 5px 15px;
@@ -1649,7 +1649,7 @@ div[data-testid="stCheckbox"] div,
 .stCheckbox label,
 .stCheckbox p,
 .stCheckbox span {{
-    color: #FFFFE0 !important;
+    color: #D4A843 !important;
     font-size: 20px !important;
     font-weight: 700 !important;
 }}
@@ -1660,7 +1660,7 @@ div[data-testid="stCheckbox"] div,
     padding: 0;
     margin: 0;
     line-height: 1 !important;
-    color: #FFFFE0 !important;
+    color: #D4A843 !important;
 }}
 .stToggle label,
 .stToggle label span,
@@ -1669,7 +1669,7 @@ div[data-testid="stCheckbox"] div,
 .stToggle label > div[data-testid="stMarkdownContainer"] p,
 .stToggle label > div[data-testid="stMarkdownContainer"] span,
 .stToggle label * {{
-    color: #FFFFE0 !important;
+    color: #D4A843 !important;
     font-size: 20px !important;
     font-weight: 700 !important;
 }}
@@ -1682,7 +1682,7 @@ div[data-testid="stCheckbox"] div,
     color: inherit !important;
 }}
 .stToggle [data-testid="stMarkdownContainer"] > p {{
-    color: #FFFFE0 !important;
+    color: #D4A843 !important;
 }}
 
 /* SELECTBOX - LABEL TIÊU ĐỀ */
@@ -1690,7 +1690,7 @@ div.stSelectbox label p,
 div.stSelectbox label span,
 div.stSelectbox label,
 div[data-testid*="column"] label p {{
-    color: #D4AA70 !important;
+    color: #D4A843 !important;
     font-size: 1.25rem !important;
     font-family: 'Rye', cursive !important;
     font-weight: bold;
@@ -1761,13 +1761,13 @@ div[data-testid="stAlert"] {{
 div[data-testid="stNotification"] *,
 .stWarning *, .stInfo *, .stError *,
 .stSuccess * {{
-    color: #FFFFE0 !important;
+    color: #D4A843 !important;
     font-family: 'Rye', cursive !important;
 }}
 
 /* Ngoại lệ: tiêu đề chính giữ màu riêng */
 #bank-main-title span {{
-    color: #D4AA70 !important;
+    color: #D4A843 !important;
 }}
 
 /* Ngoại lệ: câu hỏi và đáp án giữ màu riêng */
@@ -1797,6 +1797,7 @@ div[data-testid="stAlert"] strong {{ color: #FFD700 !important; }}
     .result-title h3 {{
         font-size: 1.3rem !important;
         font-family: 'Rye', cursive !important;
+        color: #D4A843 !important;
         white-space: normal !important;
         overflow: visible !important;
         text-overflow: clip !important;
@@ -1850,7 +1851,7 @@ st.markdown(f"""
 
 st.markdown("""
 <div id="bank-main-title" style="text-align: center; margin-top: -10px; margin-bottom: 10px;">
-    <span style="font-family: 'Rye', cursive; font-size: 2.4rem; font-weight: 900; color: #D4AA70; letter-spacing: 3px;">
+    <span style="font-family: 'Rye', cursive; font-size: 2.4rem; font-weight: 900; color: #D4A843; letter-spacing: 3px;">
         NGÂN HÀNG TRẮC NGHIỆM
     </span>
 </div>
