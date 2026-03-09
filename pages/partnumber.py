@@ -160,20 +160,20 @@ hr {{ display: none !important; }}
     text-align: center;
 }}
 #sub-static-title h2 {{
-    font-size: 2rem;
+    font-size: 2.8rem;
     color: #D4A843;
     text-align: center;
     margin-bottom: 20px;
 }}
 .result-title h3 {{
-    font-size: 2rem;
+    font-size: 2.8rem;
     color: #D4A843;
     text-align: center;
     margin-bottom: 20px;
 }}
 @media (max-width: 768px) {{
     #sub-static-title h2, .result-title h3 {{
-        font-size: 1.1rem;
+        font-size: 1.5rem;
         white-space: nowrap;
     }}
 }}
