@@ -1691,7 +1691,7 @@ div.stSelectbox label span,
 div.stSelectbox label,
 div[data-testid*="column"] label p {{
     color: #D4A843 !important;
-    font-size: 1.25rem !important;
+    font-size: 1.05rem !important;
     font-family: 'Rye', serif !important;
     font-weight: bold;
     text-shadow: none;
@@ -1792,6 +1792,21 @@ div[data-testid="stAlert"] strong {{ color: #FFD700 !important; }}
     #main-title-container {{ height: 100px; padding-top: 10px; }}
     #main-title-container h1 {{ font-size: 8vw; line-height: 1.5 !important; }}
     .main > div:first-child {{ padding-top: 90px !important; }}
+
+    /* Thu nhỏ tiêu đề chính vừa 1 dòng trên mobile */
+    #bank-main-title span {{
+        font-size: 4.8vw !important;
+        letter-spacing: 1px !important;
+        white-space: nowrap !important;
+    }}
+
+    /* Thu nhỏ label hộp chọn trên mobile */
+    div.stSelectbox label p,
+    div.stSelectbox label span,
+    div.stSelectbox label,
+    div[data-testid*="column"] label p {{
+        font-size: 0.8rem !important;
+    }}
     
     /* Chỉnh kích thước tiêu đề trên mobile */
     .result-title h3 {{
