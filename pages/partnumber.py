@@ -104,10 +104,67 @@ div[data-testid="stVerticalBlock"] {{
     margin-bottom: 10px;
 }}
 
-#logo-container img {{
+/* Wrapper ánh sáng vàng chạy vòng quanh logo */
+#logo-wrap {{
+    position: relative;
+    display: inline-block;
+    border-radius: 12px;
+    padding: 3px;
+    overflow: hidden;
+}}
+
+@property --logo-angle {{
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}}
+
+#logo-wrap::before {{
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: 12px;
+    background: conic-gradient(
+        from var(--logo-angle, 0deg),
+        transparent 0deg,
+        transparent 60deg,
+        #ffd700 90deg,
+        #fff8a0 110deg,
+        #ffd700 130deg,
+        transparent 160deg,
+        transparent 360deg
+    );
+    animation: logo-spin 2.5s linear infinite;
+    z-index: 0;
+}}
+
+@keyframes logo-spin {{
+    to {{ --logo-angle: 360deg; }}
+}}
+
+#logo-wrap::after {{
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 10px;
+    background: hsla(0,0%,10%,1);
+    z-index: 1;
+}}
+
+#logo-wrap img {{
+    position: relative;
+    z-index: 2;
+    display: block;
     max-height: 120px;
     max-width: 80%;
     object-fit: contain;
+    border-radius: 8px;
+}}
+
+@media (max-width: 768px) {{
+    #logo-wrap img {{
+        max-height: 55px;
+    }}
 }}
 
 .main > div:first-child {{
@@ -220,7 +277,7 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- LOGO Ở GIỮA, PHÍA TRÊN ---
 st.markdown(
-    f'<div id="logo-container"><img src="data:image/jpeg;base64,{logo_base64}" alt="Logo"></div>',
+    f'<div id="logo-container"><div id="logo-wrap"><img src="data:image/jpeg;base64,{logo_base64}" alt="Logo"></div></div>',
     unsafe_allow_html=True
 )
 
