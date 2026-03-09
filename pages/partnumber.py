@@ -100,8 +100,7 @@ div[data-testid="stVerticalBlock"] {{
     display: flex;
     justify-content: center;
     align-items: center;
-    padding-top: 0;
-    margin-top: 0;
+    padding-top: 30px;
     margin-bottom: 10px;
 }}
 
