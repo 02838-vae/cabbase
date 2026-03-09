@@ -55,18 +55,14 @@ except Exception as e:
 
 # --- CSS ---
 hide_streamlit_style = f"""
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Rye&display=swap" rel="stylesheet">
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Rye&display=swap');
 #MainMenu, footer, header {{visibility: hidden;}}
 
-/* ======== FONT RYE TOÀN TRANG ======== */
 html, body, .stApp, * {{
     font-family: 'Rye', serif !important;
 }}
 
-/* ======== LAYOUT ======== */
 .main {{
     padding: 0 !important;
     margin: 0 !important;
@@ -89,11 +85,8 @@ div[data-testid="stVerticalBlock"] {{
     padding-left: 20px;
     padding-right: 20px;
 }}
-hr {{
-    display: none !important;
-}}
+hr {{ display: none !important; }}
 
-/* ======== NỀN ======== */
 .stApp {{
     background: url("data:image/jpeg;base64,{pn_bg_pc_base64}") no-repeat center top fixed !important;
     background-size: cover !important;
@@ -105,7 +98,6 @@ hr {{
     }}
 }}
 
-/* ======== LOGO ======== */
 #logo-container {{
     display: flex;
     justify-content: center;
@@ -159,7 +151,6 @@ hr {{
     #logo-wrap img {{ max-height: 55px; }}
 }}
 
-/* ======== TIÊU ĐỀ ======== */
 #sub-static-title {{
     position: static;
     margin-top: 10px;
@@ -187,7 +178,6 @@ hr {{
     }}
 }}
 
-/* ======== LABEL HỘP CHỌN ======== */
 div.stSelectbox label p,
 div.stSelectbox label span,
 [data-testid="stSelectbox"] label p {{
@@ -195,23 +185,17 @@ div.stSelectbox label span,
     font-size: 1.1rem !important;
     text-shadow: none !important;
 }}
-
-/* ======== KHUNG HỘP CHỌN ======== */
 .stSelectbox div[data-baseweb="select"] {{
     background-color: rgba(0, 0, 0, 0.7) !important;
     border: 1px solid #00FF00 !important;
     border-radius: 8px !important;
 }}
-
-/* ======== NỘI DUNG TRONG HỘP CHỌN ======== */
 .stSelectbox div[data-baseweb="select"] div,
 .stSelectbox div[data-baseweb="select"] span,
 .stSelectbox div[data-baseweb="select"] input {{
     color: #FFFFFF !important;
     text-shadow: none !important;
 }}
-
-/* ======== DROPDOWN LIST ======== */
 [data-baseweb="popover"] li,
 [data-baseweb="menu"] li,
 [role="option"] {{
@@ -219,7 +203,6 @@ div.stSelectbox label span,
     text-shadow: none !important;
 }}
 
-/* ======== BẢNG KẾT QUẢ ======== */
 .custom-table th {{
     background-color: #1E8449 !important;
     color: #FFFFFF !important;
