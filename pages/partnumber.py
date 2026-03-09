@@ -58,6 +58,7 @@ hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rye&display=swap');
 #MainMenu, footer, header {{visibility: hidden;}}
 
 .main {{
@@ -96,6 +97,22 @@ div[data-testid="stVerticalBlock"] {{
 }}
 
 /* Logo căn giữa trên cùng */
+@keyframes rotateBorder {{
+    0%   {{ box-shadow: 0 0 0 3px transparent, 0 0 18px 6px #FFD700, 4px 0 18px 6px #FFF176, 0 0 0 3px transparent; }}
+    25%  {{ box-shadow: 0 0 0 3px transparent, 0 -4px 18px 6px #FFD700, 0 0 18px 6px #FFF176, 0 0 0 3px transparent; }}
+    50%  {{ box-shadow: 0 0 0 3px transparent, -4px 0 18px 6px #FFD700, 0 0 18px 6px #FFF176, 0 0 0 3px transparent; }}
+    75%  {{ box-shadow: 0 0 0 3px transparent, 0 4px 18px 6px #FFD700, 0 0 18px 6px #FFF176, 0 0 0 3px transparent; }}
+    100% {{ box-shadow: 0 0 0 3px transparent, 4px 0 18px 6px #FFD700, 0 0 18px 6px #FFF176, 0 0 0 3px transparent; }}
+}}
+
+@keyframes goldenRing {{
+    0%   {{ border-color: #FFD700; box-shadow: 0 0 12px 4px #FFD700, 0 0 30px 8px rgba(255,215,0,0.4), inset 0 0 8px rgba(255,215,0,0.1); }}
+    25%  {{ border-color: #FFF176; box-shadow: 0 0 18px 6px #FFF176, 0 0 40px 12px rgba(255,241,118,0.5), inset 0 0 10px rgba(255,241,118,0.2); }}
+    50%  {{ border-color: #FFD700; box-shadow: 0 0 24px 8px #FFD700, 0 0 50px 16px rgba(255,215,0,0.6), inset 0 0 12px rgba(255,215,0,0.3); }}
+    75%  {{ border-color: #FFAA00; box-shadow: 0 0 18px 6px #FFAA00, 0 0 40px 12px rgba(255,170,0,0.5), inset 0 0 10px rgba(255,170,0,0.2); }}
+    100% {{ border-color: #FFD700; box-shadow: 0 0 12px 4px #FFD700, 0 0 30px 8px rgba(255,215,0,0.4), inset 0 0 8px rgba(255,215,0,0.1); }}
+}}
+
 #logo-container {{
     display: flex;
     justify-content: center;
@@ -107,7 +124,12 @@ div[data-testid="stVerticalBlock"] {{
 #logo-container img {{
     max-height: 120px;
     max-width: 80%;
-    object-fit: contain;
+    object-fit: cover;
+    border-radius: 50%;
+    border: 3px solid #FFD700;
+    animation: goldenRing 3s ease-in-out infinite;
+    padding: 4px;
+    background: rgba(0,0,0,0.2);
 }}
 
 .main > div:first-child {{
@@ -132,21 +154,23 @@ hr {{
 }}
 
 #sub-static-title h2 {{
-    font-family: 'Playfair Display', serif;
+    font-family: 'Rye', serif;
     font-size: 2rem;
     color: #FFEA00;
     text-align: center;
     text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8);
     margin-bottom: 20px;
+    letter-spacing: 3px;
 }}
 
 .result-title h3 {{
-    font-family: 'Playfair Display', serif;
+    font-family: 'Rye', serif;
     font-size: 2rem;
     color: #FFEA00;
     text-align: center;
     text-shadow: 0 0 15px #FFEA00, 0 0 30px rgba(255,234,0,0.8);
     margin-bottom: 20px;
+    letter-spacing: 3px;
 }}
 
 @media (max-width: 768px) {{
@@ -159,9 +183,11 @@ hr {{
 /* --- CSS CHO DROPDOWN & BẢNG KẾT QUẢ --- */
 div.stSelectbox label p, div[data-testid*="column"] label p {{
     color: #00FF00 !important;
-    font-size: 1.25rem !important;
-    font-weight: bold;
+    font-size: 1.1rem !important;
+    font-family: 'Rye', serif !important;
+    font-weight: normal;
     text-shadow: 0 0 5px rgba(0,255,0,0.5);
+    letter-spacing: 1px;
 }}
 
 .stSelectbox div[data-baseweb="select"] {{
