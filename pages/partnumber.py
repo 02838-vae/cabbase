@@ -58,6 +58,7 @@ hide_streamlit_style = f"""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Rye&display=swap');
 #MainMenu, footer, header {{visibility: hidden;}}
 
 .main {{
@@ -84,7 +85,7 @@ div[data-testid="stVerticalBlock"] {{
 .stApp {{
     background: url("data:image/jpeg;base64,{pn_bg_pc_base64}") no-repeat center top fixed !important;
     background-size: cover !important;
-    font-family: 'Oswald', sans-serif !important;
+    font-family: 'Rye', serif !important;
 }}
 
 /* Banner nền mobile */
@@ -184,7 +185,7 @@ hr {{
 }}
 
 #sub-static-title h2 {{
-    font-family: 'Playfair Display', serif;
+    font-family: 'Rye', serif;
     font-size: 2rem;
     color: #FFEA00;
     text-align: center;
@@ -193,7 +194,7 @@ hr {{
 }}
 
 .result-title h3 {{
-    font-family: 'Playfair Display', serif;
+    font-family: 'Rye', serif;
     font-size: 2rem;
     color: #FFEA00;
     text-align: center;
@@ -203,8 +204,11 @@ hr {{
 
 @media (max-width: 768px) {{
     #sub-static-title h2, .result-title h3 {{
-        font-size: 1.2rem;
+        font-size: 1.1rem;
         white-space: nowrap;
+    }}
+    div.stSelectbox label p, div[data-testid*="column"] label p {{
+        font-size: 1rem !important;
     }}
 }}
 
@@ -213,6 +217,7 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
     color: #00FF00 !important;
     font-size: 1.25rem !important;
     font-weight: bold;
+    font-family: 'Rye', serif !important;
     text-shadow: 0 0 5px rgba(0,255,0,0.5);
 }}
 
@@ -222,8 +227,20 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
     border-radius: 8px;
 }}
 
+/* Nội dung bên trong hộp chọn */
+.stSelectbox div[data-baseweb="select"] span,
+.stSelectbox div[data-baseweb="select"] div,
+.stSelectbox [data-testid="stSelectboxVirtualDropdown"] li,
+div[data-baseweb="popover"] li,
+div[data-baseweb="popover"] span,
+div[data-baseweb="menu"] li {{
+    font-family: 'Rye', serif !important;
+    color: #FFFFFF !important;
+}}
+
 .stSelectbox div[data-baseweb="select"] div[data-testid="stTextInput"] {{
     color: #FFFFFF !important;
+    font-family: 'Rye', serif !important;
 }}
 
 .custom-table th {{
@@ -234,7 +251,7 @@ div.stSelectbox label p, div[data-testid*="column"] label p {{
     font-size: 1.1rem;
     font-weight: bold;
     text-align: center !important;
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Rye', serif;
 }}
 
 .custom-table td {{
