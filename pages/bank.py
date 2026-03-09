@@ -1820,10 +1820,16 @@ div[data-testid="stAlert"] strong {{ color: #FFD700 !important; }}
     .main > div:first-child {{ padding-top: 90px !important; }}
 
     /* Thu nhỏ tiêu đề chính vừa 1 dòng trên mobile */
-    #bank-main-title span {{
-        font-size: 4.8vw !important;
+    #bank-main-title,
+    #bank-main-title span,
+    #bank-main-title p,
+    #bank-main-title div[data-testid="stMarkdownContainer"] p,
+    #bank-main-title div[data-testid="stMarkdownContainer"] span {{
+        font-size: 5.2vw !important;
         letter-spacing: 1px !important;
         white-space: nowrap !important;
+        overflow: hidden !important;
+        text-overflow: ellipsis !important;
     }}
 
     /* Thu nhỏ label hộp chọn trên mobile */
