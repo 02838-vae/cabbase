@@ -107,10 +107,13 @@ div[data-testid="stVerticalBlock"] {{
 /* Wrapper ánh sáng vàng chạy vòng quanh logo */
 #logo-wrap {{
     position: relative;
-    display: inline-block;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
     border-radius: 12px;
     padding: 3px;
-    overflow: hidden;
+    width: fit-content;
+    isolation: isolate;
 }}
 
 @property --logo-angle {{
@@ -135,28 +138,20 @@ div[data-testid="stVerticalBlock"] {{
         transparent 360deg
     );
     animation: logo-spin 2.5s linear infinite;
-    z-index: 0;
+    z-index: -1;
 }}
 
 @keyframes logo-spin {{
     to {{ --logo-angle: 360deg; }}
 }}
 
-#logo-wrap::after {{
-    content: '';
-    position: absolute;
-    inset: 3px;
-    border-radius: 10px;
-    background: hsla(0,0%,10%,1);
-    z-index: 1;
-}}
-
 #logo-wrap img {{
     position: relative;
-    z-index: 2;
+    z-index: 1;
     display: block;
     max-height: 120px;
-    max-width: 80%;
+    width: auto;
+    max-width: 80vw;
     object-fit: contain;
     border-radius: 8px;
 }}
