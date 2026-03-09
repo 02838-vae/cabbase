@@ -1344,7 +1344,7 @@ html, body, .stApp {{
     padding: 0 !important;
     overflow: auto;
     position: relative;
-    font-family: 'Rye', cursive !important;
+    font-family: 'Rye', serif !important;
     color: #FFFFE0 !important;
 }}
 
@@ -1487,7 +1487,7 @@ html, body, .stApp {{
     text-align: center;
 }}
 .result-title h3 {{
-    font-family: 'Rye', cursive;
+    font-family: 'Rye', serif;
     font-size: 2rem;
     font-weight: 700;
     letter-spacing: 3px;
@@ -1502,7 +1502,7 @@ html, body, .stApp {{
 
 /* Tiêu đề Paragraph X . (In đậm, màu cam) */
 .paragraph-title {{
-    font-family: 'Rye', cursive;
+    font-family: 'Rye', serif;
     font-size: 1.8rem;
     font-weight: 700;
     color: #D4A843;
@@ -1553,7 +1553,7 @@ html, body, .stApp {{
 
 /* STYLE ĐÁP ÁN - PC (TRẮNG ĐẬM HƠN) */
 .bank-answer-text {{
-    font-family: 'Rye', cursive !important;
+    font-family: 'Rye', serif !important;
     font-weight: 900 !important;
     font-size: 22px !important; 
     padding: 5px 15px;
@@ -1569,7 +1569,7 @@ html, body, .stApp {{
     color: #FFFFFF !important;
     font-size: 22px !important; 
     font-weight: 900 !important; /* ĐẬM HƠN */
-    font-family: 'Rye', cursive !important;
+    font-family: 'Rye', serif !important;
     padding: 2px 12px;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9) !important; /* SHADOW ĐẬM HƠN */
     background-color: transparent !important;
@@ -1593,7 +1593,7 @@ html, body, .stApp {{
 
 div[data-testid="stMarkdownContainer"] p {{
     font-size: 22px !important;
-    font-family: 'Rye', cursive !important;
+    font-family: 'Rye', serif !important;
     color: #FFFFE0 !important;
 }}
 
@@ -1614,7 +1614,7 @@ div[data-testid="stMarkdownContainer"] p {{
     border-radius: 12px !important;
     font-size: 1.2em !important;
     font-weight: 700 !important;
-    font-family: 'Rye', cursive !important; 
+    font-family: 'Rye', serif !important; 
     border: 2px solid rgba(255, 255, 255, 0.3) !important;
     padding: 12px 24px !important;
     width: 100% !important;
@@ -1692,7 +1692,7 @@ div.stSelectbox label,
 div[data-testid*="column"] label p {{
     color: #D4A843 !important;
     font-size: 1.25rem !important;
-    font-family: 'Rye', cursive !important;
+    font-family: 'Rye', serif !important;
     font-weight: bold;
     text-shadow: none;
 }}
@@ -1709,7 +1709,7 @@ div[data-testid*="column"] label p {{
 .stSelectbox div[data-baseweb="select"] span,
 .stSelectbox div[data-baseweb="select"] div,
 .stSelectbox div[data-baseweb="select"] input {{
-    font-family: 'Rye', cursive !important;
+    font-family: 'Rye', serif !important;
     color: #000000 !important;
     font-size: 1.1rem !important;
     background-color: #FFFFFF !important;
@@ -1726,7 +1726,7 @@ div[data-testid*="column"] label p {{
 [role="option"] *,
 li[role="option"],
 li[role="option"] * {{
-    font-family: 'Rye', cursive !important;
+    font-family: 'Rye', serif !important;
     font-size: 1.1rem !important;
     color: #000000 !important;
     background-color: #FFFFFF !important;
@@ -1762,7 +1762,7 @@ div[data-testid="stNotification"] *,
 .stWarning *, .stInfo *, .stError *,
 .stSuccess * {{
     color: #D4A843 !important;
-    font-family: 'Rye', cursive !important;
+    font-family: 'Rye', serif !important;
 }}
 
 /* Ngoại lệ: tiêu đề chính giữ màu riêng */
@@ -1796,7 +1796,7 @@ div[data-testid="stAlert"] strong {{ color: #FFD700 !important; }}
     /* Chỉnh kích thước tiêu đề trên mobile */
     .result-title h3 {{
         font-size: 1.3rem !important;
-        font-family: 'Rye', cursive !important;
+        font-family: 'Rye', serif !important;
         color: #D4A843 !important;
         white-space: normal !important;
         overflow: visible !important;
@@ -1851,7 +1851,7 @@ st.markdown(f"""
 
 st.markdown("""
 <div id="bank-main-title" style="text-align: center; margin-top: -10px; margin-bottom: 10px;">
-    <span style="font-family: 'Rye', cursive; font-size: 2.4rem; font-weight: 900; color: #D4A843; letter-spacing: 3px;">
+    <span style="font-family: 'Rye', serif; font-size: 2rem; font-weight: 900; color: #D4A843; letter-spacing: 3px;">
         NGÂN HÀNG TRẮC NGHIỆM
     </span>
 </div>
