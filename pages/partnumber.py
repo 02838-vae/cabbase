@@ -73,6 +73,14 @@ hide_streamlit_style = f"""
     max-width: 100% !important;
 }}
 
+section[data-testid="stMain"] > div:first-child {{
+    padding-top: 0 !important;
+}}
+
+div[data-testid="stVerticalBlock"] {{
+    gap: 0 !important;
+}}
+
 .stApp {{
     background: url("data:image/jpeg;base64,{pn_bg_pc_base64}") no-repeat center top fixed !important;
     background-size: cover !important;
@@ -92,7 +100,8 @@ hide_streamlit_style = f"""
     display: flex;
     justify-content: center;
     align-items: center;
-    padding-top: 15px;
+    padding-top: 0;
+    margin-top: 0;
     margin-bottom: 10px;
 }}
 
