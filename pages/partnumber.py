@@ -181,13 +181,13 @@ hr {{ display: none !important; }}
 div.stSelectbox label p,
 div.stSelectbox label span,
 [data-testid="stSelectbox"] label p {{
-    color: #00FF00 !important;
+    color: #FFEA00 !important;
     font-size: 1.1rem !important;
     text-shadow: none !important;
 }}
 .stSelectbox div[data-baseweb="select"] {{
     background-color: rgba(0, 0, 0, 0.7) !important;
-    border: 1px solid #00FF00 !important;
+    border: 1px solid #FFEA00 !important;
     border-radius: 8px !important;
 }}
 .stSelectbox div[data-baseweb="select"] div,
