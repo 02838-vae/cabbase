@@ -1597,6 +1597,18 @@ div[data-testid="stMarkdownContainer"] p {{
     color: #FFFFE0 !important;
 }}
 
+/* TIÊU ĐỀ CHÍNH - override mọi rule khác */
+#bank-main-title div[data-testid="stMarkdownContainer"] p,
+#bank-main-title div[data-testid="stMarkdownContainer"] span,
+#bank-main-title p, #bank-main-title span {{
+    font-size: 2.8rem !important;
+    font-family: 'Rye', serif !important;
+    font-weight: 900 !important;
+    color: #D4A843 !important;
+    letter-spacing: 3px !important;
+    line-height: 1.2 !important;
+}}
+
 /* GIỮ NGUYÊN font câu hỏi và đáp án - KHÔNG dùng Oswald */
 .bank-question-text,
 .bank-question-text * {{
@@ -1691,7 +1703,7 @@ div.stSelectbox label span,
 div.stSelectbox label,
 div[data-testid*="column"] label p {{
     color: #D4A843 !important;
-    font-size: 1.25rem !important;
+    font-size: 1.35rem !important;
     font-family: 'Rye', serif !important;
     font-weight: bold;
     text-shadow: none;
@@ -1770,6 +1782,11 @@ div[data-testid="stNotification"] *,
     margin-top: -40px !important;
     margin-bottom: 10px !important;
     text-align: center !important;
+    font-size: 2.8rem !important;
+    font-family: 'Rye', serif !important;
+    font-weight: 900 !important;
+    color: #D4A843 !important;
+    letter-spacing: 3px !important;
 }}
 #bank-main-title span {{
     color: #D4A843 !important;
@@ -1814,7 +1831,7 @@ div[data-testid="stAlert"] strong {{ color: #FFD700 !important; }}
     div.stSelectbox label span,
     div.stSelectbox label,
     div[data-testid*="column"] label p {{
-        font-size: 0.9rem !important;
+        font-size: 1rem !important;
     }}
     
     /* Chỉnh kích thước tiêu đề trên mobile */
@@ -1874,10 +1891,8 @@ st.markdown(f"""
 """, unsafe_allow_html=True)
 
 st.markdown("""
-<div id="bank-main-title" style="text-align: center; margin-top: -30px; margin-bottom: 10px;">
-    <span style="font-family: 'Rye', serif; font-size: 2.6rem; font-weight: 900; color: #D4A843; letter-spacing: 3px;">
-        NGÂN HÀNG TRẮC NGHIỆM
-    </span>
+<div id="bank-main-title">
+    NGÂN HÀNG TRẮC NGHIỆM
 </div>
 """, unsafe_allow_html=True)
 
