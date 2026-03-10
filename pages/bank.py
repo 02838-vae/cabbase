@@ -1779,7 +1779,7 @@ div[data-testid="stNotification"] *,
 
 /* Ngoại lệ: tiêu đề chính giữ màu riêng */
 #bank-main-title {{
-    margin-top: -55px !important;
+    margin-top: -70px !important;
     margin-bottom: 10px !important;
     text-align: center !important;
     font-size: 2.8rem !important;
@@ -1861,8 +1861,10 @@ div[data-testid="stAlert"] strong {{ color: #FFD700 !important; }}
     
     /* Nút trên mobile */
     .stButton>button {{
-        font-size: 1em !important;
-        padding: 10px 18px !important;
+        font-size: 0.85em !important;
+        padding: 6px 10px !important;
+        border-radius: 8px !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
     }}
     
     /* Cập nhật mobile cho đoạn văn */
