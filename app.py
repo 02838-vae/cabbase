@@ -67,7 +67,8 @@ st.components.v1.html(f"""
   #logo {{
     position: fixed;
     top: 20px;
-    left: calc(50% - 120px); /* dịch sang trái ~120px so với center */
+    left: 50%;
+    margin-left: -280px;   /* đẩy logo trái ra xa tâm */
     transform: translateX(-50%);
     z-index: 20;
     text-align: center;
@@ -77,13 +78,14 @@ st.components.v1.html(f"""
   #logo2 {{
     position: fixed;
     top: 20px;
-    left: calc(50% + 120px); /* dịch sang phải ~120px so với center */
+    left: 50%;
+    margin-left: 280px;    /* đẩy logo phải ra xa tâm */
     transform: translateX(-50%);
     z-index: 20;
     text-align: center;
   }}
 
-  /* Wrapper bọc logo để tạo viền sáng chạy vòng */
+  /* ========== LOGO 1 WRAP (chữ nhật bo góc) ========== */
   .logo-wrap {{
     position: relative;
     display: inline-block;
@@ -92,7 +94,6 @@ st.components.v1.html(f"""
     overflow: hidden;
   }}
 
-  /* Ánh sáng vàng chạy vòng quanh logo */
   @property --logo-angle {{
     syntax: '<angle>';
     initial-value: 0deg;
@@ -123,7 +124,6 @@ st.components.v1.html(f"""
     to {{ --logo-angle: 360deg; }}
   }}
 
-  /* Fallback cho browser không hỗ trợ @property */
   @supports not (background: conic-gradient(from 0deg, red, blue)) {{
     .logo-wrap::before {{
       inset: 0;
@@ -136,17 +136,15 @@ st.components.v1.html(f"""
     }}
   }}
 
-  /* Nền tối bên trong chỉ lộ viền sáng */
   .logo-wrap::after {{
     content: '';
     position: absolute;
     inset: 3px;
     border-radius: 13px;
-    background: rgba(0, 0, 0, 0.45);
+    background: rgba(0,0,0,0.45);
     z-index: 1;
   }}
 
-  /* Hào quang ngoài logo */
   .logo-glow {{
     position: absolute;
     inset: -8px;
@@ -157,11 +155,6 @@ st.components.v1.html(f"""
       0 0 14px 4px rgba(255,215,0,0.40),
       0 0 32px 8px rgba(255,215,0,0.18),
       0 0 55px 12px rgba(184,134,11,0.10);
-  }}
-
-  /* Delay logo2 glow slightly so they're offset */
-  #logo2 .logo-glow {{
-    animation-delay: 1.5s;
   }}
 
   @keyframes logo-glow-pulse {{
@@ -180,10 +173,54 @@ st.components.v1.html(f"""
     display: block;
   }}
 
+  /* ========== LOGO 2 WRAP (elip) ========== */
+  .logo2-wrap {{
+    position: relative;
+    display: inline-block;
+    /* padding tạo khoảng để viền sáng hiện ra */
+    padding: 4px 8px;
+  }}
+
+  /* SVG viền elip chạy ánh sáng */
+  .logo2-wrap svg.ellipse-border {{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    pointer-events: none;
+    overflow: visible;
+  }}
+
+  /* Hào quang elip ngoài */
+  .logo2-glow {{
+    position: absolute;
+    inset: -10px;
+    border-radius: 50%;
+    pointer-events: none;
+    animation: logo-glow-pulse 3s ease-in-out infinite;
+    animation-delay: 1.5s;
+    box-shadow:
+      0 0 16px 5px rgba(255,215,0,0.45),
+      0 0 36px 10px rgba(255,215,0,0.20),
+      0 0 60px 14px rgba(184,134,11,0.12);
+  }}
+
+  .logo2-wrap img {{
+    position: relative;
+    z-index: 2;
+    height: 120px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
+    display: block;
+  }}
+
   @media (max-width: 768px) {{
-    .logo-wrap img {{ height: 55px; }}
-    #logo  {{ top: 15px; left: calc(50% - 70px); }}
-    #logo2 {{ top: 15px; left: calc(50% + 70px); }}
+    #logo  {{ margin-left: -120px; top: 15px; }}
+    #logo2 {{ margin-left: 120px;  top: 15px; }}
+    .logo-wrap img  {{ height: 60px; }}
+    .logo2-wrap img {{ height: 60px; }}
     .logo-wrap {{ border-radius: 12px; padding: 2px; }}
     .logo-wrap::after {{ inset: 2px; border-radius: 10px; }}
     .logo-glow {{ inset: -4px; border-radius: 16px; }}
@@ -359,11 +396,60 @@ st.components.v1.html(f"""
     </div>
   </div>
 
-  <!-- Logo phải (logo2.jpg) -->
+  <!-- Logo phải (logo2.jpg) - viền elip chạy sáng -->
   <div id="logo2">
-    <div class="logo-wrap">
-      <div class="logo-glow"></div>
-      <img src="data:image/jpeg;base64,{logo2_b64}" alt="Logo2"/>
+    <div class="logo2-wrap" id="logo2-wrap">
+      <div class="logo2-glow"></div>
+      <img src="data:image/jpeg;base64,{logo2_b64}" alt="Logo2" id="logo2-img"/>
+      <!-- SVG elip border được tạo bằng JS sau khi ảnh load để khớp kích thước -->
+      <svg class="ellipse-border" id="ellipse-svg" viewBox="0 0 200 80" preserveAspectRatio="none">
+        <defs>
+          <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%"   stop-color="#b8860b" stop-opacity="0"/>
+            <stop offset="40%"  stop-color="#ffd700" stop-opacity="1"/>
+            <stop offset="50%"  stop-color="#fffacd" stop-opacity="1"/>
+            <stop offset="60%"  stop-color="#ffd700" stop-opacity="1"/>
+            <stop offset="100%" stop-color="#b8860b" stop-opacity="0"/>
+          </linearGradient>
+          <!-- Đường elip để làm path cho ánh sáng chạy -->
+          <path id="ellipse-path" d="M 100,4 A 96,36 0 1 1 99.99,4 Z"/>
+        </defs>
+        <!-- Viền elip mờ làm nền -->
+        <ellipse cx="100" cy="40" rx="96" ry="36"
+          fill="none"
+          stroke="rgba(184,134,11,0.35)"
+          stroke-width="2"/>
+        <!-- Tia sáng chạy theo path elip -->
+        <path d="M 100,4 A 96,36 0 1 1 99.99,4 Z"
+          fill="none"
+          stroke="url(#gold-grad)"
+          stroke-width="3.5"
+          stroke-linecap="round"
+          stroke-dasharray="60 400"
+          stroke-dashoffset="0">
+          <animate
+            attributeName="stroke-dashoffset"
+            from="0"
+            to="-460"
+            dur="2.5s"
+            repeatCount="indefinite"/>
+        </path>
+        <!-- Điểm sáng lõi trắng -->
+        <path d="M 100,4 A 96,36 0 1 1 99.99,4 Z"
+          fill="none"
+          stroke="rgba(255,255,220,0.9)"
+          stroke-width="1.5"
+          stroke-linecap="round"
+          stroke-dasharray="18 442"
+          stroke-dashoffset="0">
+          <animate
+            attributeName="stroke-dashoffset"
+            from="0"
+            to="-460"
+            dur="2.5s"
+            repeatCount="indefinite"/>
+        </path>
+      </svg>
     </div>
   </div>
 
