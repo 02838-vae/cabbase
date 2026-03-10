@@ -1779,7 +1779,7 @@ div[data-testid="stNotification"] *,
 
 /* Ngoại lệ: tiêu đề chính giữ màu riêng */
 #bank-main-title {{
-    margin-top: -70px !important;
+    margin-top: -120px !important;
     margin-bottom: 10px !important;
     text-align: center !important;
     font-size: 2.8rem !important;
@@ -2119,30 +2119,31 @@ if bank_choice != "----":
             start_i = start + 1 
             
             st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
-            col_all_bank, col_test = st.columns(2)
-            with col_all_bank:
-                if is_docwise:
-                    # Lấy số phụ lục từ tên đã chọn (VD: "Phụ lục 1 : Ngữ pháp chung" → "Phụ lục 1")
-                    pl_short = st.session_state.get('doc_selected', '').split(':')[0].strip()
-                    btn_all_label = f"📖 Hiển thị toàn bộ {pl_short}"
-                else:
-                    btn_all_label = "📖 Hiển thị toàn bộ Ngân hàng"
-                if st.button(btn_all_label, key="btn_show_all"):
+            
+            # Xác định nhãn nút hiển thị toàn bộ
+            if is_docwise:
+                pl_short = st.session_state.get('doc_selected', '').split(':')[0].strip()
+                btn_all_label = f"📖 Hiển thị toàn bộ {pl_short}"
+            else:
+                btn_all_label = "📖 Hiển thị toàn bộ Ngân hàng"
+            
+            # Canh giữa 2 button bằng 3 cột (trái – giữa – phải)
+            _, col_btn_left, col_btn_right, _ = st.columns([1, 1.5, 1.5, 1])
+            with col_btn_left:
+                if st.button(btn_all_label, key="btn_show_all", use_container_width=True):
                     st.session_state.current_mode = "all"
-                    st.session_state.active_translation_key = None # Reset dịch Q&A
-                    st.session_state.active_passage_translation = None # Reset dịch Passage
-                    st.session_state.current_passage_id_displayed = None # Reset passage display
+                    st.session_state.active_translation_key = None
+                    st.session_state.active_passage_translation = None
+                    st.session_state.current_passage_id_displayed = None
                     st.rerun()
-            with col_test:
-                # Đổi tên nút test
-                if st.button("Làm bài test", key="btn_start_test"):
+            with col_btn_right:
+                if st.button("📝 Làm bài test", key="btn_start_test", use_container_width=True):
                     st.session_state.current_mode = "test"
-                    st.session_state.active_translation_key = None # Reset dịch Q&A
-                    st.session_state.active_passage_translation = None # Reset dịch Passage
-                    st.session_state.current_passage_id_displayed = None # Reset passage display
+                    st.session_state.active_translation_key = None
+                    st.session_state.active_passage_translation = None
+                    st.session_state.current_passage_id_displayed = None
                     bank_slug_new = bank_choice.split()[-1].lower()
                     test_key_prefix = f"test_{bank_slug_new}"
-                    # Reset session state cho bài test trước khi bắt đầu
                     st.session_state.pop(f"{test_key_prefix}_started", None)
                     st.session_state.pop(f"{test_key_prefix}_submitted", None)
                     st.session_state.pop(f"{test_key_prefix}_questions", None)
