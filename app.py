@@ -19,6 +19,7 @@ def get_base64(file_path):
 bg_pc_jpg  = get_base64("PC.jpg")
 bg_mob_jpg = get_base64("mobile.jpg")
 logo_b64   = get_base64("logo.jpg") or ""
+logo2_b64  = get_base64("logo2.jpg") or ""
 
 if not bg_pc_jpg or not bg_mob_jpg:
     st.error("Thiếu file ảnh nền (PC.jpg hoặc mobile.jpg)")
@@ -62,17 +63,28 @@ st.components.v1.html(f"""
     #bg img.mob {{ display: block; }}
   }}
 
+  /* ===== LOGO LEFT ===== */
   #logo {{
     position: fixed;
     top: 20px;
-    left: 50%;
+    left: calc(50% - 120px); /* dịch sang trái ~120px so với center */
+    transform: translateX(-50%);
+    z-index: 20;
+    text-align: center;
+  }}
+
+  /* ===== LOGO RIGHT (logo2) ===== */
+  #logo2 {{
+    position: fixed;
+    top: 20px;
+    left: calc(50% + 120px); /* dịch sang phải ~120px so với center */
     transform: translateX(-50%);
     z-index: 20;
     text-align: center;
   }}
 
   /* Wrapper bọc logo để tạo viền sáng chạy vòng */
-  #logo-wrap {{
+  .logo-wrap {{
     position: relative;
     display: inline-block;
     border-radius: 16px;
@@ -87,7 +99,7 @@ st.components.v1.html(f"""
     inherits: false;
   }}
 
-  #logo-wrap::before {{
+  .logo-wrap::before {{
     content: '';
     position: absolute;
     inset: -60%;
@@ -113,7 +125,7 @@ st.components.v1.html(f"""
 
   /* Fallback cho browser không hỗ trợ @property */
   @supports not (background: conic-gradient(from 0deg, red, blue)) {{
-    #logo-wrap::before {{
+    .logo-wrap::before {{
       inset: 0;
       background: linear-gradient(90deg, transparent, #ffd700, transparent);
       animation: logo-spin-fallback 3s linear infinite;
@@ -125,7 +137,7 @@ st.components.v1.html(f"""
   }}
 
   /* Nền tối bên trong chỉ lộ viền sáng */
-  #logo-wrap::after {{
+  .logo-wrap::after {{
     content: '';
     position: absolute;
     inset: 3px;
@@ -135,7 +147,7 @@ st.components.v1.html(f"""
   }}
 
   /* Hào quang ngoài logo */
-  #logo-glow {{
+  .logo-glow {{
     position: absolute;
     inset: -8px;
     border-radius: 22px;
@@ -147,12 +159,17 @@ st.components.v1.html(f"""
       0 0 55px 12px rgba(184,134,11,0.10);
   }}
 
+  /* Delay logo2 glow slightly so they're offset */
+  #logo2 .logo-glow {{
+    animation-delay: 1.5s;
+  }}
+
   @keyframes logo-glow-pulse {{
     0%, 100% {{ opacity: 0.7; }}
     50%       {{ opacity: 1; box-shadow: 0 0 20px 6px rgba(255,215,0,0.60), 0 0 44px 12px rgba(255,215,0,0.28); }}
   }}
 
-  #logo img {{
+  .logo-wrap img {{
     position: relative;
     z-index: 2;
     height: 120px;
@@ -164,11 +181,12 @@ st.components.v1.html(f"""
   }}
 
   @media (max-width: 768px) {{
-    #logo img {{ height: 55px; }}
-    #logo {{ top: 15px; }}
-    #logo-wrap {{ border-radius: 12px; padding: 2px; }}
-    #logo-wrap::after {{ inset: 2px; border-radius: 10px; }}
-    #logo-glow {{ inset: -4px; border-radius: 16px; }}
+    .logo-wrap img {{ height: 55px; }}
+    #logo  {{ top: 15px; left: calc(50% - 70px); }}
+    #logo2 {{ top: 15px; left: calc(50% + 70px); }}
+    .logo-wrap {{ border-radius: 12px; padding: 2px; }}
+    .logo-wrap::after {{ inset: 2px; border-radius: 10px; }}
+    .logo-glow {{ inset: -4px; border-radius: 16px; }}
   }}
 
   #content {{
@@ -194,7 +212,7 @@ st.components.v1.html(f"""
   .btn-wrap {{
     position: relative;
     border-radius: 9999px;
-    padding: 2px; /* độ dày viền sáng */
+    padding: 2px;
     min-width: 260px;
     overflow: hidden;
   }}
@@ -241,8 +259,6 @@ st.components.v1.html(f"""
     }}
   }}
 
-  /* Nền đen bên trong che phần giữa, chỉ lộ viền sáng */
-  /* Nền tối bên trong */
   .btn-wrap::after {{
     content: '';
     position: absolute;
@@ -252,7 +268,6 @@ st.components.v1.html(f"""
     z-index: 1;
   }}
 
-  /* Ánh sáng quét qua - shimmer effect */
   .btn {{
     position: relative;
     z-index: 2;
@@ -276,7 +291,6 @@ st.components.v1.html(f"""
     overflow: hidden;
   }}
 
-  /* Tia sáng quét qua */
   .btn::before {{
     content: '';
     position: absolute;
@@ -299,7 +313,6 @@ st.components.v1.html(f"""
     border-radius: 9999px;
   }}
 
-  /* Delay khác nhau cho 2 button */
   .btn-wrap:nth-child(2) .btn::before {{
     animation-delay: 2s;
   }}
@@ -337,12 +350,23 @@ st.components.v1.html(f"""
     <img class="pc"  src="data:image/jpeg;base64,{bg_pc_jpg}"  alt=""/>
     <img class="mob" src="data:image/jpeg;base64,{bg_mob_jpg}" alt=""/>
   </div>
+
+  <!-- Logo trái (logo.jpg) -->
   <div id="logo">
-    <div id="logo-wrap">
-      <div id="logo-glow"></div>
+    <div class="logo-wrap">
+      <div class="logo-glow"></div>
       <img src="data:image/jpeg;base64,{logo_b64}" alt="Logo"/>
     </div>
   </div>
+
+  <!-- Logo phải (logo2.jpg) -->
+  <div id="logo2">
+    <div class="logo-wrap">
+      <div class="logo-glow"></div>
+      <img src="data:image/jpeg;base64,{logo2_b64}" alt="Logo2"/>
+    </div>
+  </div>
+
   <div id="content">
     <div class="btn-wrap">
       <a class="btn" href="/partnumber" target="_blank">
