@@ -1344,7 +1344,7 @@ html, body, .stApp {{
     padding: 0 !important;
     overflow: auto;
     position: relative;
-    font-family: 'Rye', serif !important;
+    font-family: 'Arial', 'Helvetica', sans-serif !important;
     color: #FFFFE0 !important;
 }}
 
@@ -1487,10 +1487,10 @@ html, body, .stApp {{
     text-align: center;
 }}
 .result-title h3 {{
-    font-family: 'Rye', serif;
-    font-size: 2rem;
-    font-weight: 700;
-    letter-spacing: 3px;
+    font-family: 'Arial', 'Helvetica', sans-serif;
+    font-size: 1.8rem;
+    font-weight: 900;
+    letter-spacing: 2px;
     color: #D4A843;
     text-shadow: 0 0 15px #D4A843, 0 0 30px rgba(212,168,67,0.8);
 }}
@@ -1502,8 +1502,8 @@ html, body, .stApp {{
 
 /* Tiêu đề Paragraph X . (In đậm, màu cam) */
 .paragraph-title {{
-    font-family: 'Rye', serif;
-    font-size: 1.8rem;
+    font-family: 'Arial', 'Helvetica', sans-serif;
+    font-size: 1.4rem;
     font-weight: 700;
     color: #D4A843;
     text-shadow: 0 0 8px rgba(212, 168, 67, 0.5);
@@ -1594,7 +1594,7 @@ html, body, .stApp {{
 
 div[data-testid="stMarkdownContainer"] p {{
     font-size: 22px !important;
-    font-family: 'Rye', serif !important;
+    font-family: 'Arial', 'Helvetica', sans-serif !important;
     color: #FFFFE0 !important;
 }}
 
@@ -1787,7 +1787,7 @@ div[data-testid="stAlert"] {{
    GLOBAL: Tất cả text UI (trừ câu hỏi/đáp án) → #FFFFE0
    ============================================================ */
 
-/* Streamlit general text, labels, warnings, info */
+/* Streamlit general text → Arial làm mặc định toàn trang */
 .stApp p, .stApp span, .stApp div,
 .stApp label,
 [data-testid="stText"],
@@ -1798,6 +1798,13 @@ div[data-testid="stNotification"] *,
 .stWarning *, .stInfo *, .stError *,
 .stSuccess * {{
     color: #D4A843 !important;
+    font-family: 'Arial', 'Helvetica', sans-serif !important;
+}}
+
+/* Chỉ các label UI (selectbox, toggle, button) mới dùng Rye */
+div.stSelectbox label, div.stSelectbox label p, div.stSelectbox label span,
+.stToggle label, .stToggle label p, .stToggle label span,
+.stButton>button {{
     font-family: 'Rye', serif !important;
 }}
 
@@ -1867,7 +1874,7 @@ div[data-testid="stAlert"] strong {{ color: #FFD700 !important; }}
     /* Chỉnh kích thước tiêu đề trên mobile */
     .result-title h3 {{
         font-size: 1.3rem !important;
-        font-family: 'Rye', serif !important;
+        font-family: 'Arial', 'Helvetica', sans-serif !important;
         color: #D4A843 !important;
         white-space: normal !important;
         overflow: visible !important;
