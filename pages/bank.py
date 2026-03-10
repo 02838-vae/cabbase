@@ -1520,7 +1520,7 @@ html, body, .stApp {{
 .paragraph-content-box {{
     /* Dùng 'white-space: pre-wrap' để giữ nguyên khoảng trắng và ngắt dòng */
     white-space: pre-wrap; 
-    font-family: 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif !important;
+    font-family: 'Arial', 'Helvetica', sans-serif !important;
     font-size: 20px !important; 
     line-height: 1.6;
     color: #F0F0F0; /* Màu trắng nhạt */
@@ -1539,7 +1539,7 @@ html, body, .stApp {{
     font-weight: 900 !important;
     letter-spacing: 0.5px !important;
     font-size: 22px !important; 
-    font-family: 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif !important;
+    font-family: 'Arial', 'Helvetica', sans-serif !important;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
     padding: 8px 15px;
     margin-bottom: 10px;
@@ -1553,30 +1553,30 @@ html, body, .stApp {{
 
 /* STYLE ĐÁP ÁN - PC (TRẮNG ĐẬM HƠN) */
 .bank-answer-text {{
-    font-family: 'Rye', serif !important;
-    font-weight: 900 !important;
+    font-family: 'Arial', 'Helvetica', sans-serif !important;
+    font-weight: 700 !important;
     font-size: 22px !important; 
     padding: 5px 15px;
     margin: 2px 0;
     line-height: 1.5 !important; 
     display: block;
     color: #FFFFFF !important;
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9); /* SHADOW ĐẬM HƠN */
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
 }}
 
 /* RADIO BUTTONS (CHỌN ĐÁP ÁN) */
 .stRadio label {{
     color: #FFFFFF !important;
-    font-size: 22px !important; 
-    font-weight: 900 !important; /* ĐẬM HƠN */
-    font-family: 'Rye', serif !important;
+    font-size: 20px !important; 
+    font-weight: 700 !important;
+    font-family: 'Arial', 'Helvetica', sans-serif !important;
     padding: 2px 12px;
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9) !important; /* SHADOW ĐẬM HƠN */
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9) !important;
     background-color: transparent !important;
     border: none !important;
     display: block !important;
     margin: 4px 0 !important;
-    letter-spacing: 0.5px !important;
+    letter-spacing: 0.3px !important;
 }}
 
 .stRadio label:hover {{
@@ -1587,8 +1587,9 @@ html, body, .stApp {{
 .stRadio label p,
 .stRadio label div {{
     color: #FFFFFF !important;
+    font-family: 'Arial', 'Helvetica', sans-serif !important;
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9) !important;
-    letter-spacing: 0.5px !important;
+    letter-spacing: 0.3px !important;
 }}
 
 div[data-testid="stMarkdownContainer"] p {{
@@ -1641,21 +1642,22 @@ div[data-testid="stSidebarNav"] {{
     font-family: 'Arial', 'Helvetica', sans-serif !important;
 }}
 
-/* STYLE NÚT ACTION (ĐẸP VÀ BÓNG BẨY) */
+/* STYLE NÚT ACTION - NHỎ GỌN, CÙNG HÀNG */
 .stButton>button {{
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
     color: #FFFFE0 !important;
-    border-radius: 8px !important;
-    font-size: 0.95em !important;
+    border-radius: 6px !important;
+    font-size: 0.78em !important;
     font-weight: 700 !important;
-    font-family: 'Rye', serif !important; 
+    font-family: 'Rye', serif !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    padding: 7px 14px !important;
-    width: 100% !important;
+    padding: 5px 10px !important;
+    width: auto !important;
+    white-space: nowrap !important;
     box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4) !important;
     transition: all 0.3s ease !important;
     text-transform: uppercase !important;
-    letter-spacing: 1px !important;
+    letter-spacing: 0.5px !important;
 }}
 
 .stButton>button:hover {{
@@ -1881,11 +1883,12 @@ div[data-testid="stAlert"] strong {{ color: #FFD700 !important; }}
         display: inline-block !important; /* BAO VỪA CHỮ */
     }}
     
-    /* Nút trên mobile */
+    /* Nút trên mobile - giữ nhỏ gọn */
     .stButton>button {{
-        font-size: 0.85em !important;
-        padding: 6px 10px !important;
-        border-radius: 8px !important;
+        font-size: 0.72em !important;
+        padding: 5px 8px !important;
+        border-radius: 6px !important;
+        white-space: nowrap !important;
         border: 1px solid rgba(255, 255, 255, 0.3) !important;
     }}
     
@@ -2140,25 +2143,25 @@ if bank_choice != "----":
             # Set starting index for questions in non-PL3 mode
             start_i = start + 1 
             
-            st.markdown('<div style="margin-top: 20px;"></div>', unsafe_allow_html=True)
+            st.markdown('<div style="margin-top: 12px;"></div>', unsafe_allow_html=True)
             
             # Xác định nhãn nút hiển thị toàn bộ
             if is_docwise:
                 pl_short = st.session_state.get('doc_selected', '').split(':')[0].strip()
-                btn_all_label = f"📖 Hiển thị toàn bộ {pl_short}"
+                btn_all_label = f"📖 {pl_short}"
             else:
-                btn_all_label = "📖 Hiển thị toàn bộ Ngân hàng"
+                btn_all_label = "📖 Toàn bộ Ngân hàng"
             
-            # Canh giữa 2 button bằng 3 cột (trái – giữa – phải)
-            _, col_btn_left, col_btn_right, _ = st.columns([1, 1.5, 1.5, 1])
-            with col_btn_left:
+            # 2 nút cùng hàng, canh giữa, nhỏ gọn
+            col_l, col_btn1, col_btn2, col_r = st.columns([2, 3, 3, 2])
+            with col_btn1:
                 if st.button(btn_all_label, key="btn_show_all", use_container_width=True):
                     st.session_state.current_mode = "all"
                     st.session_state.active_translation_key = None
                     st.session_state.active_passage_translation = None
                     st.session_state.current_passage_id_displayed = None
                     st.rerun()
-            with col_btn_right:
+            with col_btn2:
                 if st.button("📝 Làm bài test", key="btn_start_test", use_container_width=True):
                     st.session_state.current_mode = "test"
                     st.session_state.active_translation_key = None
