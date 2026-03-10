@@ -71,17 +71,104 @@ st.components.v1.html(f"""
     text-align: center;
   }}
 
+  /* Wrapper bọc logo để tạo viền sáng chạy vòng */
+  #logo-wrap {{
+    position: relative;
+    display: inline-block;
+    border-radius: 16px;
+    padding: 3px;
+    overflow: hidden;
+  }}
+
+  /* Ánh sáng vàng chạy vòng quanh logo */
+  @property --logo-angle {{
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+  }}
+
+  #logo-wrap::before {{
+    content: '';
+    position: absolute;
+    inset: -60%;
+    background: conic-gradient(
+      from var(--logo-angle, 0deg),
+      transparent 0deg,
+      transparent 40deg,
+      #b8860b 60deg,
+      #ffd700 80deg,
+      #fffacd 90deg,
+      #ffd700 100deg,
+      #b8860b 120deg,
+      transparent 140deg,
+      transparent 360deg
+    );
+    animation: logo-spin 3s linear infinite;
+    z-index: 0;
+  }}
+
+  @keyframes logo-spin {{
+    to {{ --logo-angle: 360deg; }}
+  }}
+
+  /* Fallback cho browser không hỗ trợ @property */
+  @supports not (background: conic-gradient(from 0deg, red, blue)) {{
+    #logo-wrap::before {{
+      inset: 0;
+      background: linear-gradient(90deg, transparent, #ffd700, transparent);
+      animation: logo-spin-fallback 3s linear infinite;
+    }}
+    @keyframes logo-spin-fallback {{
+      0%   {{ transform: rotate(0deg) scale(3); }}
+      100% {{ transform: rotate(360deg) scale(3); }}
+    }}
+  }}
+
+  /* Nền tối bên trong chỉ lộ viền sáng */
+  #logo-wrap::after {{
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 13px;
+    background: rgba(0, 0, 0, 0.45);
+    z-index: 1;
+  }}
+
+  /* Hào quang ngoài logo */
+  #logo-glow {{
+    position: absolute;
+    inset: -8px;
+    border-radius: 22px;
+    pointer-events: none;
+    animation: logo-glow-pulse 3s ease-in-out infinite;
+    box-shadow:
+      0 0 14px 4px rgba(255,215,0,0.40),
+      0 0 32px 8px rgba(255,215,0,0.18),
+      0 0 55px 12px rgba(184,134,11,0.10);
+  }}
+
+  @keyframes logo-glow-pulse {{
+    0%, 100% {{ opacity: 0.7; }}
+    50%       {{ opacity: 1; box-shadow: 0 0 20px 6px rgba(255,215,0,0.60), 0 0 44px 12px rgba(255,215,0,0.28); }}
+  }}
+
   #logo img {{
+    position: relative;
+    z-index: 2;
     height: 120px;
     width: auto;
     object-fit: contain;
     filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
-    border-radius: 8px;
+    border-radius: 12px;
+    display: block;
   }}
 
   @media (max-width: 768px) {{
     #logo img {{ height: 55px; }}
     #logo {{ top: 15px; }}
+    #logo-wrap {{ border-radius: 12px; padding: 2px; }}
+    #logo-wrap::after {{ inset: 2px; border-radius: 10px; }}
+    #logo-glow {{ inset: -4px; border-radius: 16px; }}
   }}
 
   #content {{
@@ -250,7 +337,12 @@ st.components.v1.html(f"""
     <img class="pc"  src="data:image/jpeg;base64,{bg_pc_jpg}"  alt=""/>
     <img class="mob" src="data:image/jpeg;base64,{bg_mob_jpg}" alt=""/>
   </div>
-  <div id="logo"><img src="data:image/jpeg;base64,{logo_b64}" alt="Logo"/></div>
+  <div id="logo">
+    <div id="logo-wrap">
+      <div id="logo-glow"></div>
+      <img src="data:image/jpeg;base64,{logo_b64}" alt="Logo"/>
+    </div>
+  </div>
   <div id="content">
     <div class="btn-wrap">
       <a class="btn" href="/partnumber" target="_blank">
