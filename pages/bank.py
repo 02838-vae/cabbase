@@ -1609,14 +1609,36 @@ div[data-testid="stMarkdownContainer"] p {{
     line-height: 1.2 !important;
 }}
 
-/* GIỮ NGUYÊN font câu hỏi và đáp án - KHÔNG dùng Oswald */
+/* ẨN SIDEBAR HOÀN TOÀN */
+[data-testid="stSidebar"],
+[data-testid="stSidebarNav"],
+[data-testid="collapsedControl"],
+section[data-testid="stSidebar"],
+div[data-testid="stSidebarNav"] {{
+    display: none !important;
+    width: 0 !important;
+    min-width: 0 !important;
+    visibility: hidden !important;
+}}
+
+/* GIỮ NGUYÊN font câu hỏi và đáp án - DÙNG ARIAL */
 .bank-question-text,
 .bank-question-text * {{
-    font-family: 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif !important;
+    font-family: 'Arial', 'Helvetica', sans-serif !important;
+}}
+.bank-answer-text,
+.bank-answer-text * {{
+    font-family: 'Arial', 'Helvetica', sans-serif !important;
+}}
+.stRadio label,
+.stRadio label span,
+.stRadio label p,
+.stRadio label div {{
+    font-family: 'Arial', 'Helvetica', sans-serif !important;
 }}
 .paragraph-content-box,
 .paragraph-content-box * {{
-    font-family: 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', sans-serif !important;
+    font-family: 'Arial', 'Helvetica', sans-serif !important;
 }}
 
 /* STYLE NÚT ACTION (ĐẸP VÀ BÓNG BẨY) */
