@@ -206,14 +206,27 @@ st.components.v1.html(f"""
       0 0 60px 14px rgba(184,134,11,0.12);
   }}
 
+  /* Nền đen hình elip để mix-blend-mode multiply hoạt động đúng */
+  .logo2-bg {{
+    position: absolute;
+    inset: 4px 8px;
+    z-index: 1;
+    background: #111;
+    border-radius: 50%;
+  }}
+
   .logo2-wrap img {{
     position: relative;
     z-index: 2;
     height: 120px;
     width: auto;
     object-fit: contain;
-    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
     display: block;
+    /* multiply: nền trắng của ảnh × nền đen = đen → trong suốt,
+       các màu đậm (đỏ/vàng) giữ nguyên                          */
+    mix-blend-mode: multiply;
+    filter: drop-shadow(0 0 10px rgba(255,200,0,0.7))
+            drop-shadow(0 0 20px rgba(255,160,0,0.4));
   }}
 
   @media (max-width: 768px) {{
@@ -400,6 +413,7 @@ st.components.v1.html(f"""
   <div id="logo2">
     <div class="logo2-wrap" id="logo2-wrap">
       <div class="logo2-glow"></div>
+      <div class="logo2-bg"></div>
       <img src="data:image/jpeg;base64,{logo2_b64}" alt="Logo2" id="logo2-img"/>
       <!-- SVG elip border được tạo bằng JS sau khi ảnh load để khớp kích thước -->
       <svg class="ellipse-border" id="ellipse-svg" viewBox="0 0 200 80" preserveAspectRatio="none">
