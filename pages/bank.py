@@ -1623,14 +1623,14 @@ div[data-testid="stMarkdownContainer"] p {{
 .stButton>button {{
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
     color: #FFFFE0 !important;
-    border-radius: 12px !important;
-    font-size: 1.2em !important;
+    border-radius: 8px !important;
+    font-size: 0.95em !important;
     font-weight: 700 !important;
     font-family: 'Rye', serif !important; 
-    border: 2px solid rgba(255, 255, 255, 0.3) !important;
-    padding: 12px 24px !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    padding: 7px 14px !important;
     width: 100% !important;
-    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4) !important;
+    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4) !important;
     transition: all 0.3s ease !important;
     text-transform: uppercase !important;
     letter-spacing: 1px !important;
@@ -1779,7 +1779,7 @@ div[data-testid="stNotification"] *,
 
 /* Ngoại lệ: tiêu đề chính giữ màu riêng */
 #bank-main-title {{
-    margin-top: -40px !important;
+    margin-top: -55px !important;
     margin-bottom: 10px !important;
     text-align: center !important;
     font-size: 2.8rem !important;
