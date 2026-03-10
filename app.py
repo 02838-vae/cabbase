@@ -19,7 +19,7 @@ def get_base64(file_path):
 bg_pc_jpg  = get_base64("PC.jpg")
 bg_mob_jpg = get_base64("mobile.jpg")
 logo_b64   = get_base64("logo.jpg") or ""
-logo2_b64  = get_base64("logo2.jpg") or ""
+logo2_b64  = get_base64("logo2.png") or ""
 
 if not bg_pc_jpg or not bg_mob_jpg:
     st.error("Thiếu file ảnh nền (PC.jpg hoặc mobile.jpg)")
@@ -409,12 +409,12 @@ st.components.v1.html(f"""
     </div>
   </div>
 
-  <!-- Logo phải (logo2.jpg) - viền elip chạy sáng -->
+  <!-- Logo phải (logo2.png) - viền elip chạy sáng -->
   <div id="logo2">
     <div class="logo2-wrap" id="logo2-wrap">
       <div class="logo2-glow"></div>
       <div class="logo2-bg"></div>
-      <img src="data:image/jpeg;base64,{logo2_b64}" alt="Logo2" id="logo2-img"/>
+      <img src="data:image/png;base64,{logo2_b64}" alt="Logo2" id="logo2-img"/>
       <!-- SVG elip border được tạo bằng JS sau khi ảnh load để khớp kích thước -->
       <svg class="ellipse-border" id="ellipse-svg" viewBox="0 0 200 80" preserveAspectRatio="none">
         <defs>
