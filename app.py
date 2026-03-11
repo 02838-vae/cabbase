@@ -208,13 +208,13 @@ st.components.v1.html(f"""
   }}
 
   @media (max-width: 768px) {{
-    #logo  {{ left: 10px; top: 15px; }}
-    #logo2 {{ right: 10px; top: 15px; }}
-    .logo-wrap img  {{ height: 60px; }}
-    .logo2-wrap img {{ height: 60px; }}
-    .logo-wrap {{ border-radius: 12px; padding: 2px; }}
-    .logo-wrap::after {{ inset: 2px; border-radius: 10px; }}
-    .logo-glow {{ inset: -4px; border-radius: 16px; }}
+    #logo  {{ left: 8px; top: 12px; }}
+    #logo2 {{ right: 8px; top: 12px; }}
+    .logo-wrap img  {{ height: 44px; }}
+    .logo2-wrap img {{ height: 44px; }}
+    .logo-wrap {{ border-radius: 10px; padding: 2px; }}
+    .logo-wrap::after {{ inset: 2px; border-radius: 8px; }}
+    .logo-glow {{ inset: -3px; border-radius: 13px; }}
   }}
 
   #content {{
