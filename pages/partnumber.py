@@ -169,10 +169,9 @@ hr {{ display: none !important; }}
 }}
 .logo2-wrap svg.ellipse-border {{
     position: absolute;
-    top: -8px;
-    left: -10px;
-    width: calc(100% + 20px);
-    height: calc(100% + 16px);
+    inset: 0;
+    width: 100%;
+    height: 100%;
     z-index: 3;
     pointer-events: none;
     overflow: visible;
@@ -301,7 +300,7 @@ st.markdown(f"""
 <div id="logo2-container">
     <div class="logo2-wrap">
         <img src="data:image/png;base64,{logo2_base64}" alt="Logo2"/>
-        <svg class="ellipse-border" viewBox="0 0 271 126">
+        <svg class="ellipse-border" viewBox="0 0 228 100">
             <style>
                 .el-tail {{
                     stroke-dasharray: 100 900;
@@ -320,20 +319,16 @@ st.markdown(f"""
                     to   {{ stroke-dashoffset: 0; }}
                 }}
             </style>
-            <!-- Viền mờ nền, cx/cy = tâm viewBox, rx/ry sát mép -->
-            <ellipse cx="135" cy="63" rx="132" ry="60"
-                fill="none" stroke="rgba(184,134,11,0.30)" stroke-width="1.5"
-                pathLength="1000"/>
-            <ellipse cx="135" cy="63" rx="132" ry="60"
-                fill="none" stroke="#b8860b" stroke-width="3"
+            <ellipse cx="114" cy="50" rx="112" ry="48"
+                fill="none" stroke="#b8860b" stroke-width="2.5"
                 stroke-linecap="round" pathLength="1000"
                 class="el-tail"/>
-            <ellipse cx="135" cy="63" rx="132" ry="60"
-                fill="none" stroke="#FFD700" stroke-width="3.5"
+            <ellipse cx="114" cy="50" rx="112" ry="48"
+                fill="none" stroke="#FFD700" stroke-width="3"
                 stroke-linecap="round" pathLength="1000"
                 class="el-mid"/>
-            <ellipse cx="135" cy="63" rx="132" ry="60"
-                fill="none" stroke="#FFF8C0" stroke-width="2"
+            <ellipse cx="114" cy="50" rx="112" ry="48"
+                fill="none" stroke="#FFF8C0" stroke-width="1.5"
                 stroke-linecap="round" pathLength="1000"
                 class="el-tip"/>
         </svg>
