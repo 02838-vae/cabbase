@@ -67,9 +67,7 @@ st.components.v1.html(f"""
   #logo {{
     position: fixed;
     top: 20px;
-    left: 50%;
-    margin-left: -280px;   /* đẩy logo trái ra xa tâm */
-    transform: translateX(-50%);
+    left: 20px;
     z-index: 20;
     text-align: center;
   }}
@@ -78,9 +76,7 @@ st.components.v1.html(f"""
   #logo2 {{
     position: fixed;
     top: 20px;
-    left: 50%;
-    margin-left: 280px;    /* đẩy logo phải ra xa tâm */
-    transform: translateX(-50%);
+    right: 20px;
     z-index: 20;
     text-align: center;
   }}
@@ -192,27 +188,14 @@ st.components.v1.html(f"""
     overflow: visible;
   }}
 
-  /* Hào quang elip ngoài */
+  /* Hào quang elip ngoài - đã xóa */
   .logo2-glow {{
-    position: absolute;
-    inset: -10px;
-    border-radius: 50%;
-    pointer-events: none;
-    animation: logo-glow-pulse 3s ease-in-out infinite;
-    animation-delay: 1.5s;
-    box-shadow:
-      0 0 16px 5px rgba(255,215,0,0.45),
-      0 0 36px 10px rgba(255,215,0,0.20),
-      0 0 60px 14px rgba(184,134,11,0.12);
+    display: none;
   }}
 
-  /* Nền đen hình elip để mix-blend-mode multiply hoạt động đúng */
+  /* Nền đen hình elip - đã xóa */
   .logo2-bg {{
-    position: absolute;
-    inset: 4px 8px;
-    z-index: 1;
-    background: #111;
-    border-radius: 50%;
+    display: none;
   }}
 
   .logo2-wrap img {{
@@ -222,16 +205,11 @@ st.components.v1.html(f"""
     width: auto;
     object-fit: contain;
     display: block;
-    /* multiply: nền trắng của ảnh × nền đen = đen → trong suốt,
-       các màu đậm (đỏ/vàng) giữ nguyên                          */
-    mix-blend-mode: multiply;
-    filter: drop-shadow(0 0 10px rgba(255,200,0,0.7))
-            drop-shadow(0 0 20px rgba(255,160,0,0.4));
   }}
 
   @media (max-width: 768px) {{
-    #logo  {{ margin-left: -120px; top: 15px; }}
-    #logo2 {{ margin-left: 120px;  top: 15px; }}
+    #logo  {{ left: 10px; top: 15px; }}
+    #logo2 {{ right: 10px; top: 15px; }}
     .logo-wrap img  {{ height: 60px; }}
     .logo2-wrap img {{ height: 60px; }}
     .logo-wrap {{ border-radius: 12px; padding: 2px; }}
