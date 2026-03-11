@@ -187,6 +187,22 @@ st.components.v1.html(f"""
     pointer-events: none;
     overflow: visible;
   }}
+  .el-tail {{
+    stroke-dasharray: 100 900;
+    animation: elip-run 2s linear infinite;
+  }}
+  .el-mid {{
+    stroke-dasharray: 60 940;
+    animation: elip-run 2s linear infinite;
+  }}
+  .el-tip {{
+    stroke-dasharray: 18 982;
+    animation: elip-run 2s linear infinite;
+  }}
+  @keyframes elip-run {{
+    from {{ stroke-dashoffset: 1000; }}
+    to   {{ stroke-dashoffset: 0; }}
+  }}
 
   /* Hào quang elip ngoài - đã xóa */
   .logo2-glow {{
@@ -393,54 +409,19 @@ st.components.v1.html(f"""
       <div class="logo2-glow"></div>
       <div class="logo2-bg"></div>
       <img src="data:image/png;base64,{logo2_b64}" alt="Logo2" id="logo2-img"/>
-      <!-- SVG elip border được tạo bằng JS sau khi ảnh load để khớp kích thước -->
-      <svg class="ellipse-border" id="ellipse-svg" viewBox="0 0 200 80" preserveAspectRatio="none">
-        <defs>
-          <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%"   stop-color="#b8860b" stop-opacity="0"/>
-            <stop offset="40%"  stop-color="#ffd700" stop-opacity="1"/>
-            <stop offset="50%"  stop-color="#fffacd" stop-opacity="1"/>
-            <stop offset="60%"  stop-color="#ffd700" stop-opacity="1"/>
-            <stop offset="100%" stop-color="#b8860b" stop-opacity="0"/>
-          </linearGradient>
-          <!-- Đường elip để làm path cho ánh sáng chạy -->
-          <path id="ellipse-path" d="M 100,4 A 96,36 0 1 1 99.99,4 Z"/>
-        </defs>
-        <!-- Viền elip mờ làm nền -->
-        <ellipse cx="100" cy="40" rx="96" ry="36"
-          fill="none"
-          stroke="rgba(184,134,11,0.35)"
-          stroke-width="2"/>
-        <!-- Tia sáng chạy theo path elip -->
-        <path d="M 100,4 A 96,36 0 1 1 99.99,4 Z"
-          fill="none"
-          stroke="url(#gold-grad)"
-          stroke-width="3.5"
-          stroke-linecap="round"
-          stroke-dasharray="60 400"
-          stroke-dashoffset="0">
-          <animate
-            attributeName="stroke-dashoffset"
-            from="0"
-            to="-460"
-            dur="2.5s"
-            repeatCount="indefinite"/>
-        </path>
-        <!-- Điểm sáng lõi trắng -->
-        <path d="M 100,4 A 96,36 0 1 1 99.99,4 Z"
-          fill="none"
-          stroke="rgba(255,255,220,0.9)"
-          stroke-width="1.5"
-          stroke-linecap="round"
-          stroke-dasharray="18 442"
-          stroke-dashoffset="0">
-          <animate
-            attributeName="stroke-dashoffset"
-            from="0"
-            to="-460"
-            dur="2.5s"
-            repeatCount="indefinite"/>
-        </path>
+      <svg class="ellipse-border" viewBox="0 0 228 100">
+        <ellipse cx="114" cy="50" rx="112" ry="48"
+          fill="none" stroke="#b8860b" stroke-width="2.5"
+          stroke-linecap="round" pathLength="1000"
+          class="el-tail"/>
+        <ellipse cx="114" cy="50" rx="112" ry="48"
+          fill="none" stroke="#FFD700" stroke-width="3"
+          stroke-linecap="round" pathLength="1000"
+          class="el-mid"/>
+        <ellipse cx="114" cy="50" rx="112" ry="48"
+          fill="none" stroke="#FFF8C0" stroke-width="1.5"
+          stroke-linecap="round" pathLength="1000"
+          class="el-tip"/>
       </svg>
     </div>
   </div>
