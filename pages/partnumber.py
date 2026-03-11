@@ -169,9 +169,9 @@ hr {{ display: none !important; }}
 }}
 .logo2-wrap svg.ellipse-border {{
     position: absolute;
-    inset: -4px -6px;
-    width: calc(100% + 12px);
-    height: calc(100% + 8px);
+    inset: 0;
+    width: 100%;
+    height: 100%;
     z-index: 3;
     pointer-events: none;
     overflow: visible;
@@ -235,7 +235,7 @@ div.stSelectbox label span,
 .stSelectbox div[data-baseweb="select"] div,
 .stSelectbox div[data-baseweb="select"] span,
 .stSelectbox div[data-baseweb="select"] input {{
-    color: #FFFFFF !important;
+    color: #000000 !important;
     text-shadow: none !important;
 }}
 [data-baseweb="popover"] li,
