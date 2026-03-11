@@ -165,13 +165,13 @@ hr {{ display: none !important; }}
 .logo2-wrap {{
     position: relative;
     display: inline-block;
-    padding: 4px 8px;
+    padding: 0;
 }}
 .logo2-wrap svg.ellipse-border {{
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    inset: -4px -6px;
+    width: calc(100% + 12px);
+    height: calc(100% + 8px);
     z-index: 3;
     pointer-events: none;
     overflow: visible;
