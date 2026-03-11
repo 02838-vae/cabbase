@@ -300,43 +300,47 @@ st.markdown(f"""
 <div id="logo2-container">
     <div class="logo2-wrap">
         <img src="data:image/png;base64,{logo2_base64}" alt="Logo2"/>
-        <svg class="ellipse-border" viewBox="0 0 200 80" preserveAspectRatio="none">
-            <!-- Viền elip mờ nền -->
+        <svg class="ellipse-border" viewBox="0 0 200 80">
+            <style>
+                .el-tail {{
+                    stroke-dasharray: 100 900;
+                    stroke-dashoffset: 100;
+                    animation: elip-run 2s linear infinite;
+                }}
+                .el-mid {{
+                    stroke-dasharray: 60 940;
+                    stroke-dashoffset: 60;
+                    animation: elip-run 2s linear infinite;
+                }}
+                .el-tip {{
+                    stroke-dasharray: 18 982;
+                    stroke-dashoffset: 18;
+                    animation: elip-run 2s linear infinite;
+                }}
+                @keyframes elip-run {{
+                    from {{ stroke-dashoffset: 1000; }}
+                    to   {{ stroke-dashoffset: 0; }}
+                }}
+            </style>
+            <!-- Viền mờ nền -->
             <ellipse cx="100" cy="40" rx="96" ry="36"
-                fill="none" stroke="rgba(184,134,11,0.30)" stroke-width="1.5"/>
-            <!-- Tia đuôi mờ - chu vi 436px, tia 140px -->
-            <path d="M 100,4 A 96,36 0 1 1 99.99,4 Z"
-                fill="none"
-                stroke="#b8860b"
-                stroke-width="3"
-                stroke-linecap="round"
-                stroke-dasharray="100 336">
-                <animate attributeName="stroke-dashoffset"
-                    from="100" to="-336"
-                    dur="2s" repeatCount="indefinite"/>
-            </path>
-            <!-- Tia sáng chính - vàng tươi -->
-            <path d="M 100,4 A 96,36 0 1 1 99.99,4 Z"
-                fill="none"
-                stroke="#FFD700"
-                stroke-width="3.5"
-                stroke-linecap="round"
-                stroke-dasharray="60 376">
-                <animate attributeName="stroke-dashoffset"
-                    from="60" to="-376"
-                    dur="2s" repeatCount="indefinite"/>
-            </path>
-            <!-- Đỉnh sáng nhất - trắng vàng -->
-            <path d="M 100,4 A 96,36 0 1 1 99.99,4 Z"
-                fill="none"
-                stroke="#FFF8C0"
-                stroke-width="2"
-                stroke-linecap="round"
-                stroke-dasharray="18 418">
-                <animate attributeName="stroke-dashoffset"
-                    from="18" to="-418"
-                    dur="2s" repeatCount="indefinite"/>
-            </path>
+                fill="none" stroke="rgba(184,134,11,0.30)" stroke-width="1.5"
+                pathLength="1000"/>
+            <!-- Đuôi mờ -->
+            <ellipse cx="100" cy="40" rx="96" ry="36"
+                fill="none" stroke="#b8860b" stroke-width="3"
+                stroke-linecap="round" pathLength="1000"
+                class="el-tail"/>
+            <!-- Sáng chính -->
+            <ellipse cx="100" cy="40" rx="96" ry="36"
+                fill="none" stroke="#FFD700" stroke-width="3.5"
+                stroke-linecap="round" pathLength="1000"
+                class="el-mid"/>
+            <!-- Đỉnh trắng vàng -->
+            <ellipse cx="100" cy="40" rx="96" ry="36"
+                fill="none" stroke="#FFF8C0" stroke-width="2"
+                stroke-linecap="round" pathLength="1000"
+                class="el-tip"/>
         </svg>
     </div>
 </div>
