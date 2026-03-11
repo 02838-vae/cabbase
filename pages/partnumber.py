@@ -60,7 +60,7 @@ hide_streamlit_style = f"""
 @import url('https://fonts.googleapis.com/css2?family=Rye&display=swap');
 #MainMenu, footer, header {{visibility: hidden;}}
 
-html, body, .stApp, * {{
+html, body, .stApp, *:not(.custom-table):not(.custom-table th):not(.custom-table td):not(.custom-table *) {{
     font-family: 'Rye', serif !important;
 }}
 
@@ -253,6 +253,7 @@ div.stSelectbox label span,
     font-size: 1.1rem;
     font-weight: bold;
     text-align: center !important;
+    font-family: 'Arial', 'Helvetica', sans-serif !important;
 }}
 .custom-table td {{
     padding: 12px;
@@ -262,6 +263,11 @@ div.stSelectbox label span,
     font-size: 1rem;
     color: #000000;
     background-color: #FFFFFF !important;
+    font-family: 'Arial', 'Helvetica', sans-serif !important;
+}}
+.custom-table th *,
+.custom-table td * {{
+    font-family: 'Arial', 'Helvetica', sans-serif !important;
 }}
 .table-container {{
     display: flex;
