@@ -195,7 +195,7 @@ hr {{ display: none !important; }}
 
 #sub-static-title {{
     position: static;
-    margin-top: 35px;
+    margin-top: 150px;
     margin-bottom: 30px;
     z-index: 90;
     background: transparent !important;
@@ -309,12 +309,6 @@ st.markdown(f"""
             <path d="M 100,4 A 96,36 0 1 1 99.99,4 Z"
                 fill="none" stroke="url(#gold-grad)" stroke-width="3.5"
                 stroke-linecap="round" stroke-dasharray="60 400" stroke-dashoffset="0">
-                <animate attributeName="stroke-dashoffset"
-                    from="0" to="-460" dur="2.5s" repeatCount="indefinite"/>
-            </path>
-            <path d="M 100,4 A 96,36 0 1 1 99.99,4 Z"
-                fill="none" stroke="rgba(255,255,220,0.9)" stroke-width="1.5"
-                stroke-linecap="round" stroke-dasharray="18 442" stroke-dashoffset="0">
                 <animate attributeName="stroke-dashoffset"
                     from="0" to="-460" dur="2.5s" repeatCount="indefinite"/>
             </path>
