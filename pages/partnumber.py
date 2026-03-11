@@ -307,18 +307,18 @@ st.markdown(f"""
             <!-- Viền elip mờ nền -->
             <ellipse cx="100" cy="40" rx="96" ry="36"
                 fill="none" stroke="rgba(184,134,11,0.30)" stroke-width="1.5"/>
-            <!-- Tia sáng chạy: dasharray = tia(120) + khoảng trống(340) = 460 = chu vi -->
+            <!-- Chu vi elip = 436px. Tia 120px + khoảng trống 316px = 436 -->
             <path d="M 100,4 A 96,36 0 1 1 99.99,4 Z"
                 fill="none"
                 stroke="url(#gold-grad)"
                 stroke-width="3.5"
                 stroke-linecap="round"
-                stroke-dasharray="120 340"
+                stroke-dasharray="120 316"
                 stroke-dashoffset="120">
                 <animate
                     attributeName="stroke-dashoffset"
                     from="120"
-                    to="-340"
+                    to="-316"
                     dur="2.5s"
                     repeatCount="indefinite"/>
             </path>
@@ -454,8 +454,8 @@ if zone_selected:
             f"""
             <div style='
                 text-align: center;
-                background-color: rgba(46,204,113,0.08);
-                border: 1px solid #2ECC71;
+                background-color: rgba(212,168,67,0.08);
+                border: 1px solid #D4A843;
                 padding: 10px 25px;
                 border-radius: 12px;
                 margin: 15px auto;
@@ -464,8 +464,8 @@ if zone_selected:
                 <p style='
                     font-size: 1.1rem;
                     margin: 0;
-                    color: #2ECC71;
-                    text-shadow: 0 0 5px rgba(46,204,113,0.4);
+                    color: #D4A843;
+                    text-shadow: 0 0 6px rgba(212,168,67,0.5);
                 '>
                     💡 Vui lòng <strong>chọn {prompt_text}</strong> để tiếp tục tra cứu.
                 </p>
