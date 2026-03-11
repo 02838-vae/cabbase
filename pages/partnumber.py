@@ -295,32 +295,41 @@ st.markdown(f"""
     <div class="logo2-wrap">
         <img src="data:image/png;base64,{logo2_base64}" alt="Logo2"/>
         <svg class="ellipse-border" viewBox="0 0 200 80" preserveAspectRatio="none">
-            <defs>
-                <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%"   stop-color="#b8860b" stop-opacity="0"/>
-                    <stop offset="35%"  stop-color="#ffd700" stop-opacity="1"/>
-                    <stop offset="50%"  stop-color="#ffe066" stop-opacity="1"/>
-                    <stop offset="65%"  stop-color="#ffd700" stop-opacity="1"/>
-                    <stop offset="100%" stop-color="#b8860b" stop-opacity="0"/>
-                </linearGradient>
-            </defs>
             <!-- Viền elip mờ nền -->
             <ellipse cx="100" cy="40" rx="96" ry="36"
                 fill="none" stroke="rgba(184,134,11,0.30)" stroke-width="1.5"/>
-            <!-- Chu vi elip = 436px. Tia 120px + khoảng trống 316px = 436 -->
+            <!-- Tia đuôi mờ - chu vi 436px, tia 140px -->
             <path d="M 100,4 A 96,36 0 1 1 99.99,4 Z"
                 fill="none"
-                stroke="url(#gold-grad)"
+                stroke="#b8860b"
+                stroke-width="3"
+                stroke-linecap="round"
+                stroke-dasharray="100 336">
+                <animate attributeName="stroke-dashoffset"
+                    from="100" to="-336"
+                    dur="2s" repeatCount="indefinite"/>
+            </path>
+            <!-- Tia sáng chính - vàng tươi -->
+            <path d="M 100,4 A 96,36 0 1 1 99.99,4 Z"
+                fill="none"
+                stroke="#FFD700"
                 stroke-width="3.5"
                 stroke-linecap="round"
-                stroke-dasharray="120 316"
-                stroke-dashoffset="120">
-                <animate
-                    attributeName="stroke-dashoffset"
-                    from="120"
-                    to="-316"
-                    dur="2.5s"
-                    repeatCount="indefinite"/>
+                stroke-dasharray="60 376">
+                <animate attributeName="stroke-dashoffset"
+                    from="60" to="-376"
+                    dur="2s" repeatCount="indefinite"/>
+            </path>
+            <!-- Đỉnh sáng nhất - trắng vàng -->
+            <path d="M 100,4 A 96,36 0 1 1 99.99,4 Z"
+                fill="none"
+                stroke="#FFF8C0"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-dasharray="18 418">
+                <animate attributeName="stroke-dashoffset"
+                    from="18" to="-418"
+                    dur="2s" repeatCount="indefinite"/>
             </path>
         </svg>
     </div>
@@ -454,18 +463,19 @@ if zone_selected:
             f"""
             <div style='
                 text-align: center;
-                background-color: rgba(212,168,67,0.08);
-                border: 1px solid #D4A843;
+                background-color: rgba(212,168,67,0.12);
+                border: 1.5px solid #D4A843;
                 padding: 10px 25px;
                 border-radius: 12px;
                 margin: 15px auto;
                 max-width: fit-content;
             '>
                 <p style='
-                    font-size: 1.1rem;
+                    font-size: 1.15rem;
                     margin: 0;
-                    color: #D4A843;
-                    text-shadow: 0 0 6px rgba(212,168,67,0.5);
+                    color: #FFD700;
+                    font-weight: 700;
+                    text-shadow: 0 0 8px rgba(212,168,67,0.7), 1px 1px 3px rgba(0,0,0,0.8);
                 '>
                     💡 Vui lòng <strong>chọn {prompt_text}</strong> để tiếp tục tra cứu.
                 </p>
