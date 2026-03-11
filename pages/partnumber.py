@@ -46,9 +46,10 @@ CHOOSE_PROMPT = "-- CHỌN --"
 excel_file = "pages/A787.xlsx"
 
 try:
-    pn_bg_pc_base64    = get_base64_encoded_file("pages/PC.jpg")
+    pn_bg_pc_base64     = get_base64_encoded_file("pages/PC.jpg")
     pn_bg_mobile_base64 = get_base64_encoded_file("pages/mobile.jpg")
-    logo_base64        = get_base64_encoded_file("pages/logo.jpg")
+    logo_base64         = get_base64_encoded_file("pages/logo.jpg")
+    logo2_base64        = get_base64_encoded_file("pages/logo2.png")
 except Exception as e:
     st.error(f"❌ Lỗi khi đọc file ảnh: {str(e)}")
     st.stop()
@@ -99,21 +100,18 @@ hr {{ display: none !important; }}
 }}
 
 #logo-container {{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding-top: 15px;
-    margin-bottom: 10px;
+    position: fixed;
+    top: 20px;
+    left: 20px;
+    z-index: 2000;
+    pointer-events: none;
 }}
 #logo-wrap {{
     position: relative;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 12px;
+    display: inline-block;
+    border-radius: 16px;
     padding: 3px;
-    width: fit-content;
-    isolation: isolate;
+    overflow: hidden;
 }}
 @property --logo-angle {{
     syntax: '<angle>';
@@ -123,32 +121,76 @@ hr {{ display: none !important; }}
 #logo-wrap::before {{
     content: '';
     position: absolute;
-    inset: 0;
-    border-radius: 12px;
+    inset: -60%;
     background: conic-gradient(
         from var(--logo-angle, 0deg),
-        transparent 0deg, transparent 60deg,
-        #ffd700 90deg, #fff8a0 110deg, #ffd700 130deg,
-        transparent 160deg, transparent 360deg
+        transparent 0deg, transparent 40deg,
+        #b8860b 60deg, #ffd700 80deg, #fffacd 90deg,
+        #ffd700 100deg, #b8860b 120deg,
+        transparent 140deg, transparent 360deg
     );
-    animation: logo-spin 2.5s linear infinite;
-    z-index: -1;
+    animation: logo-spin 3s linear infinite;
+    z-index: 0;
 }}
 @keyframes logo-spin {{
     to {{ --logo-angle: 360deg; }}
 }}
+#logo-wrap::after {{
+    content: '';
+    position: absolute;
+    inset: 3px;
+    border-radius: 13px;
+    background: rgba(0,0,0,0.45);
+    z-index: 1;
+}}
 #logo-wrap img {{
     position: relative;
-    z-index: 1;
-    display: block;
-    max-height: 120px;
+    z-index: 2;
+    height: 110px;
     width: auto;
-    max-width: 80vw;
     object-fit: contain;
-    border-radius: 8px;
+    border-radius: 12px;
+    display: block;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
 }}
+
+/* LOGO RIGHT (logo2) */
+#logo2-container {{
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    z-index: 2000;
+    pointer-events: none;
+}}
+.logo2-wrap {{
+    position: relative;
+    display: inline-block;
+    padding: 4px 8px;
+}}
+.logo2-wrap svg.ellipse-border {{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    pointer-events: none;
+    overflow: visible;
+}}
+.logo2-wrap img {{
+    position: relative;
+    z-index: 2;
+    height: 110px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+}}
+
 @media (max-width: 768px) {{
-    #logo-wrap img {{ max-height: 55px; }}
+    #logo-container {{ top: 12px; left: 8px; }}
+    #logo-wrap img {{ height: 44px; }}
+    #logo-wrap::after {{ inset: 2px; border-radius: 10px; }}
+    #logo2-container {{ top: 12px; right: 8px; }}
+    .logo2-wrap img {{ height: 44px; }}
 }}
 
 #sub-static-title {{
@@ -241,11 +283,45 @@ div.stSelectbox label span,
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# --- LOGO Ở GIỮA, PHÍA TRÊN ---
-st.markdown(
-    f'<div id="logo-container"><div id="logo-wrap"><img src="data:image/jpeg;base64,{logo_base64}" alt="Logo"></div></div>',
-    unsafe_allow_html=True
-)
+# --- 2 LOGO GÓC TRÁI / PHẢI ---
+st.markdown(f"""
+<div id="logo-container">
+    <div id="logo-wrap">
+        <img src="data:image/jpeg;base64,{logo_base64}" alt="Logo">
+    </div>
+</div>
+
+<div id="logo2-container">
+    <div class="logo2-wrap">
+        <img src="data:image/png;base64,{logo2_base64}" alt="Logo2"/>
+        <svg class="ellipse-border" viewBox="0 0 200 80" preserveAspectRatio="none">
+            <defs>
+                <linearGradient id="gold-grad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%"   stop-color="#b8860b" stop-opacity="0"/>
+                    <stop offset="40%"  stop-color="#ffd700" stop-opacity="1"/>
+                    <stop offset="50%"  stop-color="#fffacd" stop-opacity="1"/>
+                    <stop offset="60%"  stop-color="#ffd700" stop-opacity="1"/>
+                    <stop offset="100%" stop-color="#b8860b" stop-opacity="0"/>
+                </linearGradient>
+            </defs>
+            <ellipse cx="100" cy="40" rx="96" ry="36"
+                fill="none" stroke="rgba(184,134,11,0.35)" stroke-width="2"/>
+            <path d="M 100,4 A 96,36 0 1 1 99.99,4 Z"
+                fill="none" stroke="url(#gold-grad)" stroke-width="3.5"
+                stroke-linecap="round" stroke-dasharray="60 400" stroke-dashoffset="0">
+                <animate attributeName="stroke-dashoffset"
+                    from="0" to="-460" dur="2.5s" repeatCount="indefinite"/>
+            </path>
+            <path d="M 100,4 A 96,36 0 1 1 99.99,4 Z"
+                fill="none" stroke="rgba(255,255,220,0.9)" stroke-width="1.5"
+                stroke-linecap="round" stroke-dasharray="18 442" stroke-dashoffset="0">
+                <animate attributeName="stroke-dashoffset"
+                    from="0" to="-460" dur="2.5s" repeatCount="indefinite"/>
+            </path>
+        </svg>
+    </div>
+</div>
+""", unsafe_allow_html=True)
 
 # --- TIÊU ĐỀ PHỤ ---
 st.markdown('<div id="sub-static-title"><h2>TRA CỨU PART NUMBER</h2></div>', unsafe_allow_html=True)
