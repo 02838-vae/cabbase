@@ -169,9 +169,10 @@ hr {{ display: none !important; }}
 }}
 .logo2-wrap svg.ellipse-border {{
     position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
+    top: -8px;
+    left: -10px;
+    width: calc(100% + 20px);
+    height: calc(100% + 16px);
     z-index: 3;
     pointer-events: none;
     overflow: visible;
@@ -300,21 +301,18 @@ st.markdown(f"""
 <div id="logo2-container">
     <div class="logo2-wrap">
         <img src="data:image/png;base64,{logo2_base64}" alt="Logo2"/>
-        <svg class="ellipse-border" viewBox="0 0 200 80">
+        <svg class="ellipse-border" viewBox="0 0 271 126">
             <style>
                 .el-tail {{
                     stroke-dasharray: 100 900;
-                    stroke-dashoffset: 100;
                     animation: elip-run 2s linear infinite;
                 }}
                 .el-mid {{
                     stroke-dasharray: 60 940;
-                    stroke-dashoffset: 60;
                     animation: elip-run 2s linear infinite;
                 }}
                 .el-tip {{
                     stroke-dasharray: 18 982;
-                    stroke-dashoffset: 18;
                     animation: elip-run 2s linear infinite;
                 }}
                 @keyframes elip-run {{
@@ -322,22 +320,19 @@ st.markdown(f"""
                     to   {{ stroke-dashoffset: 0; }}
                 }}
             </style>
-            <!-- Viền mờ nền -->
-            <ellipse cx="100" cy="40" rx="96" ry="36"
+            <!-- Viền mờ nền, cx/cy = tâm viewBox, rx/ry sát mép -->
+            <ellipse cx="135" cy="63" rx="132" ry="60"
                 fill="none" stroke="rgba(184,134,11,0.30)" stroke-width="1.5"
                 pathLength="1000"/>
-            <!-- Đuôi mờ -->
-            <ellipse cx="100" cy="40" rx="96" ry="36"
+            <ellipse cx="135" cy="63" rx="132" ry="60"
                 fill="none" stroke="#b8860b" stroke-width="3"
                 stroke-linecap="round" pathLength="1000"
                 class="el-tail"/>
-            <!-- Sáng chính -->
-            <ellipse cx="100" cy="40" rx="96" ry="36"
+            <ellipse cx="135" cy="63" rx="132" ry="60"
                 fill="none" stroke="#FFD700" stroke-width="3.5"
                 stroke-linecap="round" pathLength="1000"
                 class="el-mid"/>
-            <!-- Đỉnh trắng vàng -->
-            <ellipse cx="100" cy="40" rx="96" ry="36"
+            <ellipse cx="135" cy="63" rx="132" ry="60"
                 fill="none" stroke="#FFF8C0" stroke-width="2"
                 stroke-linecap="round" pathLength="1000"
                 class="el-tip"/>
