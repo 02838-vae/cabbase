@@ -308,7 +308,7 @@ st.markdown(f"""
                 fill="none" stroke="rgba(184,134,11,0.35)" stroke-width="2"/>
             <path d="M 100,4 A 96,36 0 1 1 99.99,4 Z"
                 fill="none" stroke="url(#gold-grad)" stroke-width="3.5"
-                stroke-linecap="round" stroke-dasharray="60 400" stroke-dashoffset="0">
+                stroke-linecap="round" stroke-dasharray="460 0" stroke-dashoffset="0">
                 <animate attributeName="stroke-dashoffset"
                     from="0" to="-460" dur="2.5s" repeatCount="indefinite"/>
             </path>
@@ -444,8 +444,8 @@ if zone_selected:
             f"""
             <div style='
                 text-align: center;
-                background-color: rgba(0,255,0, 0.1);
-                border: 1px solid #00FF00;
+                background-color: rgba(212,168,67,0.08);
+                border: 1px solid #D4A843;
                 padding: 10px 25px;
                 border-radius: 12px;
                 margin: 15px auto;
@@ -454,9 +454,10 @@ if zone_selected:
                 <p style='
                     font-size: 1.1rem;
                     margin: 0;
-                    text-shadow: 0 0 5px #FFFFE0;
+                    color: #D4A843;
+                    text-shadow: 0 0 5px rgba(212,168,67,0.4);
                 '>
-                    <font color="#FFFFE0">💡 Vui lòng <strong>chọn {prompt_text}</strong> để tiếp tục tra cứu.</font>
+                    💡 Vui lòng <strong>chọn {prompt_text}</strong> để tiếp tục tra cứu.
                 </p>
             </div>
             """, unsafe_allow_html=True)
