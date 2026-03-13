@@ -410,6 +410,24 @@ st.components.v1.html(f"""
       <div class="logo2-bg"></div>
       <img src="data:image/png;base64,{logo2_b64}" alt="Logo2" id="logo2-img"/>
       <svg class="ellipse-border" viewBox="0 0 228 100">
+        <style>
+          .el-tail {{
+            stroke-dasharray: 100 900;
+            animation: elip-run 2s linear infinite;
+          }}
+          .el-mid {{
+            stroke-dasharray: 60 940;
+            animation: elip-run 2s linear infinite;
+          }}
+          .el-tip {{
+            stroke-dasharray: 18 982;
+            animation: elip-run 2s linear infinite;
+          }}
+          @keyframes elip-run {{
+            from {{ stroke-dashoffset: 1000; }}
+            to   {{ stroke-dashoffset: 0; }}
+          }}
+        </style>
         <ellipse cx="114" cy="50" rx="112" ry="48"
           fill="none" stroke="#b8860b" stroke-width="2.5"
           stroke-linecap="round" pathLength="1000"
