@@ -1687,17 +1687,18 @@ div[data-testid="stSidebarNav"] {{
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
     color: #FFFFE0 !important;
     border-radius: 6px !important;
-    font-size: 0.78em !important;
+    font-size: 0.72em !important;
     font-weight: 700 !important;
     font-family: 'Rye', serif !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    padding: 5px 10px !important;
+    padding: 6px 8px !important;
     width: auto !important;
-    white-space: nowrap !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    letter-spacing: 0px !important;
     box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4) !important;
     transition: all 0.3s ease !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
 }}
 
 .stButton>button:hover {{
@@ -1930,12 +1931,14 @@ div[data-testid="stAlert"] strong {{ color: #FFD700 !important; }}
         display: inline-block !important; /* BAO VỪA CHỮ */
     }}
     
-    /* Nút trên mobile - giữ nhỏ gọn */
+    /* Nút trên mobile */
     .stButton>button {{
-        font-size: 0.72em !important;
-        padding: 5px 8px !important;
+        font-size: 0.64em !important;
+        padding: 6px 6px !important;
         border-radius: 6px !important;
-        white-space: nowrap !important;
+        white-space: normal !important;
+        word-break: break-word !important;
+        letter-spacing: 0px !important;
         border: 1px solid rgba(255, 255, 255, 0.3) !important;
     }}
     
@@ -2238,7 +2241,7 @@ if bank_choice != "----":
             else:
                 btn_all_label = "📖 Hiển thị toàn bộ ngân hàng"
 
-            # Hàng 1: nút Hiển thị — full width
+            # Hàng 1: nút Hiển thị — full width, font nhỏ để vừa 1 dòng
             if st.button(btn_all_label, key="btn_show_all", use_container_width=True):
                 st.session_state.current_mode = "all"
                 st.session_state.active_translation_key = None
@@ -2246,8 +2249,8 @@ if bank_choice != "----":
                 st.session_state.current_passage_id_displayed = None
                 st.rerun()
 
-            # Hàng 2: nút Làm bài test — canh giữa bằng columns đối xứng
-            col_tl, col_test, col_tr = st.columns([3, 4, 3])
+            # Hàng 2: nút Làm bài test — canh giữa bằng cột đối xứng
+            _, col_test, _ = st.columns([1, 1, 1])
             with col_test:
                 if st.button("📝 Làm bài test", key="btn_start_test", use_container_width=True):
                     st.session_state.current_mode = "test"
@@ -2260,54 +2263,6 @@ if bank_choice != "----":
                     st.session_state.pop(f"{test_key_prefix}_submitted", None)
                     st.session_state.pop(f"{test_key_prefix}_questions", None)
                     st.rerun()
-
-            # JS: sau khi render, thu nhỏ font nút Hiển thị để vừa 1 hàng
-            # và ẩn 2 cột padding trống bên cạnh nút test
-            st.components.v1.html("""
-            <script>
-            (function() {
-                function applyBtnFix() {
-                    var allBtns = window.parent.document.querySelectorAll(
-                        'section.main button[kind="secondary"]'
-                    );
-                    allBtns.forEach(function(btn) {
-                        var txt = btn.innerText || btn.textContent || '';
-                        // Nút Hiển thị: co font để vừa 1 dòng
-                        if (txt.includes('Hi\u1ec3n th\u1ecb') || txt.includes('Phu luc') || txt.includes('Ph\u1ee5 l\u1ee5c') || txt.includes('ng\u00e2n h\u00e0ng')) {
-                            btn.style.fontSize = 'clamp(0.52rem, 1.8vw, 0.80rem)';
-                            btn.style.whiteSpace = 'nowrap';
-                            btn.style.overflow = 'hidden';
-                            btn.style.textOverflow = 'ellipsis';
-                            btn.style.padding = '9px 6px';
-                            btn.style.letterSpacing = '0px';
-                        }
-                        // Nút Làm bài test: canh giữa wrapper
-                        if (txt.includes('b\u00e0i test') || txt.includes('Bài test')) {
-                            var row = btn.closest('[data-testid="stHorizontalBlock"]');
-                            if (row) {
-                                row.style.justifyContent = 'center';
-                                row.style.display = 'flex';
-                                // Ẩn cột trống 2 bên
-                                var cols = row.querySelectorAll('[data-testid="stColumn"]');
-                                if (cols.length === 3) {
-                                    cols[0].style.display = 'none';
-                                    cols[2].style.display = 'none';
-                                    cols[1].style.flex = '0 0 auto';
-                                    cols[1].style.width = 'auto';
-                                    cols[1].style.minWidth = '160px';
-                                    cols[1].style.maxWidth = '260px';
-                                }
-                            }
-                        }
-                    });
-                }
-                // Chạy ngay + retry để đảm bảo DOM đã render
-                applyBtnFix();
-                setTimeout(applyBtnFix, 300);
-                setTimeout(applyBtnFix, 800);
-            })();
-            </script>
-            """, height=0)
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
             
             
