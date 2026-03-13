@@ -77,8 +77,9 @@ st.components.v1.html(f"""
     position: fixed;
     top: 20px;
     right: 20px;
-    z-index: 20;
+    z-index: 2000;
     text-align: center;
+    pointer-events: none;
   }}
 
   /* ========== LOGO 1 WRAP (chữ nhật bo góc) ========== */
@@ -173,8 +174,7 @@ st.components.v1.html(f"""
   .logo2-wrap {{
     position: relative;
     display: inline-block;
-    /* padding tạo khoảng để viền sáng hiện ra */
-    padding: 4px 8px;
+    padding: 0;
   }}
 
   /* SVG viền elip chạy ánh sáng */
@@ -217,7 +217,7 @@ st.components.v1.html(f"""
   .logo2-wrap img {{
     position: relative;
     z-index: 2;
-    height: 120px;
+    height: 110px;
     width: auto;
     object-fit: contain;
     display: block;
@@ -411,22 +411,10 @@ st.components.v1.html(f"""
       <img src="data:image/png;base64,{logo2_b64}" alt="Logo2" id="logo2-img"/>
       <svg class="ellipse-border" viewBox="0 0 228 100">
         <style>
-          .el-tail {{
-            stroke-dasharray: 100 900;
-            animation: elip-run 2s linear infinite;
-          }}
-          .el-mid {{
-            stroke-dasharray: 60 940;
-            animation: elip-run 2s linear infinite;
-          }}
-          .el-tip {{
-            stroke-dasharray: 18 982;
-            animation: elip-run 2s linear infinite;
-          }}
-          @keyframes elip-run {{
-            from {{ stroke-dashoffset: 1000; }}
-            to   {{ stroke-dashoffset: 0; }}
-          }}
+          .el-tail {{ stroke-dasharray: 100 900; animation: elip-run 2s linear infinite; }}
+          .el-mid  {{ stroke-dasharray: 60 940;  animation: elip-run 2s linear infinite; }}
+          .el-tip  {{ stroke-dasharray: 18 982;  animation: elip-run 2s linear infinite; }}
+          @keyframes elip-run {{ from {{ stroke-dashoffset: 1000; }} to {{ stroke-dashoffset: 0; }} }}
         </style>
         <ellipse cx="114" cy="50" rx="112" ry="48"
           fill="none" stroke="#b8860b" stroke-width="2.5"
