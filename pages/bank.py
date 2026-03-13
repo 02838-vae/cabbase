@@ -62,6 +62,36 @@ st.markdown(
     unsafe_allow_html=True
 )
 
+# CSS: Canh giữa 2 button kết quả, chữ không xuống dòng trên PC lẫn mobile
+st.markdown(
+    """
+    <style>
+    /* Canh giữa cả 2 column chứa button kết quả */
+    div[data-testid="stHorizontalBlock"] {
+        justify-content: center !important;
+    }
+
+    /* Mỗi column co lại vừa đủ với nội dung button */
+    div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {
+        flex: 0 1 auto !important;
+        min-width: 0 !important;
+        width: auto !important;
+    }
+
+    /* Button: chữ không xuống dòng, padding đẹp */
+    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] button[kind="secondary"],
+    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] button[kind="primary"] {
+        white-space: nowrap !important;
+        width: auto !important;
+        min-width: 160px;
+        padding: 0.55rem 1.4rem !important;
+        font-size: clamp(13px, 2.5vw, 16px) !important;
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 
 
 # ⚙️ HÀM HỖ TRỢ VÀ FILE I/O
