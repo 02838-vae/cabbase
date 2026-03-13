@@ -1315,7 +1315,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
 st.set_page_config(page_title="Ngân hàng trắc nghiệm", layout="wide")
 
 PC_IMAGE_FILE = "PC2.jpg"
-MOBILE_IMAGE_FILE = "mobile.jpg"
+MOBILE_IMAGE_FILE = "mobile2.jpg"
 LOGO_IMAGE_FILE = "logo.jpg"
 LOGO2_IMAGE_FILE = "logo2.png"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
@@ -1691,14 +1691,28 @@ div[data-testid="stSidebarNav"] {{
     font-weight: 700 !important;
     font-family: 'Rye', serif !important;
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    padding: 5px 10px !important;
+    padding: 8px 12px !important;
     width: auto !important;
     white-space: normal !important;
     word-break: break-word !important;
+    height: auto !important;
+    min-height: 40px !important;
+    line-height: 1.4 !important;
+    text-align: center !important;
     box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4) !important;
     transition: all 0.3s ease !important;
     text-transform: uppercase !important;
     letter-spacing: 0.5px !important;
+}}
+
+/* Wrapper canh giữa button — hoạt động cả PC lẫn mobile */
+.btn-center-row {{
+    display: flex !important;
+    justify-content: center !important;
+    margin: 4px 0 !important;
+}}
+.btn-center-row > div {{
+    width: 100% !important;
 }}
 
 .stButton>button:hover {{
@@ -1931,17 +1945,28 @@ div[data-testid="stAlert"] strong {{ color: #FFD700 !important; }}
         display: inline-block !important; /* BAO VỪA CHỮ */
     }}
     
-    /* Nút trên mobile - giữ nhỏ gọn, cho phép xuống hàng */
+    /* Nút trên mobile */
     .stButton>button {{
-        font-size: 0.72em !important;
-        padding: 6px 8px !important;
+        font-size: 0.76em !important;
+        padding: 8px 10px !important;
         border-radius: 6px !important;
         white-space: normal !important;
         word-break: break-word !important;
-        border: 1px solid rgba(255, 255, 255, 0.3) !important;
         height: auto !important;
-        min-height: 40px !important;
-        line-height: 1.35 !important;
+        min-height: 42px !important;
+        line-height: 1.4 !important;
+        text-align: center !important;
+        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    }}
+
+    /* Canh giữa nút trên mobile */
+    .btn-center-row {{
+        justify-content: center !important;
+    }}
+    div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {{
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
     }}
     
     /* Cập nhật mobile cho đoạn văn */
@@ -1954,39 +1979,6 @@ div[data-testid="stAlert"] strong {{ color: #FFD700 !important; }}
         font-size: 16px !important; 
         line-height: 1.4;
         padding: 10px;
-    }}
-}}
-/* ===== 2 NÚT HÀNH ĐỘNG CHÍNH (Hiển thị + Làm bài test) ===== */
-div[data-testid="stButton"]:has(button[kind="secondary"]#btn_show_all) > button,
-button[data-testid="btn_show_all"] {{
-    background: linear-gradient(135deg, #b8860b 0%, #FFD700 50%, #b8860b 100%) !important;
-    color: #1a1a1a !important;
-    border: none !important;
-    box-shadow: 0 4px 18px rgba(255,215,0,0.45) !important;
-}}
-
-/* Nút Hiển thị (btn_show_all) - vàng gold */
-div[data-testid="stColumn"] div[data-testid="stButton"] button {{
-    white-space: normal !important;
-    word-break: break-word !important;
-    height: auto !important;
-    min-height: 42px !important;
-    line-height: 1.4 !important;
-    padding: 10px 16px !important;
-    font-size: 0.85em !important;
-    text-align: center !important;
-}}
-
-@media (max-width: 768px) {{
-    /* Override: cho phép button xuống hàng trên mobile */
-    div[data-testid="stColumn"] div[data-testid="stButton"] button {{
-        white-space: normal !important;
-        word-break: break-word !important;
-        font-size: 0.80em !important;
-        padding: 8px 10px !important;
-        min-height: 44px !important;
-        height: auto !important;
-        line-height: 1.35 !important;
     }}
 }}
 </style>
@@ -2276,8 +2268,9 @@ if bank_choice != "----":
             else:
                 btn_all_label = "📖 Hiển thị toàn bộ ngân hàng"
 
-            # Hàng 1: nút Hiển thị — canh giữa, full width
-            col_l, col_btn1, col_r = st.columns([1, 7, 1])
+            # Hàng 1: nút Hiển thị — canh giữa
+            st.markdown('<div class="btn-center-row">', unsafe_allow_html=True)
+            col_l1, col_btn1, col_r1 = st.columns([1, 6, 1])
             with col_btn1:
                 if st.button(btn_all_label, key="btn_show_all", use_container_width=True):
                     st.session_state.current_mode = "all"
@@ -2285,9 +2278,11 @@ if bank_choice != "----":
                     st.session_state.active_passage_translation = None
                     st.session_state.current_passage_id_displayed = None
                     st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
 
             # Hàng 2: nút Làm bài test — canh giữa
-            col_tl, col_test, col_tr = st.columns([2, 5, 2])
+            st.markdown('<div class="btn-center-row">', unsafe_allow_html=True)
+            col_l2, col_test, col_r2 = st.columns([2, 4, 2])
             with col_test:
                 if st.button("📝 Làm bài test", key="btn_start_test", use_container_width=True):
                     st.session_state.current_mode = "test"
@@ -2300,6 +2295,7 @@ if bank_choice != "----":
                     st.session_state.pop(f"{test_key_prefix}_submitted", None)
                     st.session_state.pop(f"{test_key_prefix}_questions", None)
                     st.rerun()
+            st.markdown('</div>', unsafe_allow_html=True)
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
             
             
