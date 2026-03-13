@@ -1315,7 +1315,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
 st.set_page_config(page_title="Ngân hàng trắc nghiệm", layout="wide")
 
 PC_IMAGE_FILE = "PC2.jpg"
-MOBILE_IMAGE_FILE = "mobile2.jpg"
+MOBILE_IMAGE_FILE = "mobile.jpg"
 LOGO_IMAGE_FILE = "logo.jpg"
 LOGO2_IMAGE_FILE = "logo2.png"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
@@ -1693,7 +1693,8 @@ div[data-testid="stSidebarNav"] {{
     border: 1px solid rgba(255, 255, 255, 0.3) !important;
     padding: 5px 10px !important;
     width: auto !important;
-    white-space: nowrap !important;
+    white-space: normal !important;
+    word-break: break-word !important;
     box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4) !important;
     transition: all 0.3s ease !important;
     text-transform: uppercase !important;
@@ -1930,13 +1931,17 @@ div[data-testid="stAlert"] strong {{ color: #FFD700 !important; }}
         display: inline-block !important; /* BAO VỪA CHỮ */
     }}
     
-    /* Nút trên mobile - giữ nhỏ gọn */
+    /* Nút trên mobile - giữ nhỏ gọn, cho phép xuống hàng */
     .stButton>button {{
         font-size: 0.72em !important;
-        padding: 5px 8px !important;
+        padding: 6px 8px !important;
         border-radius: 6px !important;
-        white-space: nowrap !important;
+        white-space: normal !important;
+        word-break: break-word !important;
         border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        height: auto !important;
+        min-height: 40px !important;
+        line-height: 1.35 !important;
     }}
     
     /* Cập nhật mobile cho đoạn văn */
@@ -1949,6 +1954,39 @@ div[data-testid="stAlert"] strong {{ color: #FFD700 !important; }}
         font-size: 16px !important; 
         line-height: 1.4;
         padding: 10px;
+    }}
+}}
+/* ===== 2 NÚT HÀNH ĐỘNG CHÍNH (Hiển thị + Làm bài test) ===== */
+div[data-testid="stButton"]:has(button[kind="secondary"]#btn_show_all) > button,
+button[data-testid="btn_show_all"] {{
+    background: linear-gradient(135deg, #b8860b 0%, #FFD700 50%, #b8860b 100%) !important;
+    color: #1a1a1a !important;
+    border: none !important;
+    box-shadow: 0 4px 18px rgba(255,215,0,0.45) !important;
+}}
+
+/* Nút Hiển thị (btn_show_all) - vàng gold */
+div[data-testid="stColumn"] div[data-testid="stButton"] button {{
+    white-space: normal !important;
+    word-break: break-word !important;
+    height: auto !important;
+    min-height: 42px !important;
+    line-height: 1.4 !important;
+    padding: 10px 16px !important;
+    font-size: 0.85em !important;
+    text-align: center !important;
+}}
+
+@media (max-width: 768px) {{
+    /* Override: cho phép button xuống hàng trên mobile */
+    div[data-testid="stColumn"] div[data-testid="stButton"] button {{
+        white-space: normal !important;
+        word-break: break-word !important;
+        font-size: 0.80em !important;
+        padding: 8px 10px !important;
+        min-height: 44px !important;
+        height: auto !important;
+        line-height: 1.35 !important;
     }}
 }}
 </style>
@@ -2234,12 +2272,12 @@ if bank_choice != "----":
             # Xác định nhãn nút hiển thị toàn bộ
             if is_docwise:
                 pl_short = st.session_state.get('doc_selected', '').split(':')[0].strip()
-                btn_all_label = f"📖 {pl_short}"
+                btn_all_label = f"📖 Hiển thị {pl_short}"
             else:
-                btn_all_label = "📖 Toàn bộ Ngân hàng"
-            
-            # 2 nút cùng hàng, canh giữa, nhỏ gọn
-            col_l, col_btn1, col_btn2, col_r = st.columns([2, 3, 3, 2])
+                btn_all_label = "📖 Hiển thị toàn bộ ngân hàng"
+
+            # Hàng 1: nút Hiển thị — canh giữa, full width
+            col_l, col_btn1, col_r = st.columns([1, 7, 1])
             with col_btn1:
                 if st.button(btn_all_label, key="btn_show_all", use_container_width=True):
                     st.session_state.current_mode = "all"
@@ -2247,7 +2285,10 @@ if bank_choice != "----":
                     st.session_state.active_passage_translation = None
                     st.session_state.current_passage_id_displayed = None
                     st.rerun()
-            with col_btn2:
+
+            # Hàng 2: nút Làm bài test — canh giữa
+            col_tl, col_test, col_tr = st.columns([2, 5, 2])
+            with col_test:
                 if st.button("📝 Làm bài test", key="btn_start_test", use_container_width=True):
                     st.session_state.current_mode = "test"
                     st.session_state.active_translation_key = None
