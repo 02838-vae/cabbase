@@ -1315,7 +1315,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
 st.set_page_config(page_title="Ngân hàng trắc nghiệm", layout="wide")
 
 PC_IMAGE_FILE = "PC2.jpg"
-MOBILE_IMAGE_FILE = "mobile.jpg"
+MOBILE_IMAGE_FILE = "mobile2.jpg"
 LOGO_IMAGE_FILE = "logo.jpg"
 LOGO2_IMAGE_FILE = "logo2.png"
 img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
