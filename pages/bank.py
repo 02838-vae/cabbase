@@ -1184,8 +1184,11 @@ def build_docwise_test_questions():
 def display_docwise_test_mode(bank_name, key_prefix="docwise_test"):
     """
     Màn hình Test Mode riêng cho Docwise: 100 câu từ tất cả phụ lục.
+    - Trang bắt đầu: chỉ hiển thị tổng 100 câu và điểm pass 70/100
+    - Trong khi làm bài: ẩn chi tiết phụ lục, paragraph đánh số 1/2 theo thứ tự xuất hiện
     """
-    PASS_RATE = 0.75
+    TOTAL_QUESTIONS = 100
+    PASS_SCORE = 70          # điểm pass cố định
     bank_slug = "docwise"
     test_key_prefix = f"{key_prefix}_{bank_slug}"
 
@@ -1201,20 +1204,16 @@ def display_docwise_test_mode(bank_name, key_prefix="docwise_test"):
 
     # ===================== TRANG BẮT ĐẦU =====================
     if not st.session_state[f"{test_key_prefix}_started"]:
-        st.markdown('<div class="result-title"><h3>📝 LÀM BÀI TEST TỔNG HỢP DOCWISE — 100 CÂU</h3></div>', unsafe_allow_html=True)
-        st.markdown("""
-        <div style="background:rgba(255,215,0,0.08); border-left:4px solid #FFD700; padding:14px 18px; border-radius:8px; margin-bottom:16px; font-size:16px; line-height:1.8;">
-        📌 <b>Cấu trúc đề thi:</b><br>
-        &nbsp;&nbsp;• <b>Phụ lục 3</b> — 1 Paragraph ngẫu nhiên (Bài đọc hiểu)<br>
-        &nbsp;&nbsp;• <b>Phụ lục 4</b> — 1 Paragraph ngẫu nhiên (Luật & Quy trình)<br>
-        &nbsp;&nbsp;• <b>Phụ lục 5</b> — 10 câu ngẫu nhiên (Chuyên ngành)<br>
-        &nbsp;&nbsp;• <b>Phụ lục 2</b> — 30 câu ngẫu nhiên (Từ vựng, thuật ngữ)<br>
-        &nbsp;&nbsp;• <b>Phụ lục 1</b> — phần còn lại để đủ <b>100 câu</b> (Ngữ pháp chung)<br>
+        st.markdown('<div class="result-title"><h3>📝 LÀM BÀI TEST TỔNG HỢP DOCWISE</h3></div>', unsafe_allow_html=True)
+        st.markdown(f"""
+        <div style="background:rgba(255,215,0,0.08); border-left:4px solid #FFD700; padding:16px 22px; border-radius:8px; margin-bottom:20px; font-size:18px; text-align:center; line-height:2;">
+        📋 Tổng số câu hỏi: <b>{TOTAL_QUESTIONS} câu</b><br>
+        🎯 Điểm đạt (PASS): <b>{PASS_SCORE}/{TOTAL_QUESTIONS}</b>
         </div>
         """, unsafe_allow_html=True)
 
         if st.button("🚀 Bắt đầu Bài Test 100 câu", key=f"{test_key_prefix}_start_btn"):
-            with st.spinner("⏳ Đang tạo đề thi ngẫu nhiên từ 5 phụ lục..."):
+            with st.spinner("⏳ Đang tạo đề thi ngẫu nhiên..."):
                 test_qs, info = build_docwise_test_questions()
             if not test_qs:
                 err = info.get("error", "Lỗi không xác định") if info else "Lỗi không xác định"
@@ -1229,35 +1228,27 @@ def display_docwise_test_mode(bank_name, key_prefix="docwise_test"):
 
     # ===================== ĐANG LÀM BÀI =====================
     test_batch = st.session_state[f"{test_key_prefix}_questions"]
-    info = st.session_state.get(f"{test_key_prefix}_info", {})
     current_passage_id = None
+    passage_display_counter = 0   # đếm paragraph theo thứ tự xuất hiện: 1, 2, ...
 
     if not st.session_state[f"{test_key_prefix}_submitted"]:
-        st.markdown('<div class="result-title"><h3>⏳ ĐANG LÀM BÀI TEST TỔNG HỢP — 100 CÂU</h3></div>', unsafe_allow_html=True)
-        if info:
-            st.markdown(f"""
-            <div style="background:rgba(255,215,0,0.06); border-left:3px solid #FFD700; padding:10px 16px; border-radius:6px; margin-bottom:12px; font-size:14px; color:#ccc;">
-            🎲 <b>PL3:</b> {info.get('pl3_group','')} ({info.get('pl3_count',0)} câu) &nbsp;|&nbsp;
-            <b>PL4:</b> {info.get('pl4_group','')} ({info.get('pl4_count',0)} câu) &nbsp;|&nbsp;
-            <b>PL5:</b> {info.get('pl5_count',0)} câu &nbsp;|&nbsp;
-            <b>PL2:</b> {info.get('pl2_count',0)} câu &nbsp;|&nbsp;
-            <b>PL1:</b> {info.get('pl1_count',0)} câu &nbsp;→&nbsp; <b>Tổng: {info.get('total',0)} câu</b>
-            </div>
-            """, unsafe_allow_html=True)
+        st.markdown(f'<div class="result-title"><h3>⏳ ĐANG LÀM BÀI TEST — {TOTAL_QUESTIONS} CÂU</h3></div>', unsafe_allow_html=True)
 
         for i, q in enumerate(test_batch, start=1):
             q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}"
             translation_key = f"trans_{q_key}"
             is_active = (translation_key == st.session_state.active_translation_key)
 
-            # Hiển thị đoạn văn (PL3 / PL4)
+            # Hiển thị đoạn văn (PL3 / PL4) — tiêu đề đổi thành "Paragraph 1", "Paragraph 2"
             passage_content = q.get('paragraph_content', '').strip()
             group_name = q.get('group', '')
             if passage_content:
                 passage_id = f"passage_{group_name}_{hash(passage_content)}"
                 is_passage_active = (passage_id == st.session_state.active_passage_translation)
                 if passage_id != current_passage_id:
-                    st.markdown(f'<div class="paragraph-title">**{group_name}**</div>', unsafe_allow_html=True)
+                    passage_display_counter += 1
+                    display_group_label = f"Paragraph {passage_display_counter}"
+                    st.markdown(f'<div class="paragraph-title">**{display_group_label}**</div>', unsafe_allow_html=True)
                     st.markdown(f'<div class="paragraph-content-box">{passage_content}</div>', unsafe_allow_html=True)
                     st.toggle("🌐 Dịch đoạn văn sang Tiếng Việt", value=is_passage_active,
                               key=f"toggle_passage_{passage_id}",
@@ -1279,9 +1270,8 @@ def display_docwise_test_mode(bank_name, key_prefix="docwise_test"):
                     st.markdown("---")
                     current_passage_id = passage_id
 
-            # Số thứ tự & câu hỏi
-            display_num = i
-            st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
+            # Số thứ tự liên tục 1→100
+            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
 
             st.toggle("🌐 Dịch Câu hỏi & Đáp án sang Tiếng Việt", value=is_active,
                       key=f"toggle_{translation_key}",
@@ -1308,16 +1298,8 @@ def display_docwise_test_mode(bank_name, key_prefix="docwise_test"):
     # ===================== KẾT QUẢ =====================
     else:
         st.markdown('<div class="result-title"><h3>🎉 KẾT QUẢ BÀI TEST TỔNG HỢP</h3></div>', unsafe_allow_html=True)
-        if info:
-            st.markdown(f"""
-            <div style="background:rgba(255,215,0,0.06); border-left:3px solid #FFD700; padding:10px 16px; border-radius:6px; margin-bottom:12px; font-size:14px; color:#ccc;">
-            🎲 <b>PL3:</b> {info.get('pl3_group','')} ({info.get('pl3_count',0)} câu) &nbsp;|&nbsp;
-            <b>PL4:</b> {info.get('pl4_group','')} ({info.get('pl4_count',0)} câu) &nbsp;|&nbsp;
-            <b>PL5:</b> {info.get('pl5_count',0)} câu &nbsp;|&nbsp;
-            <b>PL2:</b> {info.get('pl2_count',0)} câu &nbsp;|&nbsp;
-            <b>PL1:</b> {info.get('pl1_count',0)} câu &nbsp;→&nbsp; <b>Tổng: {info.get('total',0)} câu</b>
-            </div>
-            """, unsafe_allow_html=True)
+        current_passage_id = None
+        passage_display_counter = 0
 
         for i, q in enumerate(test_batch, start=1):
             q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}"
@@ -1327,14 +1309,16 @@ def display_docwise_test_mode(bank_name, key_prefix="docwise_test"):
             translation_key = f"trans_{q_key}"
             is_active = (translation_key == st.session_state.active_translation_key)
 
-            # Hiển thị đoạn văn (PL3 / PL4)
+            # Hiển thị đoạn văn — tiêu đề "Paragraph 1", "Paragraph 2"
             passage_content = q.get('paragraph_content', '').strip()
             group_name = q.get('group', '')
             if passage_content:
                 passage_id = f"passage_{group_name}_{hash(passage_content)}"
                 is_passage_active = (passage_id == st.session_state.active_passage_translation)
                 if passage_id != current_passage_id:
-                    st.markdown(f'<div class="paragraph-title">**{group_name}**</div>', unsafe_allow_html=True)
+                    passage_display_counter += 1
+                    display_group_label = f"Paragraph {passage_display_counter}"
+                    st.markdown(f'<div class="paragraph-title">**{display_group_label}**</div>', unsafe_allow_html=True)
                     st.markdown(f'<div class="paragraph-content-box">{passage_content}</div>', unsafe_allow_html=True)
                     st.toggle("🌐 Dịch đoạn văn sang Tiếng Việt", value=is_passage_active,
                               key=f"toggle_passage_{passage_id}",
@@ -1386,13 +1370,12 @@ def display_docwise_test_mode(bank_name, key_prefix="docwise_test"):
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
 
         total_q = len(test_batch)
-        pass_threshold = total_q * PASS_RATE
         st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{total_q}</h3></div>', unsafe_allow_html=True)
-        if score >= pass_threshold:
+        if score >= PASS_SCORE:
             st.balloons()
             st.success(f"🎊 **CHÚC MỪNG!** Bạn đã ĐẠT (PASS) — {score}/{total_q} câu đúng.")
         else:
-            st.error(f"😢 **KHÔNG ĐẠT (FAIL)**. Cần {math.ceil(pass_threshold)} câu đúng để Đạt. Bạn đạt {score}/{total_q}.")
+            st.error(f"😢 **KHÔNG ĐẠT (FAIL)**. Cần {PASS_SCORE} câu đúng để Đạt. Bạn đạt {score}/{total_q}.")
 
         if st.button("🔄 Làm lại Bài Test (Đề mới)", key=f"{test_key_prefix}_restart_btn"):
             for i, q in enumerate(test_batch, start=1):
