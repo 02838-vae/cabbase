@@ -236,18 +236,25 @@ div.stSelectbox label span,
     text-shadow: none !important;
     border-color: #D4A843 !important;
     box-shadow: none !important;
+    overflow: visible !important;
+    height: auto !important;
+    line-height: 1.5 !important;
 }}
 .stSelectbox div[data-baseweb="select"],
 [data-testid="stSelectbox"] div[data-baseweb="select"] {{
     border: 1px solid #D4A843 !important;
     border-radius: 8px !important;
+    min-height: 42px !important;
 }}
 .stSelectbox div[data-baseweb="select"] > div,
 [data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
     border: none !important;
     border-radius: 8px !important;
     margin: 0 !important;
-    padding: 6px 12px !important;
+    padding: 8px 12px !important;
+    min-height: 42px !important;
+    display: flex !important;
+    align-items: center !important;
 }}
 [data-baseweb="popover"] li,
 [data-baseweb="menu"] li,
