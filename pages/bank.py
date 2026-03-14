@@ -1291,12 +1291,24 @@ def display_docwise_test_mode(bank_name, key_prefix="docwise_test"):
 
         if st.button("✅ Nộp bài Test", key=f"{test_key_prefix}_submit_btn"):
             st.session_state[f"{test_key_prefix}_submitted"] = True
+            st.session_state[f"{test_key_prefix}_scroll_result"] = True
             st.session_state.active_translation_key = None
             st.session_state.active_passage_translation = None
             st.rerun()
 
     # ===================== KẾT QUẢ =====================
     else:
+        st.markdown('<div id="docwise-test-result"></div>', unsafe_allow_html=True)
+        if st.session_state.pop(f"{test_key_prefix}_scroll_result", False):
+            st.markdown("""
+            <script>
+            setTimeout(function() {
+                var el = document.getElementById('docwise-test-result');
+                if (el) { el.scrollIntoView({behavior: 'smooth', block: 'start'}); }
+                else { window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'}); }
+            }, 300);
+            </script>
+            """, unsafe_allow_html=True)
         st.markdown('<div class="result-title"><h3>🎉 KẾT QUẢ BÀI TEST TỔNG HỢP</h3></div>', unsafe_allow_html=True)
         current_passage_id = None
         passage_display_counter = 0
@@ -1516,11 +1528,23 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             
         if st.button("✅ Nộp bài Test", key=f"{test_key_prefix}_submit_btn"):
             st.session_state[f"{test_key_prefix}_submitted"] = True
+            st.session_state[f"{test_key_prefix}_scroll_result"] = True
             st.session_state.active_translation_key = None # Tắt dịch Q&A khi nộp
             st.session_state.active_passage_translation = None # Tắt dịch Passage khi nộp
             st.rerun()
             
     else:
+        st.markdown('<div id="regular-test-result"></div>', unsafe_allow_html=True)
+        if st.session_state.pop(f"{test_key_prefix}_scroll_result", False):
+            st.markdown("""
+            <script>
+            setTimeout(function() {
+                var el = document.getElementById('regular-test-result');
+                if (el) { el.scrollIntoView({behavior: 'smooth', block: 'start'}); }
+                else { window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'}); }
+            }, 300);
+            </script>
+            """, unsafe_allow_html=True)
         st.markdown('<div class="result-title"><h3>🎉 KẾT QUẢ BÀI TEST</h3></div>', unsafe_allow_html=True)
         
         for i, q in enumerate(test_batch, start=1):
@@ -2701,6 +2725,7 @@ if bank_choice != "----":
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
                     if st.button("✅ Nộp bài", key="submit_group"):
                         st.session_state.submitted = True
+                        st.session_state.scroll_to_group_result = True
                         st.session_state.active_translation_key = None # Tắt dịch Q&A khi nộp
                         st.session_state.active_passage_translation = None # Tắt dịch Passage khi nộp
                         st.rerun()
@@ -2817,6 +2842,17 @@ if bank_choice != "----":
                             st.error(f"❌ Sai – Đáp án đúng: {q['answer']}")
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
 
+                    st.markdown('<div id="group-result"></div>', unsafe_allow_html=True)
+                    if st.session_state.pop("scroll_to_group_result", False):
+                        st.markdown("""
+                        <script>
+                        setTimeout(function() {
+                            var el = document.getElementById('group-result');
+                            if (el) { el.scrollIntoView({behavior: 'smooth', block: 'start'}); }
+                            else { window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'}); }
+                        }, 300);
+                        </script>
+                        """, unsafe_allow_html=True)
                     st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{len(batch)}</h3></div>', unsafe_allow_html=True)
                     col_reset, col_next = st.columns(2)
                     with col_reset:
