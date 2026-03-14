@@ -47,7 +47,7 @@ excel_file = "pages/A787.xlsx"
 
 try:
     pn_bg_pc_base64     = get_base64_encoded_file("pages/PC.jpg")
-    pn_bg_mobile_base64 = get_base64_encoded_file("pages/mobile.jpg")
+    pn_bg_mobile_base64 = get_base64_encoded_file("pages/mobile2.jpg")
     logo_base64         = get_base64_encoded_file("pages/logo.jpg")
     logo2_base64        = get_base64_encoded_file("pages/logo2.png")
 except Exception as e:
