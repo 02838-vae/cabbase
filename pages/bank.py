@@ -1089,6 +1089,321 @@ def get_random_questions(questions, count=50):
     if len(questions) <= count: return questions
     return random.sample(questions, count)
 
+
+def build_docwise_test_questions():
+    """
+    Tạo bộ đề 100 câu cho Docwise Test theo công thức:
+      - 1 paragraph random từ PL3 (Bài đọc hiểu) → lấy TẤT CẢ câu hỏi của paragraph đó
+      - 1 paragraph random từ PL4 (Luật & quy trình) → lấy TẤT CẢ câu hỏi của paragraph đó
+      - 10 câu random từ PL5 (Chuyên ngành)
+      - 30 câu random từ PL2 (Từ vựng, thuật ngữ)
+      - Phần còn lại (100 - PL3_qs - PL4_qs - 10 - 30) từ PL1 (Ngữ pháp chung)
+    Trả về: (test_questions, info_dict) hoặc ([], None) nếu lỗi
+    """
+    TOTAL = 100
+    N_PL5 = 10
+    N_PL2 = 30
+
+    # --- Load các phụ lục ---
+    all_pl3 = parse_pl3_passage_bank("PL3.docx")
+    all_pl4 = parse_pl4_law_process("PL4.docx")
+    all_pl5 = parse_pl5_specialized("PL5.docx")
+    all_pl2 = parse_pl2("PL2.docx")
+    all_pl1 = parse_pl1("PL1.docx")
+
+    errors = []
+    if not all_pl3: errors.append("PL3 (Bài đọc hiểu)")
+    if not all_pl4: errors.append("PL4 (Luật & quy trình)")
+    if not all_pl5: errors.append("PL5 (Chuyên ngành)")
+    if not all_pl2: errors.append("PL2 (Từ vựng)")
+    if not all_pl1: errors.append("PL1 (Ngữ pháp)")
+    if errors:
+        return [], {"error": f"Không đọc được file: {', '.join(errors)}"}
+
+    # --- Chọn 1 paragraph ngẫu nhiên từ PL3 ---
+    pl3_groups = {}
+    for q in all_pl3:
+        g = q.get('group', 'Unknown')
+        pl3_groups.setdefault(g, []).append(q)
+    chosen_pl3_group = random.choice(list(pl3_groups.keys()))
+    qs_pl3 = pl3_groups[chosen_pl3_group]
+
+    # --- Chọn 1 paragraph ngẫu nhiên từ PL4 ---
+    pl4_groups = {}
+    for q in all_pl4:
+        g = q.get('group', 'Unknown')
+        pl4_groups.setdefault(g, []).append(q)
+    chosen_pl4_group = random.choice(list(pl4_groups.keys()))
+    qs_pl4 = pl4_groups[chosen_pl4_group]
+
+    # --- Chọn 10 câu từ PL5 ---
+    qs_pl5 = random.sample(all_pl5, min(N_PL5, len(all_pl5)))
+
+    # --- Chọn 30 câu từ PL2 ---
+    qs_pl2 = random.sample(all_pl2, min(N_PL2, len(all_pl2)))
+
+    # --- Tính số câu còn lại từ PL1 ---
+    used = len(qs_pl3) + len(qs_pl4) + len(qs_pl5) + len(qs_pl2)
+    n_pl1 = max(0, TOTAL - used)
+    qs_pl1 = random.sample(all_pl1, min(n_pl1, len(all_pl1)))
+
+    # --- Gắn nhãn nguồn cho mỗi câu (để phân biệt khi hiển thị) ---
+    def tag(qs, source_label):
+        for q in qs:
+            q['_source'] = source_label
+        return qs
+
+    tag(qs_pl3, "PL3")
+    tag(qs_pl4, "PL4")
+    tag(qs_pl5, "PL5")
+    tag(qs_pl2, "PL2")
+    tag(qs_pl1, "PL1")
+
+    # --- Ghép theo thứ tự: PL3 → PL4 → (shuffle PL5+PL2+PL1) ---
+    mixed_tail = qs_pl5 + qs_pl2 + qs_pl1
+    random.shuffle(mixed_tail)
+    final_questions = qs_pl3 + qs_pl4 + mixed_tail
+
+    # Đánh lại số thứ tự toàn cục
+    for idx, q in enumerate(final_questions, start=1):
+        q['global_number'] = idx
+
+    info = {
+        "pl3_group": chosen_pl3_group,
+        "pl3_count": len(qs_pl3),
+        "pl4_group": chosen_pl4_group,
+        "pl4_count": len(qs_pl4),
+        "pl5_count": len(qs_pl5),
+        "pl2_count": len(qs_pl2),
+        "pl1_count": len(qs_pl1),
+        "total": len(final_questions),
+    }
+    return final_questions, info
+
+
+def display_docwise_test_mode(bank_name, key_prefix="docwise_test"):
+    """
+    Màn hình Test Mode riêng cho Docwise: 100 câu từ tất cả phụ lục.
+    """
+    PASS_RATE = 0.75
+    bank_slug = "docwise"
+    test_key_prefix = f"{key_prefix}_{bank_slug}"
+
+    for k in [f"{test_key_prefix}_started", f"{test_key_prefix}_submitted"]:
+        if k not in st.session_state:
+            st.session_state[k] = False
+    if f"{test_key_prefix}_questions" not in st.session_state:
+        st.session_state[f"{test_key_prefix}_questions"] = []
+    if f"{test_key_prefix}_info" not in st.session_state:
+        st.session_state[f"{test_key_prefix}_info"] = {}
+
+    score = 0
+
+    # ===================== TRANG BẮT ĐẦU =====================
+    if not st.session_state[f"{test_key_prefix}_started"]:
+        st.markdown('<div class="result-title"><h3>📝 LÀM BÀI TEST TỔNG HỢP DOCWISE — 100 CÂU</h3></div>', unsafe_allow_html=True)
+        st.markdown("""
+        <div style="background:rgba(255,215,0,0.08); border-left:4px solid #FFD700; padding:14px 18px; border-radius:8px; margin-bottom:16px; font-size:16px; line-height:1.8;">
+        📌 <b>Cấu trúc đề thi:</b><br>
+        &nbsp;&nbsp;• <b>Phụ lục 3</b> — 1 Paragraph ngẫu nhiên (Bài đọc hiểu)<br>
+        &nbsp;&nbsp;• <b>Phụ lục 4</b> — 1 Paragraph ngẫu nhiên (Luật & Quy trình)<br>
+        &nbsp;&nbsp;• <b>Phụ lục 5</b> — 10 câu ngẫu nhiên (Chuyên ngành)<br>
+        &nbsp;&nbsp;• <b>Phụ lục 2</b> — 30 câu ngẫu nhiên (Từ vựng, thuật ngữ)<br>
+        &nbsp;&nbsp;• <b>Phụ lục 1</b> — phần còn lại để đủ <b>100 câu</b> (Ngữ pháp chung)<br>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if st.button("🚀 Bắt đầu Bài Test 100 câu", key=f"{test_key_prefix}_start_btn"):
+            with st.spinner("⏳ Đang tạo đề thi ngẫu nhiên từ 5 phụ lục..."):
+                test_qs, info = build_docwise_test_questions()
+            if not test_qs:
+                err = info.get("error", "Lỗi không xác định") if info else "Lỗi không xác định"
+                st.error(f"❌ {err}")
+                return
+            st.session_state[f"{test_key_prefix}_questions"] = test_qs
+            st.session_state[f"{test_key_prefix}_info"] = info
+            st.session_state[f"{test_key_prefix}_started"] = True
+            st.session_state[f"{test_key_prefix}_submitted"] = False
+            st.rerun()
+        return
+
+    # ===================== ĐANG LÀM BÀI =====================
+    test_batch = st.session_state[f"{test_key_prefix}_questions"]
+    info = st.session_state.get(f"{test_key_prefix}_info", {})
+    current_passage_id = None
+
+    if not st.session_state[f"{test_key_prefix}_submitted"]:
+        st.markdown('<div class="result-title"><h3>⏳ ĐANG LÀM BÀI TEST TỔNG HỢP — 100 CÂU</h3></div>', unsafe_allow_html=True)
+        if info:
+            st.markdown(f"""
+            <div style="background:rgba(255,215,0,0.06); border-left:3px solid #FFD700; padding:10px 16px; border-radius:6px; margin-bottom:12px; font-size:14px; color:#ccc;">
+            🎲 <b>PL3:</b> {info.get('pl3_group','')} ({info.get('pl3_count',0)} câu) &nbsp;|&nbsp;
+            <b>PL4:</b> {info.get('pl4_group','')} ({info.get('pl4_count',0)} câu) &nbsp;|&nbsp;
+            <b>PL5:</b> {info.get('pl5_count',0)} câu &nbsp;|&nbsp;
+            <b>PL2:</b> {info.get('pl2_count',0)} câu &nbsp;|&nbsp;
+            <b>PL1:</b> {info.get('pl1_count',0)} câu &nbsp;→&nbsp; <b>Tổng: {info.get('total',0)} câu</b>
+            </div>
+            """, unsafe_allow_html=True)
+
+        for i, q in enumerate(test_batch, start=1):
+            q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}"
+            translation_key = f"trans_{q_key}"
+            is_active = (translation_key == st.session_state.active_translation_key)
+
+            # Hiển thị đoạn văn (PL3 / PL4)
+            passage_content = q.get('paragraph_content', '').strip()
+            group_name = q.get('group', '')
+            if passage_content:
+                passage_id = f"passage_{group_name}_{hash(passage_content)}"
+                is_passage_active = (passage_id == st.session_state.active_passage_translation)
+                if passage_id != current_passage_id:
+                    st.markdown(f'<div class="paragraph-title">**{group_name}**</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="paragraph-content-box">{passage_content}</div>', unsafe_allow_html=True)
+                    st.toggle("🌐 Dịch đoạn văn sang Tiếng Việt", value=is_passage_active,
+                              key=f"toggle_passage_{passage_id}",
+                              on_change=on_passage_translate_toggle, args=(passage_id,))
+                    if is_passage_active:
+                        translated_passage = st.session_state.passage_translations_cache.get(passage_id)
+                        if not isinstance(translated_passage, str):
+                            translated_passage = translate_passage_content(passage_content)
+                            st.session_state.passage_translations_cache[passage_id] = translated_passage
+                        st.markdown(f"""
+                        <div data-testid="stAlert" class="stAlert stAlert-info">
+                            <div style="font-size:18px; line-height:1.6; color:white; padding:10px;">
+                                <strong style="color:#FFD700;">[Bản dịch Đoạn văn]</strong>
+                                <div class="paragraph-content-box" style="white-space:pre-wrap; margin-bottom:0; padding:10px; background-color:rgba(0,0,0,0.5); border-left:3px solid #00d4ff;">
+                                {translated_passage}
+                                </div>
+                            </div>
+                        </div>""", unsafe_allow_html=True)
+                    st.markdown("---")
+                    current_passage_id = passage_id
+
+            # Số thứ tự & câu hỏi
+            display_num = i
+            st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
+
+            st.toggle("🌐 Dịch Câu hỏi & Đáp án sang Tiếng Việt", value=is_active,
+                      key=f"toggle_{translation_key}",
+                      on_change=on_translate_toggle, args=(translation_key,))
+            if is_active:
+                translated_content = st.session_state.translations.get(translation_key)
+                if not isinstance(translated_content, str):
+                    st.session_state.translations[translation_key] = translate_text(build_translation_text_for_qa(q))
+                    translated_content = st.session_state.translations[translation_key]
+                st.info(translated_content, icon="🌐")
+
+            default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
+            st.radio("", q["options"],
+                     index=q["options"].index(default_val) if default_val in q["options"] else 0,
+                     key=q_key)
+            st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+
+        if st.button("✅ Nộp bài Test", key=f"{test_key_prefix}_submit_btn"):
+            st.session_state[f"{test_key_prefix}_submitted"] = True
+            st.session_state.active_translation_key = None
+            st.session_state.active_passage_translation = None
+            st.rerun()
+
+    # ===================== KẾT QUẢ =====================
+    else:
+        st.markdown('<div class="result-title"><h3>🎉 KẾT QUẢ BÀI TEST TỔNG HỢP</h3></div>', unsafe_allow_html=True)
+        if info:
+            st.markdown(f"""
+            <div style="background:rgba(255,215,0,0.06); border-left:3px solid #FFD700; padding:10px 16px; border-radius:6px; margin-bottom:12px; font-size:14px; color:#ccc;">
+            🎲 <b>PL3:</b> {info.get('pl3_group','')} ({info.get('pl3_count',0)} câu) &nbsp;|&nbsp;
+            <b>PL4:</b> {info.get('pl4_group','')} ({info.get('pl4_count',0)} câu) &nbsp;|&nbsp;
+            <b>PL5:</b> {info.get('pl5_count',0)} câu &nbsp;|&nbsp;
+            <b>PL2:</b> {info.get('pl2_count',0)} câu &nbsp;|&nbsp;
+            <b>PL1:</b> {info.get('pl1_count',0)} câu &nbsp;→&nbsp; <b>Tổng: {info.get('total',0)} câu</b>
+            </div>
+            """, unsafe_allow_html=True)
+
+        for i, q in enumerate(test_batch, start=1):
+            q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}"
+            selected_opt = st.session_state.get(q_key)
+            correct = clean_text(q["answer"])
+            is_correct = clean_text(selected_opt) == correct
+            translation_key = f"trans_{q_key}"
+            is_active = (translation_key == st.session_state.active_translation_key)
+
+            # Hiển thị đoạn văn (PL3 / PL4)
+            passage_content = q.get('paragraph_content', '').strip()
+            group_name = q.get('group', '')
+            if passage_content:
+                passage_id = f"passage_{group_name}_{hash(passage_content)}"
+                is_passage_active = (passage_id == st.session_state.active_passage_translation)
+                if passage_id != current_passage_id:
+                    st.markdown(f'<div class="paragraph-title">**{group_name}**</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="paragraph-content-box">{passage_content}</div>', unsafe_allow_html=True)
+                    st.toggle("🌐 Dịch đoạn văn sang Tiếng Việt", value=is_passage_active,
+                              key=f"toggle_passage_{passage_id}",
+                              on_change=on_passage_translate_toggle, args=(passage_id,))
+                    if is_passage_active:
+                        translated_passage = st.session_state.passage_translations_cache.get(passage_id)
+                        if not isinstance(translated_passage, str):
+                            translated_passage = translate_passage_content(passage_content)
+                            st.session_state.passage_translations_cache[passage_id] = translated_passage
+                        st.markdown(f"""
+                        <div data-testid="stAlert" class="stAlert stAlert-info">
+                            <div style="font-size:18px; line-height:1.6; color:white; padding:10px;">
+                                <strong style="color:#FFD700;">[Bản dịch Đoạn văn]</strong>
+                                <div class="paragraph-content-box" style="white-space:pre-wrap; margin-bottom:0; padding:10px; background-color:rgba(0,0,0,0.5); border-left:3px solid #00d4ff;">
+                                {translated_passage}
+                                </div>
+                            </div>
+                        </div>""", unsafe_allow_html=True)
+                    st.markdown("---")
+                    current_passage_id = passage_id
+
+            # Câu hỏi và đáp án
+            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+            st.toggle("🌐 Dịch Câu hỏi & Đáp án sang Tiếng Việt", value=is_active,
+                      key=f"toggle_{translation_key}",
+                      on_change=on_translate_toggle, args=(translation_key,))
+            if is_active:
+                translated_content = st.session_state.translations.get(translation_key)
+                if not isinstance(translated_content, str):
+                    st.session_state.translations[translation_key] = translate_text(build_translation_text_for_qa(q))
+                    translated_content = st.session_state.translations[translation_key]
+                st.info(translated_content, icon="🌐")
+
+            for opt in q["options"]:
+                opt_clean = clean_text(opt)
+                opt_display = opt
+                if opt_clean == correct:
+                    color_style = "color:#00ff00;"
+                    opt_display += " (*)"
+                elif opt_clean == clean_text(selected_opt):
+                    color_style = "color:#ff3333;"
+                else:
+                    color_style = "color:#FFFFFF;"
+                st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
+
+            if is_correct:
+                score += 1
+            st.info(f"Đáp án đúng: **{q['answer']}**", icon="💡")
+            st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+
+        total_q = len(test_batch)
+        pass_threshold = total_q * PASS_RATE
+        st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{total_q}</h3></div>', unsafe_allow_html=True)
+        if score >= pass_threshold:
+            st.balloons()
+            st.success(f"🎊 **CHÚC MỪNG!** Bạn đã ĐẠT (PASS) — {score}/{total_q} câu đúng.")
+        else:
+            st.error(f"😢 **KHÔNG ĐẠT (FAIL)**. Cần {math.ceil(pass_threshold)} câu đúng để Đạt. Bạn đạt {score}/{total_q}.")
+
+        if st.button("🔄 Làm lại Bài Test (Đề mới)", key=f"{test_key_prefix}_restart_btn"):
+            for i, q in enumerate(test_batch, start=1):
+                st.session_state.pop(f"{test_key_prefix}_q_{i}_{hash(q['question'])}", None)
+            st.session_state.pop(f"{test_key_prefix}_questions", None)
+            st.session_state.pop(f"{test_key_prefix}_info", None)
+            st.session_state[f"{test_key_prefix}_started"] = False
+            st.session_state[f"{test_key_prefix}_submitted"] = False
+            st.rerun()
+
+
 def display_test_mode(questions, bank_name, key_prefix="test"):
     TOTAL_QUESTIONS = 50
     PASS_RATE = 0.75
@@ -2554,4 +2869,7 @@ if bank_choice != "----":
             st.session_state.current_passage_id_displayed = None # Reset passage display
             st.rerun()
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
-        display_test_mode(questions, bank_choice)
+        if is_docwise:
+            display_docwise_test_mode(bank_choice)
+        else:
+            display_test_mode(questions, bank_choice)
