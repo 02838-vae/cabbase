@@ -227,14 +227,18 @@ div.stSelectbox label span,
     font-size: 1.1rem !important;
     text-shadow: none !important;
 }}
-.stSelectbox div[data-baseweb="select"] {{
+.stSelectbox div[data-baseweb="select"],
+.stSelectbox div[data-baseweb="select"] > div,
+.stSelectbox div[data-baseweb="select"] > div > div,
+[data-testid="stSelectbox"] div[data-baseweb="select"],
+[data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
     background-color: #FFFFFF !important;
     border: 1px solid #D4A843 !important;
     border-radius: 8px !important;
 }}
-.stSelectbox div[data-baseweb="select"] div,
-.stSelectbox div[data-baseweb="select"] span,
-.stSelectbox div[data-baseweb="select"] input {{
+.stSelectbox div[data-baseweb="select"] *,
+[data-testid="stSelectbox"] div[data-baseweb="select"] * {{
+    background-color: #FFFFFF !important;
     color: #000000 !important;
     text-shadow: none !important;
 }}
@@ -243,6 +247,8 @@ div.stSelectbox label span,
 [role="option"] {{
     font-family: 'Rye', serif !important;
     text-shadow: none !important;
+    background-color: #FFFFFF !important;
+    color: #000000 !important;
 }}
 
 .custom-table th {{
