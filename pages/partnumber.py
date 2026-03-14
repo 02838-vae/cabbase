@@ -228,19 +228,26 @@ div.stSelectbox label span,
     text-shadow: none !important;
 }}
 .stSelectbox div[data-baseweb="select"],
-.stSelectbox div[data-baseweb="select"] > div,
-.stSelectbox div[data-baseweb="select"] > div > div,
-[data-testid="stSelectbox"] div[data-baseweb="select"],
-[data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
-    background-color: #FFFFFF !important;
-    border: 1px solid #D4A843 !important;
-    border-radius: 8px !important;
-}}
 .stSelectbox div[data-baseweb="select"] *,
+[data-testid="stSelectbox"] div[data-baseweb="select"],
 [data-testid="stSelectbox"] div[data-baseweb="select"] * {{
     background-color: #FFFFFF !important;
     color: #000000 !important;
     text-shadow: none !important;
+    border-color: #D4A843 !important;
+    box-shadow: none !important;
+}}
+.stSelectbox div[data-baseweb="select"],
+[data-testid="stSelectbox"] div[data-baseweb="select"] {{
+    border: 1px solid #D4A843 !important;
+    border-radius: 8px !important;
+}}
+.stSelectbox div[data-baseweb="select"] > div,
+[data-testid="stSelectbox"] div[data-baseweb="select"] > div {{
+    border: none !important;
+    border-radius: 8px !important;
+    margin: 0 !important;
+    padding: 6px 12px !important;
 }}
 [data-baseweb="popover"] li,
 [data-baseweb="menu"] li,
