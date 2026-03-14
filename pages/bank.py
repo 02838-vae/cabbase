@@ -1302,12 +1302,22 @@ def display_docwise_test_mode(bank_name, key_prefix="docwise_test"):
         if st.session_state.pop(f"{test_key_prefix}_scroll_result", False):
             st.markdown("""
             <script>
-            setTimeout(function() {
-                var el = document.getElementById('docwise-test-result');
-                if (el) { el.scrollIntoView({behavior: 'smooth', block: 'start'}); }
-                else { window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'}); }
-            }, 300);
-            </script>
+setTimeout(function() {
+    // Streamlit dùng overflow scroll trên div gốc, không phải window
+    var containers = [
+        document.querySelector('.main .block-container'),
+        document.querySelector('[data-testid="stAppViewContainer"] > section'),
+        document.querySelector('.main'),
+        document.documentElement,
+        document.body
+    ];
+    for (var c of containers) {
+        if (c) { c.scrollTop = c.scrollHeight; }
+    }
+    window.scrollTo(0, document.body.scrollHeight);
+    window.parent.scrollTo(0, window.parent.document.body.scrollHeight);
+}, 400);
+</script>
             """, unsafe_allow_html=True)
         st.markdown('<div class="result-title"><h3>🎉 KẾT QUẢ BÀI TEST TỔNG HỢP</h3></div>', unsafe_allow_html=True)
         current_passage_id = None
@@ -1538,12 +1548,22 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
         if st.session_state.pop(f"{test_key_prefix}_scroll_result", False):
             st.markdown("""
             <script>
-            setTimeout(function() {
-                var el = document.getElementById('regular-test-result');
-                if (el) { el.scrollIntoView({behavior: 'smooth', block: 'start'}); }
-                else { window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'}); }
-            }, 300);
-            </script>
+setTimeout(function() {
+    // Streamlit dùng overflow scroll trên div gốc, không phải window
+    var containers = [
+        document.querySelector('.main .block-container'),
+        document.querySelector('[data-testid="stAppViewContainer"] > section'),
+        document.querySelector('.main'),
+        document.documentElement,
+        document.body
+    ];
+    for (var c of containers) {
+        if (c) { c.scrollTop = c.scrollHeight; }
+    }
+    window.scrollTo(0, document.body.scrollHeight);
+    window.parent.scrollTo(0, window.parent.document.body.scrollHeight);
+}, 400);
+</script>
             """, unsafe_allow_html=True)
         st.markdown('<div class="result-title"><h3>🎉 KẾT QUẢ BÀI TEST</h3></div>', unsafe_allow_html=True)
         
@@ -2846,12 +2866,22 @@ if bank_choice != "----":
                     if st.session_state.pop("scroll_to_group_result", False):
                         st.markdown("""
                         <script>
-                        setTimeout(function() {
-                            var el = document.getElementById('group-result');
-                            if (el) { el.scrollIntoView({behavior: 'smooth', block: 'start'}); }
-                            else { window.scrollTo({top: document.body.scrollHeight, behavior: 'smooth'}); }
-                        }, 300);
-                        </script>
+setTimeout(function() {
+    // Streamlit dùng overflow scroll trên div gốc, không phải window
+    var containers = [
+        document.querySelector('.main .block-container'),
+        document.querySelector('[data-testid="stAppViewContainer"] > section'),
+        document.querySelector('.main'),
+        document.documentElement,
+        document.body
+    ];
+    for (var c of containers) {
+        if (c) { c.scrollTop = c.scrollHeight; }
+    }
+    window.scrollTo(0, document.body.scrollHeight);
+    window.parent.scrollTo(0, window.parent.document.body.scrollHeight);
+}, 400);
+</script>
                         """, unsafe_allow_html=True)
                     st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{len(batch)}</h3></div>', unsafe_allow_html=True)
                     col_reset, col_next = st.columns(2)
