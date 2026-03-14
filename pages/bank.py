@@ -1283,9 +1283,9 @@ def display_docwise_test_mode(bank_name, key_prefix="docwise_test"):
                     translated_content = st.session_state.translations[translation_key]
                 st.info(translated_content, icon="🌐")
 
-            default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
+            default_val = st.session_state.get(q_key, None)
             st.radio("", q["options"],
-                     index=q["options"].index(default_val) if default_val in q["options"] else 0,
+                     index=q["options"].index(default_val) if default_val in q["options"] else None,
                      key=q_key)
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
 
@@ -1305,7 +1305,7 @@ def display_docwise_test_mode(bank_name, key_prefix="docwise_test"):
             q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}"
             selected_opt = st.session_state.get(q_key)
             correct = clean_text(q["answer"])
-            is_correct = clean_text(selected_opt) == correct
+            is_correct = (selected_opt is not None) and (clean_text(selected_opt) == correct)
             translation_key = f"trans_{q_key}"
             is_active = (translation_key == st.session_state.active_translation_key)
 
@@ -1387,29 +1387,37 @@ def display_docwise_test_mode(bank_name, key_prefix="docwise_test"):
             st.rerun()
 
 
+
+
 def display_test_mode(questions, bank_name, key_prefix="test"):
     TOTAL_QUESTIONS = 50
-    PASS_RATE = 0.75
+    PASS_SCORE = math.ceil(TOTAL_QUESTIONS * 0.75)  # 38/50
     bank_slug = bank_name.split()[-1].lower()
     test_key_prefix = f"{key_prefix}_{bank_slug}"
-    
+
     if f"{test_key_prefix}_started" not in st.session_state:
         st.session_state[f"{test_key_prefix}_started"] = False
     if f"{test_key_prefix}_submitted" not in st.session_state:
         st.session_state[f"{test_key_prefix}_submitted"] = False
     if f"{test_key_prefix}_questions" not in st.session_state:
         st.session_state[f"{test_key_prefix}_questions"] = []
-    
-    score = 0 # Khởi tạo biến score ở đây
+
+    score = 0
 
     if not st.session_state[f"{test_key_prefix}_started"]:
         st.markdown('<div class="result-title"><h3>📝 LÀM BÀI TEST 50 CÂU</h3></div>', unsafe_allow_html=True)
-        
+        st.markdown(f"""
+        <div style="background:rgba(255,215,0,0.08); border-left:4px solid #FFD700; padding:16px 22px; border-radius:8px; margin-bottom:20px; font-size:18px; text-align:center; line-height:2;">
+        📋 Tổng số câu hỏi: <b>{TOTAL_QUESTIONS} câu</b><br>
+        🎯 Điểm đạt (PASS): <b>{PASS_SCORE}/{TOTAL_QUESTIONS}</b>
+        </div>
+        """, unsafe_allow_html=True)
+
         if st.button("🚀 Bắt đầu Bài Test", key=f"{test_key_prefix}_start_btn"):
             st.session_state[f"{test_key_prefix}_questions"] = get_random_questions(questions, TOTAL_QUESTIONS)
             st.session_state[f"{test_key_prefix}_started"] = True
             st.session_state[f"{test_key_prefix}_submitted"] = False
-            st.session_state.current_mode = "test" 
+            st.session_state.current_mode = "test"
             st.rerun()
         return
 
@@ -1501,9 +1509,9 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
 
                 st.info(translated_content, icon="🌐")
 
-            # Hiển thị Radio Button
-            default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
-            st.radio("", q["options"], index=q["options"].index(default_val) if default_val in q["options"] else 0, key=q_key)
+            # Hiển thị Radio Button (không chọn mặc định)
+            default_val = st.session_state.get(q_key, None)
+            st.radio("", q["options"], index=q["options"].index(default_val) if default_val in q["options"] else None, key=q_key)
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
             
         if st.button("✅ Nộp bài Test", key=f"{test_key_prefix}_submit_btn"):
@@ -1519,7 +1527,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}" 
             selected_opt = st.session_state.get(q_key)
             correct = clean_text(q["answer"])
-            is_correct = clean_text(selected_opt) == correct
+            is_correct = (selected_opt is not None) and (clean_text(selected_opt) == correct)
             translation_key = f"trans_{q_key}"
             is_active = (translation_key == st.session_state.active_translation_key)
 
@@ -1620,14 +1628,13 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
         
         total_q = len(test_batch)
-        pass_threshold = total_q * PASS_RATE
         st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{total_q}</h3></div>', unsafe_allow_html=True)
 
-        if score >= pass_threshold:
+        if score >= PASS_SCORE:
             st.balloons()
-            st.success(f"🎊 **CHÚC MỪNG!** Bạn đã ĐẠT (PASS).")
+            st.success(f"🎊 **CHÚC MỪNG!** Bạn đã ĐẠT (PASS) — {score}/{total_q} câu đúng.")
         else:
-            st.error(f"😢 **KHÔNG ĐẠT (FAIL)**. Cần {math.ceil(pass_threshold)} câu đúng để Đạt.")
+            st.error(f"😢 **KHÔNG ĐẠT (FAIL)**. Cần {PASS_SCORE} câu đúng để Đạt. Bạn đạt {score}/{total_q}.")
 
         if st.button("🔄 Làm lại Bài Test", key=f"{test_key_prefix}_restart_btn"):
             for i, q in enumerate(test_batch, start=1):
@@ -2689,8 +2696,8 @@ if bank_choice != "----":
                             st.info(translated_content, icon="🌐")
 
                         # Hiển thị Radio Button
-                        default_val = st.session_state.get(q_key, q["options"][0] if q["options"] else None)
-                        st.radio("", q["options"], index=q["options"].index(default_val) if default_val in q["options"] else 0, key=q_key)
+                        default_val = st.session_state.get(q_key, None)
+                        st.radio("", q["options"], index=q["options"].index(default_val) if default_val in q["options"] else None, key=q_key)
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
                     if st.button("✅ Nộp bài", key="submit_group"):
                         st.session_state.submitted = True
@@ -2705,7 +2712,7 @@ if bank_choice != "----":
                         q_key = f"q_{i_global}_{hash(q['question'])}" 
                         selected_opt = st.session_state.get(q_key)
                         correct = clean_text(q["answer"])
-                        is_correct = clean_text(selected_opt) == correct
+                        is_correct = (selected_opt is not None) and (clean_text(selected_opt) == correct)
                         translation_key = f"trans_{q_key}"
                         is_active = (translation_key == st.session_state.active_translation_key)
                         
