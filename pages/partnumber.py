@@ -228,7 +228,7 @@ div.stSelectbox label span,
     text-shadow: none !important;
 }}
 .stSelectbox div[data-baseweb="select"] {{
-    background-color: rgba(0, 0, 0, 0.7) !important;
+    background-color: #FFFFFF !important;
     border: 1px solid #D4A843 !important;
     border-radius: 8px !important;
 }}
