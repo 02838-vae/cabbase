@@ -2448,7 +2448,7 @@ if exam_choice == "Thi CCUQ":
     bank_choice = st.selectbox("Chọn ngân hàng:", BANK_OPTIONS_CCUQ, index=BANK_OPTIONS_CCUQ.index(st.session_state.get('bank_choice_val', '----')), key="bank_selector_master")
     st.session_state.bank_choice_val = bank_choice
 elif exam_choice == "Thi CAAV":
-    BANK_OPTIONS_CAAV = ["----", "Ngân hàng CAAV Cabin", "Ngân hàng CAAV Law"]
+    BANK_OPTIONS_CAAV = ["----", "Ngân hàng CAAV Cabin", "Ngân hàng CAAV Law", "Ngân hàng Human Factor"]
     bank_choice = st.selectbox("Chọn ngân hàng:", BANK_OPTIONS_CAAV, index=BANK_OPTIONS_CAAV.index(st.session_state.get('bank_choice_val', '----') if st.session_state.get('bank_choice_val', '----') in BANK_OPTIONS_CAAV else '----'), key="bank_selector_master")
     st.session_state.bank_choice_val = bank_choice
 
@@ -2517,6 +2517,8 @@ if exam_choice != "----" and bank_choice != "----":
         else:
             st.info("Vui lòng chọn module để tiếp tục.")
             st.stop()
+    elif "Human Factor" in bank_choice:
+        source = "caav hf.docx"
     elif "Docwise" in bank_choice:
         is_docwise = True
         # Chọn Phụ lục
@@ -2558,6 +2560,8 @@ if exam_choice != "----" and bank_choice != "----":
             questions = parse_cabbank(source)
         elif "CAAV Law" in bank_choice:
             questions = parse_lawbank(source)
+        elif "Human Factor" in bank_choice:
+            questions = parse_cabbank(source)
         elif is_docwise:
             if source == "PL1.docx":
                 questions = parse_pl1(source) # Sử dụng parser cũ (dùng (*))
