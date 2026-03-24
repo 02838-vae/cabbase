@@ -2448,9 +2448,34 @@ if exam_choice == "Thi CCUQ":
     bank_choice = st.selectbox("Chọn ngân hàng:", BANK_OPTIONS_CCUQ, index=BANK_OPTIONS_CCUQ.index(st.session_state.get('bank_choice_val', '----')), key="bank_selector_master")
     st.session_state.bank_choice_val = bank_choice
 elif exam_choice == "Thi CAAV":
-    BANK_OPTIONS_CAAV = ["----", "Ngân hàng CAAV Cabin"]
+    BANK_OPTIONS_CAAV = ["----", "Ngân hàng CAAV Cabin", "Ngân hàng CAAV Law"]
     bank_choice = st.selectbox("Chọn ngân hàng:", BANK_OPTIONS_CAAV, index=BANK_OPTIONS_CAAV.index(st.session_state.get('bank_choice_val', '----') if st.session_state.get('bank_choice_val', '----') in BANK_OPTIONS_CAAV else '----'), key="bank_selector_master")
     st.session_state.bank_choice_val = bank_choice
+
+    # Hộp thoại chọn module cho CAAV Law
+    if bank_choice == "Ngân hàng CAAV Law":
+        if 'caav_law_module' not in st.session_state:
+            st.session_state.caav_law_module = None
+
+        CAAV_LAW_MODULE_OPTIONS = ["----", "Module 10.1", "Module 10.2"]
+        caav_law_module_choice = st.selectbox(
+            "Chọn module:",
+            CAAV_LAW_MODULE_OPTIONS,
+            index=CAAV_LAW_MODULE_OPTIONS.index(st.session_state.caav_law_module) if st.session_state.caav_law_module in CAAV_LAW_MODULE_OPTIONS else 0,
+            key="caav_law_module_selector"
+        )
+        # Reset khi đổi module
+        if st.session_state.caav_law_module != caav_law_module_choice:
+            st.session_state.caav_law_module = caav_law_module_choice
+            st.session_state.current_group_idx = 0
+            st.session_state.submitted = False
+            st.session_state.current_mode = "group"
+            st.session_state.active_translation_key = None
+            st.session_state.active_passage_translation = None
+            st.session_state.current_passage_id_displayed = None
+            st.rerun()
+    else:
+        st.session_state.caav_law_module = None
 elif exam_choice == "Thi Docwise":
     bank_choice = "Ngân hàng Docwise"  # tự động, không cần chọn
     st.session_state.bank_choice_val = bank_choice
@@ -2483,6 +2508,15 @@ if exam_choice != "----" and bank_choice != "----":
         source = "lawbank.docx"
     elif "CAAV Cabin" in bank_choice:
         source = "caav cab.docx"
+    elif "CAAV Law" in bank_choice:
+        caav_law_module = st.session_state.get('caav_law_module', None)
+        if caav_law_module == "Module 10.1":
+            source = "caav law1.docx"
+        elif caav_law_module == "Module 10.2":
+            source = "caav law2.docx"
+        else:
+            st.info("Vui lòng chọn module để tiếp tục.")
+            st.stop()
     elif "Docwise" in bank_choice:
         is_docwise = True
         # Chọn Phụ lục
@@ -2522,6 +2556,8 @@ if exam_choice != "----" and bank_choice != "----":
             questions = parse_lawbank(source)
         elif "CAAV Cabin" in bank_choice:
             questions = parse_cabbank(source)
+        elif "CAAV Law" in bank_choice:
+            questions = parse_lawbank(source)
         elif is_docwise:
             if source == "PL1.docx":
                 questions = parse_pl1(source) # Sử dụng parser cũ (dùng (*))
