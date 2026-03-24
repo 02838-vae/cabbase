@@ -2412,7 +2412,7 @@ if 'last_source' not in st.session_state: st.session_state.last_source = ""
 if 'group_selector_key' not in st.session_state: st.session_state.group_selector_key = 0
 
 # CẬP NHẬT LIST NGÂN HÀNG
-BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật VAECO", "Ngân hàng Docwise"]
+BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật VAECO", "Ngân hàng Docwise", "Ngân hàng CAAV Cabin"]
 bank_choice = st.selectbox("Chọn ngân hàng:", BANK_OPTIONS, index=BANK_OPTIONS.index(st.session_state.get('bank_choice_val', '----')), key="bank_selector_master")
 st.session_state.bank_choice_val = bank_choice
 
@@ -2444,6 +2444,8 @@ if bank_choice != "----":
         source = "cabbank.docx"
     elif "Luật VAECO" in bank_choice:
         source = "lawbank.docx"
+    elif "CAAV Cabin" in bank_choice:
+        source = "caav_cab.docx"
     elif "Docwise" in bank_choice:
         is_docwise = True
         # Cập nhật nhãn Phụ lục 2 và BỔ SUNG PHỤ LỤC 3
@@ -2481,6 +2483,8 @@ if bank_choice != "----":
             questions = parse_cabbank(source)
         elif "Luật VAECO" in bank_choice:
             questions = parse_lawbank(source)
+        elif "CAAV Cabin" in bank_choice:
+            questions = parse_cabbank(source)
         elif is_docwise:
             if source == "PL1.docx":
                 questions = parse_pl1(source) # Sử dụng parser cũ (dùng (*))
