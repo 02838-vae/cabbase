@@ -975,112 +975,165 @@ def display_all_questions(questions):
     if not questions:
         st.warning("Không có câu hỏi nào để hiển thị.")
         return
-    
-    # Logic hiển thị đoạn văn (nếu có)
+
+    # Khởi tạo trạng thái submitted cho chế độ "all"
+    if 'all_submitted' not in st.session_state:
+        st.session_state.all_submitted = False
+
     current_passage_id = None
-    
-    for i, q in enumerate(questions, start=1):
-        q_key = f"all_q_{i}_{hash(q['question'])}" 
-        translation_key = f"trans_{q_key}"
-        is_active = (translation_key == st.session_state.active_translation_key)
-        
-        # --- BỔ SUNG: HIỂN THỊ ĐOẠN VĂN (CHO PL3) ---
-        passage_content = q.get('paragraph_content', '').strip()
-        group_name = q.get('group', '')
-        
-        if passage_content:
-             # Dùng group_name + content để tạo ID duy nhất cho đoạn văn
-            passage_id = f"passage_{group_name}_{hash(passage_content)}"
-            is_passage_active = (passage_id == st.session_state.active_passage_translation)
 
-            if passage_id != current_passage_id:
-                # 1. In đậm, đổi màu tiêu đề
-                st.markdown(f'<div class="paragraph-title">**{group_name}**</div>', unsafe_allow_html=True) 
-                
-                # 2. Hiển thị nội dung đoạn văn gốc
-                st.markdown(f'<div class="paragraph-content-box">{passage_content}</div>', unsafe_allow_html=True)
-                
-                # 3. Thêm Nút Dịch Đoạn Văn
-                st.toggle(
-                    "🌐 Dịch đoạn văn sang Tiếng Việt", 
-                    value=is_passage_active, 
-                    key=f"toggle_passage_{passage_id}",
-                    on_change=on_passage_translate_toggle,
-                    args=(passage_id,)
-                )
-                
-                # 4. Hiển thị Bản Dịch Đoạn Văn
-                if is_passage_active:
-                    translated_passage = st.session_state.passage_translations_cache.get(passage_id)
-                    if not isinstance(translated_passage, str):
-                        # GỌI HÀM DỊCH CHỈ ĐOẠN VĂN
-                        translated_passage = translate_passage_content(passage_content)
-                        st.session_state.passage_translations_cache[passage_id] = translated_passage
+    if not st.session_state.all_submitted:
+        # ===== CHƯA NỘP BÀI: hiển thị radio button để chọn =====
+        for i, q in enumerate(questions, start=1):
+            q_key = f"all_q_{i}_{hash(q['question'])}"
+            translation_key = f"trans_{q_key}"
+            is_active = (translation_key == st.session_state.active_translation_key)
 
-                    # Sử dụng st.markdown + CSS để ép kiểu 'pre-wrap'
-                    st.markdown(f"""
-                    <div data-testid="stAlert" class="stAlert stAlert-info">
-                        <div style="font-size: 18px; line-height: 1.6; color: white; padding: 10px;">
-                            <strong style="color: #FFD700;">[Bản dịch Đoạn văn]</strong>
-                            <div class="paragraph-content-box" style="white-space: pre-wrap; margin-bottom: 0px; padding: 10px; background-color: rgba(0, 0, 0, 0.5); border-left: 3px solid #00d4ff;">
-                            {translated_passage}
+            # Đoạn văn (PL3/PL4)
+            passage_content = q.get('paragraph_content', '').strip()
+            group_name = q.get('group', '')
+            if passage_content:
+                passage_id = f"passage_{group_name}_{hash(passage_content)}"
+                is_passage_active = (passage_id == st.session_state.active_passage_translation)
+                if passage_id != current_passage_id:
+                    st.markdown(f'<div class="paragraph-title">**{group_name}**</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="paragraph-content-box">{passage_content}</div>', unsafe_allow_html=True)
+                    st.toggle("🌐 Dịch đoạn văn sang Tiếng Việt", value=is_passage_active,
+                              key=f"toggle_passage_{passage_id}",
+                              on_change=on_passage_translate_toggle, args=(passage_id,))
+                    if is_passage_active:
+                        translated_passage = st.session_state.passage_translations_cache.get(passage_id)
+                        if not isinstance(translated_passage, str):
+                            translated_passage = translate_passage_content(passage_content)
+                            st.session_state.passage_translations_cache[passage_id] = translated_passage
+                        st.markdown(f"""
+                        <div data-testid="stAlert" class="stAlert stAlert-info">
+                            <div style="font-size: 18px; line-height: 1.6; color: white; padding: 10px;">
+                                <strong style="color: #FFD700;">[Bản dịch Đoạn văn]</strong>
+                                <div class="paragraph-content-box" style="white-space: pre-wrap; margin-bottom: 0px; padding: 10px; background-color: rgba(0, 0, 0, 0.5); border-left: 3px solid #00d4ff;">
+                                {translated_passage}
+                                </div>
                             </div>
-                        </div>
-                    </div>
-                    """, unsafe_allow_html=True)
-                
-                st.markdown("---")
-                current_passage_id = passage_id
-        # --- KẾT THÚC BỔ SUNG ---
-        
-        # Hiển thị câu hỏi (SỬ DỤNG SỐ THỨ TỰ CỤC BỘ NẾU LÀ PL3/PL4 DOCWISE, KHÔNG DÙNG CHO CAAV/LAWBANK)
-        if q.get('group', '').startswith('Paragraph') and q.get('paragraph_content'):
-            # Dùng số thứ tự cục bộ (number) nếu là bài đọc hiểu (có đoạn văn thực sự)
-            display_num = q.get('number', i) 
-        else:
-             # Dùng số thứ tự toàn cục (i) cho tất cả ngân hàng khác
-            display_num = i 
-            
-        st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
+                        </div>""", unsafe_allow_html=True)
+                    st.markdown("---")
+                    current_passage_id = passage_id
 
-        # Nút Dịch Q&A ở dưới
-        st.toggle(
-            "🌐 Dịch Câu hỏi & Đáp án sang Tiếng Việt", 
-            value=is_active, 
-            key=f"toggle_{translation_key}",
-            on_change=on_translate_toggle,
-            args=(translation_key,)
-        )
-
-        # Hiển thị Bản Dịch Q&A
-        if is_active:
-            # Check if translated content is already cached
-            translated_content = st.session_state.translations.get(translation_key)
-            
-            # If not cached or is not a string (default True/False state)
-            if not isinstance(translated_content, str):
-                # GỌI HÀM MỚI ĐỂ GỬI CHỈ CÂU HỎI VÀ ĐÁP ÁN ĐI DỊCH
-                full_text_to_translate = build_translation_text_for_qa(q) 
-                st.session_state.translations[translation_key] = translate_text(full_text_to_translate)
-                translated_content = st.session_state.translations[translation_key]
-
-            st.info(translated_content, icon="🌐")
-            
-        # Hiển thị Đáp án
-        for opt in q["options"]:
-            # Dùng clean_text để so sánh, bỏ qua khoảng trắng, ký tự ẩn
-            if clean_text(opt) == clean_text(q["answer"]):
-                # Đáp án đúng: Xanh lá (KHÔNG thêm ký tự (*))
-                color_style = "color:#00ff00 !important;" 
-                opt_display = opt
+            # Số thứ tự
+            if q.get('group', '').startswith('Paragraph') and q.get('paragraph_content'):
+                display_num = q.get('number', i)
             else:
-                # Đáp án thường: Trắng
-                color_style = "color:#FFFFFF !important;"
-                opt_display = opt
-                
-            st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
-        
-        st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+                display_num = i
+
+            st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
+
+            st.toggle("🌐 Dịch Câu hỏi & Đáp án sang Tiếng Việt", value=is_active,
+                      key=f"toggle_{translation_key}",
+                      on_change=on_translate_toggle, args=(translation_key,))
+            if is_active:
+                translated_content = st.session_state.translations.get(translation_key)
+                if not isinstance(translated_content, str):
+                    st.session_state.translations[translation_key] = translate_text(build_translation_text_for_qa(q))
+                    translated_content = st.session_state.translations[translation_key]
+                st.info(translated_content, icon="🌐")
+
+            default_val = st.session_state.get(q_key, None)
+            st.radio("", q["options"],
+                     index=q["options"].index(default_val) if default_val in q["options"] else None,
+                     key=q_key)
+            st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+
+        if st.button("✅ Nộp bài", key="submit_all"):
+            st.session_state.all_submitted = True
+            st.session_state.active_translation_key = None
+            st.session_state.active_passage_translation = None
+            st.rerun()
+
+    else:
+        # ===== SAU KHI NỘP BÀI: hiển thị kết quả =====
+        score = 0
+        current_passage_id = None
+        for i, q in enumerate(questions, start=1):
+            q_key = f"all_q_{i}_{hash(q['question'])}"
+            selected_opt = st.session_state.get(q_key)
+            correct = clean_text(q["answer"])
+            is_correct = (selected_opt is not None) and (clean_text(selected_opt) == correct)
+            translation_key = f"trans_{q_key}"
+            is_active = (translation_key == st.session_state.active_translation_key)
+
+            # Đoạn văn (PL3/PL4)
+            passage_content = q.get('paragraph_content', '').strip()
+            group_name = q.get('group', '')
+            if passage_content:
+                passage_id = f"passage_{group_name}_{hash(passage_content)}"
+                is_passage_active = (passage_id == st.session_state.active_passage_translation)
+                if passage_id != current_passage_id:
+                    st.markdown(f'<div class="paragraph-title">**{group_name}**</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="paragraph-content-box">{passage_content}</div>', unsafe_allow_html=True)
+                    st.toggle("🌐 Dịch đoạn văn sang Tiếng Việt", value=is_passage_active,
+                              key=f"toggle_passage_{passage_id}",
+                              on_change=on_passage_translate_toggle, args=(passage_id,))
+                    if is_passage_active:
+                        translated_passage = st.session_state.passage_translations_cache.get(passage_id)
+                        if not isinstance(translated_passage, str):
+                            translated_passage = translate_passage_content(passage_content)
+                            st.session_state.passage_translations_cache[passage_id] = translated_passage
+                        st.markdown(f"""
+                        <div data-testid="stAlert" class="stAlert stAlert-info">
+                            <div style="font-size: 18px; line-height: 1.6; color: white; padding: 10px;">
+                                <strong style="color: #FFD700;">[Bản dịch Đoạn văn]</strong>
+                                <div class="paragraph-content-box" style="white-space: pre-wrap; margin-bottom: 0px; padding: 10px; background-color: rgba(0, 0, 0, 0.5); border-left: 3px solid #00d4ff;">
+                                {translated_passage}
+                                </div>
+                            </div>
+                        </div>""", unsafe_allow_html=True)
+                    st.markdown("---")
+                    current_passage_id = passage_id
+
+            # Số thứ tự
+            if q.get('group', '').startswith('Paragraph') and q.get('paragraph_content'):
+                display_num = q.get('number', i)
+            else:
+                display_num = i
+
+            st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
+
+            st.toggle("🌐 Dịch Câu hỏi & Đáp án sang Tiếng Việt", value=is_active,
+                      key=f"toggle_{translation_key}",
+                      on_change=on_translate_toggle, args=(translation_key,))
+            if is_active:
+                translated_content = st.session_state.translations.get(translation_key)
+                if not isinstance(translated_content, str):
+                    st.session_state.translations[translation_key] = translate_text(build_translation_text_for_qa(q))
+                    translated_content = st.session_state.translations[translation_key]
+                st.info(translated_content, icon="🌐")
+
+            # Hiển thị đáp án với màu sắc
+            for opt in q["options"]:
+                opt_clean = clean_text(opt)
+                if opt_clean == correct:
+                    color_style = "color:#00ff00 !important;"
+                elif opt_clean == clean_text(selected_opt) if selected_opt else False:
+                    color_style = "color:#ff3333 !important;"
+                else:
+                    color_style = "color:#FFFFFF !important;"
+                st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
+
+            if is_correct:
+                st.success(f"✅ Đúng – Đáp án: {q['answer']}")
+                score += 1
+            else:
+                st.error(f"❌ Sai – Đáp án đúng: {q['answer']}")
+            st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+
+        st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{len(questions)}</h3></div>', unsafe_allow_html=True)
+        if st.button("🔄 Làm lại toàn bộ", key="reset_all"):
+            for i, q in enumerate(questions, start=1):
+                q_key = f"all_q_{i}_{hash(q['question'])}"
+                st.session_state.pop(q_key, None)
+            st.session_state.all_submitted = False
+            st.session_state.active_translation_key = None
+            st.session_state.active_passage_translation = None
+            st.rerun()
 
 # ====================================================
 # 🌟 HÀM: TEST MODE (CẬP NHẬT CHỨC NĂNG DỊCH)
@@ -2704,6 +2757,7 @@ if exam_choice != "----" and bank_choice != "----":
             # Hàng 1: nút Hiển thị — full width, font nhỏ để vừa 1 dòng
             if st.button(btn_all_label, key="btn_show_all", use_container_width=True):
                 st.session_state.current_mode = "all"
+                st.session_state.all_submitted = False
                 st.session_state.active_translation_key = None
                 st.session_state.active_passage_translation = None
                 st.session_state.current_passage_id_displayed = None
@@ -2786,13 +2840,11 @@ if exam_choice != "----" and bank_choice != "----":
                                 current_passage_id_in_group_mode = passage_id
                         # -----------------------------------------------------------------
                         
-                        # Fix KeyError: 'number' (Sử dụng global number nếu có, nếu không thì dùng number của paragraph)
-                        if q.get('group', '').startswith('Paragraph'):
-                            # Dùng số thứ tự cục bộ (number) nếu là bài đọc hiểu
-                            display_num = q.get('number', i_global) 
+                        # Fix số trùng: chỉ dùng số cục bộ khi có đoạn văn thực sự (PL3/PL4)
+                        if q.get('group', '').startswith('Paragraph') and q.get('paragraph_content'):
+                            display_num = q.get('number', i_global)
                         else:
-                            # Dùng số thứ tự toàn cục (i_global) cho các ngân hàng khác
-                            display_num = i_global 
+                            display_num = i_global
                         
                         # Hiển thị câu hỏi
                         st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True) 
@@ -2925,16 +2977,13 @@ if exam_choice != "----" and bank_choice != "----":
                         # Hiển thị Đáp án (KẾT QUẢ)
                         for opt in q["options"]:
                             opt_clean = clean_text(opt)
-                            opt_display = opt # Khởi tạo giá trị hiển thị
-
                             if opt_clean == correct:
-                                color_style = "color:#00ff00;" # Xanh lá
-                                opt_display += " (*)" # BỔ SUNG: Thêm ký tự (*)
-                            elif opt_clean == clean_text(selected_opt):
-                                color_style = "color:#ff3333;" # Đỏ
+                                color_style = "color:#00ff00 !important;"
+                            elif opt_clean == clean_text(selected_opt) if selected_opt else False:
+                                color_style = "color:#ff3333 !important;"
                             else:
-                                color_style = "color:#FFFFFF;" # Trắng chân phương
-                            st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
+                                color_style = "color:#FFFFFF !important;"
+                            st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
                         
                         if is_correct: 
                             st.success(f"✅ Đúng – Đáp án: {q['answer']}")
