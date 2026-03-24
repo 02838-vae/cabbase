@@ -1548,14 +1548,8 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
                     current_passage_id = passage_id
             # --- KẾT THÚC BỔ SUNG ---
 
-            # Hiển thị câu hỏi (SỬ DỤNG SỐ THỨ TỰ CỤC BỘ NẾU LÀ PL3, NẾU KHÔNG DÙNG SỐ THỨ TỰ TOÀN CỤC)
-            if q.get('group', '').startswith('Paragraph'):
-                # Dùng số thứ tự cục bộ (number) nếu là bài đọc hiểu
-                display_num = q.get('number', i) 
-            else:
-                # Dùng số thứ tự toàn cục (i) cho các ngân hàng khác
-                display_num = i
-            st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
+            # Luôn dùng số thứ tự toàn cục
+            display_num = i
 
             # Nút Dịch Q&A ở dưới
             st.toggle(
@@ -1666,14 +1660,8 @@ setTimeout(function() {
                         """, unsafe_allow_html=True)
 
                     st.markdown("---")
-                    current_passage_id = passage_id
-            # --- KẾT THÚC BỔ SUNG ---
-
-            # Hiển thị câu hỏi (SỬ DỤNG SỐ THỨ TỰ CỤC BỘ NẾU LÀ PL3, NẾU KHÔNG DÙNG SỐ THỨ TỰ TOÀN CỤC)
-            if q.get('group', '').startswith('Paragraph'):
-                # Dùng số thứ tự cục bộ (number) nếu là bài đọc hiểu
-                display_num = q.get('number', i) 
-            else:
+            # Luôn dùng số thứ tự toàn cục
+            display_num = i
                 # Dùng số thứ tự toàn cục (i) cho các ngân hàng khác
                 display_num = i
             st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
@@ -2063,16 +2051,6 @@ div[data-testid="stMarkdownContainer"] p {{
     font-family: 'Arial', 'Helvetica', sans-serif !important;
     color: #FFFFE0 !important;
 }}
-
-/* ĐÁP ÁN: bank-answer-text là div trực tiếp, KHÔNG phải p-tag — giữ nguyên inline style */
-div[data-testid="stMarkdownContainer"] div.bank-answer-text {{
-    font-size: 22px !important;
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-    /* KHÔNG đặt color ở đây — để inline style thắng */
-}}
-.bank-answer-text[style*="color:#00ff00"] {{ color: #00ff00 !important; }}
-.bank-answer-text[style*="color:#ff3333"] {{ color: #ff3333 !important; }}
-.bank-answer-text[style*="color:#FFFFFF"]  {{ color: #FFFFFF !important; }}
 
 /* TIÊU ĐỀ CHÍNH - override mọi rule khác */
 #bank-main-title div[data-testid="stMarkdownContainer"] p,
@@ -2844,11 +2822,8 @@ if exam_choice != "----" and bank_choice != "----":
                                 current_passage_id_in_group_mode = passage_id
                         # -----------------------------------------------------------------
                         
-                        # Fix số trùng: chỉ dùng số cục bộ khi có đoạn văn thực sự (PL3/PL4)
-                        if q.get('group', '').startswith('Paragraph') and q.get('paragraph_content'):
-                            display_num = q.get('number', i_global)
-                        else:
-                            display_num = i_global
+                        # Số thứ tự — luôn dùng i_global (số toàn cục)
+                        display_num = i_global
                         
                         # Hiển thị câu hỏi
                         st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True) 
@@ -2946,7 +2921,7 @@ if exam_choice != "----" and bank_choice != "----":
                                 current_passage_id_in_group_mode = passage_id
                         # -----------------------------------------------------------------
 
-                        # Hiển thị câu hỏi: số thứ tự toàn cục i_global
+                        # Hiển thị câu hỏi: luôn dùng i_global (số toàn cục)
                         display_num = i_global
                         st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True) 
 
