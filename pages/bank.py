@@ -2410,24 +2410,61 @@ if 'current_passage_id_displayed' not in st.session_state: st.session_state.curr
 if 'group_mode_title' not in st.session_state: st.session_state.group_mode_title = "Luyện tập theo nhóm (30 câu/nhóm)"
 if 'last_source' not in st.session_state: st.session_state.last_source = ""
 if 'group_selector_key' not in st.session_state: st.session_state.group_selector_key = 0
+if 'exam_choice_val' not in st.session_state: st.session_state.exam_choice_val = "----"
+if 'last_exam_choice' not in st.session_state: st.session_state.last_exam_choice = "----"
+if 'bank_choice_val' not in st.session_state: st.session_state.bank_choice_val = "----"
 
-# CẬP NHẬT LIST NGÂN HÀNG
-BANK_OPTIONS = ["----", "Ngân hàng Kỹ thuật", "Ngân hàng Luật VAECO", "Ngân hàng Docwise", "Ngân hàng CAAV Cabin"]
-bank_choice = st.selectbox("Chọn ngân hàng:", BANK_OPTIONS, index=BANK_OPTIONS.index(st.session_state.get('bank_choice_val', '----')), key="bank_selector_master")
-st.session_state.bank_choice_val = bank_choice
+# ============================================================
+# BƯỚC 1: CHỌN KỲ THI
+# ============================================================
+EXAM_OPTIONS = ["----", "Thi Docwise", "Thi CCUQ", "Thi CAAV"]
+exam_choice = st.selectbox("Chọn kỳ thi:", EXAM_OPTIONS, index=EXAM_OPTIONS.index(st.session_state.get('exam_choice_val', '----')), key="exam_selector_master")
+st.session_state.exam_choice_val = exam_choice
 
-# Xử lý khi đổi ngân hàng (reset mode)
+# Reset khi đổi kỳ thi
+if st.session_state.get('last_exam_choice') != exam_choice and exam_choice != "----":
+    st.session_state.bank_choice_val = "----"
+    st.session_state.current_group_idx = 0
+    st.session_state.submitted = False
+    st.session_state.current_mode = "group"
+    st.session_state.active_translation_key = None
+    st.session_state.active_passage_translation = None
+    st.session_state.current_passage_id_displayed = None
+    last_exam = st.session_state.get('last_exam_choice', '----')
+    if isinstance(last_exam, str) and last_exam != "----":
+        exam_slug_old = last_exam.split()[-1].lower()
+        st.session_state.pop(f"test_{exam_slug_old}_started", None)
+        st.session_state.pop(f"test_{exam_slug_old}_submitted", None)
+        st.session_state.pop(f"test_{exam_slug_old}_questions", None)
+    st.session_state.last_exam_choice = exam_choice
+    st.rerun()
+
+# ============================================================
+# BƯỚC 2: CHỌN NGÂN HÀNG (tuỳ theo kỳ thi)
+# ============================================================
+bank_choice = "----"
+if exam_choice == "Thi CCUQ":
+    BANK_OPTIONS_CCUQ = ["----", "Ngân hàng Luật VAECO", "Ngân hàng Kỹ thuật"]
+    bank_choice = st.selectbox("Chọn ngân hàng:", BANK_OPTIONS_CCUQ, index=BANK_OPTIONS_CCUQ.index(st.session_state.get('bank_choice_val', '----')), key="bank_selector_master")
+    st.session_state.bank_choice_val = bank_choice
+elif exam_choice == "Thi CAAV":
+    BANK_OPTIONS_CAAV = ["----", "Ngân hàng CAAV Cabin"]
+    bank_choice = st.selectbox("Chọn ngân hàng:", BANK_OPTIONS_CAAV, index=BANK_OPTIONS_CAAV.index(st.session_state.get('bank_choice_val', '----') if st.session_state.get('bank_choice_val', '----') in BANK_OPTIONS_CAAV else '----'), key="bank_selector_master")
+    st.session_state.bank_choice_val = bank_choice
+elif exam_choice == "Thi Docwise":
+    bank_choice = "Ngân hàng Docwise"  # tự động, không cần chọn
+    st.session_state.bank_choice_val = bank_choice
+
+# Reset khi đổi ngân hàng (trong cùng kỳ thi)
 if st.session_state.get('last_bank_choice') != bank_choice and bank_choice != "----":
     st.session_state.current_group_idx = 0
     st.session_state.submitted = False
-    st.session_state.current_mode = "group" 
-    # Reset active translation keys
-    st.session_state.active_translation_key = None 
-    st.session_state.active_passage_translation = None 
-    st.session_state.current_passage_id_displayed = None # Reset passage display
+    st.session_state.current_mode = "group"
+    st.session_state.active_translation_key = None
+    st.session_state.active_passage_translation = None
+    st.session_state.current_passage_id_displayed = None
     last_bank_name = st.session_state.get('last_bank_choice')
-    if not isinstance(last_bank_name, str) or last_bank_name == "----": last_bank_name = "null bank" 
-    # Xoá session state của bài test cũ
+    if not isinstance(last_bank_name, str) or last_bank_name == "----": last_bank_name = "null bank"
     bank_slug_old = last_bank_name.split()[-1].lower()
     st.session_state.pop(f"test_{bank_slug_old}_started", None)
     st.session_state.pop(f"test_{bank_slug_old}_submitted", None)
@@ -2435,47 +2472,47 @@ if st.session_state.get('last_bank_choice') != bank_choice and bank_choice != "-
     st.session_state.last_bank_choice = bank_choice
     st.rerun()
 
-if bank_choice != "----":
+if exam_choice != "----" and bank_choice != "----":
     # XỬ LÝ LOGIC NGUỒN DỮ LIỆU
     source = ""
     is_docwise = False
-    
+
     if "Kỹ thuật" in bank_choice:
         source = "cabbank.docx"
     elif "Luật VAECO" in bank_choice:
         source = "lawbank.docx"
     elif "CAAV Cabin" in bank_choice:
-        source = "caav_cab.docx"
+        source = "caav cab.docx"
     elif "Docwise" in bank_choice:
         is_docwise = True
-        # Cập nhật nhãn Phụ lục 2 và BỔ SUNG PHỤ LỤC 3
+        # Chọn Phụ lục
         doc_options = ["Phụ lục 1 : Ngữ pháp chung", "Phụ lục 2 : Từ vựng, thuật ngữ", "Phụ lục 3 : Bài đọc hiểu", "Phụ lục 4 : Luật và qui trình", "Phụ lục 5 : Chuyên ngành"]
         doc_selected_new = st.selectbox("Chọn Phụ lục:", doc_options, index=doc_options.index(st.session_state.get('doc_selected', doc_options[0])), key="docwise_selector")
-        
+
         # Xử lý khi đổi phụ lục (reset mode)
         if st.session_state.doc_selected != doc_selected_new:
             st.session_state.doc_selected = doc_selected_new
             st.session_state.current_group_idx = 0
-            st.session_state.group_selector_key += 1  # Clear cache widget group_selector
-            st.session_state.last_source = ""          # Reset để trigger khởi tạo nhóm mới
+            st.session_state.group_selector_key += 1
+            st.session_state.last_source = ""
             st.session_state.submitted = False
             st.session_state.current_mode = "group"
-            st.session_state.active_translation_key = None 
-            st.session_state.active_passage_translation = None 
+            st.session_state.active_translation_key = None
+            st.session_state.active_passage_translation = None
             st.session_state.current_passage_id_displayed = None
             st.rerun()
 
         if st.session_state.doc_selected == "Phụ lục 1 : Ngữ pháp chung":
-            source = "PL1.docx" # File PL1.docx (Dùng parse_pl1)
-        elif st.session_state.doc_selected == "Phụ lục 2 : Từ vựng, thuật ngữ": 
-            source = "PL2.docx" # File PL2.docx (Dùng parse_pl2 đã sửa)
-        elif st.session_state.doc_selected == "Phụ lục 3 : Bài đọc hiểu": 
-            source = "PL3.docx" # File PL3.docx (Dùng parse_pl3_passage_bank mới)
-        elif st.session_state.doc_selected == "Phụ lục 4 : Luật và qui trình": 
-            source = "PL4.docx" # File Pl4.docx
-        elif st.session_state.doc_selected == "Phụ lục 5 : Chuyên ngành": 
-            source = "PL5.docx" # File Pl4.docx
-        
+            source = "PL1.docx"
+        elif st.session_state.doc_selected == "Phụ lục 2 : Từ vựng, thuật ngữ":
+            source = "PL2.docx"
+        elif st.session_state.doc_selected == "Phụ lục 3 : Bài đọc hiểu":
+            source = "PL3.docx"
+        elif st.session_state.doc_selected == "Phụ lục 4 : Luật và qui trình":
+            source = "PL4.docx"
+        elif st.session_state.doc_selected == "Phụ lục 5 : Chuyên ngành":
+            source = "PL5.docx"
+
     # LOAD CÂU HỎI
     questions = []
     if source:
