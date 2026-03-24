@@ -1033,12 +1033,12 @@ def display_all_questions(questions):
                 current_passage_id = passage_id
         # --- KẾT THÚC BỔ SUNG ---
         
-        # Hiển thị câu hỏi (SỬ DỤNG SỐ THỨ TỰ CỤC BỘ NẾU LÀ PL3, NẾU KHÔNG DÙNG SỐ THỨ TỰ TOÀN CỤC)
-        if q.get('group', '').startswith('Paragraph'):
-            # Dùng số thứ tự cục bộ (number) nếu là bài đọc hiểu
+        # Hiển thị câu hỏi (SỬ DỤNG SỐ THỨ TỰ CỤC BỘ NẾU LÀ PL3/PL4 DOCWISE, KHÔNG DÙNG CHO CAAV/LAWBANK)
+        if q.get('group', '').startswith('Paragraph') and q.get('paragraph_content'):
+            # Dùng số thứ tự cục bộ (number) nếu là bài đọc hiểu (có đoạn văn thực sự)
             display_num = q.get('number', i) 
         else:
-             # Dùng số thứ tự toàn cục (i) cho các ngân hàng khác
+             # Dùng số thứ tự toàn cục (i) cho tất cả ngân hàng khác
             display_num = i 
             
         st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
@@ -1070,12 +1070,12 @@ def display_all_questions(questions):
         for opt in q["options"]:
             # Dùng clean_text để so sánh, bỏ qua khoảng trắng, ký tự ẩn
             if clean_text(opt) == clean_text(q["answer"]):
-                # Đáp án đúng: Xanh lá (Thêm ký tự (*))
-                color_style = "color:#00ff00;" 
-                opt_display = opt + " (*)"
+                # Đáp án đúng: Xanh lá (KHÔNG thêm ký tự (*))
+                color_style = "color:#00ff00 !important;" 
+                opt_display = opt
             else:
-                # Đáp án thường: Trắng (Bỏ shadow)
-                color_style = "color:#FFFFFF;"
+                # Đáp án thường: Trắng
+                color_style = "color:#FFFFFF !important;"
                 opt_display = opt
                 
             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
@@ -2890,12 +2890,12 @@ if exam_choice != "----" and bank_choice != "----":
                                 current_passage_id_in_group_mode = passage_id
                         # -----------------------------------------------------------------
 
-                        # Hiển thị câu hỏi: FIX KeyError: 'number'
-                        if q.get('group', '').startswith('Paragraph'):
-                            # Dùng số thứ tự cục bộ (number) nếu là bài đọc hiểu
+                        # Hiển thị câu hỏi: FIX số trùng cho CAAV/LAWBANK
+                        if q.get('group', '').startswith('Paragraph') and q.get('paragraph_content'):
+                            # Dùng số thứ tự cục bộ (number) chỉ khi là bài đọc hiểu có đoạn văn
                             display_num = q.get('number', i_global) 
                         else:
-                            # Dùng số thứ tự toàn cục (i_global) cho các ngân hàng khác
+                            # Dùng số thứ tự toàn cục (i_global) cho tất cả ngân hàng khác
                             display_num = i_global 
                         st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True) 
 
