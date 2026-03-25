@@ -1129,8 +1129,6 @@ def display_all_questions(questions):
                     color_style = "color:#00ff00 !important;"
                     # Hiện lại (*) cho đáp án đúng
                     opt_display += " (*)"
-                elif opt_clean == clean_text(selected_opt) if selected_opt else False:
-                    color_style = "color:#ff3333 !important;"
                 else:
                     color_style = "color:#FFFFFF !important;"
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
@@ -1454,8 +1452,6 @@ setTimeout(function() {
                     color_style = "color:#00ff00;"
                     # Chỉ hiện thị (*) sau khi nộp bài
                     opt_display += " (*)"
-                elif opt_clean == clean_text(selected_opt):
-                    color_style = "color:#ff3333;"
                 else:
                     color_style = "color:#FFFFFF;"
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
@@ -1738,8 +1734,6 @@ setTimeout(function() {
                     color_style = "color:#00ff00;"
                     # Chỉ hiển thị (*) sau khi nộp bài
                     opt_display += " (*)"
-                elif opt_clean == clean_text(selected_opt):
-                    color_style = "color:#ff3333;"
                 else:
                     color_style = "color:#FFFFFF;"
                     
@@ -3019,8 +3013,8 @@ if exam_choice != "----" and bank_choice != "----":
                             opt_clean = clean_text(opt)
                             if opt_clean == correct:
                                 color_style = "color:#00ff00 !important;"
-                            elif opt_clean == clean_text(selected_opt) if selected_opt else False:
-                                color_style = "color:#ff3333 !important;"
+                                # Hiện lại (*) cho đáp án đúng
+                                opt_display += " (*)"
                             else:
                                 color_style = "color:#FFFFFF !important;"
                             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
