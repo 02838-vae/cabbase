@@ -139,6 +139,11 @@ def clean_text(s: str) -> str:
     
     return temp_s.strip()
 
+def strip_question_number(s: str) -> str:
+    """Xóa số thứ tự đầu câu hỏi nếu có: '1. ...' hoặc '1) ...' → '...'"""
+    return re.sub(r'^\s*\d+[\.)\]]\s*', '', s).strip()
+
+
 def find_file_path(source):
     """Hàm tìm đường dẫn file với cơ chế tìm kiếm đa dạng."""
     paths = [
@@ -332,7 +337,7 @@ def parse_cabbank(source):
                     if not current["answer"] and current["options"]:
                         current["answer"] = current["options"][0]
                     questions.append(current)
-                current = {"question": clean_text(p), "options": [], "answer": ""}
+                current = {"question": strip_question_number(clean_text(p)), "options": [], "answer": ""}
             else:
                 if current["question"]: current["question"] += " " + clean_text(p)
                 else: current["question"] = clean_text(p)
@@ -345,7 +350,7 @@ def parse_cabbank(source):
                     if not current["answer"] and current["options"]:
                         current["answer"] = current["options"][0]
                     questions.append(current)
-                current = {"question": clean_text(pre_text), "options": [], "answer": ""}
+                current = {"question": strip_question_number(clean_text(pre_text)), "options": [], "answer": ""}
             else:
                 if current["question"]: current["question"] += " " + clean_text(pre_text)
                 else: current["question"] = clean_text(pre_text)
@@ -389,7 +394,7 @@ def parse_lawbank(source):
                     if not current["answer"] and current["options"]:
                         current["answer"] = current["options"][0]
                     questions.append(current)
-                current = {"question": clean_text(p), "options": [], "answer": ""}
+                current = {"question": strip_question_number(clean_text(p)), "options": [], "answer": ""}
             else:
                 if current["question"]: current["question"] += " " + clean_text(p)
                 else: current["question"] = clean_text(p)
@@ -403,7 +408,7 @@ def parse_lawbank(source):
                     if not current["answer"] and current["options"]:
                         current["answer"] = current["options"][0]
                     questions.append(current)
-                current = {"question": clean_text(pre_text), "options": [], "answer": ""}
+                current = {"question": strip_question_number(clean_text(pre_text)), "options": [], "answer": ""}
             else:
                 if current["question"]: current["question"] += " " + clean_text(pre_text)
                 else: current["question"] = clean_text(pre_text)
