@@ -1129,12 +1129,12 @@ def display_all_questions(questions):
                 # Ẩn dấu (*) khi hiển thị kết quả
                 opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
-                    color_style = "color:#00ff00 !important;"
+                    extra_class = "correct-answer"
                     # Hiện lại (*) cho đáp án đúng
                     opt_display += " (*)"
                 else:
-                    color_style = "color:#FFFFFF !important;"
-                st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
+                    extra_class = ""
+                st.markdown(f'<div class="bank-answer-text {extra_class}">{opt_display}</div>', unsafe_allow_html=True)
 
             if is_correct:
                 st.success(f"✅ Đúng – Đáp án: {q['answer']}")
@@ -1452,12 +1452,12 @@ setTimeout(function() {
                 # Ẩn dấu (*) nếu chưa nộp bài trong Test Mode
                 opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
-                    color_style = "color:#00ff00 !important;"
+                    extra_class = "correct-answer"
                     # Chỉ hiện thị (*) sau khi nộp bài
                     opt_display += " (*)"
                 else:
-                    color_style = "color:#FFFFFF !important;"
-                st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
+                    extra_class = ""
+                st.markdown(f'<div class="bank-answer-text {extra_class}">{opt_display}</div>', unsafe_allow_html=True)
 
             if is_correct:
                 score += 1
@@ -1734,13 +1734,13 @@ setTimeout(function() {
                 opt_display = opt.replace("(*)", "").strip()
 
                 if opt_clean == correct:
-                    color_style = "color:#00ff00 !important;"
+                    extra_class = "correct-answer"
                     # Chỉ hiển thị (*) sau khi nộp bài
                     opt_display += " (*)"
                 else:
-                    color_style = "color:#FFFFFF !important;"
+                    extra_class = ""
                     
-                st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="bank-answer-text {extra_class}">{opt_display}</div>', unsafe_allow_html=True)
 
             if is_correct: score += 1
             st.info(f"Đáp án đúng: **{q['answer']}**", icon="💡")
@@ -2092,6 +2092,15 @@ div[data-testid="stMarkdownContainer"] p {{
     color: #FFFFE0 !important;
 }}
 
+/* ĐÁP ÁN SAU KHI NỘP BÀI: màu trắng mặc định, xanh lá cho đáp án đúng */
+div[data-testid="stMarkdownContainer"] .bank-answer-text {{
+    color: #FFFFFF !important;
+}}
+div[data-testid="stMarkdownContainer"] .bank-answer-text.correct-answer {{
+    color: #00ff00 !important;
+    text-shadow: 0 0 8px rgba(0, 255, 0, 0.4) !important;
+}}
+
 /* TIÊU ĐỀ CHÍNH - override mọi rule khác */
 #bank-main-title div[data-testid="stMarkdownContainer"] p,
 #bank-main-title div[data-testid="stMarkdownContainer"] span,
@@ -2324,7 +2333,8 @@ div.stSelectbox label, div.stSelectbox label p, div.stSelectbox label span,
 
 /* Ngoại lệ: câu hỏi và đáp án giữ màu riêng */
 .bank-question-text, .bank-question-text * {{ color: #FF8C00 !important; }}
-.bank-answer-text {{ color: #FFFFFF; }}
+.bank-answer-text {{ color: #FFFFFF !important; }}
+.bank-answer-text.correct-answer {{ color: #00ff00 !important; text-shadow: 0 0 8px rgba(0, 255, 0, 0.4) !important; }}
 .stRadio label, .stRadio label span,
 .stRadio label p, .stRadio label div {{ color: #FFFFFF !important; }}
 .paragraph-content-box, .paragraph-content-box * {{ color: #F0F0F0 !important; }}
@@ -3015,12 +3025,12 @@ if exam_choice != "----" and bank_choice != "----":
                             opt_display = opt.replace("(*)", "").strip()
                             opt_clean = clean_text(opt)
                             if opt_clean == correct:
-                                color_style = "color:#00ff00 !important;"
+                                extra_class = "correct-answer"
                                 # Hiện lại (*) cho đáp án đúng
                                 opt_display += " (*)"
                             else:
-                                color_style = "color:#FFFFFF !important;"
-                            st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
+                                extra_class = ""
+                            st.markdown(f'<div class="bank-answer-text {extra_class}">{opt_display}</div>', unsafe_allow_html=True)
                         
                         if is_correct: 
                             st.success(f"✅ Đúng – Đáp án: {q['answer']}")
