@@ -2719,7 +2719,8 @@ if exam_choice != "----" and bank_choice != "----":
             
             if is_passage_grouping:
                 batch = custom_groups[idx]['questions']
-                start = 0 # Not relevant in this new grouping mode
+                # Tính start = tổng số câu của các nhóm trước
+                start = sum(len(custom_groups[i]['questions']) for i in range(idx))
             else:
                 # Logic lấy batch cũ (30 câu/nhóm)
                 start = idx * group_size
@@ -2771,7 +2772,7 @@ if exam_choice != "----" and bank_choice != "----":
                 if not st.session_state.submitted:
                     # Luyện tập
                     for i_local, q in enumerate(batch):
-                        i_global = q.get('global_number', start + i_local + 1) # Sử dụng global_number nếu có
+                        i_global = start + i_local + 1  # Số thứ tự toàn cục
                         q_key = f"q_{i_global}_{hash(q['question'])}" 
                         translation_key = f"trans_{q_key}"
                         is_active = (translation_key == st.session_state.active_translation_key)
@@ -2867,7 +2868,7 @@ if exam_choice != "----" and bank_choice != "----":
                     # Chế độ xem đáp án
                     score = 0
                     for i_local, q in enumerate(batch):
-                        i_global = q.get('global_number', start + i_local + 1)
+                        i_global = start + i_local + 1  # Số thứ tự toàn cục
                         q_key = f"q_{i_global}_{hash(q['question'])}" 
                         selected_opt = st.session_state.get(q_key)
                         correct = clean_text(q["answer"])
@@ -2995,7 +2996,7 @@ setTimeout(function() {
                         if st.button("🔄 Làm lại nhóm này", key="reset_group"):
                             # Xoá session state của các radio button trong nhóm
                             for i_local, q in enumerate(batch):
-                                i_global = q.get('global_number', start + i_local + 1)
+                                i_global = start + i_local + 1  # Số thứ tự toàn cục
                                 st.session_state.pop(f"q_{i_global}_{hash(q['question'])}", None) 
                             st.session_state.submitted = False
                             st.session_state.active_translation_key = None # Reset dịch Q&A
