@@ -2500,20 +2500,25 @@ exam_choice = st.selectbox("Chọn kỳ thi:", EXAM_OPTIONS, index=EXAM_OPTIONS.
 st.session_state.exam_choice_val = exam_choice
 
 # Reset khi đổi kỳ thi
-if st.session_state.get('last_exam_choice') != exam_choice and exam_choice != "----":
+if st.session_state.get('last_exam_choice') != exam_choice:
     st.session_state.bank_choice_val = "----"
+    if 'bank_selector_master' in st.session_state:
+        st.session_state.bank_selector_master = "----"
+    
     st.session_state.current_group_idx = 0
     st.session_state.submitted = False
     st.session_state.current_mode = "group"
     st.session_state.active_translation_key = None
     st.session_state.active_passage_translation = None
     st.session_state.current_passage_id_displayed = None
+    
     last_exam = st.session_state.get('last_exam_choice', '----')
     if isinstance(last_exam, str) and last_exam != "----":
         exam_slug_old = last_exam.split()[-1].lower()
         st.session_state.pop(f"test_{exam_slug_old}_started", None)
         st.session_state.pop(f"test_{exam_slug_old}_submitted", None)
         st.session_state.pop(f"test_{exam_slug_old}_questions", None)
+    
     st.session_state.last_exam_choice = exam_choice
     st.rerun()
 
