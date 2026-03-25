@@ -1662,6 +1662,7 @@ setTimeout(function() {
 
                     st.markdown("---")
                     current_passage_id = passage_id
+            # --- KẾT THÚC BỔ SUNG ---
 
             # Luôn dùng số thứ tự toàn cục
             display_num = i
@@ -2823,7 +2824,7 @@ if exam_choice != "----" and bank_choice != "----":
                                 current_passage_id_in_group_mode = passage_id
                         # -----------------------------------------------------------------
                         
-                        # Số thứ tự — luôn dùng i_global (số toàn cục)
+                        # Luôn dùng số thứ tự toàn cục
                         display_num = i_global
                         
                         # Hiển thị câu hỏi
@@ -2922,7 +2923,7 @@ if exam_choice != "----" and bank_choice != "----":
                                 current_passage_id_in_group_mode = passage_id
                         # -----------------------------------------------------------------
 
-                        # Hiển thị câu hỏi: luôn dùng i_global (số toàn cục)
+                        # Luôn dùng số thứ tự toàn cục
                         display_num = i_global
                         st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True) 
 
