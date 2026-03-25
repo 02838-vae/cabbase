@@ -1550,6 +1550,7 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
 
             # Luôn dùng số thứ tự toàn cục
             display_num = i
+            st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
 
             # Nút Dịch Q&A ở dưới
             st.toggle(
@@ -1660,10 +1661,10 @@ setTimeout(function() {
                         """, unsafe_allow_html=True)
 
                     st.markdown("---")
+                    current_passage_id = passage_id
+
             # Luôn dùng số thứ tự toàn cục
             display_num = i
-                # Dùng số thứ tự toàn cục (i) cho các ngân hàng khác
-                display_num = i
             st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
 
             # Nút Dịch Q&A ở dưới
