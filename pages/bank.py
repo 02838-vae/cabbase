@@ -130,6 +130,9 @@ def clean_text(s: str) -> str:
             temp_s = temp_s.replace(matched_text, placeholder, 1)
             counter += 1
     
+    # BƯỚC 2.5: Xóa ký hiệu đáp án (*) để so sánh
+    temp_s = temp_s.replace("(*)", "").strip()
+    
     # BƯỚC 3: Xóa khoảng trắng thừa (2+ spaces → 1 space)
     temp_s = re.sub(r'\s{2,}', ' ', temp_s)
     
@@ -1449,11 +1452,11 @@ setTimeout(function() {
                 # Ẩn dấu (*) nếu chưa nộp bài trong Test Mode
                 opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
-                    color_style = "color:#00ff00;"
+                    color_style = "color:#00ff00 !important;"
                     # Chỉ hiện thị (*) sau khi nộp bài
                     opt_display += " (*)"
                 else:
-                    color_style = "color:#FFFFFF;"
+                    color_style = "color:#FFFFFF !important;"
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
 
             if is_correct:
@@ -1731,11 +1734,11 @@ setTimeout(function() {
                 opt_display = opt.replace("(*)", "").strip()
 
                 if opt_clean == correct:
-                    color_style = "color:#00ff00;"
+                    color_style = "color:#00ff00 !important;"
                     # Chỉ hiển thị (*) sau khi nộp bài
                     opt_display += " (*)"
                 else:
-                    color_style = "color:#FFFFFF;"
+                    color_style = "color:#FFFFFF !important;"
                     
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
 
@@ -2321,7 +2324,7 @@ div.stSelectbox label, div.stSelectbox label p, div.stSelectbox label span,
 
 /* Ngoại lệ: câu hỏi và đáp án giữ màu riêng */
 .bank-question-text, .bank-question-text * {{ color: #FF8C00 !important; }}
-.bank-answer-text {{ color: #FFFFFF !important; }}
+.bank-answer-text {{ color: #FFFFFF; }}
 .stRadio label, .stRadio label span,
 .stRadio label p, .stRadio label div {{ color: #FFFFFF !important; }}
 .paragraph-content-box, .paragraph-content-box * {{ color: #F0F0F0 !important; }}
