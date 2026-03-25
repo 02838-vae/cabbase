@@ -139,10 +139,10 @@ def clean_text(s: str) -> str:
     
     return temp_s.strip()
 
-def strip_question_number(s: str) -> str:
-    """Xóa số thứ tự đầu câu hỏi nếu có: '1. ...' hoặc '1) ...' → '...'"""
-    return re.sub(r'^\s*\d+[\.)\]]\s*', '', s).strip()
-
+def strip_question_number(text: str) -> str:
+    """Xóa số thứ tự ở đầu câu hỏi (ví dụ: '1. ', '1.1. ', '2) ') để tránh lặp số."""
+    # Regex hỗ trợ cả 1., 1.1, 1.1., 1) ... theo sau là ít nhất 1 khoảng trắng
+    return re.sub(r'^\s*\d+([\.\d]+)*[\.\)]?\s+', '', text).strip()
 
 def find_file_path(source):
     """Hàm tìm đường dẫn file với cơ chế tìm kiếm đa dạng."""
@@ -337,10 +337,13 @@ def parse_cabbank(source):
                     if not current["answer"] and current["options"]:
                         current["answer"] = current["options"][0]
                     questions.append(current)
+                # Xóa số thứ tự cho câu hỏi mới
                 current = {"question": strip_question_number(clean_text(p)), "options": [], "answer": ""}
             else:
-                if current["question"]: current["question"] += " " + clean_text(p)
-                else: current["question"] = clean_text(p)
+                if not current["question"]:
+                    current["question"] = strip_question_number(clean_text(p))
+                else:
+                    current["question"] += " " + clean_text(p)
             continue
 
         pre_text = p[:matches[0].start()].strip()
@@ -352,8 +355,10 @@ def parse_cabbank(source):
                     questions.append(current)
                 current = {"question": strip_question_number(clean_text(pre_text)), "options": [], "answer": ""}
             else:
-                if current["question"]: current["question"] += " " + clean_text(pre_text)
-                else: current["question"] = clean_text(pre_text)
+                if not current["question"]:
+                    current["question"] = strip_question_number(clean_text(pre_text))
+                else:
+                    current["question"] += " " + clean_text(pre_text)
 
         for i, m in enumerate(matches):
             s = m.end()
@@ -394,10 +399,13 @@ def parse_lawbank(source):
                     if not current["answer"] and current["options"]:
                         current["answer"] = current["options"][0]
                     questions.append(current)
+                # Xóa số thứ tự cho câu hỏi mới
                 current = {"question": strip_question_number(clean_text(p)), "options": [], "answer": ""}
             else:
-                if current["question"]: current["question"] += " " + clean_text(p)
-                else: current["question"] = clean_text(p)
+                if not current["question"]:
+                    current["question"] = strip_question_number(clean_text(p))
+                else:
+                    current["question"] += " " + clean_text(p)
             continue
 
         first_match = matches[0]
@@ -410,8 +418,10 @@ def parse_lawbank(source):
                     questions.append(current)
                 current = {"question": strip_question_number(clean_text(pre_text)), "options": [], "answer": ""}
             else:
-                if current["question"]: current["question"] += " " + clean_text(pre_text)
-                else: current["question"] = clean_text(pre_text)
+                if not current["question"]:
+                    current["question"] = strip_question_number(clean_text(pre_text))
+                else:
+                    current["question"] += " " + clean_text(pre_text)
 
         for i, m in enumerate(matches):
             s = m.end()
@@ -473,9 +483,7 @@ def parse_pl1(source):
         
         if must_switch_q:
             current = finalize_current_question(current, questions)
-            q_text = clean_p
-            if is_explicitly_numbered:
-                q_text = q_start_pat.sub('', clean_p).strip()
+            q_text = strip_question_number(clean_p)
             current["question"] = q_text
             
         else:
@@ -556,9 +564,7 @@ def parse_pl2(source):
         
         if must_switch_q:
             current = finalize_current_question(current, questions)
-            q_text = clean_p
-            if is_explicitly_numbered:
-                q_text = q_start_pat.sub('', clean_p).strip()
+            q_text = strip_question_number(clean_p)
             current["question"] = q_text
             
         else:
@@ -906,8 +912,8 @@ def parse_pl5_specialized(source):
                     current["answer"] = current["options"][0]
                 questions.append(current)
             
-            # Bắt đầu câu hỏi mới
-            q_text = q_start_pat.sub('', clean_p).strip()
+            # Bắt đầu câu hỏi mới (Xóa số thứ tự đầu câu)
+            q_text = strip_question_number(clean_p)
             current = {"question": q_text, "options": [], "answer": ""}
             continue
         
@@ -1023,8 +1029,11 @@ def display_all_questions(questions):
                     st.markdown("---")
                     current_passage_id = passage_id
 
-            # Số thứ tự — luôn dùng i (số toàn cục)
-            display_num = i
+            # Số thứ tự
+            if q.get('group', '').startswith('Paragraph') and q.get('paragraph_content'):
+                display_num = q.get('number', i)
+            else:
+                display_num = i
 
             st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
 
@@ -1039,8 +1048,10 @@ def display_all_questions(questions):
                 st.info(translated_content, icon="🌐")
 
             default_val = st.session_state.get(q_key, None)
-            st.radio("", q["options"],
-                     index=q["options"].index(default_val) if default_val in q["options"] else None,
+            # Ẩn dấu (*) khỏi nhãn của radio button
+            options_clean = [opt.replace("(*)", "").strip() for opt in q["options"]]
+            st.radio("", options_clean,
+                     index=options_clean.index(default_val.replace("(*)", "").strip()) if default_val and default_val.replace("(*)", "").strip() in options_clean else None,
                      key=q_key)
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
 
@@ -1091,8 +1102,11 @@ def display_all_questions(questions):
                     st.markdown("---")
                     current_passage_id = passage_id
 
-            # Số thứ tự — luôn dùng i (số toàn cục)
-            display_num = i
+            # Số thứ tự
+            if q.get('group', '').startswith('Paragraph') and q.get('paragraph_content'):
+                display_num = q.get('number', i)
+            else:
+                display_num = i
 
             st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
 
@@ -1109,13 +1123,17 @@ def display_all_questions(questions):
             # Hiển thị đáp án với màu sắc
             for opt in q["options"]:
                 opt_clean = clean_text(opt)
+                # Ẩn dấu (*) khi hiển thị kết quả
+                opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
                     color_style = "color:#00ff00 !important;"
+                    # Hiện lại (*) cho đáp án đúng
+                    opt_display += " (*)"
                 elif opt_clean == clean_text(selected_opt) if selected_opt else False:
                     color_style = "color:#ff3333 !important;"
                 else:
                     color_style = "color:#FFFFFF !important;"
-                st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
 
             if is_correct:
                 st.success(f"✅ Đúng – Đáp án: {q['answer']}")
@@ -1336,8 +1354,10 @@ def display_docwise_test_mode(bank_name, key_prefix="docwise_test"):
                 st.info(translated_content, icon="🌐")
 
             default_val = st.session_state.get(q_key, None)
-            st.radio("", q["options"],
-                     index=q["options"].index(default_val) if default_val in q["options"] else None,
+            # Ẩn dấu (*) khỏi nhãn của radio button
+            options_clean = [opt.replace("(*)", "").strip() for opt in q["options"]]
+            st.radio("", options_clean,
+                     index=options_clean.index(default_val.replace("(*)", "").strip()) if default_val and default_val.replace("(*)", "").strip() in options_clean else None,
                      key=q_key)
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
 
@@ -1428,9 +1448,11 @@ setTimeout(function() {
 
             for opt in q["options"]:
                 opt_clean = clean_text(opt)
-                opt_display = opt
+                # Ẩn dấu (*) nếu chưa nộp bài trong Test Mode
+                opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
                     color_style = "color:#00ff00;"
+                    # Chỉ hiện thị (*) sau khi nộp bài
                     opt_display += " (*)"
                 elif opt_clean == clean_text(selected_opt):
                     color_style = "color:#ff3333;"
@@ -1553,8 +1575,13 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
                     current_passage_id = passage_id
             # --- KẾT THÚC BỔ SUNG ---
 
-            # Luôn dùng số thứ tự toàn cục
-            display_num = i
+            # Hiển thị câu hỏi (SỬ DỤNG SỐ THỨ TỰ CỤC BỘ NẾU LÀ PL3, NẾU KHÔNG DÙNG SỐ THỨ TỰ TOÀN CỤC)
+            if q.get('group', '').startswith('Paragraph'):
+                # Dùng số thứ tự cục bộ (number) nếu là bài đọc hiểu
+                display_num = q.get('number', i) 
+            else:
+                # Dùng số thứ tự toàn cục (i) cho các ngân hàng khác
+                display_num = i
             st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
 
             # Nút Dịch Q&A ở dưới
@@ -1580,7 +1607,9 @@ def display_test_mode(questions, bank_name, key_prefix="test"):
 
             # Hiển thị Radio Button (không chọn mặc định)
             default_val = st.session_state.get(q_key, None)
-            st.radio("", q["options"], index=q["options"].index(default_val) if default_val in q["options"] else None, key=q_key)
+            # Ẩn dấu (*) khỏi nhãn của radio button
+            options_clean = [opt.replace("(*)", "").strip() for opt in q["options"]]
+            st.radio("", options_clean, index=options_clean.index(default_val.replace("(*)", "").strip()) if default_val and default_val.replace("(*)", "").strip() in options_clean else None, key=q_key)
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
             
         if st.button("✅ Nộp bài Test", key=f"{test_key_prefix}_submit_btn"):
@@ -1669,8 +1698,13 @@ setTimeout(function() {
                     current_passage_id = passage_id
             # --- KẾT THÚC BỔ SUNG ---
 
-            # Luôn dùng số thứ tự toàn cục
-            display_num = i
+            # Hiển thị câu hỏi (SỬ DỤNG SỐ THỨ TỰ CỤC BỘ NẾU LÀ PL3, NẾU KHÔNG DÙNG SỐ THỨ TỰ TOÀN CỤC)
+            if q.get('group', '').startswith('Paragraph'):
+                # Dùng số thứ tự cục bộ (number) nếu là bài đọc hiểu
+                display_num = q.get('number', i) 
+            else:
+                # Dùng số thứ tự toàn cục (i) cho các ngân hàng khác
+                display_num = i
             st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True)
 
             # Nút Dịch Q&A ở dưới
@@ -1697,11 +1731,13 @@ setTimeout(function() {
             # Hiển thị Đáp án (KẾT QUẢ)
             for opt in q["options"]:
                 opt_clean = clean_text(opt)
-                opt_display = opt # Khởi tạo giá trị hiển thị
+                # Ẩn dấu (*) nếu chưa nộp bài
+                opt_display = opt.replace("(*)", "").strip()
 
                 if opt_clean == correct:
                     color_style = "color:#00ff00;"
-                    opt_display += " (*)" # BỔ SUNG: Thêm ký tự (*)
+                    # Chỉ hiển thị (*) sau khi nộp bài
+                    opt_display += " (*)"
                 elif opt_clean == clean_text(selected_opt):
                     color_style = "color:#ff3333;"
                 else:
@@ -2615,6 +2651,12 @@ if exam_choice != "----" and bank_choice != "----":
                 questions = parse_pl4_law_process(source)
             elif source == "PL5.docx":
                 questions = parse_pl5_specialized(source)
+        
+        # XỬ LÝ LỌC SỐ THỨ TỰ CHO CÂU HỎI 1 (CAAV LAW 10.2 & HUMAN FACTOR)
+        if (bank_choice == "Ngân hàng CAAV Law" and st.session_state.get('caav_law_module') == "Module 10.2") or \
+           (bank_choice == "Ngân hàng Human Factor"):
+            for q in questions:
+                q["question"] = strip_question_number(q["question"])
     
     if not questions:
         # Cập nhật thông báo lỗi để phù hợp với logic (*) cho cả PL1 và PL2
@@ -2724,8 +2766,7 @@ if exam_choice != "----" and bank_choice != "----":
             
             if is_passage_grouping:
                 batch = custom_groups[idx]['questions']
-                # Tính start = tổng số câu của các nhóm trước
-                start = sum(len(custom_groups[i]['questions']) for i in range(idx))
+                start = 0 # Not relevant in this new grouping mode
             else:
                 # Logic lấy batch cũ (30 câu/nhóm)
                 start = idx * group_size
@@ -2777,7 +2818,7 @@ if exam_choice != "----" and bank_choice != "----":
                 if not st.session_state.submitted:
                     # Luyện tập
                     for i_local, q in enumerate(batch):
-                        i_global = start + i_local + 1  # Số thứ tự toàn cục
+                        i_global = q.get('global_number', start + i_local + 1) # Sử dụng global_number nếu có
                         q_key = f"q_{i_global}_{hash(q['question'])}" 
                         translation_key = f"trans_{q_key}"
                         is_active = (translation_key == st.session_state.active_translation_key)
@@ -2830,8 +2871,11 @@ if exam_choice != "----" and bank_choice != "----":
                                 current_passage_id_in_group_mode = passage_id
                         # -----------------------------------------------------------------
                         
-                        # Luôn dùng số thứ tự toàn cục
-                        display_num = i_global
+                        # Fix số trùng: chỉ dùng số cục bộ khi có đoạn văn thực sự (PL3/PL4)
+                        if q.get('group', '').startswith('Paragraph') and q.get('paragraph_content'):
+                            display_num = q.get('number', i_global)
+                        else:
+                            display_num = i_global
                         
                         # Hiển thị câu hỏi
                         st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True) 
@@ -2861,7 +2905,9 @@ if exam_choice != "----" and bank_choice != "----":
 
                         # Hiển thị Radio Button
                         default_val = st.session_state.get(q_key, None)
-                        st.radio("", q["options"], index=q["options"].index(default_val) if default_val in q["options"] else None, key=q_key)
+                        # Ẩn dấu (*) khỏi nhãn của radio button
+                        options_clean = [opt.replace("(*)", "").strip() for opt in q["options"]]
+                        st.radio("", options_clean, index=options_clean.index(default_val.replace("(*)", "").strip()) if default_val and default_val.replace("(*)", "").strip() in options_clean else None, key=q_key)
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
                     if st.button("✅ Nộp bài", key="submit_group"):
                         st.session_state.submitted = True
@@ -2873,7 +2919,7 @@ if exam_choice != "----" and bank_choice != "----":
                     # Chế độ xem đáp án
                     score = 0
                     for i_local, q in enumerate(batch):
-                        i_global = start + i_local + 1  # Số thứ tự toàn cục
+                        i_global = q.get('global_number', start + i_local + 1)
                         q_key = f"q_{i_global}_{hash(q['question'])}" 
                         selected_opt = st.session_state.get(q_key)
                         correct = clean_text(q["answer"])
@@ -2929,8 +2975,13 @@ if exam_choice != "----" and bank_choice != "----":
                                 current_passage_id_in_group_mode = passage_id
                         # -----------------------------------------------------------------
 
-                        # Luôn dùng số thứ tự toàn cục
-                        display_num = i_global
+                        # Hiển thị câu hỏi: FIX số trùng cho CAAV/LAWBANK
+                        if q.get('group', '').startswith('Paragraph') and q.get('paragraph_content'):
+                            # Dùng số thứ tự cục bộ (number) chỉ khi là bài đọc hiểu có đoạn văn
+                            display_num = q.get('number', i_global) 
+                        else:
+                            # Dùng số thứ tự toàn cục (i_global) cho tất cả ngân hàng khác
+                            display_num = i_global 
                         st.markdown(f'<div class="bank-question-text">{display_num}. {q["question"]}</div>', unsafe_allow_html=True) 
 
                         # Nút Dịch Q&A ở dưới
@@ -2958,6 +3009,8 @@ if exam_choice != "----" and bank_choice != "----":
 
                         # Hiển thị Đáp án (KẾT QUẢ)
                         for opt in q["options"]:
+                            # Ẩn dấu (*) nếu chưa nộp bài
+                            opt_display = opt.replace("(*)", "").strip()
                             opt_clean = clean_text(opt)
                             if opt_clean == correct:
                                 color_style = "color:#00ff00 !important;"
@@ -2965,7 +3018,7 @@ if exam_choice != "----" and bank_choice != "----":
                                 color_style = "color:#ff3333 !important;"
                             else:
                                 color_style = "color:#FFFFFF !important;"
-                            st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt}</div>', unsafe_allow_html=True)
+                            st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
                         
                         if is_correct: 
                             st.success(f"✅ Đúng – Đáp án: {q['answer']}")
@@ -3001,7 +3054,7 @@ setTimeout(function() {
                         if st.button("🔄 Làm lại nhóm này", key="reset_group"):
                             # Xoá session state của các radio button trong nhóm
                             for i_local, q in enumerate(batch):
-                                i_global = start + i_local + 1  # Số thứ tự toàn cục
+                                i_global = q.get('global_number', start + i_local + 1)
                                 st.session_state.pop(f"q_{i_global}_{hash(q['question'])}", None) 
                             st.session_state.submitted = False
                             st.session_state.active_translation_key = None # Reset dịch Q&A
