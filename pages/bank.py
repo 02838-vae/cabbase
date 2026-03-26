@@ -1161,6 +1161,123 @@ def get_random_questions(questions, count=50):
     return random.sample(questions, count)
 
 
+def build_caav_mock_exam_questions():
+    """
+    Tạo bộ đề thi thử CAAV: 70 câu
+    - 10 câu random từ Human Factor
+    - 30 câu random từ CAAV Cabin
+    - 30 câu random từ CAAV Law (Module 10.1 và 10.2)
+    """
+    try:
+        qs_hf = parse_cabbank("caav hf.docx")
+        qs_cab = parse_cabbank("caav cab.docx")
+        qs_law1 = parse_lawbank("caav law1.docx")
+        qs_law2 = parse_lawbank("caav law2.docx")
+        
+        if not qs_hf or not qs_cab or not qs_law1 or not qs_law2:
+            return [], "Không tìm thấy đủ dữ liệu từ các file CAAV (HF, Cabin, Law 10.1, Law 10.2)."
+            
+        final_hf = random.sample(qs_hf, min(10, len(qs_hf)))
+        final_cab = random.sample(qs_cab, min(30, len(qs_cab)))
+        
+        all_law = qs_law1 + qs_law2
+        final_law = random.sample(all_law, min(30, len(all_law)))
+        
+        final_qs = final_hf + final_cab + final_law
+        random.shuffle(final_qs)
+        
+        for idx, q in enumerate(final_qs, start=1):
+            q['global_number'] = idx
+            
+        return final_qs, None
+    except Exception as e:
+        return [], str(e)
+
+def display_caav_mock_test_mode():
+    TOTAL_QUESTIONS = 70
+    PASS_SCORE_PCT = 75 # 75/100
+    test_key_prefix = "caav_mock_test"
+    
+    if f"{test_key_prefix}_started" not in st.session_state:
+        st.session_state[f"{test_key_prefix}_started"] = False
+    if f"{test_key_prefix}_submitted" not in st.session_state:
+        st.session_state[f"{test_key_prefix}_submitted"] = False
+    if f"{test_key_prefix}_questions" not in st.session_state:
+        st.session_state[f"{test_key_prefix}_questions"] = []
+
+    if not st.session_state[f"{test_key_prefix}_started"]:
+        st.markdown('<div class="result-title"><h3>🎓 THI THỬ CAAV (70 CÂU)</h3></div>', unsafe_allow_html=True)
+        st.markdown(f"""
+        <div style="background:rgba(255,215,0,0.08); border-left:4px solid #FFD700; padding:16px 22px; border-radius:8px; margin-bottom:20px; font-size:18px; text-align:center; line-height:2;">
+        📋 Cơ cấu đề: <b>10 HF + 30 Cabin + 30 Law</b><br>
+        🎯 Điểm đạt (PASS): <b>{PASS_SCORE_PCT}/100</b>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if st.button("🚀 Bắt đầu Thi thử CAAV", key=f"{test_key_prefix}_start_btn"):
+            with st.spinner("⏳ Đang tạo đề thi ngẫu nhiên..."):
+                test_qs, error = build_caav_mock_exam_questions()
+            if error:
+                st.error(f"❌ {error}")
+                return
+            st.session_state[f"{test_key_prefix}_questions"] = test_qs
+            st.session_state[f"{test_key_prefix}_started"] = True
+            st.session_state[f"{test_key_prefix}_submitted"] = False
+            st.rerun()
+        return
+
+    test_batch = st.session_state[f"{test_key_prefix}_questions"]
+    
+    if not st.session_state[f"{test_key_prefix}_submitted"]:
+        st.markdown(f'<div class="result-title"><h3>⏳ ĐANG THI THỬ CAAV — {len(test_batch)} CÂU</h3></div>', unsafe_allow_html=True)
+        for i, q in enumerate(test_batch, start=1):
+            q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}"
+            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+            options_clean = [opt.replace("(*)", "").strip() for opt in q["options"]]
+            st.radio("", options_clean, index=None, key=q_key)
+            st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+            
+        if st.button("✅ Nộp bài", key=f"{test_key_prefix}_submit_btn"):
+            st.session_state[f"{test_key_prefix}_submitted"] = True
+            st.rerun()
+    else:
+        score = 0
+        for i, q in enumerate(test_batch, start=1):
+            q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}"
+            selected_opt = st.session_state.get(q_key)
+            correct = clean_text(q["answer"])
+            is_correct = (selected_opt is not None) and (clean_text(selected_opt) == correct)
+            
+            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+            for opt in q["options"]:
+                opt_clean = clean_text(opt)
+                opt_display = opt.replace("(*)", "").strip()
+                if opt_clean == correct:
+                    color = "color:#00ff00 !important;"
+                    opt_display += " (*)"
+                else:
+                    color = "color:#FFFFFF !important;"
+                st.markdown(f'<div class="bank-answer-text" style="{color}">{opt_display}</div>', unsafe_allow_html=True)
+
+            if is_correct: score += 1
+            else: st.error(f"❌ Sai – Đáp án đúng: {q['answer']}")
+            st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+
+        final_score_scaled = (score / len(test_batch)) * 100
+        st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {int(final_score_scaled)}/100</h3></div>', unsafe_allow_html=True)
+        if final_score_scaled >= PASS_SCORE_PCT:
+            st.balloons()
+            st.success(f"🎊 **CHÚC MỪNG!** Bạn đã ĐẠT (PASS) — {score}/{len(test_batch)} câu đúng.")
+        else:
+            st.error(f"😢 **KHÔNG ĐẠT (FAIL)**. Bạn đạt {int(final_score_scaled)}/100.")
+            
+        if st.button("🔄 Làm lại bài thi", key=f"{test_key_prefix}_restart_btn"):
+            for i, q in enumerate(test_batch, start=1):
+                st.session_state.pop(f"{test_key_prefix}_q_{i}_{hash(q['question'])}", None)
+            st.session_state[f"{test_key_prefix}_started"] = False
+            st.session_state[f"{test_key_prefix}_submitted"] = False
+            st.rerun()
+
 def build_docwise_test_questions():
     """
     Tạo bộ đề 100 câu cho Docwise Test theo công thức:
@@ -2997,12 +3114,21 @@ if exam_choice != "----" and bank_choice != "----":
                         st.session_state.pop(f"{test_key_prefix}_questions", None)
                         st.rerun()
 
-            # Hàng 3: nút Thi thử Docwise (chỉ khi là Docwise)
+            # Hàng 3: nút Thi thử Docwise (chỉ khi là Docwise) hoặc Thi thử CAAV (chỉ khi là CAAV)
             if is_docwise:
                 _, col_docwise, _ = st.columns([1, 1, 1])
                 with col_docwise:
                     if st.button("🎓 Thi thử Docwise", key="btn_start_docwise_test", use_container_width=True):
                         st.session_state.current_mode = "test"
+                        st.session_state.active_translation_key = None
+                        st.session_state.active_passage_translation = None
+                        st.session_state.current_passage_id_displayed = None
+                        st.rerun()
+            elif exam_choice == "Thi CAAV":
+                _, col_caav_mock, _ = st.columns([1, 1, 1])
+                with col_caav_mock:
+                    if st.button("🎓 Thi thử CAAV", key="btn_start_caav_mock", use_container_width=True):
+                        st.session_state.current_mode = "caav_mock_test"
                         st.session_state.active_translation_key = None
                         st.session_state.active_passage_translation = None
                         st.session_state.current_passage_id_displayed = None
@@ -3290,6 +3416,16 @@ setTimeout(function() {
             st.rerun()
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
         display_appendix_test_mode(st.session_state.doc_selected)
+
+    elif st.session_state.current_mode == "caav_mock_test":
+        if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
+            st.session_state.current_mode = "group"
+            st.session_state.active_translation_key = None
+            st.session_state.active_passage_translation = None
+            st.session_state.current_passage_id_displayed = None
+            st.rerun()
+        st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+        display_caav_mock_test_mode()
 
     elif st.session_state.current_mode == "test":
         if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
