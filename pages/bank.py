@@ -1130,8 +1130,6 @@ def display_all_questions(questions):
                 opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
                     color_style = "color:#00ff00 !important;"
-                    # Hiện lại (*) cho đáp án đúng
-                    opt_display += " (*)"
                 else:
                     color_style = "color:#FFFFFF !important;"
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
@@ -1254,7 +1252,6 @@ def display_caav_mock_test_mode():
                 opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
                     color = "color:#00ff00 !important;"
-                    opt_display += " (*)"
                 else:
                     color = "color:#FFFFFF !important;"
                 st.markdown(f'<div class="bank-answer-text" style="{color}">{opt_display}</div>', unsafe_allow_html=True)
@@ -1570,8 +1567,6 @@ setTimeout(function() {
                 opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
                     color_style = "color:#00ff00 !important;"
-                    # Chỉ hiện thị (*) sau khi nộp bài
-                    opt_display += " (*)"
                 else:
                     color_style = "color:#FFFFFF !important;"
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
@@ -1852,8 +1847,6 @@ setTimeout(function() {
 
                 if opt_clean == correct:
                     color_style = "color:#00ff00 !important;"
-                    # Chỉ hiển thị (*) sau khi nộp bài
-                    opt_display += " (*)"
                 else:
                     color_style = "color:#FFFFFF !important;"
                     
@@ -2036,7 +2029,6 @@ def display_appendix_test_mode(appendix_full_name):
                 opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
                     color = "color:#00ff00 !important;"
-                    opt_display += " (*)"
                 else:
                     color = "color:#FFFFFF !important;"
                 st.markdown(f'<div class="bank-answer-text" style="{color}">{opt_display}</div>', unsafe_allow_html=True)
@@ -3339,8 +3331,6 @@ if exam_choice != "----" and bank_choice != "----":
                             opt_clean = clean_text(opt)
                             if opt_clean == correct:
                                 color_style = "color:#00ff00 !important;"
-                                # Hiện lại (*) cho đáp án đúng
-                                opt_display += " (*)"
                             else:
                                 color_style = "color:#FFFFFF !important;"
                             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
