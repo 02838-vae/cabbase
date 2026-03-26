@@ -1182,10 +1182,17 @@ def build_caav_full_test_questions():
     # Lọc dòng tiêu đề bị parse nhầm
     def _is_header(q):
         qt = q.get("question", "").strip().lower()
-        return "caav law" in qt or "bộ câu hỏi" in qt or "question bank" in qt
+        return (
+            "caav law" in qt or
+            "bộ câu hỏi" in qt or
+            "bo cau hoi" in qt or
+            "question bank" in qt or
+            qt.startswith("caav")
+        )
 
     all_cabin = [q for q in all_cabin if not _is_header(q)]
     all_law1  = [q for q in all_law1  if not _is_header(q)]
+    all_law2  = [q for q in all_law2  if not _is_header(q)]
     all_law   = all_law1 + all_law2
 
     errors = []
@@ -2908,20 +2915,20 @@ if exam_choice != "----" and bank_choice != "----":
                 q["question"] = strip_question_number(q["question"])
 
         # XÓA DÒNG TIÊU ĐỀ BỊ PARSE NHẦM THÀNH CÂU HỎI
-        # CAAV Law Module 10.1: dòng đầu chứa "Caav law" hoặc "Bộ câu hỏi"
-        # CAAV Cabin: dòng đầu chứa "question bank" (không phân biệt hoa thường)
+        # CAAV Law (mọi module): dòng đầu chứa "caav law", "bộ câu hỏi", "question bank"
+        # CAAV Cabin: dòng đầu chứa "question bank"
         def _is_header_question(q):
             qt = q.get("question", "").strip().lower()
             return (
                 "caav law" in qt or
+                "bo cau hoi" in qt or
                 "bộ câu hỏi" in qt or
-                "question bank" in qt
+                "question bank" in qt or
+                qt.startswith("caav")
             )
 
-        if (bank_choice == "Ngân hàng CAAV Law" and st.session_state.get('caav_law_module') == "Module 10.1") or \
-           (bank_choice == "Ngân hàng CAAV Cabin"):
-            questions = [q for q in questions if not _is_header_question(q)]
-    
+        if bank_choice == "Ngân hàng CAAV Law" or bank_choice == "Ngân hàng CAAV Cabin":
+            questions = [q for q in questions if not _is_header_question(q)]    
     if not questions:
         # Cập nhật thông báo lỗi để phù hợp với logic (*) cho cả PL1 và PL2
         st.error(f"❌ Không đọc được câu hỏi nào từ file **{source}**. Vui lòng kiểm tra file và cấu trúc thư mục (đảm bảo file nằm trong thư mục gốc hoặc thư mục 'pages/'), và kiểm tra lại định dạng đáp án đúng (dùng dấu `(*)`).")
