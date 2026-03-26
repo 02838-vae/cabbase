@@ -1178,6 +1178,14 @@ def build_caav_full_test_questions():
     all_cabin = parse_cabbank("caav cab.docx")
     all_law1  = parse_cabbank("caav law1.docx")
     all_law2  = parse_cabbank("caav law2.docx")
+
+    # Lọc dòng tiêu đề bị parse nhầm
+    def _is_header(q):
+        qt = q.get("question", "").strip().lower()
+        return "caav law" in qt or "bộ câu hỏi" in qt or "question bank" in qt
+
+    all_cabin = [q for q in all_cabin if not _is_header(q)]
+    all_law1  = [q for q in all_law1  if not _is_header(q)]
     all_law   = all_law1 + all_law2
 
     errors = []
@@ -2898,6 +2906,21 @@ if exam_choice != "----" and bank_choice != "----":
            (bank_choice == "Ngân hàng Human Factor"):
             for q in questions:
                 q["question"] = strip_question_number(q["question"])
+
+        # XÓA DÒNG TIÊU ĐỀ BỊ PARSE NHẦM THÀNH CÂU HỎI
+        # CAAV Law Module 10.1: dòng đầu chứa "Caav law" hoặc "Bộ câu hỏi"
+        # CAAV Cabin: dòng đầu chứa "question bank" (không phân biệt hoa thường)
+        def _is_header_question(q):
+            qt = q.get("question", "").strip().lower()
+            return (
+                "caav law" in qt or
+                "bộ câu hỏi" in qt or
+                "question bank" in qt
+            )
+
+        if (bank_choice == "Ngân hàng CAAV Law" and st.session_state.get('caav_law_module') == "Module 10.1") or \
+           (bank_choice == "Ngân hàng CAAV Cabin"):
+            questions = [q for q in questions if not _is_header_question(q)]
     
     if not questions:
         # Cập nhật thông báo lỗi để phù hợp với logic (*) cho cả PL1 và PL2
