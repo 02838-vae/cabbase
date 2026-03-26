@@ -1161,6 +1161,235 @@ def get_random_questions(questions, count=50):
     return random.sample(questions, count)
 
 
+def build_caav_full_test_questions():
+    """
+    Tạo bộ đề CAAV tổng hợp 70 câu:
+      - 10 câu random từ Human Factor (caav hf.docx)
+      - 30 câu random từ CAAV Cabin (caav cab.docx)
+      - 30 câu random từ CAAV Law Module 10.1 + 10.2 gộp lại (caav law1.docx + caav law2.docx)
+    Trả về: (test_questions, info_dict) hoặc ([], {"error": ...}) nếu lỗi
+    """
+    N_HF    = 10
+    N_CABIN = 30
+    N_LAW   = 30
+    TOTAL   = N_HF + N_CABIN + N_LAW  # 70
+
+    all_hf    = parse_cabbank("caav hf.docx")
+    all_cabin = parse_cabbank("caav cab.docx")
+    all_law1  = parse_cabbank("caav law1.docx")
+    all_law2  = parse_cabbank("caav law2.docx")
+    all_law   = all_law1 + all_law2
+
+    errors = []
+    if not all_hf:    errors.append("Human Factor (caav hf.docx)")
+    if not all_cabin: errors.append("CAAV Cabin (caav cab.docx)")
+    if not all_law:   errors.append("CAAV Law (caav law1/law2.docx)")
+    if errors:
+        return [], {"error": f"Không đọc được file: {', '.join(errors)}"}
+
+    qs_hf    = random.sample(all_hf,    min(N_HF,    len(all_hf)))
+    qs_cabin = random.sample(all_cabin, min(N_CABIN, len(all_cabin)))
+    qs_law   = random.sample(all_law,   min(N_LAW,   len(all_law)))
+
+    def tag(qs, label):
+        for q in qs:
+            q['_source'] = label
+        return qs
+
+    tag(qs_hf,    "HF")
+    tag(qs_cabin, "CABIN")
+    tag(qs_law,   "LAW")
+
+    # Shuffle toàn bộ để trộn lẫn 3 nguồn
+    final_questions = qs_hf + qs_cabin + qs_law
+    random.shuffle(final_questions)
+
+    for idx, q in enumerate(final_questions, start=1):
+        q['global_number'] = idx
+
+    info = {
+        "hf_count":    len(qs_hf),
+        "cabin_count": len(qs_cabin),
+        "law_count":   len(qs_law),
+        "total":       len(final_questions),
+    }
+    return final_questions, info
+
+
+def display_caav_full_test_mode(key_prefix="caav_full_test"):
+    """
+    Màn hình Test CAAV tổng hợp 70 câu (10 HF + 30 Cabin + 30 Law 10.1&10.2).
+    """
+    TOTAL_QUESTIONS = 70
+    PASS_SCORE = math.ceil(TOTAL_QUESTIONS * 0.75)  # 53/70
+    test_key_prefix = key_prefix
+
+    for k in [f"{test_key_prefix}_started", f"{test_key_prefix}_submitted"]:
+        if k not in st.session_state:
+            st.session_state[k] = False
+    if f"{test_key_prefix}_questions" not in st.session_state:
+        st.session_state[f"{test_key_prefix}_questions"] = []
+    if f"{test_key_prefix}_info" not in st.session_state:
+        st.session_state[f"{test_key_prefix}_info"] = {}
+
+    score = 0
+
+    # ── MÀN HÌNH BẮT ĐẦU ──
+    if not st.session_state[f"{test_key_prefix}_started"]:
+        st.markdown('<div class="result-title"><h3>🎓 LÀM BÀI TEST CAAV TỔNG HỢP</h3></div>', unsafe_allow_html=True)
+        st.markdown(f"""
+        <div style="background:rgba(255,215,0,0.08); border-left:4px solid #FFD700; padding:18px 24px;
+                    border-radius:10px; margin-bottom:20px; font-size:18px; line-height:2.2; text-align:center;">
+        📋 Tổng số câu hỏi: <b>{TOTAL_QUESTIONS} câu</b><br>
+        🧠 Human Factor: <b>10 câu</b> &nbsp;|&nbsp;
+        ✈️ CAAV Cabin: <b>30 câu</b> &nbsp;|&nbsp;
+        ⚖️ CAAV Law (10.1 & 10.2): <b>30 câu</b><br>
+        🎯 Điểm đạt (PASS): <b>{PASS_SCORE}/{TOTAL_QUESTIONS}</b>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if st.button("🚀 Bắt đầu Bài Test CAAV", key=f"{test_key_prefix}_start_btn"):
+            qs, info = build_caav_full_test_questions()
+            if not qs:
+                err = info.get("error", "Lỗi không xác định")
+                st.error(f"❌ {err}")
+                return
+            st.session_state[f"{test_key_prefix}_questions"] = qs
+            st.session_state[f"{test_key_prefix}_info"]      = info
+            st.session_state[f"{test_key_prefix}_started"]   = True
+            st.session_state[f"{test_key_prefix}_submitted"] = False
+            st.rerun()
+        return
+
+    test_batch = st.session_state[f"{test_key_prefix}_questions"]
+    info       = st.session_state[f"{test_key_prefix}_info"]
+
+    # ── ĐANG LÀM BÀI ──
+    if not st.session_state[f"{test_key_prefix}_submitted"]:
+        st.markdown('<div class="result-title"><h3>⏳ ĐANG LÀM BÀI TEST CAAV</h3></div>', unsafe_allow_html=True)
+
+        for i, q in enumerate(test_batch, start=1):
+            q_key         = f"{test_key_prefix}_q_{i}_{hash(q['question'])}"
+            translation_key = f"trans_{q_key}"
+            is_active     = (translation_key == st.session_state.active_translation_key)
+
+            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+
+            st.toggle(
+                "🌐 Dịch Câu hỏi & Đáp án sang Tiếng Việt",
+                value=is_active,
+                key=f"toggle_{translation_key}",
+                on_change=on_translate_toggle,
+                args=(translation_key,)
+            )
+            if is_active:
+                translated_content = st.session_state.translations.get(translation_key)
+                if not isinstance(translated_content, str):
+                    st.session_state.translations[translation_key] = translate_text(build_translation_text_for_qa(q))
+                    translated_content = st.session_state.translations[translation_key]
+                st.info(translated_content, icon="🌐")
+
+            opts_display = [o.replace("(*)", "").strip() for o in q["options"]]
+            st.radio("Chọn đáp án:", opts_display, index=None, key=q_key)
+            st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+
+        col_l, col_mid, col_r = st.columns([1, 2, 1])
+        with col_mid:
+            if st.button("📬 Nộp bài", key=f"{test_key_prefix}_submit_btn", use_container_width=True):
+                st.session_state[f"{test_key_prefix}_submitted"] = True
+                st.rerun()
+        return
+
+    # ── KẾT QUẢ ──
+    st.markdown('<div class="result-title"><h3>📊 KẾT QUẢ BÀI TEST CAAV</h3></div>', unsafe_allow_html=True)
+
+    for i, q in enumerate(test_batch, start=1):
+        q_key   = f"{test_key_prefix}_q_{i}_{hash(q['question'])}"
+        correct = clean_text(q["answer"])
+        user_ans = st.session_state.get(q_key)
+        is_correct = False
+
+        if user_ans is not None:
+            opts_display = [o.replace("(*)", "").strip() for o in q["options"]]
+            if user_ans in opts_display:
+                user_ans_idx = opts_display.index(user_ans)
+                user_ans_clean = clean_text(q["options"][user_ans_idx])
+                is_correct = (user_ans_clean == correct)
+
+        src_label = q.get('_source', '')
+        src_badge = {"HF": "🧠 HF", "CABIN": "✈️ Cabin", "LAW": "⚖️ Law"}.get(src_label, "")
+
+        translation_key = f"trans_{q_key}"
+        is_active = (translation_key == st.session_state.active_translation_key)
+
+        st.markdown(
+            f'<div class="bank-question-text">{i}. {q["question"]} '
+            f'<span style="font-size:14px;color:#FFD700;font-weight:400;">{src_badge}</span></div>',
+            unsafe_allow_html=True
+        )
+
+        st.toggle(
+            "🌐 Dịch Câu hỏi & Đáp án sang Tiếng Việt",
+            value=is_active,
+            key=f"toggle_{translation_key}",
+            on_change=on_translate_toggle,
+            args=(translation_key,)
+        )
+        if is_active:
+            translated_content = st.session_state.translations.get(translation_key)
+            if not isinstance(translated_content, str):
+                st.session_state.translations[translation_key] = translate_text(build_translation_text_for_qa(q))
+                translated_content = st.session_state.translations[translation_key]
+            st.info(translated_content, icon="🌐")
+
+        for opt in q["options"]:
+            opt_clean   = clean_text(opt)
+            opt_display = opt.replace("(*)", "").strip()
+            if opt_clean == correct:
+                extra_class = "correct-answer"
+                opt_display += " (*)"
+            else:
+                extra_class = ""
+            st.markdown(f'<div class="bank-answer-text {extra_class}">{opt_display}</div>', unsafe_allow_html=True)
+
+        if is_correct:
+            st.success(f"✅ Đúng – Đáp án: {q['answer']}")
+            score += 1
+        else:
+            st.error(f"❌ Sai – Đáp án đúng: {q['answer']}")
+        st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+
+    # Tổng kết
+    pass_score = math.ceil(TOTAL_QUESTIONS * 0.75)
+    result_color = "#00ff00" if score >= pass_score else "#ff4444"
+    st.markdown(f"""
+    <div style="background:rgba(0,0,0,0.6); border:2px solid {result_color}; border-radius:12px;
+                padding:20px; text-align:center; margin:20px 0;">
+        <div style="font-size:28px; font-weight:900; color:{result_color};">
+            🎯 KẾT QUẢ: {score}/{TOTAL_QUESTIONS}
+        </div>
+        <div style="font-size:18px; color:#FFD700; margin-top:8px;">
+            🧠 Human Factor: {info.get('hf_count',0)} câu &nbsp;|&nbsp;
+            ✈️ Cabin: {info.get('cabin_count',0)} câu &nbsp;|&nbsp;
+            ⚖️ Law: {info.get('law_count',0)} câu
+        </div>
+        <div style="font-size:16px; color:#ccc; margin-top:6px;">
+            {"🏆 ĐẠT – Chúc mừng bạn!" if score >= pass_score else f"❌ CHƯA ĐẠT – Cần đạt tối thiểu {pass_score}/{TOTAL_QUESTIONS}"}
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+
+    if st.button("🔄 Làm lại bài test CAAV", key=f"{test_key_prefix}_reset_btn"):
+        st.session_state[f"{test_key_prefix}_started"]   = False
+        st.session_state[f"{test_key_prefix}_submitted"] = False
+        st.session_state[f"{test_key_prefix}_questions"] = []
+        st.session_state[f"{test_key_prefix}_info"]      = {}
+        st.session_state.active_translation_key = None
+        for i, q in enumerate(test_batch, start=1):
+            st.session_state.pop(f"{test_key_prefix}_q_{i}_{hash(q['question'])}", None)
+        st.rerun()
+
+
 def build_docwise_test_questions():
     """
     Tạo bộ đề 100 câu cho Docwise Test theo công thức:
@@ -2820,6 +3049,21 @@ if exam_choice != "----" and bank_choice != "----":
                     st.session_state.pop(f"{test_key_prefix}_submitted", None)
                     st.session_state.pop(f"{test_key_prefix}_questions", None)
                     st.rerun()
+
+            # Nút Làm bài test CAAV tổng hợp (chỉ hiện khi đang ở kỳ thi CAAV)
+            if exam_choice == "Thi CAAV":
+                _, col_caav_test, _ = st.columns([1, 2, 1])
+                with col_caav_test:
+                    if st.button("🎓 Làm bài test CAAV (70 câu tổng hợp)", key="btn_caav_full_test", use_container_width=True):
+                        st.session_state.current_mode = "caav_full_test"
+                        st.session_state.active_translation_key = None
+                        st.session_state.active_passage_translation = None
+                        st.session_state.current_passage_id_displayed = None
+                        # Reset state bài test CAAV tổng hợp
+                        for _k in ["caav_full_test_started", "caav_full_test_submitted",
+                                   "caav_full_test_questions", "caav_full_test_info"]:
+                            st.session_state.pop(_k, None)
+                        st.rerun()
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
             
             
@@ -3106,3 +3350,13 @@ setTimeout(function() {
             display_docwise_test_mode(bank_choice)
         else:
             display_test_mode(questions, bank_choice)
+
+    elif st.session_state.current_mode == "caav_full_test":
+        if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
+            st.session_state.current_mode = "group"
+            st.session_state.active_translation_key = None
+            st.session_state.active_passage_translation = None
+            st.session_state.current_passage_id_displayed = None
+            st.rerun()
+        st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+        display_caav_full_test_mode()
