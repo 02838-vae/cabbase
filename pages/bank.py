@@ -1129,12 +1129,12 @@ def display_all_questions(questions):
                 # Ẩn dấu (*) khi hiển thị kết quả
                 opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
-                    extra_class = "correct-answer"
+                    color_style = "color:#00ff00 !important;"
                     # Hiện lại (*) cho đáp án đúng
                     opt_display += " (*)"
                 else:
-                    extra_class = ""
-                st.markdown(f'<div class="bank-answer-text {extra_class}">{opt_display}</div>', unsafe_allow_html=True)
+                    color_style = "color:#FFFFFF !important;"
+                st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
 
             if is_correct:
                 st.success(f"✅ Đúng – Đáp án: {q['answer']}")
@@ -1159,250 +1159,6 @@ def display_all_questions(questions):
 def get_random_questions(questions, count=50):
     if len(questions) <= count: return questions
     return random.sample(questions, count)
-
-
-def build_caav_full_test_questions():
-    """
-    Tạo bộ đề CAAV tổng hợp 70 câu:
-      - 10 câu random từ Human Factor (caav hf.docx)
-      - 30 câu random từ CAAV Cabin (caav cab.docx)
-      - 30 câu random từ CAAV Law Module 10.1 + 10.2 gộp lại (caav law1.docx + caav law2.docx)
-    Trả về: (test_questions, info_dict) hoặc ([], {"error": ...}) nếu lỗi
-    """
-    N_HF    = 10
-    N_CABIN = 30
-    N_LAW   = 30
-    TOTAL   = N_HF + N_CABIN + N_LAW  # 70
-
-    all_hf    = parse_cabbank("caav hf.docx")
-    all_cabin = parse_cabbank("caav cab.docx")
-    all_law1  = parse_cabbank("caav law1.docx")
-    all_law2  = parse_cabbank("caav law2.docx")
-
-    # Lọc dòng tiêu đề bị parse nhầm
-    def _is_header(q):
-        qt = q.get("question", "").strip().lower()
-        return (
-            "caav law" in qt or
-            "bộ câu hỏi" in qt or
-            "bo cau hoi" in qt or
-            "question bank" in qt or
-            qt.startswith("caav")
-        )
-
-    all_cabin = [q for q in all_cabin if not _is_header(q)]
-    all_law1  = [q for q in all_law1  if not _is_header(q)]
-    all_law2  = [q for q in all_law2  if not _is_header(q)]
-    all_law   = all_law1 + all_law2
-
-    errors = []
-    if not all_hf:    errors.append("Human Factor (caav hf.docx)")
-    if not all_cabin: errors.append("CAAV Cabin (caav cab.docx)")
-    if not all_law:   errors.append("CAAV Law (caav law1/law2.docx)")
-    if errors:
-        return [], {"error": f"Không đọc được file: {', '.join(errors)}"}
-
-    qs_hf    = random.sample(all_hf,    min(N_HF,    len(all_hf)))
-    qs_cabin = random.sample(all_cabin, min(N_CABIN, len(all_cabin)))
-    qs_law   = random.sample(all_law,   min(N_LAW,   len(all_law)))
-
-    def tag(qs, label):
-        for q in qs:
-            q['_source'] = label
-        return qs
-
-    tag(qs_hf,    "HF")
-    tag(qs_cabin, "CABIN")
-    tag(qs_law,   "LAW")
-
-    # Shuffle toàn bộ để trộn lẫn 3 nguồn
-    final_questions = qs_hf + qs_cabin + qs_law
-    random.shuffle(final_questions)
-
-    for idx, q in enumerate(final_questions, start=1):
-        q['global_number'] = idx
-
-    info = {
-        "hf_count":    len(qs_hf),
-        "cabin_count": len(qs_cabin),
-        "law_count":   len(qs_law),
-        "total":       len(final_questions),
-    }
-    return final_questions, info
-
-
-def display_caav_full_test_mode(key_prefix="caav_full_test"):
-    """
-    Màn hình Test CAAV tổng hợp 70 câu (10 HF + 30 Cabin + 30 Law 10.1&10.2).
-    """
-    TOTAL_QUESTIONS = 70
-    PASS_SCORE = math.ceil(TOTAL_QUESTIONS * 0.75)  # 53/70
-    test_key_prefix = key_prefix
-
-    for k in [f"{test_key_prefix}_started", f"{test_key_prefix}_submitted"]:
-        if k not in st.session_state:
-            st.session_state[k] = False
-    if f"{test_key_prefix}_questions" not in st.session_state:
-        st.session_state[f"{test_key_prefix}_questions"] = []
-    if f"{test_key_prefix}_info" not in st.session_state:
-        st.session_state[f"{test_key_prefix}_info"] = {}
-
-    score = 0
-
-    # ── MÀN HÌNH BẮT ĐẦU ──
-    if not st.session_state[f"{test_key_prefix}_started"]:
-        st.markdown('<div class="result-title"><h3>🎓 LÀM BÀI TEST CAAV TỔNG HỢP</h3></div>', unsafe_allow_html=True)
-        st.markdown(f"""
-        <div style="background:rgba(255,215,0,0.08); border-left:4px solid #FFD700; padding:18px 24px;
-                    border-radius:10px; margin-bottom:20px; font-size:18px; line-height:2.2; text-align:center;">
-        📋 Tổng số câu hỏi: <b>{TOTAL_QUESTIONS} câu</b><br>
-        🧠 Human Factor: <b>10 câu</b> &nbsp;|&nbsp;
-        ✈️ CAAV Cabin: <b>30 câu</b> &nbsp;|&nbsp;
-        ⚖️ CAAV Law (10.1 & 10.2): <b>30 câu</b><br>
-        🎯 Điểm đạt (PASS): <b>{PASS_SCORE}/{TOTAL_QUESTIONS}</b>
-        </div>
-        """, unsafe_allow_html=True)
-
-        if st.button("🚀 Bắt đầu Bài Test CAAV", key=f"{test_key_prefix}_start_btn"):
-            qs, info = build_caav_full_test_questions()
-            if not qs:
-                err = info.get("error", "Lỗi không xác định")
-                st.error(f"❌ {err}")
-                return
-            st.session_state[f"{test_key_prefix}_questions"] = qs
-            st.session_state[f"{test_key_prefix}_info"]      = info
-            st.session_state[f"{test_key_prefix}_started"]   = True
-            st.session_state[f"{test_key_prefix}_submitted"] = False
-            st.rerun()
-        return
-
-    test_batch = st.session_state[f"{test_key_prefix}_questions"]
-    info       = st.session_state[f"{test_key_prefix}_info"]
-
-    # ── ĐANG LÀM BÀI ──
-    if not st.session_state[f"{test_key_prefix}_submitted"]:
-        st.markdown('<div class="result-title"><h3>⏳ ĐANG LÀM BÀI TEST CAAV</h3></div>', unsafe_allow_html=True)
-
-        for i, q in enumerate(test_batch, start=1):
-            q_key         = f"{test_key_prefix}_q_{i}_{hash(q['question'])}"
-            translation_key = f"trans_{q_key}"
-            is_active     = (translation_key == st.session_state.active_translation_key)
-
-            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
-
-            st.toggle(
-                "🌐 Dịch Câu hỏi & Đáp án sang Tiếng Việt",
-                value=is_active,
-                key=f"toggle_{translation_key}",
-                on_change=on_translate_toggle,
-                args=(translation_key,)
-            )
-            if is_active:
-                translated_content = st.session_state.translations.get(translation_key)
-                if not isinstance(translated_content, str):
-                    st.session_state.translations[translation_key] = translate_text(build_translation_text_for_qa(q))
-                    translated_content = st.session_state.translations[translation_key]
-                st.info(translated_content, icon="🌐")
-
-            opts_display = [o.replace("(*)", "").strip() for o in q["options"]]
-            st.radio("Chọn đáp án:", opts_display, index=None, key=q_key)
-            st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
-
-        col_l, col_mid, col_r = st.columns([1, 2, 1])
-        with col_mid:
-            if st.button("📬 Nộp bài", key=f"{test_key_prefix}_submit_btn", use_container_width=True):
-                st.session_state[f"{test_key_prefix}_submitted"] = True
-                st.rerun()
-        return
-
-    # ── KẾT QUẢ ──
-    st.markdown('<div class="result-title"><h3>📊 KẾT QUẢ BÀI TEST CAAV</h3></div>', unsafe_allow_html=True)
-
-    for i, q in enumerate(test_batch, start=1):
-        q_key   = f"{test_key_prefix}_q_{i}_{hash(q['question'])}"
-        correct = clean_text(q["answer"])
-        user_ans = st.session_state.get(q_key)
-        is_correct = False
-
-        if user_ans is not None:
-            opts_display = [o.replace("(*)", "").strip() for o in q["options"]]
-            if user_ans in opts_display:
-                user_ans_idx = opts_display.index(user_ans)
-                user_ans_clean = clean_text(q["options"][user_ans_idx])
-                is_correct = (user_ans_clean == correct)
-
-        src_label = q.get('_source', '')
-        src_badge = {"HF": "🧠 HF", "CABIN": "✈️ Cabin", "LAW": "⚖️ Law"}.get(src_label, "")
-
-        translation_key = f"trans_{q_key}"
-        is_active = (translation_key == st.session_state.active_translation_key)
-
-        st.markdown(
-            f'<div class="bank-question-text">{i}. {q["question"]} '
-            f'<span style="font-size:14px;color:#FFD700;font-weight:400;">{src_badge}</span></div>',
-            unsafe_allow_html=True
-        )
-
-        st.toggle(
-            "🌐 Dịch Câu hỏi & Đáp án sang Tiếng Việt",
-            value=is_active,
-            key=f"toggle_{translation_key}",
-            on_change=on_translate_toggle,
-            args=(translation_key,)
-        )
-        if is_active:
-            translated_content = st.session_state.translations.get(translation_key)
-            if not isinstance(translated_content, str):
-                st.session_state.translations[translation_key] = translate_text(build_translation_text_for_qa(q))
-                translated_content = st.session_state.translations[translation_key]
-            st.info(translated_content, icon="🌐")
-
-        for opt in q["options"]:
-            opt_clean   = clean_text(opt)
-            opt_display = opt.replace("(*)", "").strip()
-            if opt_clean == correct:
-                extra_class = "correct-answer"
-                opt_display += " (*)"
-            else:
-                extra_class = ""
-            st.markdown(f'<div class="bank-answer-text {extra_class}">{opt_display}</div>', unsafe_allow_html=True)
-
-        if is_correct:
-            st.success(f"✅ Đúng – Đáp án: {q['answer']}")
-            score += 1
-        else:
-            st.error(f"❌ Sai – Đáp án đúng: {q['answer']}")
-        st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
-
-    # Tổng kết
-    pass_score = math.ceil(TOTAL_QUESTIONS * 0.75)
-    result_color = "#00ff00" if score >= pass_score else "#ff4444"
-    st.markdown(f"""
-    <div style="background:rgba(0,0,0,0.6); border:2px solid {result_color}; border-radius:12px;
-                padding:20px; text-align:center; margin:20px 0;">
-        <div style="font-size:28px; font-weight:900; color:{result_color};">
-            🎯 KẾT QUẢ: {score}/{TOTAL_QUESTIONS}
-        </div>
-        <div style="font-size:18px; color:#FFD700; margin-top:8px;">
-            🧠 Human Factor: {info.get('hf_count',0)} câu &nbsp;|&nbsp;
-            ✈️ Cabin: {info.get('cabin_count',0)} câu &nbsp;|&nbsp;
-            ⚖️ Law: {info.get('law_count',0)} câu
-        </div>
-        <div style="font-size:16px; color:#ccc; margin-top:6px;">
-            {"🏆 ĐẠT – Chúc mừng bạn!" if score >= pass_score else f"❌ CHƯA ĐẠT – Cần đạt tối thiểu {pass_score}/{TOTAL_QUESTIONS}"}
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-
-    if st.button("🔄 Làm lại bài test CAAV", key=f"{test_key_prefix}_reset_btn"):
-        st.session_state[f"{test_key_prefix}_started"]   = False
-        st.session_state[f"{test_key_prefix}_submitted"] = False
-        st.session_state[f"{test_key_prefix}_questions"] = []
-        st.session_state[f"{test_key_prefix}_info"]      = {}
-        st.session_state.active_translation_key = None
-        for i, q in enumerate(test_batch, start=1):
-            st.session_state.pop(f"{test_key_prefix}_q_{i}_{hash(q['question'])}", None)
-        st.rerun()
 
 
 def build_docwise_test_questions():
@@ -1696,12 +1452,12 @@ setTimeout(function() {
                 # Ẩn dấu (*) nếu chưa nộp bài trong Test Mode
                 opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
-                    extra_class = "correct-answer"
+                    color_style = "color:#00ff00 !important;"
                     # Chỉ hiện thị (*) sau khi nộp bài
                     opt_display += " (*)"
                 else:
-                    extra_class = ""
-                st.markdown(f'<div class="bank-answer-text {extra_class}">{opt_display}</div>', unsafe_allow_html=True)
+                    color_style = "color:#FFFFFF !important;"
+                st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
 
             if is_correct:
                 score += 1
@@ -1978,13 +1734,13 @@ setTimeout(function() {
                 opt_display = opt.replace("(*)", "").strip()
 
                 if opt_clean == correct:
-                    extra_class = "correct-answer"
+                    color_style = "color:#00ff00 !important;"
                     # Chỉ hiển thị (*) sau khi nộp bài
                     opt_display += " (*)"
                 else:
-                    extra_class = ""
+                    color_style = "color:#FFFFFF !important;"
                     
-                st.markdown(f'<div class="bank-answer-text {extra_class}">{opt_display}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
 
             if is_correct: score += 1
             st.info(f"Đáp án đúng: **{q['answer']}**", icon="💡")
@@ -2010,6 +1766,172 @@ setTimeout(function() {
 # ====================================================
 # 🖥️ GIAO DIỆN STREAMLIT
 # ====================================================
+def build_appendix_specific_test_questions(appendix_short):
+    """
+    Tạo bộ đề cho từng phụ lục:
+    - PL1, PL2, PL5: 50 câu ngẫu nhiên.
+    - PL3, PL4: 3 paragraph ngẫu nhiên từ PL3 & PL4.
+    """
+    if any(x in appendix_short for x in ["Phụ lục 1", "Phụ lục 2", "Phụ lục 5"]):
+        if "Phụ lục 1" in appendix_short: qs = parse_pl1("PL1.docx")
+        elif "Phụ lục 2" in appendix_short: qs = parse_pl2("PL2.docx")
+        else: qs = parse_pl5_specialized("PL5.docx")
+        
+        if not qs: return [], 0
+        return random.sample(qs, min(50, len(qs))), 50
+    else:
+        # PL3 & PL4 combined
+        all_pl3 = parse_pl3_passage_bank("PL3.docx")
+        all_pl4 = parse_pl4_law_process("PL4.docx")
+        groups = {}
+        for q in all_pl3 + all_pl4:
+            g = q.get('group', 'Unknown')
+            groups.setdefault(g, []).append(q)
+            
+        if not groups: return [], 0
+        chosen = random.sample(list(groups.keys()), min(3, len(groups)))
+        final = []
+        for c in chosen:
+            final.extend(groups[c])
+        return final, len(final)
+
+def display_appendix_test_mode(appendix_full_name):
+    appendix_short = appendix_full_name.split(':')[0].strip()
+    test_key_prefix = f"appendix_test_{appendix_short.replace(' ', '_').lower()}"
+    PASS_THRESHOLD = 70 # điểm pass 70/100
+    
+    if f"{test_key_prefix}_started" not in st.session_state:
+        st.session_state[f"{test_key_prefix}_started"] = False
+    if f"{test_key_prefix}_submitted" not in st.session_state:
+        st.session_state[f"{test_key_prefix}_submitted"] = False
+    if f"{test_key_prefix}_questions" not in st.session_state:
+        st.session_state[f"{test_key_prefix}_questions"] = []
+
+    if not st.session_state[f"{test_key_prefix}_started"]:
+        st.markdown(f'<div class="result-title"><h3>📝 LÀM BÀI TEST {appendix_short.upper()}</h3></div>', unsafe_allow_html=True)
+        
+        # Mô tả cơ cấu đề
+        if any(x in appendix_short for x in ["Phụ lục 1", "Phụ lục 2", "Phụ lục 5"]):
+            desc = "📋 Tổng số câu hỏi: <b>50 câu (ngẫu nhiên)</b>"
+        else:
+            desc = "📋 Cơ cấu đề: <b>3 Paragraph ngẫu nhiên (từ PL3 & PL4)</b>"
+            
+        st.markdown(f"""
+        <div style="background:rgba(255,215,0,0.08); border-left:4px solid #FFD700; padding:16px 22px; border-radius:8px; margin-bottom:20px; font-size:18px; text-align:center; line-height:2;">
+        {desc}<br>
+        🎯 Điểm đạt (PASS): <b>70/100</b>
+        </div>
+        """, unsafe_allow_html=True)
+
+        if st.button(f"🚀 Bắt đầu Bài Test {appendix_short}", key=f"{test_key_prefix}_start_btn"):
+            with st.spinner("⏳ Đang tạo đề thi..."):
+                test_qs, total_val = build_appendix_specific_test_questions(appendix_short)
+            if not test_qs:
+                st.error("❌ Không thể tạo đề thi. Vui lòng kiểm tra lại file dữ liệu.")
+                return
+            st.session_state[f"{test_key_prefix}_questions"] = test_qs
+            st.session_state[f"{test_key_prefix}_started"] = True
+            st.session_state[f"{test_key_prefix}_submitted"] = False
+            st.rerun()
+        return
+
+    test_batch = st.session_state[f"{test_key_prefix}_questions"]
+    current_passage_id = None
+    passage_counter = 0
+
+    if not st.session_state[f"{test_key_prefix}_submitted"]:
+        st.markdown(f'<div class="result-title"><h3>⏳ ĐANG LÀM BÀI TEST {appendix_short.upper()}</h3></div>', unsafe_allow_html=True)
+        for i, q in enumerate(test_batch, start=1):
+            q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}"
+            translation_key = f"trans_{q_key}"
+            is_active = (translation_key == st.session_state.active_translation_key)
+            
+            # Đoạn văn
+            passage_content = q.get('paragraph_content', '').strip()
+            group_name = q.get('group', '')
+            if passage_content:
+                passage_id = f"passage_{group_name}_{hash(passage_content)}"
+                is_passage_active = (passage_id == st.session_state.active_passage_translation)
+                if passage_id != current_passage_id:
+                    passage_counter += 1
+                    st.markdown(f'<div class="paragraph-title">**Paragraph {passage_counter}**</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="paragraph-content-box">{passage_content}</div>', unsafe_allow_html=True)
+                    st.toggle("🌐 Dịch đoạn văn", value=is_passage_active, key=f"toggle_passage_{passage_id}_{test_key_prefix}", on_change=on_passage_translate_toggle, args=(passage_id,))
+                    if is_passage_active:
+                        trans = st.session_state.passage_translations_cache.get(passage_id)
+                        if not trans:
+                            trans = translate_passage_content(passage_content)
+                            st.session_state.passage_translations_cache[passage_id] = trans
+                        st.info(trans)
+                    current_passage_id = passage_id
+
+            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+            st.toggle("🌐 Dịch Q&A", value=is_active, key=f"toggle_{translation_key}_{test_key_prefix}", on_change=on_translate_toggle, args=(translation_key,))
+            if is_active:
+                trans_qa = st.session_state.translations.get(translation_key)
+                if not isinstance(trans_qa, str):
+                    st.session_state.translations[translation_key] = translate_text(build_translation_text_for_qa(q))
+                    trans_qa = st.session_state.translations[translation_key]
+                st.info(trans_qa)
+
+            options_clean = [opt.replace("(*)", "").strip() for opt in q["options"]]
+            st.radio("", options_clean, index=None, key=q_key)
+            st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+            
+        if st.button("✅ Nộp bài", key=f"{test_key_prefix}_submit_btn"):
+            st.session_state[f"{test_key_prefix}_submitted"] = True
+            st.rerun()
+    else:
+        score = 0
+        current_passage_id = None
+        passage_counter = 0
+        for i, q in enumerate(test_batch, start=1):
+            q_key = f"{test_key_prefix}_q_{i}_{hash(q['question'])}"
+            selected_opt = st.session_state.get(q_key)
+            correct = clean_text(q["answer"])
+            is_correct = (selected_opt is not None) and (clean_text(selected_opt) == correct)
+            
+            # Rendering results
+            passage_content = q.get('paragraph_content', '').strip()
+            group_name = q.get('group', '')
+            if passage_content:
+                passage_id = f"passage_{group_name}_{hash(passage_content)}"
+                if passage_id != current_passage_id:
+                    passage_counter += 1
+                    st.markdown(f'<div class="paragraph-title">**Paragraph {passage_counter}**</div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="paragraph-content-box">{passage_content}</div>', unsafe_allow_html=True)
+                    current_passage_id = passage_id
+
+            st.markdown(f'<div class="bank-question-text">{i}. {q["question"]}</div>', unsafe_allow_html=True)
+            for opt in q["options"]:
+                opt_clean = clean_text(opt)
+                opt_display = opt.replace("(*)", "").strip()
+                if opt_clean == correct:
+                    color = "color:#00ff00 !important;"
+                    opt_display += " (*)"
+                else:
+                    color = "color:#FFFFFF !important;"
+                st.markdown(f'<div class="bank-answer-text" style="{color}">{opt_display}</div>', unsafe_allow_html=True)
+
+            if is_correct: score += 1
+            else: st.error(f"❌ Sai – Đáp án đúng: {q['answer']}")
+            st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+
+        final_score = (score / len(test_batch)) * 100 if test_batch else 0
+        st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {int(final_score)}/100</h3></div>', unsafe_allow_html=True)
+        if final_score >= PASS_THRESHOLD:
+            st.balloons()
+            st.success(f"🎊 **CHÚC MỪNG!** Bạn đã ĐẠT (PASS) — {score}/{len(test_batch)} câu đúng.")
+        else:
+            st.error(f"😢 **KHÔNG ĐẠT (FAIL)**. Bạn đạt {int(final_score)}/100.")
+        
+        if st.button("🔄 Làm lại Bài Test", key=f"{test_key_prefix}_restart"):
+            for i, q in enumerate(test_batch, start=1):
+                st.session_state.pop(f"{test_key_prefix}_q_{i}_{hash(q['question'])}", None)
+            st.session_state[f"{test_key_prefix}_started"] = False
+            st.session_state[f"{test_key_prefix}_submitted"] = False
+            st.rerun()
+
 st.set_page_config(page_title="Ngân hàng trắc nghiệm", layout="wide")
 
 PC_IMAGE_FILE = "PC2.jpg"
@@ -2336,15 +2258,6 @@ div[data-testid="stMarkdownContainer"] p {{
     color: #FFFFE0 !important;
 }}
 
-/* ĐÁP ÁN SAU KHI NỘP BÀI: màu trắng mặc định, xanh lá cho đáp án đúng */
-div[data-testid="stMarkdownContainer"] .bank-answer-text {{
-    color: #FFFFFF !important;
-}}
-div[data-testid="stMarkdownContainer"] .bank-answer-text.correct-answer {{
-    color: #00ff00 !important;
-    text-shadow: 0 0 8px rgba(0, 255, 0, 0.4) !important;
-}}
-
 /* TIÊU ĐỀ CHÍNH - override mọi rule khác */
 #bank-main-title div[data-testid="stMarkdownContainer"] p,
 #bank-main-title div[data-testid="stMarkdownContainer"] span,
@@ -2577,8 +2490,7 @@ div.stSelectbox label, div.stSelectbox label p, div.stSelectbox label span,
 
 /* Ngoại lệ: câu hỏi và đáp án giữ màu riêng */
 .bank-question-text, .bank-question-text * {{ color: #FF8C00 !important; }}
-.bank-answer-text {{ color: #FFFFFF !important; }}
-.bank-answer-text.correct-answer {{ color: #00ff00 !important; text-shadow: 0 0 8px rgba(0, 255, 0, 0.4) !important; }}
+.bank-answer-text {{ color: #FFFFFF; }}
 .stRadio label, .stRadio label span,
 .stRadio label p, .stRadio label div {{ color: #FFFFFF !important; }}
 .paragraph-content-box, .paragraph-content-box * {{ color: #F0F0F0 !important; }}
@@ -2913,22 +2825,7 @@ if exam_choice != "----" and bank_choice != "----":
            (bank_choice == "Ngân hàng Human Factor"):
             for q in questions:
                 q["question"] = strip_question_number(q["question"])
-
-        # XÓA DÒNG TIÊU ĐỀ BỊ PARSE NHẦM THÀNH CÂU HỎI
-        # CAAV Law (mọi module): dòng đầu chứa "caav law", "bộ câu hỏi", "question bank"
-        # CAAV Cabin: dòng đầu chứa "question bank"
-        def _is_header_question(q):
-            qt = q.get("question", "").strip().lower()
-            return (
-                "caav law" in qt or
-                "bo cau hoi" in qt or
-                "bộ câu hỏi" in qt or
-                "question bank" in qt or
-                qt.startswith("caav")
-            )
-
-        if bank_choice == "Ngân hàng CAAV Law" or bank_choice == "Ngân hàng CAAV Cabin":
-            questions = [q for q in questions if not _is_header_question(q)]    
+    
     if not questions:
         # Cập nhật thông báo lỗi để phù hợp với logic (*) cho cả PL1 và PL2
         st.error(f"❌ Không đọc được câu hỏi nào từ file **{source}**. Vui lòng kiểm tra file và cấu trúc thư mục (đảm bảo file nằm trong thư mục gốc hoặc thư mục 'pages/'), và kiểm tra lại định dạng đáp án đúng (dùng dấu `(*)`).")
@@ -3068,31 +2965,36 @@ if exam_choice != "----" and bank_choice != "----":
             # Hàng 2: nút Làm bài test — canh giữa bằng cột đối xứng
             _, col_test, _ = st.columns([1, 1, 1])
             with col_test:
-                if st.button("📝 Làm bài test", key="btn_start_test", use_container_width=True):
-                    st.session_state.current_mode = "test"
-                    st.session_state.active_translation_key = None
-                    st.session_state.active_passage_translation = None
-                    st.session_state.current_passage_id_displayed = None
-                    bank_slug_new = bank_choice.split()[-1].lower()
-                    test_key_prefix = f"test_{bank_slug_new}"
-                    st.session_state.pop(f"{test_key_prefix}_started", None)
-                    st.session_state.pop(f"{test_key_prefix}_submitted", None)
-                    st.session_state.pop(f"{test_key_prefix}_questions", None)
-                    st.rerun()
-
-            # Nút Làm bài test CAAV tổng hợp (chỉ hiện khi đang ở kỳ thi CAAV)
-            if exam_choice == "Thi CAAV":
-                _, col_caav_test, _ = st.columns([1, 2, 1])
-                with col_caav_test:
-                    if st.button("🎓 Làm bài test CAAV (70 câu tổng hợp)", key="btn_caav_full_test", use_container_width=True):
-                        st.session_state.current_mode = "caav_full_test"
+                if is_docwise:
+                    pl_short = st.session_state.get('doc_selected', '').split(':')[0].strip()
+                    if st.button(f"📝 Làm bài test {pl_short}", key="btn_start_appendix_test", use_container_width=True):
+                        st.session_state.current_mode = "appendix_test"
                         st.session_state.active_translation_key = None
                         st.session_state.active_passage_translation = None
                         st.session_state.current_passage_id_displayed = None
-                        # Reset state bài test CAAV tổng hợp
-                        for _k in ["caav_full_test_started", "caav_full_test_submitted",
-                                   "caav_full_test_questions", "caav_full_test_info"]:
-                            st.session_state.pop(_k, None)
+                        st.rerun()
+                else:
+                    if st.button("📝 Làm bài test", key="btn_start_test", use_container_width=True):
+                        st.session_state.current_mode = "test"
+                        st.session_state.active_translation_key = None
+                        st.session_state.active_passage_translation = None
+                        st.session_state.current_passage_id_displayed = None
+                        bank_slug_new = bank_choice.split()[-1].lower()
+                        test_key_prefix = f"test_{bank_slug_new}"
+                        st.session_state.pop(f"{test_key_prefix}_started", None)
+                        st.session_state.pop(f"{test_key_prefix}_submitted", None)
+                        st.session_state.pop(f"{test_key_prefix}_questions", None)
+                        st.rerun()
+
+            # Hàng 3: nút Thi thử Docwise (chỉ khi là Docwise)
+            if is_docwise:
+                _, col_docwise, _ = st.columns([1, 1, 1])
+                with col_docwise:
+                    if st.button("🎓 Thi thử Docwise", key="btn_start_docwise_test", use_container_width=True):
+                        st.session_state.current_mode = "test"
+                        st.session_state.active_translation_key = None
+                        st.session_state.active_passage_translation = None
+                        st.session_state.current_passage_id_displayed = None
                         st.rerun()
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
             
@@ -3299,12 +3201,12 @@ if exam_choice != "----" and bank_choice != "----":
                             opt_display = opt.replace("(*)", "").strip()
                             opt_clean = clean_text(opt)
                             if opt_clean == correct:
-                                extra_class = "correct-answer"
+                                color_style = "color:#00ff00 !important;"
                                 # Hiện lại (*) cho đáp án đúng
                                 opt_display += " (*)"
                             else:
-                                extra_class = ""
-                            st.markdown(f'<div class="bank-answer-text {extra_class}">{opt_display}</div>', unsafe_allow_html=True)
+                                color_style = "color:#FFFFFF !important;"
+                            st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
                         
                         if is_correct: 
                             st.success(f"✅ Đúng – Đáp án: {q['answer']}")
@@ -3368,6 +3270,16 @@ setTimeout(function() {
         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
         display_all_questions(questions)
         
+    elif st.session_state.current_mode == "appendix_test":
+        if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
+            st.session_state.current_mode = "group"
+            st.session_state.active_translation_key = None
+            st.session_state.active_passage_translation = None
+            st.session_state.current_passage_id_displayed = None
+            st.rerun()
+        st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
+        display_appendix_test_mode(st.session_state.doc_selected)
+
     elif st.session_state.current_mode == "test":
         if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
             st.session_state.current_mode = "group"
@@ -3380,13 +3292,3 @@ setTimeout(function() {
             display_docwise_test_mode(bank_choice)
         else:
             display_test_mode(questions, bank_choice)
-
-    elif st.session_state.current_mode == "caav_full_test":
-        if st.button("⬅️ Quay lại chế độ Luyện tập theo nhóm"):
-            st.session_state.current_mode = "group"
-            st.session_state.active_translation_key = None
-            st.session_state.active_passage_translation = None
-            st.session_state.current_passage_id_displayed = None
-            st.rerun()
-        st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
-        display_caav_full_test_mode()
