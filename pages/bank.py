@@ -1770,7 +1770,8 @@ def build_appendix_specific_test_questions(appendix_short):
     """
     Tạo bộ đề cho từng phụ lục:
     - PL1, PL2, PL5: 50 câu ngẫu nhiên.
-    - PL3, PL4: 3 paragraph ngẫu nhiên từ PL3 & PL4.
+    - PL3: 3 paragraph ngẫu nhiên từ PL3.
+    - PL4: 3 paragraph ngẫu nhiên từ PL4.
     """
     if any(x in appendix_short for x in ["Phụ lục 1", "Phụ lục 2", "Phụ lục 5"]):
         if "Phụ lục 1" in appendix_short: qs = parse_pl1("PL1.docx")
@@ -1779,21 +1780,31 @@ def build_appendix_specific_test_questions(appendix_short):
         
         if not qs: return [], 0
         return random.sample(qs, min(50, len(qs))), 50
-    else:
-        # PL3 & PL4 combined
+    elif "Phụ lục 3" in appendix_short:
         all_pl3 = parse_pl3_passage_bank("PL3.docx")
-        all_pl4 = parse_pl4_law_process("PL4.docx")
         groups = {}
-        for q in all_pl3 + all_pl4:
+        for q in all_pl3:
             g = q.get('group', 'Unknown')
             groups.setdefault(g, []).append(q)
-            
         if not groups: return [], 0
         chosen = random.sample(list(groups.keys()), min(3, len(groups)))
         final = []
         for c in chosen:
             final.extend(groups[c])
         return final, len(final)
+    elif "Phụ lục 4" in appendix_short:
+        all_pl4 = parse_pl4_law_process("PL4.docx")
+        groups = {}
+        for q in all_pl4:
+            g = q.get('group', 'Unknown')
+            groups.setdefault(g, []).append(q)
+        if not groups: return [], 0
+        chosen = random.sample(list(groups.keys()), min(3, len(groups)))
+        final = []
+        for c in chosen:
+            final.extend(groups[c])
+        return final, len(final)
+    return [], 0
 
 def display_appendix_test_mode(appendix_full_name):
     appendix_short = appendix_full_name.split(':')[0].strip()
@@ -1814,7 +1825,7 @@ def display_appendix_test_mode(appendix_full_name):
         if any(x in appendix_short for x in ["Phụ lục 1", "Phụ lục 2", "Phụ lục 5"]):
             desc = "📋 Tổng số câu hỏi: <b>50 câu (ngẫu nhiên)</b>"
         else:
-            desc = "📋 Cơ cấu đề: <b>3 Paragraph ngẫu nhiên (từ PL3 & PL4)</b>"
+            desc = f"📋 Cơ cấu đề: <b>3 Paragraph ngẫu nhiên (từ {appendix_short})</b>"
             
         st.markdown(f"""
         <div style="background:rgba(255,215,0,0.08); border-left:4px solid #FFD700; padding:16px 22px; border-radius:8px; margin-bottom:20px; font-size:18px; text-align:center; line-height:2;">
