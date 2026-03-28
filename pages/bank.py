@@ -1135,10 +1135,7 @@ def display_all_questions(questions):
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
 
             if is_correct:
-                st.success(f"✅ Đúng – Đáp án: {q['answer']}")
                 score += 1
-            else:
-                st.error(f"❌ Sai – Đáp án đúng: {q['answer']}")
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
 
         st.markdown(f'<div class="result-title"><h3>🎯 KẾT QUẢ: {score}/{len(questions)}</h3></div>', unsafe_allow_html=True)
@@ -1257,7 +1254,6 @@ def display_caav_mock_test_mode():
                 st.markdown(f'<div class="bank-answer-text" style="{color}">{opt_display}</div>', unsafe_allow_html=True)
 
             if is_correct: score += 1
-            else: st.error(f"❌ Sai – Đáp án đúng: {q['answer']}")
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
 
         final_score_scaled = (score / len(test_batch)) * 100
@@ -1573,7 +1569,6 @@ setTimeout(function() {
 
             if is_correct:
                 score += 1
-            st.info(f"Đáp án đúng: **{q['answer']}**", icon="💡")
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
 
         total_q = len(test_batch)
@@ -1853,7 +1848,6 @@ setTimeout(function() {
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
 
             if is_correct: score += 1
-            st.info(f"Đáp án đúng: **{q['answer']}**", icon="💡")
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
         
         total_q = len(test_batch)
@@ -2034,7 +2028,6 @@ def display_appendix_test_mode(appendix_full_name):
                 st.markdown(f'<div class="bank-answer-text" style="{color}">{opt_display}</div>', unsafe_allow_html=True)
 
             if is_correct: score += 1
-            else: st.error(f"❌ Sai – Đáp án đúng: {q['answer']}")
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
 
         final_score = (score / len(test_batch)) * 100 if test_batch else 0
@@ -3336,10 +3329,7 @@ if exam_choice != "----" and bank_choice != "----":
                             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
                         
                         if is_correct: 
-                            st.success(f"✅ Đúng – Đáp án: {q['answer']}")
                             score += 1
-                        else: 
-                            st.error(f"❌ Sai – Đáp án đúng: {q['answer']}")
                         st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True) 
 
                     st.markdown('<div id="group-result"></div>', unsafe_allow_html=True)
