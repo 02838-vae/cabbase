@@ -367,11 +367,14 @@ def parse_cabbank(source):
         for i, m in enumerate(matches):
             s = m.end()
             e = matches[i + 1].start() if i + 1 < len(matches) else len(p)
-            opt_body = clean_text(p[s:e])
+            raw_body = p[s:e]
+            # Nhận diện (*) ở cuối đáp án (ví dụ: "A. text (*)")
+            has_star_end = bool(re.search(r'\(\*\)\s*$', raw_body.strip()))
+            opt_body = clean_text(raw_body)
             letter = m.group('letter').lower()
             opt = f"{letter}. {opt_body}"
             current["options"].append(opt)
-            if m.group("star"): current["answer"] = opt
+            if m.group("star") or has_star_end: current["answer"] = opt
 
     if current["question"] and current["options"]:
         if not current["answer"] and current["options"]:
@@ -430,11 +433,14 @@ def parse_lawbank(source):
         for i, m in enumerate(matches):
             s = m.end()
             e = matches[i+1].start() if i+1 < len(matches) else len(p)
-            opt_body = clean_text(p[s:e])
+            raw_body = p[s:e]
+            # Nhận diện (*) ở cuối đáp án (ví dụ: "A. text (*)")
+            has_star_end = bool(re.search(r'\(\*\)\s*$', raw_body.strip()))
+            opt_body = clean_text(raw_body)
             letter = m.group("letter").lower()
             option = f"{letter}. {opt_body}"
             current["options"].append(option)
-            if m.group("star"): current["answer"] = option
+            if m.group("star") or has_star_end: current["answer"] = option
 
     if current["question"] and current["options"]:
         if not current["answer"] and current["options"]:
@@ -1131,6 +1137,8 @@ def display_all_questions(questions):
                 opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
                     ans_class = "bank-answer-text answer-correct"
+                elif selected_opt is not None and clean_text(selected_opt) == opt_clean:
+                    ans_class = "bank-answer-text answer-selected-wrong"
                 else:
                     ans_class = "bank-answer-text answer-wrong"
                 st.markdown(f'<div class="{ans_class}">{opt_display}</div>', unsafe_allow_html=True)
@@ -1250,6 +1258,8 @@ def display_caav_mock_test_mode():
                 opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
                     ans_class = "bank-answer-text answer-correct"
+                elif selected_opt is not None and clean_text(selected_opt) == opt_clean:
+                    ans_class = "bank-answer-text answer-selected-wrong"
                 else:
                     ans_class = "bank-answer-text answer-wrong"
                 st.markdown(f'<div class="{ans_class}">{opt_display}</div>', unsafe_allow_html=True)
@@ -1564,6 +1574,8 @@ setTimeout(function() {
                 opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
                     ans_class = "bank-answer-text answer-correct"
+                elif selected_opt is not None and clean_text(selected_opt) == opt_clean:
+                    ans_class = "bank-answer-text answer-selected-wrong"
                 else:
                     ans_class = "bank-answer-text answer-wrong"
                 st.markdown(f'<div class="{ans_class}">{opt_display}</div>', unsafe_allow_html=True)
@@ -2024,6 +2036,8 @@ def display_appendix_test_mode(appendix_full_name):
                 opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
                     ans_class = "bank-answer-text answer-correct"
+                elif selected_opt is not None and clean_text(selected_opt) == opt_clean:
+                    ans_class = "bank-answer-text answer-selected-wrong"
                 else:
                     ans_class = "bank-answer-text answer-wrong"
                 st.markdown(f'<div class="{ans_class}">{opt_display}</div>', unsafe_allow_html=True)
@@ -2626,8 +2640,17 @@ div.bank-answer-text.answer-correct,
 .stApp .bank-answer-text.answer-correct,
 .stApp div.bank-answer-text.answer-correct {{
     color: #00ff00 !important;
+    font-weight: 900 !important;
 }}
-/* Đáp án sai → màu trắng */
+/* Người dùng chọn sai → màu vàng */
+.bank-answer-text.answer-selected-wrong,
+div.bank-answer-text.answer-selected-wrong,
+.stApp .bank-answer-text.answer-selected-wrong,
+.stApp div.bank-answer-text.answer-selected-wrong {{
+    color: #FFD700 !important;
+    font-weight: 900 !important;
+}}
+/* Đáp án không được chọn và sai → màu trắng */
 .bank-answer-text.answer-wrong,
 div.bank-answer-text.answer-wrong,
 .stApp .bank-answer-text.answer-wrong,
@@ -3341,6 +3364,8 @@ if exam_choice != "----" and bank_choice != "----":
                             opt_clean = clean_text(opt)
                             if opt_clean == correct:
                                 ans_class = "bank-answer-text answer-correct"
+                            elif selected_opt is not None and clean_text(selected_opt) == opt_clean:
+                                ans_class = "bank-answer-text answer-selected-wrong"
                             else:
                                 ans_class = "bank-answer-text answer-wrong"
                             st.markdown(f'<div class="{ans_class}">{opt_display}</div>', unsafe_allow_html=True)
