@@ -1130,9 +1130,9 @@ def display_all_questions(questions):
                 # Ẩn dấu (*) khi hiển thị kết quả
                 opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
-                    color_style = "color:#00FF00 !important; font-weight:bold; background-color:rgba(0,255,0,0.15); border-left:5px solid #00FF00; padding-left:10px; margin:5px 0;"
+                    color_style = "color:#00ff00 !important;"
                 else:
-                    color_style = "color:#FFFFFF !important; opacity: 0.8;"
+                    color_style = "color:#FFFFFF !important;"
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
 
             if is_correct:
@@ -1249,9 +1249,9 @@ def display_caav_mock_test_mode():
                 opt_clean = clean_text(opt)
                 opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
-                    color = "color:#00FF00 !important; font-weight:bold; background-color:rgba(0,255,0,0.15); border-left:5px solid #00FF00; padding-left:10px; margin:5px 0;"
+                    color = "color:#00ff00 !important;"
                 else:
-                    color = "color:#FFFFFF !important; opacity: 0.8;"
+                    color = "color:#FFFFFF !important;"
                 st.markdown(f'<div class="bank-answer-text" style="{color}">{opt_display}</div>', unsafe_allow_html=True)
 
             if is_correct: score += 1
@@ -1563,9 +1563,9 @@ setTimeout(function() {
                 # Ẩn dấu (*) nếu chưa nộp bài trong Test Mode
                 opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
-                    color_style = "color:#00FF00 !important; font-weight:bold; background-color:rgba(0,255,0,0.15); border-left:5px solid #00FF00; padding-left:10px; margin:5px 0;"
+                    color_style = "color:#00ff00 !important;"
                 else:
-                    color_style = "color:#FFFFFF !important; opacity: 0.8;"
+                    color_style = "color:#FFFFFF !important;"
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
 
             if is_correct:
@@ -1842,9 +1842,9 @@ setTimeout(function() {
                 opt_display = opt.replace("(*)", "").strip()
 
                 if opt_clean == correct:
-                    color_style = "color:#00FF00 !important; font-weight:bold; background-color:rgba(0,255,0,0.15); border-left:5px solid #00FF00; padding-left:10px; margin:5px 0;"
+                    color_style = "color:#00ff00 !important;"
                 else:
-                    color_style = "color:#FFFFFF !important; opacity: 0.8;"
+                    color_style = "color:#FFFFFF !important;"
                     
                 st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
 
@@ -2023,9 +2023,9 @@ def display_appendix_test_mode(appendix_full_name):
                 opt_clean = clean_text(opt)
                 opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
-                    color = "color:#00FF00 !important; font-weight:bold; background-color:rgba(0,255,0,0.15); border-left:5px solid #00FF00; padding-left:10px; margin:5px 0;"
+                    color = "color:#00ff00 !important;"
                 else:
-                    color = "color:#FFFFFF !important; opacity: 0.8;"
+                    color = "color:#FFFFFF !important;"
                 st.markdown(f'<div class="bank-answer-text" style="{color}">{opt_display}</div>', unsafe_allow_html=True)
 
             if is_correct: score += 1
@@ -3324,9 +3324,9 @@ if exam_choice != "----" and bank_choice != "----":
                             opt_display = opt.replace("(*)", "").strip()
                             opt_clean = clean_text(opt)
                             if opt_clean == correct:
-                                color_style = "color:#00FF00 !important; font-weight:bold; background-color:rgba(0,255,0,0.15); border-left:5px solid #00FF00; padding-left:10px; margin:5px 0;"
+                                color_style = "color:#00ff00 !important;"
                             else:
-                                color_style = "color:#FFFFFF !important; opacity: 0.8;"
+                                color_style = "color:#FFFFFF !important;"
                             st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
                         
                         if is_correct: 
