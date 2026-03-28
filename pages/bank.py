@@ -1130,10 +1130,10 @@ def display_all_questions(questions):
                 # Ẩn dấu (*) khi hiển thị kết quả
                 opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
-                    color_style = "color:#00ff00 !important;"
+                    ans_class = "bank-answer-text answer-correct"
                 else:
-                    color_style = "color:#FFFFFF !important;"
-                st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
+                    ans_class = "bank-answer-text answer-wrong"
+                st.markdown(f'<div class="{ans_class}">{opt_display}</div>', unsafe_allow_html=True)
 
             if is_correct:
                 score += 1
@@ -1249,10 +1249,10 @@ def display_caav_mock_test_mode():
                 opt_clean = clean_text(opt)
                 opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
-                    color = "color:#00ff00 !important;"
+                    ans_class = "bank-answer-text answer-correct"
                 else:
-                    color = "color:#FFFFFF !important;"
-                st.markdown(f'<div class="bank-answer-text" style="{color}">{opt_display}</div>', unsafe_allow_html=True)
+                    ans_class = "bank-answer-text answer-wrong"
+                st.markdown(f'<div class="{ans_class}">{opt_display}</div>', unsafe_allow_html=True)
 
             if is_correct: score += 1
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
@@ -1563,10 +1563,10 @@ setTimeout(function() {
                 # Ẩn dấu (*) nếu chưa nộp bài trong Test Mode
                 opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
-                    color_style = "color:#00ff00 !important;"
+                    ans_class = "bank-answer-text answer-correct"
                 else:
-                    color_style = "color:#FFFFFF !important;"
-                st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
+                    ans_class = "bank-answer-text answer-wrong"
+                st.markdown(f'<div class="{ans_class}">{opt_display}</div>', unsafe_allow_html=True)
 
             if is_correct:
                 score += 1
@@ -1842,11 +1842,11 @@ setTimeout(function() {
                 opt_display = opt.replace("(*)", "").strip()
 
                 if opt_clean == correct:
-                    color_style = "color:#00ff00 !important;"
+                    ans_class = "bank-answer-text answer-correct"
                 else:
-                    color_style = "color:#FFFFFF !important;"
+                    ans_class = "bank-answer-text answer-wrong"
                     
-                st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
+                st.markdown(f'<div class="{ans_class}">{opt_display}</div>', unsafe_allow_html=True)
 
             if is_correct: score += 1
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
@@ -2023,10 +2023,10 @@ def display_appendix_test_mode(appendix_full_name):
                 opt_clean = clean_text(opt)
                 opt_display = opt.replace("(*)", "").strip()
                 if opt_clean == correct:
-                    color = "color:#00ff00 !important;"
+                    ans_class = "bank-answer-text answer-correct"
                 else:
-                    color = "color:#FFFFFF !important;"
-                st.markdown(f'<div class="bank-answer-text" style="{color}">{opt_display}</div>', unsafe_allow_html=True)
+                    ans_class = "bank-answer-text answer-wrong"
+                st.markdown(f'<div class="{ans_class}">{opt_display}</div>', unsafe_allow_html=True)
 
             if is_correct: score += 1
             st.markdown('<div class="question-separator"></div>', unsafe_allow_html=True)
@@ -2618,6 +2618,22 @@ div[data-testid="stAlert"] li,
 div[data-testid="stAlert"] span,
 div[data-testid="stAlert"] div {{ color: #FFFFFF !important; }}
 div[data-testid="stAlert"] strong {{ color: #FFD700 !important; }}
+
+/* ĐÁP ÁN SAU KHI NỘP BÀI: CLASS-BASED (KHÔNG BỊ OVERRIDE BỞI GLOBAL RULE) */
+/* Đáp án đúng → màu xanh lá */
+.bank-answer-text.answer-correct,
+div.bank-answer-text.answer-correct,
+.stApp .bank-answer-text.answer-correct,
+.stApp div.bank-answer-text.answer-correct {{
+    color: #00ff00 !important;
+}}
+/* Đáp án sai → màu trắng */
+.bank-answer-text.answer-wrong,
+div.bank-answer-text.answer-wrong,
+.stApp .bank-answer-text.answer-wrong,
+.stApp div.bank-answer-text.answer-wrong {{
+    color: #FFFFFF !important;
+}}
 
 /* MOBILE RESPONSIVE */
 @media (max-width: 768px) {{
@@ -3324,10 +3340,10 @@ if exam_choice != "----" and bank_choice != "----":
                             opt_display = opt.replace("(*)", "").strip()
                             opt_clean = clean_text(opt)
                             if opt_clean == correct:
-                                color_style = "color:#00ff00 !important;"
+                                ans_class = "bank-answer-text answer-correct"
                             else:
-                                color_style = "color:#FFFFFF !important;"
-                            st.markdown(f'<div class="bank-answer-text" style="{color_style}">{opt_display}</div>', unsafe_allow_html=True)
+                                ans_class = "bank-answer-text answer-wrong"
+                            st.markdown(f'<div class="{ans_class}">{opt_display}</div>', unsafe_allow_html=True)
                         
                         if is_correct: 
                             score += 1
