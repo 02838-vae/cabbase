@@ -1046,67 +1046,57 @@ def parse_pl4_law_process(source):
         })
     return final_questions
 def parse_pl5_specialized(source):
-    """
-    Parser cho định dạng PL5 (Chuyên ngành)
-    - Câu hỏi bắt đầu bằng số: 1., 2., 3., ...
-    - Đáp án A., B., C. với câu đúng có dấu (*) ở cuối
-    """
     paras = read_docx_paragraphs(source)
     if not paras: return []
 
     questions = []
     current = {"question": "", "options": [], "answer": ""}
     
-    # Pattern nhận diện số thứ tự câu hỏi
-    q_start_pat = re.compile(r'^\s*(\d+)\s*[\.\)]\s*')
-    # Pattern nhận diện đáp án A, B, C (với hoặc không có dấu (*) ở cuối)
-    opt_pat = re.compile(r'^\s*([A-Ca-c])[\.\)]\s+(.+?)(\s*\(\*\)\s*)?$')
-    
+    # Regex nhận diện câu hỏi (Ví dụ: 1. hoặc 1))
+    q_start_pat = re.compile(r'^\s*(\d+)[\.\)]\s*') 
+    # Regex nhận diện option (a. b. c. d.)
+    opt_prefix_pat = re.compile(r'^\s*[A-Da-d]([\.\)]|\s+)\s*') 
+
     for p in paras:
         clean_p = clean_text(p)
         if not clean_p: continue
         
-        # Kiểm tra xem có phải câu hỏi mới không
-        q_match = q_start_pat.match(clean_p)
-        if q_match:
-            # Lưu câu hỏi cũ nếu có
+        # Nếu gặp dòng bắt đầu bằng số (ví dụ: "1. What is...") -> Chuyển câu mới
+        if q_start_pat.match(clean_p):
+            # Lưu câu cũ nếu hợp lệ
             if current["question"] and current["options"]:
-                if not current["answer"] and current["options"]:
-                    current["answer"] = current["options"][0]
                 questions.append(current)
             
-            # Bắt đầu câu hỏi mới (Xóa số thứ tự đầu câu)
-            q_text = strip_question_number(clean_p)
-            current = {"question": q_text, "options": [], "answer": ""}
-            continue
+            # Khởi tạo câu mới
+            current = {
+                "question": strip_question_number(clean_p),
+                "options": [],
+                "answer": ""
+            }
         
-        # Kiểm tra xem có phải đáp án không
-        opt_match = opt_pat.match(clean_p)
-        if opt_match and current["question"]:
-            letter = opt_match.group(1).lower()
-            opt_text = opt_match.group(2).strip()
-            has_star = opt_match.group(3) is not None
+        # Nếu gặp dòng có định dạng đáp án (a, b, c, d)
+        elif opt_prefix_pat.match(clean_p) and current["question"]:
+            is_correct = "(*)" in clean_p
+            text_only = clean_p.replace("(*)", "").strip()
             
-            # Loại bỏ dấu (*) khỏi text nếu có
-            if has_star:
-                opt_text = opt_text.replace("(*)", "").strip()
+            # Chuẩn hóa tiền tố thành a., b., ...
+            idx = len(current["options"])
+            label = chr(97 + idx) # tạo a, b, c, d
+            opt_content = opt_prefix_pat.sub('', text_only).strip()
+            full_opt = f"{label}. {opt_content}"
             
-            full_option = f"{letter}. {opt_text}"
-            current["options"].append(full_option)
-            
-            if has_star:
-                current["answer"] = full_option
-        else:
-            # Nếu không phải câu hỏi mới hoặc đáp án, nối vào câu hỏi hiện tại
-            if current["question"]:
-                current["question"] += " " + clean_p
-    
-    # Lưu câu hỏi cuối cùng
+            current["options"].append(full_opt)
+            if is_correct:
+                current["answer"] = full_opt
+        
+        # Nếu là văn bản bình thường (không phải số câu, không phải đáp án) -> Cộng dồn vào câu hỏi
+        elif current["question"] and not current["options"]:
+            current["question"] += " " + clean_p
+
+    # Add câu cuối cùng
     if current["question"] and current["options"]:
-        if not current["answer"] and current["options"]:
-            current["answer"] = current["options"][0]
         questions.append(current)
-    
+        
     return questions
 # ====================================================
 # 🌟 HÀM: LOGIC DỊCH ĐỘC QUYỀN (EXCLUSIVE TRANSLATION)
