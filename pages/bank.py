@@ -1065,6 +1065,8 @@ def parse_pl5_specialized(source):
         if q_start_pat.match(clean_p):
             # Lưu câu cũ nếu hợp lệ
             if current["question"] and current["options"]:
+                if not current["answer"]:
+                    current["answer"] = current["options"][0]
                 questions.append(current)
             
             # Khởi tạo câu mới
@@ -1076,8 +1078,8 @@ def parse_pl5_specialized(source):
         
         # Nếu gặp dòng có định dạng đáp án (a, b, c, d)
         elif opt_prefix_pat.match(clean_p) and current["question"]:
-            is_correct = "(*)" in clean_p
-            text_only = clean_p.replace("(*)", "").strip()
+            is_correct = "(*)" in p  # Kiểm tra trên raw text TRƯỚC khi clean_text xóa (*)
+            text_only = clean_p  # clean_p đã không còn (*) (do clean_text đã xóa)
             
             # Chuẩn hóa tiền tố thành a., b., ...
             idx = len(current["options"])
@@ -1095,6 +1097,8 @@ def parse_pl5_specialized(source):
 
     # Add câu cuối cùng
     if current["question"] and current["options"]:
+        if not current["answer"]:
+            current["answer"] = current["options"][0]
         questions.append(current)
         
     return questions
