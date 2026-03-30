@@ -613,178 +613,331 @@ def parse_pl2(source):
 # 🧩 PARSER 5: PHỤ LỤC 3 - BÀI ĐỌC HIỂU (PASSAGE-BASED) - ĐÃ SỬA LỖI PARAGRAPH 2
 # ====================================================
 # ... (parse_pl3_passage_bank remains unchanged)
+# ── PL3 Parser v2: handles all 58 Paragraphs and all question formats ──────
+# Patterns for PL3 parser
+_pl3_paragraph_start_pat = re.compile(r'^\s*Paragraph\s*(\d+)', re.I)
+_pl3_q_with_text_pat     = re.compile(r'^\s*(?P<q_num>\d+)\s*[\.\.\):\t]\s*(?P<rest>\S.+)', re.I)
+_pl3_q_standalone_pat    = re.compile(r'^\s*(?P<q_num>\d+)\s*[\.\.\)]\s*$', re.I)
+_pl3_opt_letter_pat      = re.compile(r'^\s*(?P<letter>[A-Da-d])[\.\.\)]\s*(?P<text>.+?)(\s*\(\*\))?\s*$', re.I)
+_pl3_true_false_pat      = re.compile(r'^\s*(TRUE|FALSE|NOT\s+GIVEN)\s*(\(\*\))?\s*$', re.I)
+_pl3_correct_pat         = re.compile(r'\(\*\)')
+_pl3_q_num_only_pat      = re.compile(r'^\d+[\.\)]\s*$')
+_PL3_LETTERS             = 'ABCD'
+
+def _pl3_iter_all_paragraphs(document):
+    """Yield paragraphs in document order including those inside tables."""
+    from docx.oxml.ns import qn as _qn
+    from docx.text.paragraph import Paragraph as _Para
+    from docx.table import Table as _Table
+    body = document.element.body
+    for child in body.iterchildren():
+        if child.tag == _qn('w:p'):
+            yield _Para(child, document)
+        elif child.tag == _qn('w:tbl'):
+            for row in _Table(child, document).rows:
+                for cell in row.cells:
+                    for p in cell.paragraphs:
+                        yield p
+
+def _pl3_parse_tab_line(line):
+    """Parse tab-separated option line. Returns None if no valid option group found."""
+    parts = [p.strip() for p in line.split('\t') if p.strip()]
+    if len(parts) < 2: return None
+    if any(_pl3_q_num_only_pat.match(p) for p in parts): return None
+    raw = []
+    proper_count = 0
+    for p in parts:
+        m = _pl3_opt_letter_pat.match(p)
+        if m:
+            proper_count += 1
+            raw.append((m.group('letter').upper(), m.group('text').strip(), bool(_pl3_correct_pat.search(p))))
+        else:
+            raw.append((None, p, bool(_pl3_correct_pat.search(p))))
+    if proper_count == 0 or len(raw) < 2: return None
+    used = {r[0] for r in raw if r[0]}
+    avail = [l for l in _PL3_LETTERS if l not in used]
+    ai = 0
+    final = []
+    for letter, text, ic in raw:
+        if letter is None:
+            if ai < len(avail): letter = avail[ai]; ai += 1
+            else: continue
+        final.append((letter, text, ic))
+    return final if len(final) >= 2 else None
+
+def _pl3_is_structural(line):
+    if _pl3_paragraph_start_pat.match(line): return True
+    if _pl3_q_with_text_pat.match(line): return True
+    if _pl3_q_standalone_pat.match(line): return True
+    if _pl3_opt_letter_pat.match(line): return True
+    if _pl3_true_false_pat.match(line): return True
+    if '\t' in line and _pl3_parse_tab_line(line): return True
+    return False
+
+def _pl3_check_3plain_opts(all_lines, idx):
+    """Check if lines[idx+1..idx+3] are 3 plain options with exactly 1 (*).
+    Also ensures none of the options looks like a question (ends with ?)."""
+    n = len(all_lines)
+    if idx + 3 >= n: return False
+    opts = [all_lines[idx+1], all_lines[idx+2], all_lines[idx+3]]
+    if any(_pl3_is_structural(o) for o in opts): return False
+    # Reject if any option looks like a Q (ends with "?")
+    if any(o.rstrip().endswith('?') for o in opts): return False
+    return sum(bool(_pl3_correct_pat.search(o)) for o in opts) == 1
+
+# ... (parse_pl3_passage_bank remains unchanged)
 def parse_pl3_passage_bank(source):
     """
-    Parser cho định dạng PL3 (Bài đọc hiểu)
-    - Fix: Xử lý đúng cho câu hỏi điền chỗ trống (Paragraph 2) bằng cách tạo câu hỏi tường minh.
+    Parser hoàn chỉnh cho PL3.docx - xử lý tất cả 58 Paragraphs và mọi format câu hỏi:
+    - Câu hỏi có số (1. / 1) / 1: / 1\tA.)
+    - Câu hỏi không có số (plain text trước các đáp án)
+    - Option A có hoặc không có ký tự chữ cái
+    - Fill-in-blank (số đứng một mình, hoặc số + tab + A.)
+    - TRUE/FALSE/NOT GIVEN
+    - Tab-separated inline options
+    - Đọc cả paragraph lẫn table cells theo thứ tự trong document
     """
     path = find_file_path(source)
     if not path:
         print(f"Lỗi không tìm thấy file DOCX: {source}")
         return []
-    
-    questions = []
-    current_group = None
-    group_content = ""
-    current_q_num = 0
-    
-    # Regex cho tiêu đề đoạn văn mới
-    paragraph_start_pat = re.compile(r'^\s*Paragraph\s*(\d+)\s*\.\s*', re.I)
-    # Regex cho số thứ tự câu hỏi
-    q_start_pat = re.compile(r'^\s*(?P<q_num>\d+)\s*[\.\)]\s*', re.I)
-    # Regex cho đáp án, bao gồm ký tự (*)
-    opt_pat_single = re.compile(r'^\s*(?P<letter>[A-Da-d])[\.\)]\s*(?P<text>.*?)(\s*\(\*\))?$', re.I)
-    
     try:
         doc = Document(path)
     except Exception as e:
         print(f"Lỗi đọc file DOCX: {source}. Chi tiết: {e}")
         return []
 
-    for paragraph in doc.paragraphs:
-        text = paragraph.text.strip()
-        if not text: continue
-        
-        is_new_paragraph_group = paragraph_start_pat.match(text)
-        match_q_start = q_start_pat.match(text)
-        
-        # 1. BẮT ĐẦU NHÓM ĐOẠN VĂN MỚI
-        if is_new_paragraph_group:
-            # Lưu câu hỏi/group cũ nếu có
-            if current_group is not None and current_group.get('question'):
-                questions.append(current_group)
-            
-            group_name = is_new_paragraph_group.group(0).strip()
-            current_group = {
-                'group_name': group_name,
-                'paragraph_content': "",
-                'question': "",
-                'options': {},
-                'correct_answer': "",
-                'number': 0
-            }
-            group_content = "" # Reset nội dung đoạn văn
-            current_q_num = 0 # Reset số thứ tự câu hỏi
-            continue
-            
-        if current_group is None:
-            # Bỏ qua nếu chưa bắt đầu Paragraph X .
-            continue
-            
-        # 2. BẮT ĐẦU CÂU HỎI MỚI
-        if match_q_start:
-            # Lưu câu hỏi cũ nếu có
-            if current_group.get('question') and current_group.get('options'):
-                 questions.append(current_group)
-            
-            q_num_str = match_q_start.group('q_num')
-            remaining_text = text[match_q_start.end():].strip()
-            
-            # --- XÁC ĐỊNH LOẠI CÂU HỎI & NỘI DUNG ---
-            # Type B: Fill-in-the-blank (Passage content contains patterns like (1), (2)...)
-            # Check for fill-in-the-blank context inside the collected passage content
-            is_fill_in_blank = bool(re.search(r'\(\s*\d+\s*\)', group_content))
-            
-            if is_fill_in_blank:
-                # Type B: Question is implicit, remaining text is the first option (A.)
-                q_text = f"Chọn đáp án thích hợp cho ô trống **({q_num_str})** trong đoạn văn trên."
-                first_option_text = remaining_text # This is the first option (A.)
-            else:
-                # Type A: Reading Comp. Remaining text is the question body.
-                q_text = remaining_text
-                first_option_text = ""
-            
-            # Bắt đầu câu hỏi mới
-            current_group = {
-                'group_name': current_group['group_name'],
-                # Gán nội dung đoạn văn đã thu thập
-                'paragraph_content': group_content.strip(), 
-                'question': clean_text(q_text),
-                'options': {},
-                'correct_answer': "",
-                # Gán số thứ tự câu hỏi cục bộ (local number)
-                'number': int(q_num_str) 
-            }
-            current_q_num = int(q_num_str)
-            
-            # Process the first option (if Fill-in-the-blank mode)
-            if is_fill_in_blank and first_option_text:
-                match_opt = opt_pat_single.match(first_option_text)
-                if match_opt:
-                    letter = match_opt.group('letter').upper()
-                    opt_text_raw = match_opt.group('text').strip()
-                    is_correct = match_opt.group(3) is not None
-                    
-                    opt_text = clean_text(opt_text_raw.replace("(*)", "").strip())
-                    full_opt_text = f"{letter}. {opt_text}"
-                    
-                    current_group['options'][letter] = full_opt_text
-                    if is_correct:
-                        current_group['correct_answer'] = letter
-            
-        # 3. ĐANG TRONG CÂU HỎI (Option hoặc phần tiếp theo của câu hỏi)
-        elif current_q_num > 0:
-            match_opt = opt_pat_single.match(text)
-            if match_opt:
-                # Xử lý các options B., C. cho cả hai loại câu hỏi
-                letter = match_opt.group('letter').upper()
-                opt_text_raw = match_opt.group('text').strip()
-                is_correct = match_opt.group(3) is not None
-                
-                # Loại bỏ ký tự thừa (*), sau đó clean text
-                opt_text = clean_text(opt_text_raw.replace("(*)", "").strip())
-                
-                # Lấy toàn bộ text để hiển thị (bao gồm cả ký tự A. B. C.)
-                full_opt_text = f"{letter}. {opt_text}"
-                
-                # Dùng chữ cái làm key để dễ dàng tìm đáp án đúng
-                current_group['options'][letter] = full_opt_text
-                
-                if is_correct:
-                    current_group['correct_answer'] = letter
-            else:
-                # Nếu không phải option, thêm vào câu hỏi (chỉ áp dụng cho Reading Comp - Type A)
-                current_group['question'] += " " + clean_text(text)
-                
-        # 4. ĐANG THU THẬP NỘI DUNG ĐOẠN VĂN
-        elif current_group is not None and current_q_num == 0 and not is_new_paragraph_group:
-            # Dùng paragraph.text + "\n" để giữ nguyên bố cục xuống dòng
-            group_content += paragraph.text + "\n"
-        
-    # Lưu câu hỏi cuối cùng
-    if current_group is not None and current_group.get('question'):
-        questions.append(current_group)
+    all_lines = [p.text.strip() for p in _pl3_iter_all_paragraphs(doc) if p.text.strip()]
+    n = len(all_lines)
 
-    # Chuẩn hóa cấu trúc để tương thích với các hàm hiển thị khác
+    questions     = []
+    current_group = None
+    group_content = ''
+    current_q     = None
+    local_q_num   = 0
+    letter_ctr    = 0
+    in_passage    = True
+
+    def flush():
+        nonlocal current_q, letter_ctr
+        if current_q:
+            q = current_q
+            if not q['correct_answer'] and q['options']:
+                q['correct_answer'] = list(q['options'].keys())[0]
+            if q['correct_answer'] and q['options']:
+                questions.append(q)
+        current_q = None; letter_ctr = 0
+
+    def start_q(text, num=None):
+        nonlocal current_q, local_q_num, letter_ctr, in_passage
+        flush(); local_q_num += 1; in_passage = False
+        current_q = {
+            'group_name': current_group,
+            'paragraph_content': group_content.strip(),
+            'question': clean_text(text),
+            'options': {}, 'correct_answer': '',
+            'number': num if num is not None else local_q_num
+        }
+        letter_ctr = 0
+
+    def add_opt(letter, text, ic):
+        if not current_q: return
+        L = letter.upper()
+        current_q['options'][L] = f'{L}. {clean_text(text)}'
+        if ic and not current_q['correct_answer']: current_q['correct_answer'] = L
+
+    def add_auto(text, ic):
+        nonlocal letter_ctr
+        if not current_q or letter_ctr >= 4: return
+        L = _PL3_LETTERS[letter_ctr]; letter_ctr += 1
+        current_q['options'][L] = f'{L}. {clean_text(text)}'
+        if ic and not current_q['correct_answer']: current_q['correct_answer'] = L
+
+    i = 0
+    while i < n:
+        line = all_lines[i]
+        nxt  = all_lines[i+1] if i+1 < n else ''
+        nxt2 = all_lines[i+2] if i+2 < n else ''
+
+        # 0. Paragraph X header
+        m_para = _pl3_paragraph_start_pat.match(line)
+        if m_para:
+            flush()
+            current_group = f'Paragraph {m_para.group(1)} .'
+            group_content = ''; in_passage = True; local_q_num = 0
+            i += 1; continue
+
+        if current_group is None:
+            i += 1; continue
+
+        # 1. Tab-separated line
+        if '\t' in line:
+            tab_opts = _pl3_parse_tab_line(line)
+            if tab_opts and len(tab_opts) >= 2:
+                m_inline = _pl3_q_with_text_pat.match(line)
+                if m_inline:
+                    inner = _pl3_parse_tab_line(m_inline.group('rest'))
+                    if inner and len(inner) >= 2:
+                        q_num = int(m_inline.group('q_num'))
+                        start_q(f'Chọn đáp án thích hợp cho ô trống ({q_num}) trong đoạn văn trên.', q_num)
+                        for lt, tx, ic in inner: add_opt(lt, tx, ic)
+                        i += 1; continue
+                if current_q:
+                    for lt, tx, ic in tab_opts: add_opt(lt, tx, ic)
+                i += 1; continue
+
+        # 2. Numbered Q with text: "1. text" / "1: text" / "1.\tA. opt"
+        m_qtext = _pl3_q_with_text_pat.match(line)
+        if m_qtext:
+            q_num_val = int(m_qtext.group('q_num'))
+            rest_val  = m_qtext.group('rest').strip()
+            m_rest_opt = _pl3_opt_letter_pat.match(rest_val)
+            if m_rest_opt and m_rest_opt.group('letter').upper() == 'A':
+                start_q(f'Chọn đáp án thích hợp cho ô trống ({q_num_val}) trong đoạn văn trên.', q_num_val)
+                add_opt(m_rest_opt.group('letter'), m_rest_opt.group('text').strip(), bool(_pl3_correct_pat.search(rest_val)))
+            else:
+                start_q(rest_val, q_num_val)
+            i += 1; continue
+
+        # 3. Standalone number "1."
+        m_qalone = _pl3_q_standalone_pat.match(line)
+        if m_qalone:
+            q_num = int(m_qalone.group('q_num'))
+            start_q(f'Chọn đáp án thích hợp cho ô trống ({q_num}) trong đoạn văn trên.', q_num)
+            i += 1; continue
+
+        # 4. Letter option A./B./C./D.
+        m_opt = _pl3_opt_letter_pat.match(line)
+        if m_opt:
+            letter = m_opt.group('letter').upper()
+            text   = m_opt.group('text').strip()
+            ic     = bool(_pl3_correct_pat.search(line))
+            if letter == 'A':
+                if current_q and current_q['options']:
+                    q_num = local_q_num + 1
+                    start_q(f'Chọn đáp án thích hợp cho ô trống ({q_num}) trong đoạn văn trên.', q_num)
+                    add_opt(letter, text, ic)
+                elif current_q:
+                    add_opt(letter, text, ic)
+                else:
+                    nxt_is_B = bool(_pl3_opt_letter_pat.match(nxt)) and nxt.upper().lstrip()[:1] == 'B'
+                    if ic or nxt_is_B:
+                        q_num = local_q_num + 1
+                        start_q(f'Chọn đáp án thích hợp cho ô trống ({q_num}) trong đoạn văn trên.', q_num)
+                        add_opt(letter, text, ic)
+                    else:
+                        group_content += line + '\n'
+            else:
+                if current_q:
+                    add_opt(letter, text, ic)
+            i += 1; continue
+
+        # 5. TRUE/FALSE/NOT GIVEN
+        m_tf = _pl3_true_false_pat.match(line)
+        if m_tf:
+            if current_q:
+                add_auto(m_tf.group(1), bool(_pl3_correct_pat.search(line)))
+            i += 1; continue
+
+        # 6. Plain text
+        nxt_is_tab   = '\t' in nxt and bool(_pl3_parse_tab_line(nxt))
+        nxt_is_B     = bool(_pl3_opt_letter_pat.match(nxt))  and nxt.upper().lstrip()[:1]  == 'B'
+        nxt2_is_B    = bool(_pl3_opt_letter_pat.match(nxt2)) and nxt2.upper().lstrip()[:1] == 'B'
+        nxt_is_tf    = bool(_pl3_true_false_pat.match(nxt))
+        nxt_is_opt   = bool(_pl3_opt_letter_pat.match(nxt)) or nxt_is_tf
+        nxt_is_plain = not _pl3_is_structural(nxt) and bool(nxt)
+
+        # 6a. Q [plainA] B.  (2-step lookahead)
+        if nxt_is_plain and nxt2_is_B:
+            if current_q and current_q['options']: start_q(line)
+            elif not current_q: start_q(line)
+            else: current_q['question'] += ' ' + clean_text(line)
+            i += 1; continue
+
+        # 6b. Q followed by tab-opt
+        if nxt_is_tab:
+            if current_q and current_q['options']: start_q(line)
+            elif not current_q: start_q(line)
+            else: current_q['question'] += ' ' + clean_text(line)
+            i += 1; continue
+
+        # 6c. If current_q already HAS options and line ends with "?" → new Q
+        if current_q and current_q['options'] and line.rstrip().endswith('?'):
+            start_q(line); i += 1; continue
+
+        # 6c2. Plain option A (current_q, no opts yet, next is B./TF)
+        if current_q and letter_ctr == 0 and (nxt_is_B or nxt_is_tf):
+            add_auto(line, bool(_pl3_correct_pat.search(line)))
+            i += 1; continue
+
+        # 6d. 4-lookahead: Q + 3 plain options (P28/P38/P40/P46/P49 pattern)
+        if _pl3_check_3plain_opts(all_lines, i):
+            if current_q and current_q['options']: start_q(line)
+            elif not current_q: start_q(line)
+            else: current_q['question'] += ' ' + clean_text(line)
+            i += 1; continue
+
+        # 6e. current_q + no opts + 2-4 plain lines with (*) ahead
+        if current_q and letter_ctr == 0:
+            cands = [line]
+            j = i + 1
+            while j < n and j < i + 4:
+                l2 = all_lines[j]
+                if _pl3_is_structural(l2) or _pl3_paragraph_start_pat.match(l2): break
+                # Stop if candidate looks like a question (ends with "?")
+                if l2.rstrip().endswith('?'): break
+                cands.append(l2); j += 1
+            if 2 <= len(cands) <= 4 and any(_pl3_correct_pat.search(c) for c in cands):
+                for c in cands: add_auto(c, bool(_pl3_correct_pat.search(c)))
+                i = j; continue
+
+        # 6f. No current_q + next 2-3 plain with (*)
+        if not current_q and not _pl3_is_structural(line):
+            cands_ahead = []
+            j = i + 1
+            while j < n and j < i + 4:
+                l2 = all_lines[j]
+                if _pl3_is_structural(l2) or _pl3_paragraph_start_pat.match(l2): break
+                # Stop if candidate looks like a question (ends with "?")
+                if l2.rstrip().endswith('?'): break
+                cands_ahead.append(l2); j += 1
+            if 2 <= len(cands_ahead) <= 3 and any(_pl3_correct_pat.search(c) for c in cands_ahead):
+                start_q(line)
+                for c in cands_ahead: add_auto(c, bool(_pl3_correct_pat.search(c)))
+                i = j; continue
+
+        # 6g. Unnumbered Q: next is letter opt or TF
+        if nxt_is_opt:
+            if current_q and current_q['options']: start_q(line); i += 1; continue
+            elif not current_q: start_q(line); i += 1; continue
+
+        # 6h. Passage content or Q continuation
+        if in_passage and not current_q: group_content += line + '\n'
+        elif current_q: current_q['question'] += ' ' + clean_text(line)
+        else: group_content += line + '\n'
+
+        i += 1
+
+    flush()
+
     final_questions = []
-    
-    # Gán số thứ tự toàn cục (global number) cho mỗi câu hỏi
-    global_q_counter = 1 
+    global_q_counter = 1
     for q in questions:
-        if not q.get('correct_answer') and len(q.get('options', {})) > 0:
-             # Nếu không có (*), coi option đầu là đúng (hoặc bỏ qua nếu cần nghiêm ngặt hơn)
-             q['correct_answer'] = list(q['options'].keys())[0]
-        
-        # Nếu vẫn không có đáp án hoặc không có options, bỏ qua
-        if not q.get('correct_answer') or not q.get('options'):
-            continue
-        
-        # Chuyển options từ dict sang list of strings (chỉ values)
-        options_list = list(q['options'].values()) 
-        
+        opts = list(q['options'].values())
+        if not opts: continue
+        ans = q['options'].get(q['correct_answer'], opts[0])
         final_questions.append({
             'question': q['question'],
-            'options': options_list, 
-            'answer': q['options'][q['correct_answer']], # Lưu đáp án đúng dưới dạng string (A. Text)
-            'number': q['number'], # Số thứ tự câu hỏi cục bộ (1, 2, 3...)
-            'global_number': global_q_counter, # Bổ sung số thứ tự toàn cục
-            # Sử dụng 'group' thay cho 'group_name' để tương thích với display_all_questions/test_mode 
-            'group': q['group_name'], 
-            'paragraph_content': q['paragraph_content'] # Nội dung đoạn văn
+            'options': opts,
+            'answer': ans,
+            'number': q['number'],
+            'global_number': global_q_counter,
+            'group': q['group_name'],
+            'paragraph_content': q['paragraph_content']
         })
         global_q_counter += 1
-
     return final_questions
+
 def parse_pl4_law_process(source):
     path = find_file_path(source)
     if not path: return []
