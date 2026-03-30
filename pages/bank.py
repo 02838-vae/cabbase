@@ -123,11 +123,16 @@ def clean_text(s: str) -> str:
     ]
     
     for pattern in standalone_patterns:
-        for match in re.finditer(pattern, temp_s): # Đã sửa: finditer thành re.finditer (Fix NameError cũ)
+        # Sử dụng finditer và thay thế từng match một cách an toàn hơn
+        matches = list(re.finditer(pattern, temp_s))
+        # Duyệt ngược để không làm thay đổi index của các match chưa xử lý
+        for match in reversed(matches):
             matched_text = match.group()
-            placeholder = f"__PLACEHOLDER_{counter}__"
+            # Sử dụng ký tự đặc biệt không trùng lặp để làm placeholder
+            placeholder = f"@@@PH_{counter}@@@"
             placeholders[placeholder] = matched_text
-            temp_s = temp_s.replace(matched_text, placeholder, 1)
+            # Thay thế chính xác tại vị trí match
+            temp_s = temp_s[:match.start()] + placeholder + temp_s[match.end():]
             counter += 1
     
     # BƯỚC 2.5: Xóa ký hiệu đáp án (*) và khoảng trắng thừa để so sánh
@@ -135,7 +140,7 @@ def clean_text(s: str) -> str:
     temp_s = re.sub(r'\s+', ' ', temp_s).strip()
     
     # BƯỚC 3: Xóa khoảng trắng thừa (2+ spaces → 1 space)
-    temp_s = re.sub(r'\s{2,}', ' ', temp_s)
+    # temp_s = re.sub(r'\s{2,}', ' ', temp_s) # Đã gộp ở trên
     
     # BƯỚC 4: Khôi phục các pattern đã lưu
     for placeholder, original in placeholders.items():
@@ -897,21 +902,22 @@ def parse_pl5_specialized(source):
     
     # Pattern nhận diện số thứ tự câu hỏi
     q_start_pat = re.compile(r'^\s*(\d+)\s*[\.\)]\s*')
-    # Pattern nhận diện đáp án A, B, C (với hoặc không có dấu (*) ở cuối)
-    opt_pat = re.compile(r'^\s*([A-Da-d])[\.\)]\s+(.*?)\s*(\(\*\))?\s*$')
+    # Pattern nhận diện đáp án A, B, C, D, E (với hoặc không có dấu (*) ở cuối)
+    # Hỗ trợ nhiều loại dấu ngăn cách: . ) / -
+    opt_pat = re.compile(r'^\s*(?P<letter>[A-Ea-e])[\.\)\/\-]\s*(?P<text>.*?)\s*(?P<star>\(\*\))?\s*$', re.I)
     
     for p in paras:
-        clean_p = p.strip() # Dùng strip() thay vì clean_text() để giữ nguyên (*)
+        clean_p = p.strip()
         if not clean_p: continue
         
-        # Kiểm tra xem có phải câu hỏi mới không
+        # Kiểm tra xem có phải câu hỏi mới không (Ví dụ: "1.", "Câu 1:", "1.1.")
         q_match = q_start_pat.match(clean_p)
         if q_match:
             # Lưu câu hỏi cũ nếu có
             if current["question"] and current["options"]:
                 questions.append(current)
             
-            # Bắt đầu câu hỏi mới (Xóa số thứ tự đầu câu)
+            # Bắt đầu câu hỏi mới
             q_text = strip_question_number(clean_p)
             current = {"question": q_text, "options": [], "answer": ""}
             continue
@@ -919,11 +925,11 @@ def parse_pl5_specialized(source):
         # Kiểm tra xem có phải đáp án không
         opt_match = opt_pat.match(clean_p)
         if opt_match and current["question"]:
-            letter = opt_match.group(1).lower()
-            opt_text = opt_match.group(2).strip()
-            has_star = opt_match.group(3) is not None
+            letter = opt_match.group("letter").lower()
+            opt_text = opt_match.group("text").strip()
+            has_star = opt_match.group("star") is not None
             
-            # Đảm bảo opt_text không còn dấu (*)
+            # Đảm bảo opt_text không còn dấu (*) nếu regex chưa bắt hết
             opt_text = opt_text.replace("(*)", "").strip()
             
             full_option = f"{letter}. {opt_text}"
@@ -933,8 +939,15 @@ def parse_pl5_specialized(source):
                 current["answer"] = full_option
         else:
             # Nếu không phải câu hỏi mới hoặc đáp án, nối vào câu hỏi hiện tại
+            # Nhưng bỏ qua nếu là các dòng rác như "Trang X", "Page X", "---"
+            junk_patterns = [r'^Trang\s+\d+', r'^Page\s+\d+', r'^-+$', r'^_+$']
+            if any(re.match(jp, clean_p, re.I) for jp in junk_patterns):
+                continue
+
             if current["question"]:
-                current["question"] += " " + clean_text(clean_p)
+                # Tránh lặp lại nội dung nếu đã có
+                if clean_text(clean_p) not in current["question"]:
+                    current["question"] += " " + clean_text(clean_p)
     
     # Lưu câu hỏi cuối cùng
     if current["question"] and current["options"]:
