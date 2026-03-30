@@ -617,8 +617,6 @@ def parse_pl3_passage_bank(source):
     """
     Parser cho định dạng PL3 (Bài đọc hiểu)
     - Fix: Xử lý đúng cho câu hỏi điền chỗ trống (Paragraph 2) bằng cách tạo câu hỏi tường minh.
-    - Fix: Duyệt cả paragraph lẫn table cells theo đúng thứ tự trong document
-      (nhiều câu hỏi nằm trong bảng nên doc.paragraphs bỏ sót chúng).
     """
     path = find_file_path(source)
     if not path:
@@ -631,7 +629,7 @@ def parse_pl3_passage_bank(source):
     current_q_num = 0
     
     # Regex cho tiêu đề đoạn văn mới
-    paragraph_start_pat = re.compile(r'^\s*Paragraph\s*(\d+)\s*\.?\s*', re.I)
+    paragraph_start_pat = re.compile(r'^\s*Paragraph\s*(\d+)\s*\.\s*', re.I)
     # Regex cho số thứ tự câu hỏi
     q_start_pat = re.compile(r'^\s*(?P<q_num>\d+)\s*[\.\)]\s*', re.I)
     # Regex cho đáp án, bao gồm ký tự (*)
@@ -643,26 +641,7 @@ def parse_pl3_passage_bank(source):
         print(f"Lỗi đọc file DOCX: {source}. Chi tiết: {e}")
         return []
 
-    # --- Hàm duyệt toàn bộ body theo thứ tự: paragraph + nội dung bảng ---
-    from docx.oxml.ns import qn as _qn
-    from docx.text.paragraph import Paragraph as _Para
-    from docx.table import Table as _Table
-
-    def _iter_all_paragraphs(document):
-        """Yield mọi Paragraph trong document theo thứ tự xuất hiện,
-        bao gồm cả các paragraph nằm trong ô bảng."""
-        body = document.element.body
-        for child in body.iterchildren():
-            if child.tag == _qn('w:p'):
-                yield _Para(child, document)
-            elif child.tag == _qn('w:tbl'):
-                tbl = _Table(child, document)
-                for row in tbl.rows:
-                    for cell in row.cells:
-                        for p in cell.paragraphs:
-                            yield p
-
-    for paragraph in _iter_all_paragraphs(doc):
+    for paragraph in doc.paragraphs:
         text = paragraph.text.strip()
         if not text: continue
         
@@ -684,8 +663,8 @@ def parse_pl3_passage_bank(source):
                 'correct_answer': "",
                 'number': 0
             }
-            group_content = "" # Reset nội dung đoạn văn
-            current_q_num = 0 # Reset số thứ tự câu hỏi
+            group_content = paragraph.text + "\n"
+            current_q_num = 0
             continue
             
         if current_group is None:
