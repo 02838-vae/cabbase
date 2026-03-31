@@ -707,7 +707,38 @@ def parse_pl3_passage_bank(source):
         print(f"Lỗi đọc file DOCX: {source}. Chi tiết: {e}")
         return []
 
-    all_lines = [p.text.strip() for p in _pl3_iter_all_paragraphs(doc) if p.text.strip()]
+    def _para_has_correct_formatting(p):
+        """Trả về True nếu paragraph có run được tô đậm (bold) hoặc highlight vàng — dấu hiệu đáp án đúng."""
+        for run in p.runs:
+            if run.bold:
+                return True
+            if run.font.highlight_color is not None:
+                try:
+                    from docx.enum.text import WD_COLOR_INDEX
+                    if run.font.highlight_color == WD_COLOR_INDEX.YELLOW:
+                        return True
+                except Exception:
+                    return True  # nếu có highlight bất kỳ thì coi là đúng
+        return False
+
+    def _build_line_with_marker(p):
+        """Trả về text của paragraph, tự động thêm (*) nếu phát hiện bold/highlight.
+        Chỉ inject (*) cho các dòng trông giống option (A./B./C./D.) hoặc plain option,
+        tránh inject vào nội dung đoạn văn (passage content) thường dùng bold để nhấn mạnh.
+        """
+        text = p.text.strip()
+        if not text:
+            return text
+        # Chỉ thêm (*) khi chưa có sẵn trong text
+        if _pl3_correct_pat.search(text):
+            return text
+        # Chỉ inject (*) khi dòng này trông giống option (có chữ cái A/B/C/D ở đầu, hoặc TRUE/FALSE/NOT GIVEN)
+        looks_like_option = bool(_pl3_opt_letter_pat.match(text)) or bool(_pl3_true_false_pat.match(text))
+        if looks_like_option and _para_has_correct_formatting(p):
+            return text + " (*)"
+        return text
+
+    all_lines = [_build_line_with_marker(p) for p in _pl3_iter_all_paragraphs(doc) if p.text.strip()]
     n = len(all_lines)
 
     questions     = []
@@ -961,13 +992,34 @@ def parse_pl4_law_process(source):
         print(f"Lỗi: {e}")
         return []
 
+    def _pl4_para_has_correct_fmt(p):
+        """Trả về True nếu paragraph có run bold hoặc highlight vàng."""
+        for run in p.runs:
+            if run.bold:
+                return True
+            if run.font.highlight_color is not None:
+                try:
+                    from docx.enum.text import WD_COLOR_INDEX
+                    if run.font.highlight_color == WD_COLOR_INDEX.YELLOW:
+                        return True
+                except Exception:
+                    return True
+        return False
+
     for paragraph in doc.paragraphs:
-        text = paragraph.text.strip()
-        if not text: continue
-        
+        raw_text = paragraph.text.strip()
+        if not raw_text: continue
+        # Tự động inject (*) nếu paragraph có bold/highlight và chưa có (*)
+        # Chỉ inject khi dòng trông giống option (A./B./C./D.) — tránh inject vào đoạn văn passage
+        _looks_like_pl4_opt = bool(opt_pat_single.match(raw_text))
+        if _looks_like_pl4_opt and _pl4_para_has_correct_fmt(paragraph) and '(*)' not in raw_text:
+            text = raw_text + " (*)"
+        else:
+            text = raw_text
+
         is_new_paragraph_group = paragraph_start_pat.match(text)
         match_q_start = q_start_pat.match(text)
-        
+
         if is_new_paragraph_group:
             if current_group and current_group.get('question'):
                 questions.append(current_group)
