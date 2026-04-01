@@ -561,81 +561,95 @@ def parse_pl1(source):
 # ... (parse_pl2 remains unchanged)
 def parse_pl2(source):
     """
-    Parser cho định dạng PL2 (Sử dụng ký hiệu (*) để nhận diện đáp án đúng)
+    Parser cho PL2.docx.
+    Cấu trúc mỗi câu = 4 dòng liên tiếp:
+      1. Câu hỏi (có "(level N)")
+      2. Option A: text thuần, KHÔNG có prefix "A."
+      3. Option B: bắt đầu bằng "B."
+      4. Option C: bắt đầu bằng "C."
+    Đáp án đúng: dòng option có (*) ở cuối.
     """
-    data = read_pl2_data(source) # SỬ DỤNG HÀM ĐỌC ĐÃ SỬA CHỈ LẤY TEXT
-    if not data: return []
+    path = find_file_path(source)
+    if not path:
+        return []
+    try:
+        doc = Document(path)
+    except Exception as e:
+        print(f"Lỗi đọc PL2: {e}")
+        return []
+
+    level_pat = re.compile(r'\(level\s*\d+\)', re.I)
+    opt_B_pat  = re.compile(r'^\s*B[\.\)]\s*', re.I)
+    opt_C_pat  = re.compile(r'^\s*C[\.\)]\s*', re.I)
+    opt_D_pat  = re.compile(r'^\s*D[\.\)]\s*', re.I)
+
+    # Lấy tất cả paragraphs có text
+    paras = [p for p in doc.paragraphs if p.text.strip()]
 
     questions = []
-    current = {"question": "", "options": [], "answer": ""}
-    
-    q_start_pat = re.compile(r'^\s*(\d+)[\.\)]\s*') 
-    phrase_start_pat = re.compile(r'Choose the correct group of words', re.I)
-    opt_prefix_pat = re.compile(r'^\s*[A-Ca-c]([\.\)]|\s+)\s*') 
-    labels = ["a", "b", "c"]
-    MAX_OPTIONS = 3
+    i = 0
+    while i < len(paras):
+        t = paras[i].text.strip()
 
-    def finalize_current_question(q_dict, q_list):
-        if q_dict["question"]:
-            if not q_dict["answer"] and q_dict["options"]:
-                q_dict["answer"] = q_dict["options"][0] 
-            q_list.append(q_dict)
-        return {"question": "", "options": [], "answer": ""}
-    
-    for p_data in data:
-        # Kiểm tra (*) trên raw full_text (đã inject) TRƯỚC khi clean_text xóa nó
-        raw_has_star = "(*)" in p_data["full_text"]
-        clean_p = clean_text(p_data["full_text"])
-        if not clean_p: continue
-        
-        is_q_start_phrased = phrase_start_pat.search(clean_p)
-        is_explicitly_numbered = q_start_pat.match(clean_p) 
-        is_max_options_reached = len(current["options"]) >= MAX_OPTIONS
-        is_question_started = current["question"]
-        is_first_line = not is_question_started and not current["options"]
-        
-        must_switch_q = (
-            is_first_line or                            
-            is_q_start_phrased or                       
-            (is_question_started and is_max_options_reached)
-        )
-        
-        if must_switch_q:
-            current = finalize_current_question(current, questions)
-            q_text = strip_question_number(clean_p)
-            current["question"] = q_text
-            
+        # Nhận diện câu hỏi: có "(level N)"
+        if level_pat.search(t):
+            # Xóa "(level N)" khỏi câu hỏi
+            q_text = level_pat.sub('', t).strip()
+            q_text = re.sub(r' +', ' ', q_text).strip()
+
+            opts = []  # list of (label, text, is_correct)
+
+            i += 1
+            # Đọc tối đa 3 options tiếp theo
+            while i < len(paras) and len(opts) < 3:
+                ot = paras[i].text.strip()
+
+                # Nếu gặp câu hỏi mới thì dừng
+                if level_pat.search(ot):
+                    break
+
+                is_correct = '(*)' in ot
+                # Xóa (*) khỏi text hiển thị
+                ot_clean = ot.replace('(*)', '').strip()
+
+                if opt_D_pat.match(ot_clean):
+                    opt_body = opt_D_pat.sub('', ot_clean).strip()
+                    label = chr(97 + len(opts))  # a, b, c, d
+                    opts.append((label, opt_body, is_correct))
+                elif opt_C_pat.match(ot_clean):
+                    opt_body = opt_C_pat.sub('', ot_clean).strip()
+                    label = chr(97 + len(opts))
+                    opts.append((label, opt_body, is_correct))
+                elif opt_B_pat.match(ot_clean):
+                    opt_body = opt_B_pat.sub('', ot_clean).strip()
+                    label = chr(97 + len(opts))
+                    opts.append((label, opt_body, is_correct))
+                else:
+                    # Option A: không có prefix
+                    label = 'a'
+                    opts.append((label, ot_clean, is_correct))
+
+                i += 1
+
+            if opts:
+                answer = ''
+                options_list = []
+                for label, body, ic in opts:
+                    opt_text = f"{label}. {body}"
+                    options_list.append(opt_text)
+                    if ic:
+                        answer = opt_text
+                if not answer and options_list:
+                    answer = options_list[0]
+                questions.append({
+                    'question': q_text,
+                    'options': options_list,
+                    'answer': answer
+                })
         else:
-            if is_question_started and not is_max_options_reached:
-                # SỬ DỤNG LOGIC DẤU (*) — check trên raw text trước khi clean_text xóa
-                is_correct = raw_has_star or p_data.get("has_yellow_highlight", False)
-                
-                match_prefix = opt_prefix_pat.match(clean_p)
-                if match_prefix:
-                    clean_p = clean_p[match_prefix.end():].strip()
-                    
-                idx = len(current["options"])
-                if idx < len(labels):
-                    label = labels[idx]
-                    opt_text = f"{label}. {clean_p}"
-                    current["options"].append(opt_text)
-                    
-                    if is_correct:
-                        current["answer"] = opt_text
-            
-            elif is_question_started:
-                 current["question"] += " " + clean_p
-        
-            elif not is_question_started and not current["options"]:
-                current["question"] = clean_p
+            i += 1
 
-    current = finalize_current_question(current, questions)
-        
     return questions
-
-# ====================================================
-# 🧩 PARSER 5: PHỤ LỤC 3 - BÀI ĐỌC HIỂU (PASSAGE-BASED) - ĐÃ SỬA LỖI PARAGRAPH 2
-# ====================================================
 # ... (parse_pl3_passage_bank remains unchanged)
 # ── PL3 Parser v2: handles all 58 Paragraphs and all question formats ──────
 # Patterns for PL3 parser
@@ -1122,61 +1136,107 @@ def parse_pl4_law_process(source):
         })
     return final_questions
 def parse_pl5_specialized(source):
-    paras = read_docx_paragraphs(source)
-    if not paras: return []
+    """
+    Parser cho PL5.docx.
+    Cấu trúc: mỗi câu hỏi có số thứ tự "N." ở đầu,
+    theo sau là các dòng câu hỏi (có thể nhiều dòng), rồi options A/B/C,
+    mỗi option cũng có thể trải nhiều dòng.
+    Đáp án đúng: dòng cuối của option đó có (*).
+    """
+    path = find_file_path(source)
+    if not path:
+        return []
+    try:
+        doc = Document(path)
+    except Exception as e:
+        print(f"Lỗi đọc PL5: {e}")
+        return []
+
+    q_start_pat  = re.compile(r'^\s*(\d+)[\.\)]\s+\S')
+    opt_start_pat = re.compile(r'^\s*([A-Ca-c])[\.\)]\s+', re.I)
+
+    paras = [p for p in doc.paragraphs if p.text.strip()]
+    n = len(paras)
 
     questions = []
-    current = {"question": "", "options": [], "answer": ""}
-    
-    # Regex nhận diện câu hỏi (Ví dụ: 1. hoặc 1))
-    q_start_pat = re.compile(r'^\s*(\d+)[\.\)]\s*') 
-    # Regex nhận diện option (a. b. c. d.)
-    opt_prefix_pat = re.compile(r'^\s*[A-Da-d]([\.\)]|\s+)\s*') 
+    i = 0
 
-    for p in paras:
-        clean_p = clean_text(p)
-        if not clean_p: continue
-        
-        # Nếu gặp dòng bắt đầu bằng số (ví dụ: "1. What is...") -> Chuyển câu mới
-        if q_start_pat.match(clean_p):
-            # Lưu câu cũ nếu hợp lệ
-            if current["question"] and current["options"]:
-                if not current["answer"]:
-                    current["answer"] = current["options"][0]
-                questions.append(current)
-            
-            # Khởi tạo câu mới
-            current = {
-                "question": strip_question_number(clean_p),
-                "options": [],
-                "answer": ""
-            }
-        
-        # Nếu gặp dòng có định dạng đáp án (a, b, c, d)
-        elif opt_prefix_pat.match(clean_p) and current["question"]:
-            is_correct = "(*)" in p  # Kiểm tra trên raw text TRƯỚC khi clean_text xóa (*)
-            text_only = clean_p  # clean_p đã không còn (*) (do clean_text đã xóa)
-            
-            # Chuẩn hóa tiền tố thành a., b., ...
-            idx = len(current["options"])
-            label = chr(97 + idx) # tạo a, b, c, d
-            opt_content = opt_prefix_pat.sub('', text_only).strip()
-            full_opt = f"{label}. {opt_content}"
-            
-            current["options"].append(full_opt)
-            if is_correct:
-                current["answer"] = full_opt
-        
-        # Nếu là văn bản bình thường (không phải số câu, không phải đáp án) -> Cộng dồn vào câu hỏi
-        elif current["question"] and not current["options"]:
-            current["question"] += " " + clean_p
+    while i < n:
+        t = paras[i].text.strip()
+        m_q = q_start_pat.match(t)
+        if not m_q:
+            i += 1
+            continue
 
-    # Add câu cuối cùng
-    if current["question"] and current["options"]:
-        if not current["answer"]:
-            current["answer"] = current["options"][0]
-        questions.append(current)
-        
+        # Tìm thấy câu hỏi mới
+        q_lines = [t]
+        i += 1
+
+        # Gom các dòng tiếp theo cho đến khi gặp option A hoặc câu hỏi mới
+        while i < n:
+            t2 = paras[i].text.strip()
+            if q_start_pat.match(t2) or opt_start_pat.match(t2):
+                break
+            q_lines.append(t2)
+            i += 1
+
+        q_text = ' '.join(q_lines)
+        # Xóa số thứ tự đầu câu
+        q_text = re.sub(r'^\s*\d+[\.\)]\s*', '', q_text).strip()
+
+        # Gom options
+        opts = []  # list of (letter, full_text, is_correct)
+
+        while i < n:
+            t2 = paras[i].text.strip()
+            # Nếu gặp câu hỏi mới thì dừng
+            if q_start_pat.match(t2):
+                break
+
+            m_opt = opt_start_pat.match(t2)
+            if m_opt:
+                letter = m_opt.group(1).upper()
+                opt_lines = [t2]
+                is_correct = '(*)' in t2
+                i += 1
+
+                # Gom các dòng tiếp theo của option này
+                while i < n:
+                    t3 = paras[i].text.strip()
+                    if q_start_pat.match(t3) or opt_start_pat.match(t3):
+                        break
+                    if '(*)' in t3:
+                        is_correct = True
+                    opt_lines.append(t3)
+                    i += 1
+
+                # Ghép text option, xóa (*) và prefix chữ cái
+                full_opt_text = ' '.join(opt_lines)
+                full_opt_text = full_opt_text.replace('(*)', '').strip()
+                # Xóa prefix A./B./C.
+                full_opt_text = opt_start_pat.sub('', full_opt_text).strip()
+
+                label = chr(96 + len(opts) + 1)  # a, b, c
+                opt_text = f"{label}. {full_opt_text}"
+                opts.append((letter, opt_text, is_correct))
+            else:
+                i += 1
+
+        if opts:
+            answer = ''
+            options_list = [o[1] for o in opts]
+            for _, opt_text, ic in opts:
+                if ic:
+                    answer = opt_text
+                    break
+            if not answer and options_list:
+                answer = options_list[0]
+            questions.append({
+                'question': q_text,
+                'options': options_list,
+                'answer': answer
+            })
+
     return questions
 # ====================================================
 # 🌟 HÀM: LOGIC DỊCH ĐỘC QUYỀN (EXCLUSIVE TRANSLATION)
