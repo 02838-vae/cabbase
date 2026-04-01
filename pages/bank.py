@@ -160,9 +160,31 @@ def find_file_path(source):
             return path
     return None
 
+def _para_has_correct_fmt(p):
+    """Helper dùng chung: True nếu paragraph có run bold hoặc highlight vàng."""
+    for run in p.runs:
+        if run.bold:
+            return True
+        if run.font.highlight_color is not None:
+            try:
+                if run.font.highlight_color == WD_COLOR_INDEX.YELLOW:
+                    return True
+            except Exception:
+                return True
+    return False
+
+def _inject_star_if_needed(text, p):
+    """Thêm (*) vào cuối text nếu paragraph có formatting đáp án đúng và chưa có (*)."""
+    if '(*)' in text:
+        return text
+    if _para_has_correct_fmt(p):
+        return text + ' (*)'
+    return text
+
 def read_docx_paragraphs(source):
     """
-    Hàm đọc paragraphs chỉ lấy TEXT (sử dụng cho cabbank, lawbank, PL1)
+    Hàm đọc paragraphs lấy TEXT, tự động inject (*) nếu paragraph có bold/highlight.
+    Dùng cho PL1, PL5 và các ngân hàng khác (cabbank, lawbank).
     """
     path = find_file_path(source)
     if not path:
@@ -171,16 +193,21 @@ def read_docx_paragraphs(source):
     
     try:
         doc = Document(path)
-        return [p.text.strip() for p in doc.paragraphs if p.text.strip()]
+        result = []
+        for p in doc.paragraphs:
+            t = p.text.strip()
+            if not t:
+                continue
+            result.append(_inject_star_if_needed(t, p))
+        return result
     except Exception as e:
         print(f"Lỗi đọc file DOCX (chỉ text): {source}. Chi tiết: {e}")
         return []
 
-# HÀM ĐỌC FILE MỚI: DÙNG CHO PL2 (CHỈ LẤY TEXT)
+# HÀM ĐỌC FILE DÙNG CHO PL2
 def read_pl2_data(source):
     """
-    Hàm đọc paragraphs chỉ lấy TEXT (tương tự read_docx_paragraphs),
-    để parse_pl2 có thể dùng logic (*).
+    Hàm đọc paragraphs cho PL2, tự động inject (*) nếu paragraph có bold/highlight.
     """
     path = find_file_path(source)
     if not path:
@@ -200,10 +227,11 @@ def read_pl2_data(source):
         if not p_text_stripped:
             continue
         
-        # BỎ LOGIC HIGHLIGHT VÀNG, CHỈ LẤY TEXT VÀ ĐẶT CỜ HIGHLIGHT = FALSE
+        text_with_marker = _inject_star_if_needed(p_text_stripped, p)
+        has_highlight = _para_has_correct_fmt(p)
         data.append({
-            "full_text": p_text_stripped,
-            "has_yellow_highlight": False 
+            "full_text": text_with_marker,
+            "has_yellow_highlight": has_highlight
         })
         
     return data
@@ -451,84 +479,82 @@ def parse_lawbank(source):
 # ====================================================
 # 🧩 PARSER 3: PHỤ LỤC 1 (Dùng dấu (*))
 # ====================================================
-# ... (parse_pl1 remains unchanged) or  .group(1).lower()
+# ... (parse_pl1 remains unchanged)
 def parse_pl1(source):
     """
-    Parser đặc chế cho file PL1 (1).docx
-    Xử lý: Không số thứ tự, không nhãn A/B/C, có nhiều ký tự Tab và dấu (*)
+    Parser cho định dạng PL1 (sử dụng dấu (*) để nhận diện đáp án đúng)
     """
-    try:
-        doc = docx.Document(source)
-        # Lấy tất cả các dòng có chữ, loại bỏ khoảng trắng thừa ở 2 đầu
-        paras = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
-    except Exception as e:
-        print(f"Lỗi đọc file: {e}")
-        return []
+    paras = read_docx_paragraphs(source)
+    if not paras: return []
 
     questions = []
     current = {"question": "", "options": [], "answer": ""}
     
-    # Các nhãn mặc định nếu câu hỏi trong file không có A, B, C
-    default_labels = ["a", "b", "c", "d"]
+    q_start_pat = re.compile(r'^\s*(\d+)[\.\)]\s*') 
+    phrase_start_pat = re.compile(r'Choose the correct group of words', re.I)
+    opt_prefix_pat = re.compile(r'^\s*[A-Ca-c]([\.\)]|\s+)\s*') 
+    labels = ["a", "b", "c"]
+    MAX_OPTIONS = 3
 
-    def finalize(q_dict, q_list):
-        if q_dict["question"] and q_dict["options"]:
+    def finalize_current_question(q_dict, q_list):
+        if q_dict["question"]:
+            if not q_dict["answer"] and q_dict["options"]:
+                q_dict["answer"] = q_dict["options"][0] 
             q_list.append(q_dict)
         return {"question": "", "options": [], "answer": ""}
-
-    for line in paras:
-        # 1. DẤU HIỆU CÂU HỎI MỚI
-        # Nếu dòng chứa "Choose the correct" hoặc kết thúc bằng dấu chấm/hỏi (không có (*))
-        # và dòng đó không phải là một trong các lựa chọn.
-        is_instruction = "choose the correct" in line.lower()
-        is_labeled_opt = re.match(r'^[A-Da-d][\.\)]', line)
+    
+    for p in paras:
+        # Kiểm tra (*) trên raw text (sau inject) TRƯỚC khi clean_text xóa nó
+        raw_has_star = "(*)" in p
+        clean_p = clean_text(p)
+        if not clean_p: continue
         
-        # Nếu gặp dòng hướng dẫn -> Chắc chắn là câu mới
-        if is_instruction:
-            current = finalize(current, questions)
-            current["question"] = line
-            continue
-
-        # 2. XỬ LÝ ĐÁP ÁN
-        # Một dòng được coi là đáp án nếu: có dấu (*), hoặc đã có câu hỏi nhưng chưa đủ 3-4 đáp án
-        if current["question"]:
-            is_correct = "(*)" in line
+        is_q_start_phrased = phrase_start_pat.search(clean_p)
+        is_explicitly_numbered = q_start_pat.match(clean_p) 
+        is_max_options_reached = len(current["options"]) >= MAX_OPTIONS
+        is_question_started = current["question"]
+        is_first_line = not is_question_started and not current["options"]
+        
+        must_switch_q = (
+            is_first_line or                            
+            is_q_start_phrased or                       
+            (is_question_started and is_max_options_reached)
+        )
+        
+        if must_switch_q:
+            current = finalize_current_question(current, questions)
+            q_text = strip_question_number(clean_p)
+            current["question"] = q_text
             
-            # Làm sạch nội dung đáp án: xóa dấu (*), xóa nhãn A. B. nếu có, xóa Tab
-            clean_opt = line.replace("(*)", "").strip()
-            clean_opt = re.sub(r'^[A-Da-d][\.\)\s\t]+', '', clean_opt).strip()
-            
-            # Nếu sau khi sạch mà vẫn có nội dung
-            if clean_opt:
+        else:
+            if is_question_started and not is_max_options_reached:
+                # SỬ DỤNG DẤU (*) — check trên raw text trước khi clean_text xóa
+                is_correct = raw_has_star
+                
+                match_prefix = opt_prefix_pat.match(clean_p)
+                if match_prefix:
+                    clean_p = clean_p[match_prefix.end():].strip()
+                    
                 idx = len(current["options"])
-                if idx < 4:
-                    label = default_labels[idx]
-                    opt_text = f"{label}. {clean_opt}"
+                    
+                if idx < len(labels):
+                    label = labels[idx]
+                    opt_text = f"{label}. {clean_p}"
                     current["options"].append(opt_text)
                     
                     if is_correct:
                         current["answer"] = opt_text
-                
-                # Nếu đã đủ 3-4 đáp án mà gặp dòng tiếp theo không phải hướng dẫn 
-                # thì có thể đó là câu hỏi mới (dạng câu hỏi không có "Choose the...")
-                elif idx >= 3 and not is_instruction:
-                     current = finalize(current, questions)
-                     current["question"] = line
-        else:
-            # Trường hợp dòng đầu tiên của file không có hướng dẫn
-            current["question"] = line
+            
+            elif is_question_started:
+                 current["question"] += " " + clean_p
+        
+            elif not is_question_started and not current["options"]:
+                current["question"] = clean_p
 
-    # Lưu câu cuối cùng
-    finalize(current, questions)
-    
-    # Kiểm tra nếu vẫn không ra kết quả (do cấu trúc file quá lệch)
-    if not questions:
-        print("Cảnh báo: Không tìm thấy câu hỏi phù hợp với logic (*).")
+    current = finalize_current_question(current, questions)
         
     return questions
-            
 
-      
 # ====================================================
 # 🧩 PARSER 4: PHỤ LỤC 2 (Dùng dấu (*))
 # ====================================================
@@ -557,6 +583,8 @@ def parse_pl2(source):
         return {"question": "", "options": [], "answer": ""}
     
     for p_data in data:
+        # Kiểm tra (*) trên raw full_text (đã inject) TRƯỚC khi clean_text xóa nó
+        raw_has_star = "(*)" in p_data["full_text"]
         clean_p = clean_text(p_data["full_text"])
         if not clean_p: continue
         
@@ -579,12 +607,8 @@ def parse_pl2(source):
             
         else:
             if is_question_started and not is_max_options_reached:
-                is_correct = False
-                
-                # SỬ DỤNG LOGIC DẤU (*)
-                if "(*)" in clean_p:
-                    is_correct = True
-                    clean_p = clean_p.replace("(*)", "").strip() # Loại bỏ ký hiệu sau khi phát hiện
+                # SỬ DỤNG LOGIC DẤU (*) — check trên raw text trước khi clean_text xóa
+                is_correct = raw_has_star or p_data.get("has_yellow_highlight", False)
                 
                 match_prefix = opt_prefix_pat.match(clean_p)
                 if match_prefix:
