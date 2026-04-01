@@ -453,8 +453,6 @@ def parse_lawbank(source):
 # ====================================================
 # ... (parse_pl1 remains unchanged) or  
 
-      import re
-
 def parse_pl1(source):
     """
     Parser phiên bản nâng cấp: Tự động nhận diện câu hỏi mới dựa trên 
