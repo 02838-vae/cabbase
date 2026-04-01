@@ -452,25 +452,34 @@ def parse_lawbank(source):
 # 🧩 PARSER 3: PHỤ LỤC 1 (Dùng dấu (*))
 # ====================================================
 # ... (parse_pl1 remains unchanged) or  
-def clean_text(text):
-    if not text: return ""
-    # Làm sạch khoảng trắng thừa và ký tự đặc biệt
-    return text.strip()
+def parse_pl1(source):
+    """
+    Parser tối ưu: 
+    - Nhận diện câu hỏi qua số thứ tự hoặc 'Choose the...'
+    - Nhận diện đáp án A-D (hoa/thường)
+    - Xử lý đáp án có dấu (*)
+    """
+    try:
+        doc = docx.Document(source)
+        paras = [p.text for p in doc.paragraphs if p.text.strip()]
+    except Exception as e:
+        print(f"Lỗi đọc file: {e}")
+        return []
 
-def parse_pl1_v2(source):
-    paras = [p.text for p in docx.Document(source).paragraphs if p.text.strip()]
-    
     questions = []
     current = {"question": "", "options": [], "answer": ""}
     
-    # 1. Pattern nhận diện câu hỏi (Bắt đầu bằng số: 1. hoặc câu lệnh Choose...)
-    q_start_pat = re.compile(r'^(\d+[\.\)]|Choose the correct)', re.I)
+    # Pattern: Câu hỏi bắt đầu bằng số (1., 2...) hoặc "Choose the..."
+    q_start_pat = re.compile(r'^(\d+[\.\)]|Choose\s+the\s+correct)', re.I)
     
-    # 2. Pattern nhận diện nhãn đáp án (A. B. C. D. hoặc a. b. c. d.)
+    # Pattern: Đáp án bắt đầu bằng A., B., C., D. hoặc a., b., c., d.
+    # Hỗ trợ cả dấu chấm, dấu đóng ngoặc hoặc khoảng trắng/Tab sau nhãn
     opt_label_pat = re.compile(r'^([A-Da-d])[\.\)\t\s]')
 
     def finalize(q_dict, q_list):
-        if q_dict["question"]:
+        # Chỉ lưu nếu câu hỏi có nội dung
+        if q_dict["question"].strip():
+            # Nếu có ít nhất 1 option thì mới tính là câu hỏi hoàn chỉnh
             q_list.append(q_dict)
         return {"question": "", "options": [], "answer": ""}
 
@@ -478,22 +487,22 @@ def parse_pl1_v2(source):
         line = p.strip()
         if not line: continue
 
-        # KIỂM TRA: ĐÂY CÓ PHẢI LÀ CÂU HỎI MỚI?
+        # 1. KIỂM TRA DẤU HIỆU CÂU HỎI MỚI
         if q_start_pat.match(line):
             current = finalize(current, questions)
-            # Loại bỏ số thứ tự ở đầu câu hỏi nếu muốn sạch hơn
-            current["question"] = re.sub(r'^\d+[\.\)]\s*', '', line)
+            # Lưu nội dung câu hỏi (có thể giữ hoặc bỏ số thứ tự)
+            current["question"] = line 
             continue
 
-        # KIỂM TRA: ĐÂY CÓ PHẢI LÀ MỘT ĐÁP ÁN?
+        # 2. KIỂM TRA DẤU HIỆU ĐÁP ÁN (A, B, C, D)
         opt_match = opt_label_pat.match(line)
         if opt_match:
             is_correct = "(*)" in line
-            # Cắt bỏ nhãn A. B. C. và dấu (*) để lấy text thuần
+            # Làm sạch text: bỏ nhãn A., B.. và bỏ dấu (*)
             clean_opt = re.sub(r'^[A-Da-d][\.\)\s\t]+', '', line)
             clean_opt = clean_opt.replace("(*)", "").strip()
             
-            # Gắn nhãn chuẩn hóa (a, b, c, d)
+            # Chuẩn hóa nhãn về chữ thường (a., b., c...)
             label = opt_match.group(1).lower()
             opt_text = f"{label}. {clean_opt}"
             
@@ -501,26 +510,26 @@ def parse_pl1_v2(source):
             if is_correct:
                 current["answer"] = opt_text
         
+        # 3. NẾU LÀ DÒNG NỐI TIẾP (Không phải câu hỏi mới, không có nhãn)
         else:
-            # TRƯỜNG HỢP DÒNG LẺ (Không phải câu hỏi mới, không có nhãn A/B/C)
             if not current["options"]:
-                # Nếu chưa có options nào, thì đây là nội dung nối dài của câu hỏi
+                # Nếu chưa có option nào, dòng này thuộc về phần mô tả câu hỏi
                 current["question"] += " " + line
             else:
-                # Nếu đã có options, thì đây là nội dung nối dài của option cuối cùng
-                # (Trường hợp 1 option bị xuống dòng trong Word)
+                # Nếu đã có option, dòng này là nội dung bị xuống dòng của option cuối cùng
                 last_idx = len(current["options"]) - 1
-                is_correct_in_extra = "(*)" in line
-                
+                is_correct_extra = "(*)" in line
                 extra_text = line.replace("(*)", "").strip()
-                current["options"][last_idx] += " " + extra_text
                 
-                if is_correct_in_extra:
+                current["options"][last_idx] += " " + extra_text
+                if is_correct_extra:
                     current["answer"] = current["options"][last_idx]
 
-    # Lưu câu cuối cùng
+    # Đóng câu hỏi cuối cùng sau khi kết thúc vòng lặp
     finalize(current, questions)
+    
     return questions
+
 
       
 # ====================================================
