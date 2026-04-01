@@ -451,10 +451,14 @@ def parse_lawbank(source):
 # ====================================================
 # 🧩 PARSER 3: PHỤ LỤC 1 (Dùng dấu (*))
 # ====================================================
-# ... (parse_pl1 remains unchanged)
+# ... (parse_pl1 remains unchanged) or  
+
+      import re
+
 def parse_pl1(source):
     """
-    Parser cho định dạng PL1 (sử dụng dấu (*) để nhận diện đáp án đúng)
+    Parser phiên bản nâng cấp: Tự động nhận diện câu hỏi mới dựa trên 
+    cấu trúc dòng và cụm từ chỉ dẫn.
     """
     paras = read_docx_paragraphs(source)
     if not paras: return []
@@ -462,73 +466,72 @@ def parse_pl1(source):
     questions = []
     current = {"question": "", "options": [], "answer": ""}
     
-    q_start_pat = re.compile(r'^\s*(\d+)[\.\)]\s*') 
-    phrase_start_pat = re.compile(r'Choose the correct group of words', re.I)
-    opt_prefix_pat = re.compile(r'^\s*[A-Ca-c]([\.\)]|\s+)\s*') 
+    # Pattern nhận diện chỉ dẫn
+    phrase_start_pat = re.compile(r'Choose the correct', re.I)
+    # Pattern nhận diện nhãn A. B. C. hoặc A) B) C)
+    opt_prefix_pat = re.compile(r'^\s*([A-Ca-c])[\.\)]\s*')
+    
     labels = ["a", "b", "c"]
-    MAX_OPTIONS = 3
 
     def finalize_current_question(q_dict, q_list):
-        if q_dict["question"]:
-            if not q_dict["answer"] and q_dict["options"]:
-                q_dict["answer"] = q_dict["options"][0] 
+        # Chỉ lưu khi có ít nhất câu hỏi hoặc options
+        if q_dict["question"].strip() or q_dict["options"]:
+            # Nếu kết thúc câu mà vẫn chưa tìm thấy (*), không tự gán bừa
             q_list.append(q_dict)
         return {"question": "", "options": [], "answer": ""}
-    
+
     for p in paras:
-        clean_p = clean_text(p)
+        clean_p = p.strip()
         if not clean_p: continue
+
+        # KIỂM TRA ĐIỀU KIỆN NGẮT CÂU HỎI MỚI
+        is_instruction = bool(phrase_start_pat.search(clean_p))
+        is_option_with_label = bool(opt_prefix_pat.match(clean_p))
+        is_correct_marked = "(*)" in clean_p
         
-        is_q_start_phrased = phrase_start_pat.search(clean_p)
-        is_explicitly_numbered = q_start_pat.match(clean_p) 
-        is_max_options_reached = len(current["options"]) >= MAX_OPTIONS
-        is_question_started = current["question"]
-        is_first_line = not is_question_started and not current["options"]
-        
-        must_switch_q = (
-            is_first_line or                            
-            is_q_start_phrased or                       
-            (is_question_started and is_max_options_reached)
-        )
-        
-        if must_switch_q:
-            current = finalize_current_question(current, questions)
-            q_text = strip_question_number(clean_p)
-            current["question"] = q_text
-            
+        # Một dòng được coi là "Câu hỏi mới" nếu:
+        # 1. Nó là câu lệnh "Choose the..."
+        # 2. Hoặc nó KHÔNG phải là option (không có nhãn A/B/C và không có dấu (*))
+        #    VÀ chúng ta đã có options ở câu trước đó rồi.
+        is_new_question_text = not is_option_with_label and not is_correct_marked and len(current["options"]) >= 2
+
+        if is_instruction or is_new_question_text:
+            if current["question"] or current["options"]:
+                current = finalize_current_question(current, questions)
+            current["question"] = clean_p
+            continue
+
+        # XỬ LÝ OPTIONS VÀ ĐÁP ÁN
+        is_correct = False
+        if is_correct_marked:
+            is_correct = True
+            clean_p = clean_p.replace("(*)", "").strip()
+
+        # Nếu dòng có nhãn A. B. C... thì cắt bỏ nhãn để lấy nội dung
+        match_prefix = opt_prefix_pat.match(clean_p)
+        if match_prefix:
+            content = clean_p[match_prefix.end():].strip()
         else:
-            if is_question_started and not is_max_options_reached:
-                is_correct = False
-                
-                # SỬ DỤNG DẤU (*)
-                if "(*)" in clean_p:
-                    is_correct = True
-                    clean_p = clean_p.replace("(*)", "").strip() 
-                
-                match_prefix = opt_prefix_pat.match(clean_p)
-                if match_prefix:
-                    clean_p = clean_p[match_prefix.end():].strip()
-                    
-                idx = len(current["options"])
-                    
-                if idx < len(labels):
-                    label = labels[idx]
-                    opt_text = f"{label}. {clean_p}"
-                    current["options"].append(opt_text)
-                    
-                    if is_correct:
-                        current["answer"] = opt_text
-            
-            elif is_question_started:
-                 current["question"] += " " + clean_p
-        
-            elif not is_question_started and not current["options"]:
-                current["question"] = clean_p
+            content = clean_p
 
-    current = finalize_current_question(current, questions)
-        
+        # Thêm vào danh sách options (tối đa 3)
+        if current["question"]:
+            idx = len(current["options"])
+            if idx < 3:
+                label = labels[idx]
+                opt_text = f"{label}. {content}"
+                current["options"].append(opt_text)
+                if is_correct:
+                    current["answer"] = opt_text
+        else:
+            # Trường hợp dòng đầu tiên của file
+            current["question"] = clean_p
+
+    # Lưu câu cuối cùng
+    finalize_current_question(current, questions)
+    
     return questions
-
+      
 # ====================================================
 # 🧩 PARSER 4: PHỤ LỤC 2 (Dùng dấu (*))
 # ====================================================
