@@ -451,17 +451,16 @@ def parse_lawbank(source):
 # ====================================================
 # 🧩 PARSER 3: PHỤ LỤC 1 (Dùng dấu (*))
 # ====================================================
-# ... (parse_pl1 remains unchanged) or  
+# ... (parse_pl1 remains unchanged) or  .group(1).lower()
 def parse_pl1(source):
     """
-    Parser tối ưu: 
-    - Nhận diện câu hỏi qua số thứ tự hoặc 'Choose the...'
-    - Nhận diện đáp án A-D (hoa/thường)
-    - Xử lý đáp án có dấu (*)
+    Parser đặc chế cho file PL1 (1).docx
+    Xử lý: Không số thứ tự, không nhãn A/B/C, có nhiều ký tự Tab và dấu (*)
     """
     try:
         doc = docx.Document(source)
-        paras = [p.text for p in doc.paragraphs if p.text.strip()]
+        # Lấy tất cả các dòng có chữ, loại bỏ khoảng trắng thừa ở 2 đầu
+        paras = [p.text.strip() for p in doc.paragraphs if p.text.strip()]
     except Exception as e:
         print(f"Lỗi đọc file: {e}")
         return []
@@ -469,67 +468,65 @@ def parse_pl1(source):
     questions = []
     current = {"question": "", "options": [], "answer": ""}
     
-    # Pattern: Câu hỏi bắt đầu bằng số (1., 2...) hoặc "Choose the..."
-    q_start_pat = re.compile(r'^(\d+[\.\)]|Choose\s+the\s+correct)', re.I)
-    
-    # Pattern: Đáp án bắt đầu bằng A., B., C., D. hoặc a., b., c., d.
-    # Hỗ trợ cả dấu chấm, dấu đóng ngoặc hoặc khoảng trắng/Tab sau nhãn
-    opt_label_pat = re.compile(r'^([A-Da-d])[\.\)\t\s]')
+    # Các nhãn mặc định nếu câu hỏi trong file không có A, B, C
+    default_labels = ["a", "b", "c", "d"]
 
     def finalize(q_dict, q_list):
-        # Chỉ lưu nếu câu hỏi có nội dung
-        if q_dict["question"].strip():
-            # Nếu có ít nhất 1 option thì mới tính là câu hỏi hoàn chỉnh
+        if q_dict["question"] and q_dict["options"]:
             q_list.append(q_dict)
         return {"question": "", "options": [], "answer": ""}
 
-    for p in paras:
-        line = p.strip()
-        if not line: continue
-
-        # 1. KIỂM TRA DẤU HIỆU CÂU HỎI MỚI
-        if q_start_pat.match(line):
+    for line in paras:
+        # 1. DẤU HIỆU CÂU HỎI MỚI
+        # Nếu dòng chứa "Choose the correct" hoặc kết thúc bằng dấu chấm/hỏi (không có (*))
+        # và dòng đó không phải là một trong các lựa chọn.
+        is_instruction = "choose the correct" in line.lower()
+        is_labeled_opt = re.match(r'^[A-Da-d][\.\)]', line)
+        
+        # Nếu gặp dòng hướng dẫn -> Chắc chắn là câu mới
+        if is_instruction:
             current = finalize(current, questions)
-            # Lưu nội dung câu hỏi (có thể giữ hoặc bỏ số thứ tự)
-            current["question"] = line 
+            current["question"] = line
             continue
 
-        # 2. KIỂM TRA DẤU HIỆU ĐÁP ÁN (A, B, C, D)
-        opt_match = opt_label_pat.match(line)
-        if opt_match:
+        # 2. XỬ LÝ ĐÁP ÁN
+        # Một dòng được coi là đáp án nếu: có dấu (*), hoặc đã có câu hỏi nhưng chưa đủ 3-4 đáp án
+        if current["question"]:
             is_correct = "(*)" in line
-            # Làm sạch text: bỏ nhãn A., B.. và bỏ dấu (*)
-            clean_opt = re.sub(r'^[A-Da-d][\.\)\s\t]+', '', line)
-            clean_opt = clean_opt.replace("(*)", "").strip()
             
-            # Chuẩn hóa nhãn về chữ thường (a., b., c...)
-            label = opt_match.group(1).lower()
-            opt_text = f"{label}. {clean_opt}"
+            # Làm sạch nội dung đáp án: xóa dấu (*), xóa nhãn A. B. nếu có, xóa Tab
+            clean_opt = line.replace("(*)", "").strip()
+            clean_opt = re.sub(r'^[A-Da-d][\.\)\s\t]+', '', clean_opt).strip()
             
-            current["options"].append(opt_text)
-            if is_correct:
-                current["answer"] = opt_text
-        
-        # 3. NẾU LÀ DÒNG NỐI TIẾP (Không phải câu hỏi mới, không có nhãn)
-        else:
-            if not current["options"]:
-                # Nếu chưa có option nào, dòng này thuộc về phần mô tả câu hỏi
-                current["question"] += " " + line
-            else:
-                # Nếu đã có option, dòng này là nội dung bị xuống dòng của option cuối cùng
-                last_idx = len(current["options"]) - 1
-                is_correct_extra = "(*)" in line
-                extra_text = line.replace("(*)", "").strip()
+            # Nếu sau khi sạch mà vẫn có nội dung
+            if clean_opt:
+                idx = len(current["options"])
+                if idx < 4:
+                    label = default_labels[idx]
+                    opt_text = f"{label}. {clean_opt}"
+                    current["options"].append(opt_text)
+                    
+                    if is_correct:
+                        current["answer"] = opt_text
                 
-                current["options"][last_idx] += " " + extra_text
-                if is_correct_extra:
-                    current["answer"] = current["options"][last_idx]
+                # Nếu đã đủ 3-4 đáp án mà gặp dòng tiếp theo không phải hướng dẫn 
+                # thì có thể đó là câu hỏi mới (dạng câu hỏi không có "Choose the...")
+                elif idx >= 3 and not is_instruction:
+                     current = finalize(current, questions)
+                     current["question"] = line
+        else:
+            # Trường hợp dòng đầu tiên của file không có hướng dẫn
+            current["question"] = line
 
-    # Đóng câu hỏi cuối cùng sau khi kết thúc vòng lặp
+    # Lưu câu cuối cùng
     finalize(current, questions)
     
+    # Kiểm tra nếu vẫn không ra kết quả (do cấu trúc file quá lệch)
+    if not questions:
+        print("Cảnh báo: Không tìm thấy câu hỏi phù hợp với logic (*).")
+        
     return questions
-
+            
 
       
 # ====================================================
