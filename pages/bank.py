@@ -2489,24 +2489,11 @@ html, body, .stApp {{
 
 /* LOGO LEFT */
 #logo-container {{
-    position: absolute;
-    top: 20px;
-    left: 20px;
+    position: fixed;
+    top: 10px;
+    left: 10px;
     z-index: 2000;
     pointer-events: none;
-}}
-
-#logo2-container {{
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 2000;
-    pointer-events: none;
-}}
-
-/* body cần relative để absolute logo tính từ đầu trang */
-body {{
-    position: relative !important;
 }}
 
 /* Wrapper viền sáng chạy vòng quanh logo trái */
@@ -2569,6 +2556,14 @@ body {{
 }}
 
 /* LOGO RIGHT (logo2) */
+#logo2-container {{
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 2000;
+    pointer-events: none;
+}}
+
 .logo2-wrap {{
     position: relative;
     display: inline-block;
@@ -2596,16 +2591,16 @@ body {{
 
 @media (max-width: 767px) {{
     #logo-container {{
-        top: 12px;
-        left: 8px;
+        top: 5px;
+        left: 5px;
     }}
     #logo-wrap img {{
         height: 44px;
     }}
     #logo-wrap::after {{ inset: 2px; border-radius: 10px; }}
     #logo2-container {{
-        top: 12px;
-        right: 8px;
+        top: 5px;
+        right: 5px;
     }}
     .logo2-wrap img {{
         height: 44px;
@@ -3176,30 +3171,6 @@ st.markdown(f"""
 <div id="header-content-wrapper">
     <div id="main-title-container"></div>
 </div>
-
-<script>
-(function moveLogo() {{
-    // Di chuyển 2 logo lên body để position:absolute tính từ đầu trang (cuộn theo trang)
-    function doMove() {{
-        var logo  = document.getElementById('logo-container');
-        var logo2 = document.getElementById('logo2-container');
-        if (logo && logo2 && document.body) {{
-            // Chỉ move nếu chưa là con trực tiếp của body
-            if (logo.parentElement !== document.body)  document.body.appendChild(logo);
-            if (logo2.parentElement !== document.body) document.body.appendChild(logo2);
-            // Đảm bảo body là relative (để absolute tính từ đỉnh trang)
-            document.body.style.position = 'relative';
-        }} else {{
-            setTimeout(doMove, 100);
-        }}
-    }}
-    if (document.readyState === 'loading') {{
-        document.addEventListener('DOMContentLoaded', doMove);
-    }} else {{
-        doMove();
-    }}
-}})();
-</script>
 """, unsafe_allow_html=True)
 
 st.markdown("""
