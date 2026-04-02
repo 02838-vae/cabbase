@@ -2496,11 +2496,16 @@ html, body, .stApp {{
     pointer-events: none;
 }}
 
-/* Đảm bảo stApp và các container cha là relative để absolute của logo hoạt động đúng */
-.stApp,
-[data-testid="stAppViewContainer"],
-[data-testid="stMain"],
-.main {{
+#logo2-container {{
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 2000;
+    pointer-events: none;
+}}
+
+/* body cần relative để absolute logo tính từ đầu trang */
+body {{
     position: relative !important;
 }}
 
@@ -2564,14 +2569,6 @@ html, body, .stApp {{
 }}
 
 /* LOGO RIGHT (logo2) */
-#logo2-container {{
-    position: absolute;
-    top: 20px;
-    right: 20px;
-    z-index: 2000;
-    pointer-events: none;
-}}
-
 .logo2-wrap {{
     position: relative;
     display: inline-block;
@@ -3179,6 +3176,30 @@ st.markdown(f"""
 <div id="header-content-wrapper">
     <div id="main-title-container"></div>
 </div>
+
+<script>
+(function moveLogo() {{
+    // Di chuyển 2 logo lên body để position:absolute tính từ đầu trang (cuộn theo trang)
+    function doMove() {{
+        var logo  = document.getElementById('logo-container');
+        var logo2 = document.getElementById('logo2-container');
+        if (logo && logo2 && document.body) {{
+            // Chỉ move nếu chưa là con trực tiếp của body
+            if (logo.parentElement !== document.body)  document.body.appendChild(logo);
+            if (logo2.parentElement !== document.body) document.body.appendChild(logo2);
+            // Đảm bảo body là relative (để absolute tính từ đỉnh trang)
+            document.body.style.position = 'relative';
+        }} else {{
+            setTimeout(doMove, 100);
+        }}
+    }}
+    if (document.readyState === 'loading') {{
+        document.addEventListener('DOMContentLoaded', doMove);
+    }} else {{
+        doMove();
+    }}
+}})();
+</script>
 """, unsafe_allow_html=True)
 
 st.markdown("""
