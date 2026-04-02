@@ -2489,11 +2489,19 @@ html, body, .stApp {{
 
 /* LOGO LEFT */
 #logo-container {{
-    position: fixed;
+    position: absolute;
     top: 20px;
     left: 20px;
     z-index: 2000;
     pointer-events: none;
+}}
+
+/* Đảm bảo stApp và các container cha là relative để absolute của logo hoạt động đúng */
+.stApp,
+[data-testid="stAppViewContainer"],
+[data-testid="stMain"],
+.main {{
+    position: relative !important;
 }}
 
 /* Wrapper viền sáng chạy vòng quanh logo trái */
@@ -2557,7 +2565,7 @@ html, body, .stApp {{
 
 /* LOGO RIGHT (logo2) */
 #logo2-container {{
-    position: fixed;
+    position: absolute;
     top: 20px;
     right: 20px;
     z-index: 2000;
