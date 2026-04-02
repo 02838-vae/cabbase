@@ -2489,7 +2489,7 @@ html, body, .stApp {{
 
 /* LOGO LEFT */
 #logo-container {{
-    position: absolute;
+    position: fixed;
     top: 10px;
     left: 10px;
     z-index: 2000;
@@ -2557,7 +2557,7 @@ html, body, .stApp {{
 
 /* LOGO RIGHT (logo2) */
 #logo2-container {{
-    position: absolute;
+    position: fixed;
     top: 10px;
     right: 10px;
     z-index: 2000;
