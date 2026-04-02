@@ -66,26 +66,82 @@ st.markdown(
 st.markdown(
     """
     <style>
-    /* Canh giữa cả 2 column chứa button kết quả */
+    /* =============================================
+       CANH GIỮA TẤT CẢ BUTTON (mọi chế độ)
+       ============================================= */
+
+    /* Canh giữa column trong horizontal block */
     div[data-testid="stHorizontalBlock"] {
         justify-content: center !important;
     }
-
-    /* Mỗi column co lại vừa đủ với nội dung button */
     div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {
         flex: 0 1 auto !important;
         min-width: 0 !important;
         width: auto !important;
     }
 
-    /* Button: chữ không xuống dòng, padding đẹp */
+    /* Canh giữa từng stButton đơn lẻ */
+    div[data-testid="stButton"],
+    div.stButton {
+        display: flex !important;
+        justify-content: center !important;
+    }
+
+    /* =============================================
+       VIỀN SÁNG CHẠY VÒNG — dùng wrapper pseudo
+       ============================================= */
+    @property --btn-angle {
+        syntax: '<angle>';
+        initial-value: 0deg;
+        inherits: false;
+    }
+    @keyframes btn-border-spin {
+        to { --btn-angle: 360deg; }
+    }
+
+    /* Wrapper bọc button để tạo viền chạy */
+    div[data-testid="stButton"],
+    div.stButton {
+        position: relative;
+        border-radius: 50px !important;
+        padding: 3px !important;
+        background: conic-gradient(
+            from var(--btn-angle, 0deg),
+            transparent 0deg,
+            transparent 60deg,
+            #b8860b 80deg,
+            #FFD700 95deg,
+            #ffffff 105deg,
+            #FFD700 115deg,
+            #b8860b 130deg,
+            transparent 150deg,
+            transparent 360deg
+        ) !important;
+        animation: btn-border-spin 2.5s linear infinite !important;
+    }
+
+    /* Button: bo tròn 4 góc, padding đẹp, không xuống dòng */
+    div[data-testid="stButton"] button,
+    div.stButton > button {
+        white-space: nowrap !important;
+        width: auto !important;
+        min-width: 160px;
+        padding: 0.55rem 1.6rem !important;
+        font-size: clamp(13px, 2.5vw, 16px) !important;
+        border-radius: 50px !important;
+        border: none !important;
+        position: relative !important;
+        z-index: 1 !important;
+    }
+
     div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] button[kind="secondary"],
     div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] button[kind="primary"] {
         white-space: nowrap !important;
         width: auto !important;
         min-width: 160px;
-        padding: 0.55rem 1.4rem !important;
+        padding: 0.55rem 1.6rem !important;
         font-size: clamp(13px, 2.5vw, 16px) !important;
+        border-radius: 50px !important;
     }
     </style>
     """,
@@ -2715,35 +2771,78 @@ div[data-testid="stSidebarNav"] {{
     font-family: 'Arial', 'Helvetica', sans-serif !important;
 }}
 
-/* STYLE NÚT ACTION - NHỎ GỌN, CÙNG HÀNG */
+/* =============================================
+   STYLE NÚT ACTION — BO TRÒN + HOVER + GLOW
+   ============================================= */
+
+/* @property cho animation conic wrapper */
+@property --btn-angle {{
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}}
+@keyframes btn-border-spin {{
+    to {{ --btn-angle: 360deg; }}
+}}
+
+/* Wrapper div.stButton: tạo viền sáng chạy vòng + canh giữa */
+div.stButton,
+div[data-testid="stButton"] {{
+    display: flex !important;
+    justify-content: center !important;
+    position: relative !important;
+    border-radius: 50px !important;
+    padding: 3px !important;
+    background: conic-gradient(
+        from var(--btn-angle, 0deg),
+        transparent 0deg,
+        transparent 55deg,
+        #7b4f00 75deg,
+        #FFD700 92deg,
+        #fffbe6 104deg,
+        #FFD700 116deg,
+        #7b4f00 133deg,
+        transparent 153deg,
+        transparent 360deg
+    ) !important;
+    animation: btn-border-spin 2.5s linear infinite !important;
+    width: fit-content !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+    box-shadow: 0 0 12px rgba(255, 215, 0, 0.35) !important;
+}}
+
+/* Button bên trong */
 .stButton>button {{
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+    background: linear-gradient(135deg, #1a0a3c 0%, #2d1265 60%, #1a0a3c 100%) !important;
     color: #FFFFE0 !important;
-    border-radius: 6px !important;
+    border-radius: 50px !important;
     font-size: 0.72em !important;
     font-weight: 700 !important;
     font-family: 'Rye', serif !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    padding: 6px 8px !important;
+    border: none !important;
+    padding: 10px 22px !important;
     width: auto !important;
-    white-space: normal !important;
-    word-break: break-word !important;
-    letter-spacing: 0px !important;
-    box-shadow: 0 3px 10px rgba(102, 126, 234, 0.4) !important;
-    transition: all 0.3s ease !important;
+    white-space: nowrap !important;
+    letter-spacing: 1px !important;
     text-transform: uppercase !important;
+    transition: all 0.3s ease !important;
+    position: relative !important;
+    z-index: 1 !important;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.1) !important;
 }}
 
 .stButton>button:hover {{
-    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%) !important;
-    box-shadow: 0 8px 25px rgba(118, 75, 162, 0.6) !important;
-    transform: translateY(-2px) !important;
-    border-color: rgba(255, 255, 255, 0.5) !important;
+    background: linear-gradient(135deg, #3d1280 0%, #6023b0 60%, #3d1280 100%) !important;
+    color: #FFD700 !important;
+    transform: translateY(-3px) scale(1.04) !important;
+    box-shadow: 0 0 24px rgba(255, 215, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.2) !important;
+    letter-spacing: 2px !important;
 }}
 
 .stButton>button:active {{
-    transform: translateY(0) !important;
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3) !important;
+    transform: translateY(0) scale(0.98) !important;
+    box-shadow: 0 0 8px rgba(255, 215, 0, 0.3) !important;
 }}
 
 /* STYLE CHO NÚT DỊCH (st.toggle) */
@@ -2992,12 +3091,16 @@ div.bank-answer-text.answer-wrong,
     /* Nút trên mobile */
     .stButton>button {{
         font-size: 0.64em !important;
-        padding: 6px 6px !important;
-        border-radius: 6px !important;
-        white-space: normal !important;
-        word-break: break-word !important;
+        padding: 8px 16px !important;
+        border-radius: 50px !important;
+        white-space: nowrap !important;
         letter-spacing: 0px !important;
-        border: 1px solid rgba(255, 255, 255, 0.3) !important;
+        border: none !important;
+    }}
+    div.stButton,
+    div[data-testid="stButton"] {{
+        padding: 3px !important;
+        border-radius: 50px !important;
     }}
     
     /* Cập nhật mobile cho đoạn văn */
