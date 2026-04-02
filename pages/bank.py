@@ -2488,8 +2488,15 @@ html, body, .stApp {{
 }}
 
 /* LOGO LEFT */
+#logo-header-wrapper {{
+    position: relative;
+    width: 100%;
+    height: 130px;
+    pointer-events: none;
+}}
+
 #logo-container {{
-    position: fixed;
+    position: absolute;
     top: 10px;
     left: 10px;
     z-index: 2000;
@@ -2557,7 +2564,7 @@ html, body, .stApp {{
 
 /* LOGO RIGHT (logo2) */
 #logo2-container {{
-    position: fixed;
+    position: absolute;
     top: 10px;
     right: 10px;
     z-index: 2000;
@@ -3124,6 +3131,7 @@ st.markdown(css_style, unsafe_allow_html=True)
 # 🧭 HEADER & BODY
 # ====================================================
 st.markdown(f"""
+<div id="logo-header-wrapper">
 <div id="logo-container">
     <div id="logo-wrap">
         <img src="data:image/jpeg;base64,{img_logo_base64}" alt="Logo" />
@@ -3170,6 +3178,7 @@ st.markdown(f"""
 
 <div id="header-content-wrapper">
     <div id="main-title-container"></div>
+</div>
 </div>
 """, unsafe_allow_html=True)
 
