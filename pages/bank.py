@@ -2138,6 +2138,8 @@ setTimeout(function() {
 
                 if opt_clean == correct:
                     ans_class = "bank-answer-text answer-correct"
+                elif selected_opt is not None and clean_text(selected_opt) == opt_clean:
+                    ans_class = "bank-answer-text answer-selected-wrong"
                 else:
                     ans_class = "bank-answer-text answer-wrong"
                     
