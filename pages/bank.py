@@ -3124,53 +3124,53 @@ st.markdown(css_style, unsafe_allow_html=True)
 # 🧭 HEADER & BODY
 # ====================================================
 st.markdown(f"""
-<div id="logo-container">
-    <div id="logo-wrap">
-        <img src="data:image/jpeg;base64,{img_logo_base64}" alt="Logo" />
-    </div>
-</div>
+<div id="header-content-wrapper" style="height:145px;pointer-events:none;"></div>
 
-<div id="logo2-container">
-    <div class="logo2-wrap" id="logo2-wrap">
-        <img src="data:image/png;base64,{img_logo2_base64}" alt="Logo2" id="logo2-img"/>
-        <svg class="ellipse-border" viewBox="0 0 228 100">
-            <style>
-                .el-tail {{
-                    stroke-dasharray: 100 900;
-                    animation: elip-run 2s linear infinite;
-                }}
-                .el-mid {{
-                    stroke-dasharray: 60 940;
-                    animation: elip-run 2s linear infinite;
-                }}
-                .el-tip {{
-                    stroke-dasharray: 18 982;
-                    animation: elip-run 2s linear infinite;
-                }}
-                @keyframes elip-run {{
-                    from {{ stroke-dashoffset: 1000; }}
-                    to   {{ stroke-dashoffset: 0; }}
-                }}
-            </style>
-            <ellipse cx="114" cy="50" rx="112" ry="48"
-                fill="none" stroke="#b8860b" stroke-width="2.5"
-                stroke-linecap="round" pathLength="1000"
-                class="el-tail"/>
-            <ellipse cx="114" cy="50" rx="112" ry="48"
-                fill="none" stroke="#FFD700" stroke-width="3"
-                stroke-linecap="round" pathLength="1000"
-                class="el-mid"/>
-            <ellipse cx="114" cy="50" rx="112" ry="48"
-                fill="none" stroke="#FFF8C0" stroke-width="1.5"
-                stroke-linecap="round" pathLength="1000"
-                class="el-tip"/>
-        </svg>
-    </div>
-</div>
+<script>
+(function mountLogos() {{
+    var doc = (window.parent && window.parent.document) ? window.parent.document : document;
+    var body = doc.body;
 
-<div id="header-content-wrapper">
-    <div id="main-title-container"></div>
-</div>
+    // Xóa cũ nếu đã tồn tại (để re-render đúng khi Streamlit reload)
+    var oldL = doc.getElementById('logo-container-fixed');
+    var oldR = doc.getElementById('logo2-container-fixed');
+    if (oldL) oldL.remove();
+    if (oldR) oldR.remove();
+
+    var left = doc.createElement('div');
+    left.id = 'logo-container-fixed';
+    left.style.cssText = 'position:fixed;top:10px;left:10px;z-index:99999;pointer-events:none;';
+    left.innerHTML = '<div style="position:relative;border-radius:16px;padding:3px;display:inline-block;overflow:hidden;">'
+        + '<img src="data:image/jpeg;base64,{img_logo_base64}"'
+        + ' alt="Logo"'
+        + ' style="position:relative;z-index:2;height:110px;width:auto;'
+        + 'object-fit:contain;border-radius:12px;display:block;'
+        + 'filter:drop-shadow(0 2px 8px rgba(0,0,0,0.6));" />'
+        + '</div>';
+
+    var right = doc.createElement('div');
+    right.id = 'logo2-container-fixed';
+    right.style.cssText = 'position:fixed;top:10px;right:10px;z-index:99999;pointer-events:none;';
+    right.innerHTML = '<div style="position:relative;display:inline-block;">'
+        + '<img src="data:image/png;base64,{img_logo2_base64}"'
+        + ' alt="Logo2"'
+        + ' style="position:relative;z-index:2;height:110px;width:auto;object-fit:contain;display:block;" />'
+        + '<svg viewBox="0 0 228 100" style="position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none;overflow:visible;">'
+        + '<style>'
+        + '.el-tail2{{stroke-dasharray:100 900;animation:elip-run2 2s linear infinite;}}'
+        + '.el-mid2{{stroke-dasharray:60 940;animation:elip-run2 2s linear infinite;}}'
+        + '.el-tip2{{stroke-dasharray:18 982;animation:elip-run2 2s linear infinite;}}'
+        + '@keyframes elip-run2{{from{{stroke-dashoffset:1000;}}to{{stroke-dashoffset:0;}}}}'
+        + '</style>'
+        + '<ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#b8860b" stroke-width="2.5" stroke-linecap="round" pathLength="1000" class="el-tail2"/>'
+        + '<ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#FFD700" stroke-width="3" stroke-linecap="round" pathLength="1000" class="el-mid2"/>'
+        + '<ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#FFF8C0" stroke-width="1.5" stroke-linecap="round" pathLength="1000" class="el-tip2"/>'
+        + '</svg></div>';
+
+    body.appendChild(left);
+    body.appendChild(right);
+}})();
+</script>
 """, unsafe_allow_html=True)
 
 st.markdown("""
