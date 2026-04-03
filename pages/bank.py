@@ -3123,69 +3123,76 @@ st.markdown(css_style, unsafe_allow_html=True)
 # ====================================================
 # 🧭 HEADER & BODY
 # ====================================================
-# Truyền base64 vào JS qua hidden span, tránh xung đột f-string với JS
-st.markdown(
-    f'<span id="_logo1_b64" style="display:none">{img_logo_base64}</span>'
-    f'<span id="_logo2_b64" style="display:none">{img_logo2_base64}</span>'
-    '<div id="header-content-wrapper" style="height:145px;pointer-events:none;"></div>',
-    unsafe_allow_html=True
-)
+st.markdown(f"""
+<style>
+#logo-fixed-left {{
+    position: fixed !important;
+    top: 10px;
+    left: 10px;
+    z-index: 99999;
+    pointer-events: none;
+}}
+#logo-fixed-left img {{
+    height: 110px;
+    width: auto;
+    object-fit: contain;
+    border-radius: 12px;
+    display: block;
+    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
+}}
+#logo-fixed-right {{
+    position: fixed !important;
+    top: 10px;
+    right: 10px;
+    z-index: 99999;
+    pointer-events: none;
+}}
+#logo-fixed-right img {{
+    height: 110px;
+    width: auto;
+    object-fit: contain;
+    display: block;
+}}
+#logo-fixed-right .lw {{
+    position: relative;
+    display: inline-block;
+}}
+#logo-fixed-right svg {{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    pointer-events: none;
+    overflow: visible;
+}}
+.el-t {{ stroke-dasharray: 100 900; animation: elr 2s linear infinite; }}
+.el-m {{ stroke-dasharray: 60 940;  animation: elr 2s linear infinite; }}
+.el-p {{ stroke-dasharray: 18 982;  animation: elr 2s linear infinite; }}
+@keyframes elr {{ from {{ stroke-dashoffset: 1000; }} to {{ stroke-dashoffset: 0; }} }}
+@media (max-width: 767px) {{
+    #logo-fixed-left img, #logo-fixed-right img {{ height: 44px; }}
+    #logo-fixed-left {{ top: 5px; left: 5px; }}
+    #logo-fixed-right {{ top: 5px; right: 5px; }}
+}}
+</style>
 
-st.markdown("""
-<script>
-(function mountLogos() {
-    var iDoc = document;
-    var pDoc = (window.parent && window.parent.document) ? window.parent.document : document;
-    var pBody = pDoc.body;
+<div id="logo-fixed-left">
+    <img src="data:image/jpeg;base64,{img_logo_base64}" alt="Logo"/>
+</div>
 
-    var b64L = iDoc.getElementById('_logo1_b64');
-    var b64R = iDoc.getElementById('_logo2_b64');
-    if (!b64L || !b64R) { setTimeout(mountLogos, 300); return; }
+<div id="logo-fixed-right">
+    <div class="lw">
+        <img src="data:image/png;base64,{img_logo2_base64}" alt="Logo2"/>
+        <svg viewBox="0 0 228 100">
+            <ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#b8860b" stroke-width="2.5" stroke-linecap="round" pathLength="1000" class="el-t"/>
+            <ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#FFD700" stroke-width="3" stroke-linecap="round" pathLength="1000" class="el-m"/>
+            <ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#FFF8C0" stroke-width="1.5" stroke-linecap="round" pathLength="1000" class="el-p"/>
+        </svg>
+    </div>
+</div>
 
-    var srcL = b64L.textContent.trim();
-    var srcR = b64R.textContent.trim();
-
-    // Xoa cu
-    ['logo-fixed-left','logo-fixed-right','logo-fixed-style'].forEach(function(id){
-        var el = pDoc.getElementById(id); if(el) el.remove();
-    });
-
-    // CSS inject vao parent
-    var style = pDoc.createElement('style');
-    style.id = 'logo-fixed-style';
-    style.textContent = [
-        '#logo-fixed-left{position:fixed;top:10px;left:10px;z-index:99999;pointer-events:none;}',
-        '#logo-fixed-right{position:fixed;top:10px;right:10px;z-index:99999;pointer-events:none;}',
-        '#logo-fixed-left img{height:110px;width:auto;object-fit:contain;border-radius:12px;display:block;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.6));}',
-        '#logo-fixed-right img{height:110px;width:auto;object-fit:contain;display:block;}',
-        '#logo-fixed-right .lw{position:relative;display:inline-block;}',
-        '#logo-fixed-right svg{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none;overflow:visible;}',
-        '.el-t{stroke-dasharray:100 900;animation:elr 2s linear infinite;}',
-        '.el-m{stroke-dasharray:60 940;animation:elr 2s linear infinite;}',
-        '.el-p{stroke-dasharray:18 982;animation:elr 2s linear infinite;}',
-        '@keyframes elr{from{stroke-dashoffset:1000;}to{stroke-dashoffset:0;}}',
-        '@media(max-width:767px){#logo-fixed-left img,#logo-fixed-right img{height:44px;}#logo-fixed-left{top:5px;left:5px;}#logo-fixed-right{top:5px;right:5px;}}'
-    ].join('');
-    pDoc.head.appendChild(style);
-
-    var left = pDoc.createElement('div');
-    left.id = 'logo-fixed-left';
-    left.innerHTML = '<img src="data:image/jpeg;base64,' + srcL + '" alt="Logo"/>';
-
-    var right = pDoc.createElement('div');
-    right.id = 'logo-fixed-right';
-    right.innerHTML = '<div class="lw">'
-        + '<img src="data:image/png;base64,' + srcR + '" alt="Logo2"/>'
-        + '<svg viewBox="0 0 228 100">'
-        + '<ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#b8860b" stroke-width="2.5" stroke-linecap="round" pathLength="1000" class="el-t"/>'
-        + '<ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#FFD700" stroke-width="3" stroke-linecap="round" pathLength="1000" class="el-m"/>'
-        + '<ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#FFF8C0" stroke-width="1.5" stroke-linecap="round" pathLength="1000" class="el-p"/>'
-        + '</svg></div>';
-
-    pBody.appendChild(left);
-    pBody.appendChild(right);
-})();
-</script>
+<div style="height:130px;pointer-events:none;"></div>
 """, unsafe_allow_html=True)
 
 st.markdown("""
