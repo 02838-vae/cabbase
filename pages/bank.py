@@ -2433,7 +2433,7 @@ html, body, .stApp {{
     min-height: 100vh !important;
     margin: 0 !important;
     padding: 0 !important;
-    overflow: auto;
+    overflow: visible;
     position: relative;
     font-family: 'Arial', 'Helvetica', sans-serif !important;
     color: #FFFFE0 !important;
