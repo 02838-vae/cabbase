@@ -2428,13 +2428,24 @@ css_style = f"""
     100% {{ transform: translateX(-100%); }}
 }}
 
-html, body, .stApp {{
+html, body {{
     height: 100% !important;
     min-height: 100vh !important;
     margin: 0 !important;
     padding: 0 !important;
-    overflow: visible;
-    position: relative;
+    overflow: auto;
+    font-family: 'Arial', 'Helvetica', sans-serif !important;
+    color: #FFFFE0 !important;
+}}
+.stApp {{
+    height: 100% !important;
+    min-height: 100vh !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    position: static !important;
+    transform: none !important;
+    filter: none !important;
     font-family: 'Arial', 'Helvetica', sans-serif !important;
     color: #FFFFE0 !important;
 }}
@@ -2470,6 +2481,19 @@ html, body, .stApp {{
 [data-testid="stMainBlock"],
 .main {{
     background-color: transparent !important;
+}}
+
+/* Buộc scroll container không tạo containing block mới cho fixed */
+[data-testid="stAppViewContainer"] {{
+    overflow: visible !important;
+    transform: none !important;
+    filter: none !important;
+    will-change: auto !important;
+}}
+[data-testid="stAppViewContainer"] > section {{
+    overflow: visible !important;
+    transform: none !important;
+    filter: none !important;
 }}
 
 /* Ẩn UI */
