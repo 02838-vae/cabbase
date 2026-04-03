@@ -3131,11 +3131,15 @@ st.markdown(f"""
 #logo-header-row {{
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    width: 100%;
+    align-items: flex-start;
+    width: calc(100% + 8rem);
+    margin-left: -4rem;
+    margin-top: -6rem;
     padding: 10px 10px 0 10px;
     box-sizing: border-box;
     pointer-events: none;
+    position: relative;
+    z-index: 100;
 }}
 #logo-fixed-left {{
     pointer-events: none;
@@ -3176,6 +3180,11 @@ st.markdown(f"""
 @keyframes elr {{ from {{ stroke-dashoffset: 1000; }} to {{ stroke-dashoffset: 0; }} }}
 @media (max-width: 767px) {{
     #logo-fixed-left img, #logo-fixed-right img {{ height: 44px; }}
+    #logo-header-row {{
+        width: calc(100% + 2rem);
+        margin-left: -1rem;
+        margin-top: -4rem;
+    }}
 }}
 </style>
 
