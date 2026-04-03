@@ -2483,19 +2483,6 @@ html, body {{
     background-color: transparent !important;
 }}
 
-/* Buộc scroll container không tạo containing block mới cho fixed */
-[data-testid="stAppViewContainer"] {{
-    overflow: visible !important;
-    transform: none !important;
-    filter: none !important;
-    will-change: auto !important;
-}}
-[data-testid="stAppViewContainer"] > section {{
-    overflow: visible !important;
-    transform: none !important;
-    filter: none !important;
-}}
-
 /* Ẩn UI */
 #MainMenu, footer, header {{visibility: hidden; height: 0;}}
 [data-testid="stHeader"] {{display: none;}}
@@ -2513,10 +2500,6 @@ html, body {{
 
 /* LOGO LEFT */
 #logo-container {{
-    position: fixed;
-    top: 10px;
-    left: 10px;
-    z-index: 99999;
     pointer-events: none;
 }}
 
@@ -2581,10 +2564,6 @@ html, body {{
 
 /* LOGO RIGHT (logo2) */
 #logo2-container {{
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    z-index: 99999;
     pointer-events: none;
 }}
 
@@ -2648,9 +2627,9 @@ html, body {{
     text-shadow: 0 0 15px #D4A843, 0 0 30px rgba(212,168,67,0.8);
 }}
 
-/* Đẩy nội dung chính xuống để không bị che bởi logo */
+/* Padding bottom cho nội dung chính */
 .main > div:first-child {{
-    padding-top: 145px !important; padding-bottom: 2rem !important;
+    padding-bottom: 2rem !important;
 }}
 
 /* Tiêu đề Paragraph X . (In đậm, màu cam) */
@@ -3149,11 +3128,16 @@ st.markdown(css_style, unsafe_allow_html=True)
 # ====================================================
 st.markdown(f"""
 <style>
+#logo-header-row {{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 10px 10px 0 10px;
+    box-sizing: border-box;
+    pointer-events: none;
+}}
 #logo-fixed-left {{
-    position: fixed !important;
-    top: 10px;
-    left: 10px;
-    z-index: 99999;
     pointer-events: none;
 }}
 #logo-fixed-left img {{
@@ -3165,10 +3149,6 @@ st.markdown(f"""
     filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
 }}
 #logo-fixed-right {{
-    position: fixed !important;
-    top: 10px;
-    right: 10px;
-    z-index: 99999;
     pointer-events: none;
 }}
 #logo-fixed-right img {{
@@ -3196,27 +3176,24 @@ st.markdown(f"""
 @keyframes elr {{ from {{ stroke-dashoffset: 1000; }} to {{ stroke-dashoffset: 0; }} }}
 @media (max-width: 767px) {{
     #logo-fixed-left img, #logo-fixed-right img {{ height: 44px; }}
-    #logo-fixed-left {{ top: 5px; left: 5px; }}
-    #logo-fixed-right {{ top: 5px; right: 5px; }}
 }}
 </style>
 
-<div id="logo-fixed-left">
-    <img src="data:image/jpeg;base64,{img_logo_base64}" alt="Logo"/>
-</div>
-
-<div id="logo-fixed-right">
-    <div class="lw">
-        <img src="data:image/png;base64,{img_logo2_base64}" alt="Logo2"/>
-        <svg viewBox="0 0 228 100">
-            <ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#b8860b" stroke-width="2.5" stroke-linecap="round" pathLength="1000" class="el-t"/>
-            <ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#FFD700" stroke-width="3" stroke-linecap="round" pathLength="1000" class="el-m"/>
-            <ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#FFF8C0" stroke-width="1.5" stroke-linecap="round" pathLength="1000" class="el-p"/>
-        </svg>
+<div id="logo-header-row">
+    <div id="logo-fixed-left">
+        <img src="data:image/jpeg;base64,{img_logo_base64}" alt="Logo"/>
+    </div>
+    <div id="logo-fixed-right">
+        <div class="lw">
+            <img src="data:image/png;base64,{img_logo2_base64}" alt="Logo2"/>
+            <svg viewBox="0 0 228 100">
+                <ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#b8860b" stroke-width="2.5" stroke-linecap="round" pathLength="1000" class="el-t"/>
+                <ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#FFD700" stroke-width="3" stroke-linecap="round" pathLength="1000" class="el-m"/>
+                <ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#FFF8C0" stroke-width="1.5" stroke-linecap="round" pathLength="1000" class="el-p"/>
+            </svg>
+        </div>
     </div>
 </div>
-
-<div style="height:130px;pointer-events:none;"></div>
 """, unsafe_allow_html=True)
 
 st.markdown("""
