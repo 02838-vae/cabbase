@@ -2488,18 +2488,11 @@ html, body, .stApp {{
 }}
 
 /* LOGO LEFT */
-#logo-header-wrapper {{
-    position: relative;
-    width: 100%;
-    height: 130px;
-    pointer-events: none;
-}}
-
 #logo-container {{
-    position: absolute;
+    position: fixed;
     top: 10px;
     left: 10px;
-    z-index: 2000;
+    z-index: 99999;
     pointer-events: none;
 }}
 
@@ -2564,10 +2557,10 @@ html, body, .stApp {{
 
 /* LOGO RIGHT (logo2) */
 #logo2-container {{
-    position: absolute;
+    position: fixed;
     top: 10px;
     right: 10px;
-    z-index: 2000;
+    z-index: 99999;
     pointer-events: none;
 }}
 
@@ -2633,7 +2626,7 @@ html, body, .stApp {{
 
 /* Đẩy nội dung chính xuống để không bị che bởi logo */
 .main > div:first-child {{
-    padding-top: 130px !important; padding-bottom: 2rem !important;
+    padding-top: 145px !important; padding-bottom: 2rem !important;
 }}
 
 /* Tiêu đề Paragraph X . (In đậm, màu cam) */
@@ -3053,7 +3046,7 @@ div.bank-answer-text.answer-wrong,
 @media (max-width: 768px) {{
     #main-title-container {{ height: 100px; padding-top: 10px; }}
     #main-title-container h1 {{ font-size: 8vw; line-height: 1.5 !important; }}
-    .main > div:first-child {{ padding-top: 90px !important; }}
+    .main > div:first-child {{ padding-top: 75px !important; }}
 
     /* Thu nhỏ tiêu đề chính vừa 1 dòng trên mobile */
     #bank-main-title,
@@ -3131,7 +3124,6 @@ st.markdown(css_style, unsafe_allow_html=True)
 # 🧭 HEADER & BODY
 # ====================================================
 st.markdown(f"""
-<div id="logo-header-wrapper">
 <div id="logo-container">
     <div id="logo-wrap">
         <img src="data:image/jpeg;base64,{img_logo_base64}" alt="Logo" />
@@ -3178,7 +3170,6 @@ st.markdown(f"""
 
 <div id="header-content-wrapper">
     <div id="main-title-container"></div>
-</div>
 </div>
 """, unsafe_allow_html=True)
 
