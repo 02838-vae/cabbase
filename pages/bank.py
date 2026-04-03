@@ -3134,50 +3134,56 @@ st.markdown(
 st.markdown("""
 <script>
 (function mountLogos() {
-    var doc = (window.parent && window.parent.document) ? window.parent.document : document;
-    var iframeDoc = document;
-    var body = doc.body;
+    var iDoc = document;
+    var pDoc = (window.parent && window.parent.document) ? window.parent.document : document;
+    var pBody = pDoc.body;
 
-    // Lấy base64 từ hidden span trong iframe
-    var b64L = iframeDoc.getElementById('_logo1_b64');
-    var b64R = iframeDoc.getElementById('_logo2_b64');
-    if (!b64L || !b64R) { setTimeout(mountLogos, 200); return; }
+    var b64L = iDoc.getElementById('_logo1_b64');
+    var b64R = iDoc.getElementById('_logo2_b64');
+    if (!b64L || !b64R) { setTimeout(mountLogos, 300); return; }
+
     var srcL = b64L.textContent.trim();
     var srcR = b64R.textContent.trim();
 
-    // Xóa cũ
-    var oldL = doc.getElementById('logo-container-fixed');
-    var oldR = doc.getElementById('logo2-container-fixed');
-    if (oldL) oldL.remove();
-    if (oldR) oldR.remove();
+    // Xoa cu
+    ['logo-fixed-left','logo-fixed-right','logo-fixed-style'].forEach(function(id){
+        var el = pDoc.getElementById(id); if(el) el.remove();
+    });
 
-    var left = doc.createElement('div');
-    left.id = 'logo-container-fixed';
-    left.style.cssText = 'position:fixed;top:10px;left:10px;z-index:99999;pointer-events:none;';
-    left.innerHTML = '<img src="data:image/jpeg;base64,' + srcL + '" alt="Logo" '
-        + 'style="height:110px;width:auto;object-fit:contain;border-radius:12px;display:block;'
-        + 'filter:drop-shadow(0 2px 8px rgba(0,0,0,0.6));" />';
+    // CSS inject vao parent
+    var style = pDoc.createElement('style');
+    style.id = 'logo-fixed-style';
+    style.textContent = [
+        '#logo-fixed-left{position:fixed;top:10px;left:10px;z-index:99999;pointer-events:none;}',
+        '#logo-fixed-right{position:fixed;top:10px;right:10px;z-index:99999;pointer-events:none;}',
+        '#logo-fixed-left img{height:110px;width:auto;object-fit:contain;border-radius:12px;display:block;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.6));}',
+        '#logo-fixed-right img{height:110px;width:auto;object-fit:contain;display:block;}',
+        '#logo-fixed-right .lw{position:relative;display:inline-block;}',
+        '#logo-fixed-right svg{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none;overflow:visible;}',
+        '.el-t{stroke-dasharray:100 900;animation:elr 2s linear infinite;}',
+        '.el-m{stroke-dasharray:60 940;animation:elr 2s linear infinite;}',
+        '.el-p{stroke-dasharray:18 982;animation:elr 2s linear infinite;}',
+        '@keyframes elr{from{stroke-dashoffset:1000;}to{stroke-dashoffset:0;}}',
+        '@media(max-width:767px){#logo-fixed-left img,#logo-fixed-right img{height:44px;}#logo-fixed-left{top:5px;left:5px;}#logo-fixed-right{top:5px;right:5px;}}'
+    ].join('');
+    pDoc.head.appendChild(style);
 
-    var right = doc.createElement('div');
-    right.id = 'logo2-container-fixed';
-    right.style.cssText = 'position:fixed;top:10px;right:10px;z-index:99999;pointer-events:none;';
-    right.innerHTML = '<div style="position:relative;display:inline-block;">'
-        + '<img src="data:image/png;base64,' + srcR + '" alt="Logo2" '
-        + 'style="height:110px;width:auto;object-fit:contain;display:block;" />'
-        + '<svg viewBox="0 0 228 100" style="position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none;overflow:visible;">'
-        + '<style>'
-        + '.el-tail2{stroke-dasharray:100 900;animation:elip-run2 2s linear infinite;}'
-        + '.el-mid2{stroke-dasharray:60 940;animation:elip-run2 2s linear infinite;}'
-        + '.el-tip2{stroke-dasharray:18 982;animation:elip-run2 2s linear infinite;}'
-        + '@keyframes elip-run2{from{stroke-dashoffset:1000;}to{stroke-dashoffset:0;}}'
-        + '</style>'
-        + '<ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#b8860b" stroke-width="2.5" stroke-linecap="round" pathLength="1000" class="el-tail2"/>'
-        + '<ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#FFD700" stroke-width="3" stroke-linecap="round" pathLength="1000" class="el-mid2"/>'
-        + '<ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#FFF8C0" stroke-width="1.5" stroke-linecap="round" pathLength="1000" class="el-tip2"/>'
+    var left = pDoc.createElement('div');
+    left.id = 'logo-fixed-left';
+    left.innerHTML = '<img src="data:image/jpeg;base64,' + srcL + '" alt="Logo"/>';
+
+    var right = pDoc.createElement('div');
+    right.id = 'logo-fixed-right';
+    right.innerHTML = '<div class="lw">'
+        + '<img src="data:image/png;base64,' + srcR + '" alt="Logo2"/>'
+        + '<svg viewBox="0 0 228 100">'
+        + '<ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#b8860b" stroke-width="2.5" stroke-linecap="round" pathLength="1000" class="el-t"/>'
+        + '<ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#FFD700" stroke-width="3" stroke-linecap="round" pathLength="1000" class="el-m"/>'
+        + '<ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#FFF8C0" stroke-width="1.5" stroke-linecap="round" pathLength="1000" class="el-p"/>'
         + '</svg></div>';
 
-    body.appendChild(left);
-    body.appendChild(right);
+    pBody.appendChild(left);
+    pBody.appendChild(right);
 })();
 </script>
 """, unsafe_allow_html=True)
