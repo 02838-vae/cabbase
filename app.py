@@ -466,7 +466,7 @@ st.components.v1.html(f"""
     resize();
     window.addEventListener('resize', resize);
 
-    const COUNT = 80;
+    const COUNT = 6;
     const flies = [];
 
     function rand(a, b) {{ return a + Math.random() * (b - a); }}
@@ -476,10 +476,10 @@ st.components.v1.html(f"""
         x:      rand(0, window.innerWidth),
         y:      rand(0, window.innerHeight),
         r:      rand(1.2, 2.8),
-        speedX: rand(-0.4, 0.4),
-        speedY: rand(-0.4, 0.4),
+        speedX: rand(-0.2, 0.2),
+        speedY: rand(-0.2, 0.2),
         alpha:  rand(0, 1),
-        dAlpha: rand(0.005, 0.022) * (Math.random() < 0.5 ? 1 : -1),
+        dAlpha: rand(0.002, 0.006) * (Math.random() < 0.5 ? 1 : -1),
         maxAlpha: rand(0.55, 1.0),
         glow:   rand(3, 9),
         hue:    rand(48, 72),
@@ -508,8 +508,8 @@ st.components.v1.html(f"""
           f.dAlpha = Math.abs(f.dAlpha);
           f.x = rand(0, W);
           f.y = rand(0, H);
-          f.speedX = rand(-0.4, 0.4);
-          f.speedY = rand(-0.4, 0.4);
+          f.speedX = rand(-0.2, 0.2);
+          f.speedY = rand(-0.2, 0.2);
           f.maxAlpha = rand(0.55, 1.0);
         }}
 
