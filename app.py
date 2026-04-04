@@ -451,6 +451,96 @@ st.components.v1.html(f"""
       </a>
     </div>
   </div>
+  <!-- Đom đóm -->
+  <canvas id="fireflies" style="position:fixed;inset:0;z-index:5;pointer-events:none;width:100%;height:100%;"></canvas>
+
+  <script>
+  (function() {{
+    const canvas = document.getElementById('fireflies');
+    const ctx = canvas.getContext('2d');
+
+    function resize() {{
+      canvas.width  = window.innerWidth;
+      canvas.height = window.innerHeight;
+    }}
+    resize();
+    window.addEventListener('resize', resize);
+
+    const COUNT = 80;
+    const flies = [];
+
+    function rand(a, b) {{ return a + Math.random() * (b - a); }}
+
+    for (let i = 0; i < COUNT; i++) {{
+      flies.push({{
+        x:      rand(0, window.innerWidth),
+        y:      rand(0, window.innerHeight),
+        r:      rand(1.2, 2.8),
+        speedX: rand(-0.4, 0.4),
+        speedY: rand(-0.4, 0.4),
+        alpha:  rand(0, 1),
+        dAlpha: rand(0.005, 0.022) * (Math.random() < 0.5 ? 1 : -1),
+        maxAlpha: rand(0.55, 1.0),
+        glow:   rand(3, 9),
+        hue:    rand(48, 72),
+      }});
+    }}
+
+    function draw() {{
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const W = canvas.width;
+      const H = canvas.height;
+
+      for (let f of flies) {{
+        f.x += f.speedX;
+        f.y += f.speedY;
+
+        if (f.x < -10) f.x = W + 10;
+        if (f.x > W + 10) f.x = -10;
+        if (f.y < -10) f.y = H + 10;
+        if (f.y > H + 10) f.y = -10;
+
+        f.alpha += f.dAlpha;
+        if (f.alpha >= f.maxAlpha) {{ f.alpha = f.maxAlpha; f.dAlpha = -Math.abs(f.dAlpha); }}
+        if (f.alpha <= 0) {{
+          f.alpha = 0;
+          f.dAlpha = Math.abs(f.dAlpha);
+          f.x = rand(0, W);
+          f.y = rand(0, H);
+          f.speedX = rand(-0.4, 0.4);
+          f.speedY = rand(-0.4, 0.4);
+          f.maxAlpha = rand(0.55, 1.0);
+        }}
+
+        const a = Math.max(0, Math.min(1, f.alpha));
+        ctx.save();
+        ctx.globalAlpha = a;
+
+        const grd = ctx.createRadialGradient(f.x, f.y, 0, f.x, f.y, f.glow * 2.5);
+        grd.addColorStop(0,   `hsla(${{f.hue}}, 100%, 92%, 1)`);
+        grd.addColorStop(0.3, `hsla(${{f.hue}}, 100%, 75%, 0.7)`);
+        grd.addColorStop(1,   `hsla(${{f.hue}}, 100%, 55%, 0)`);
+
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, f.glow * 2.5, 0, Math.PI * 2);
+        ctx.fillStyle = grd;
+        ctx.fill();
+
+        ctx.beginPath();
+        ctx.arc(f.x, f.y, f.r, 0, Math.PI * 2);
+        ctx.fillStyle = `hsla(${{f.hue}}, 100%, 97%, 1)`;
+        ctx.fill();
+
+        ctx.restore();
+      }}
+
+      requestAnimationFrame(draw);
+    }}
+
+    draw();
+  }})();
+  </script>
 </body>
 </html>
 """, height=1080, scrolling=False)
