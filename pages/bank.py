@@ -3139,7 +3139,9 @@ st.markdown(f"""
     justify-content: space-between;
     align-items: flex-start;
     width: 100%;
-    padding: 10px 10px 0 10px;
+    padding: 4px 10px 0 10px;
+    margin-top: -20px;
+    margin-bottom: 30px;
     box-sizing: border-box;
     pointer-events: none;
     position: relative;
@@ -3189,7 +3191,9 @@ st.markdown(f"""
 
 <div id="logo-header-row">
     <div id="logo-fixed-left">
-        <img src="data:image/jpeg;base64,{img_logo_base64}" alt="Logo"/>
+        <div id="logo-wrap">
+            <img src="data:image/jpeg;base64,{img_logo_base64}" alt="Logo"/>
+        </div>
     </div>
     <div id="logo-fixed-right">
         <div class="lw">
