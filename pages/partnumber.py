@@ -460,8 +460,15 @@ if zone_selected:
                 html_parts.append('<tr>')
                 for col in df_display.columns:
                     val = row[col]
+                    # Nếu giá trị là NaN, None, hoặc chuỗi "nan"/"NaN" thì hiển thị trống
+                    if val is None or (isinstance(val, float) and pd.isna(val)):
+                        display_val = ""
+                    else:
+                        display_val = str(val).strip()
+                        if display_val.lower() == "nan":
+                            display_val = ""
                     style = "color: #FF69B4; font-weight: bold;" if col == "PART NUMBER" else ""
-                    html_parts.append(f'<td style="{style}">{str(val)}</td>')
+                    html_parts.append(f'<td style="{style}">{display_val}</td>')
                 html_parts.append('</tr>')
             html_parts.append('</tbody></table>')
             html_parts.append('</div>')
