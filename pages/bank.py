@@ -2993,7 +2993,7 @@ div.stSelectbox label, div.stSelectbox label p, div.stSelectbox label span,
 
 /* Ngoại lệ: tiêu đề chính giữ màu riêng */
 #bank-main-title {{
-    margin-top: -120px !important;
+    margin-top: 0px !important;
     margin-bottom: 10px !important;
     text-align: center !important;
     font-size: 2.8rem !important;
