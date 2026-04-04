@@ -4,6 +4,7 @@ import streamlit as st
 import pandas as pd
 import base64
 import os
+import html as html_module
 
 # --- CẤU HÌNH ---
 st.set_page_config(page_title="Tra cứu PN", layout="wide", initial_sidebar_state="collapsed")
@@ -436,7 +437,7 @@ elif zone_selected:
 desc_exists = "DESCRIPTION" in df_filtered.columns
 desc_selected = False
 if aircraft_selected and zone_selected and desc_exists:
-    descs_options = [CHOOSE_PROMPT] + list(dict.fromkeys(df_filtered["DESCRIPTION"].dropna().tolist()))
+    descs_options = [CHOOSE_PROMPT] + list(dict.fromkeys(v for v in df_filtered["DESCRIPTION"].tolist() if v != "" and str(v).strip().lower() not in ("nan","none","")))
     with col3:
         desc = st.selectbox("🔑 Mô tả chi tiết", descs_options, key="desc_select")
     desc_selected = (desc and desc != CHOOSE_PROMPT)
@@ -501,8 +502,15 @@ if zone_selected:
                         display_val = str(val).strip()
                         if display_val.lower() in ("nan", "none", "nat", "<na>"):
                             display_val = ""
-                    style = "color: #FF69B4; font-weight: bold;" if col == "PART NUMBER" else ""
-                    html_parts.append(f'<td style="{style}">{display_val}</td>')
+                    safe_val = html_module.escape(str(display_val))
+                    if col == "PART NUMBER":
+                        style = "color: #FF69B4; font-weight: bold; white-space: nowrap;"
+                        html_parts.append(f'<td style="{style}">{safe_val}</td>')
+                    elif col in ("NOTE", "NOTES", "PN INTERCHANGE", "PN INTERCHAGE"):
+                        style = "max-width:260px; word-wrap:break-word; white-space:pre-wrap; text-align:left !important;"
+                        html_parts.append(f'<td style="{style}">{safe_val}</td>')
+                    else:
+                        html_parts.append(f'<td>{safe_val}</td>')
                 html_parts.append('</tr>')
             html_parts.append('</tbody></table>')
             html_parts.append('</div>')
