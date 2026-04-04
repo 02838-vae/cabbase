@@ -465,7 +465,7 @@ st.components.v1.html(f"""
     resize();
     window.addEventListener('resize', resize);
 
-    const COUNT = 6;
+    const COUNT = 12;
     const flies = [];
 
     function rand(a, b) {{ return a + Math.random() * (b - a); }}
