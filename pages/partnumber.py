@@ -35,7 +35,10 @@ def load_and_clean(excel_file, sheet):
         for col in df.columns:
             if df[col].dtype == "object":
                 df[col] = df[col].fillna("").astype(str).str.strip()
-            if col in ["A/C", "DESCRIPTION", "ITEM", "PART NUMBER"] and df[col].eq("").all():
+            else:
+                # Giữ nguyên kiểu số, chỉ fillna chuỗi rỗng khi cần hiển thị sẽ xử lý sau
+                pass
+            if col in ["A/C", "DESCRIPTION", "ITEM", "PART NUMBER"] and df[col].replace("", pd.NA).isna().all():
                 return pd.DataFrame()
         return df
     except Exception as e:
@@ -311,53 +314,35 @@ st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
 # --- HIỆU ỨNG SAO LẤP LÁNH ---
 st.markdown("""
-<div id="stars-container"></div>
 <style>
-.star {
-    position: fixed;
-    pointer-events: none;
-    z-index: 9999;
-    animation: twinkle var(--dur) ease-in-out var(--delay) infinite;
-    opacity: 0;
+@keyframes star-twinkle {
+    0%,100% { opacity:0; transform:scale(0.3) rotate(0deg); }
+    30%      { opacity:1; transform:scale(1.4) rotate(20deg); filter:drop-shadow(0 0 8px currentColor) drop-shadow(0 0 16px currentColor); }
+    60%      { opacity:0.6; transform:scale(1.0) rotate(-10deg); }
+    80%      { opacity:1; transform:scale(1.2) rotate(5deg); filter:drop-shadow(0 0 6px currentColor); }
 }
-.star::before {
-    content: '\\2605';
-    font-size: var(--size);
-    color: var(--color);
-    filter: drop-shadow(0 0 6px var(--color)) drop-shadow(0 0 14px var(--color));
-    display: block;
-}
-@keyframes twinkle {
-    0%   { opacity: 0;    transform: scale(0.4) rotate(0deg); }
-    25%  { opacity: 1;    transform: scale(1.3) rotate(20deg); }
-    50%  { opacity: 0.7;  transform: scale(0.9) rotate(-12deg); }
-    75%  { opacity: 1;    transform: scale(1.2) rotate(10deg); }
-    100% { opacity: 0;    transform: scale(0.4) rotate(0deg); }
-}
+.twinkle-star { position:fixed; pointer-events:none; z-index:9998; font-size:1.2rem; animation:star-twinkle linear infinite; opacity:0; }
+.ts1  { top:5vh;  left:8vw;  color:#FFD700; animation-duration:2.8s; animation-delay:0s;    font-size:1.4rem; }
+.ts2  { top:15vh; left:88vw; color:#FFF8C0; animation-duration:2.1s; animation-delay:0.7s;  font-size:1.0rem; }
+.ts3  { top:30vh; left:3vw;  color:#FFE066; animation-duration:3.2s; animation-delay:1.3s;  font-size:1.6rem; }
+.ts4  { top:45vh; left:93vw; color:#D4A843; animation-duration:2.5s; animation-delay:0.3s;  font-size:1.1rem; }
+.ts5  { top:60vh; left:12vw; color:#FFC0CB; animation-duration:2.9s; animation-delay:1.8s;  font-size:0.9rem; }
+.ts6  { top:72vh; left:75vw; color:#FFFFFF; animation-duration:2.3s; animation-delay:0.9s;  font-size:1.3rem; }
+.ts7  { top:85vh; left:40vw; color:#FFD700; animation-duration:3.0s; animation-delay:2.2s;  font-size:1.5rem; }
+.ts8  { top:20vh; left:50vw; color:#B0E0FF; animation-duration:2.6s; animation-delay:1.1s;  font-size:1.0rem; }
+.ts9  { top:55vh; left:60vw; color:#FFFACD; animation-duration:2.2s; animation-delay:0.5s;  font-size:1.2rem; }
+.ts10 { top:90vh; left:22vw; color:#FFE066; animation-duration:3.4s; animation-delay:1.6s;  font-size:1.4rem; }
 </style>
-<script>
-(function() {
-    var colors = ['#FFD700','#FFF8C0','#FFFACD','#FFE066','#FFC0CB','#B0E0FF','#FFFFFF','#D4A843'];
-    var sizes  = ['1.0rem','1.3rem','1.6rem','0.9rem','1.5rem'];
-    var count  = 10;
-    var container = document.getElementById('stars-container');
-    for (var i = 0; i < count; i++) {
-        var star = document.createElement('div');
-        star.classList.add('star');
-        var top   = (Math.random() * 92 + 2).toFixed(2) + 'vh';
-        var left  = (Math.random() * 95 + 1).toFixed(2) + 'vw';
-        var dur   = (Math.random() * 2.5 + 1.8).toFixed(2) + 's';
-        var delay = (Math.random() * 6).toFixed(2) + 's';
-        var color = colors[Math.floor(Math.random() * colors.length)];
-        var size  = sizes [Math.floor(Math.random() * sizes.length)];
-        star.style.cssText =
-            'top:' + top + ';left:' + left +
-            ';--dur:' + dur + ';--delay:' + delay +
-            ';--color:' + color + ';--size:' + size;
-        container.appendChild(star);
-    }
-})();
-</script>
+<div class="twinkle-star ts1">&#9733;</div>
+<div class="twinkle-star ts2">&#9733;</div>
+<div class="twinkle-star ts3">&#9733;</div>
+<div class="twinkle-star ts4">&#9733;</div>
+<div class="twinkle-star ts5">&#9733;</div>
+<div class="twinkle-star ts6">&#9733;</div>
+<div class="twinkle-star ts7">&#9733;</div>
+<div class="twinkle-star ts8">&#9733;</div>
+<div class="twinkle-star ts9">&#9733;</div>
+<div class="twinkle-star ts10">&#9733;</div>
 """, unsafe_allow_html=True)
 
 # --- 2 LOGO GÓC TRÁI / PHẢI ---
@@ -511,8 +496,17 @@ if zone_selected:
                 html_parts.append('<tr>')
                 for col in df_display.columns:
                     val = row[col]
+                    import math
+                    if val is None:
+                        display_val = ""
+                    elif isinstance(val, float) and (math.isnan(val) or math.isinf(val)):
+                        display_val = ""
+                    else:
+                        display_val = str(val).strip()
+                        if display_val.lower() in ("nan", "none", "nat", "<na>"):
+                            display_val = ""
                     style = "color: #FF69B4; font-weight: bold;" if col == "PART NUMBER" else ""
-                    html_parts.append(f'<td style="{style}">{str(val)}</td>')
+                    html_parts.append(f'<td style="{style}">{display_val}</td>')
                 html_parts.append('</tr>')
             html_parts.append('</tbody></table>')
             html_parts.append('</div>')
