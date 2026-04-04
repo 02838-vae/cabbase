@@ -252,140 +252,116 @@ st.components.v1.html(f"""
     }}
   }}
 
-  /* Wrapper để chứa hiệu ứng ánh sáng chạy vòng */
+  /* ===== LEAF BUTTON ===== */
   .btn-wrap {{
     position: relative;
-    border-radius: 9999px;
-    padding: 2px;
-    min-width: 260px;
-    overflow: hidden;
+    min-width: 280px;
+    height: 72px;
   }}
 
-  /* Ánh sáng vàng chạy vòng quanh */
-  .btn-wrap::before {{
+  /* SVG viền lá chạy sáng */
+  .btn-wrap svg.leaf-border {{
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 3;
+    pointer-events: none;
+    overflow: visible;
+  }}
+
+  .leaf-path-tail {{
+    stroke-dasharray: 120 900;
+    animation: leaf-run 3s linear infinite;
+  }}
+  .leaf-path-mid {{
+    stroke-dasharray: 70 950;
+    animation: leaf-run 3s linear infinite;
+  }}
+  .leaf-path-tip {{
+    stroke-dasharray: 22 1000;
+    animation: leaf-run 3s linear infinite;
+  }}
+  .btn-wrap:nth-child(2) .leaf-path-tail,
+  .btn-wrap:nth-child(2) .leaf-path-mid,
+  .btn-wrap:nth-child(2) .leaf-path-tip {{
+    animation-delay: -1.5s;
+  }}
+
+  @keyframes leaf-run {{
+    from {{ stroke-dashoffset: 1050; }}
+    to   {{ stroke-dashoffset: 0; }}
+  }}
+
+  /* Nền tối bên trong lá */
+  .btn-bg {{
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    clip-path: path('M 140,4 C 220,0 276,16 276,36 C 276,56 220,68 140,68 C 60,68 4,56 4,36 C 4,16 60,0 140,4 Z');
+    background: rgba(10, 30, 10, 0.72);
+    backdrop-filter: blur(6px);
+  }}
+
+  .btn-bg::after {{
     content: '';
     position: absolute;
     inset: 0;
-    border-radius: 9999px;
-    background: conic-gradient(
-      from var(--angle, 0deg),
-      transparent 0deg,
-      transparent 60deg,
-      #ffd700 90deg,
-      #fff8a0 110deg,
-      #ffd700 130deg,
-      transparent 160deg,
-      transparent 360deg
+    background: linear-gradient(
+      105deg,
+      transparent 20%,
+      rgba(255,255,255,0.06) 45%,
+      rgba(255,215,0,0.13) 50%,
+      rgba(255,255,255,0.06) 55%,
+      transparent 80%
     );
-    animation: spin-light 2.5s linear infinite;
-    z-index: 0;
+    transform: skewX(-15deg) translateX(-160%);
+    animation: leaf-shimmer 7s ease-in-out infinite;
   }}
-
-  @property --angle {{
-    syntax: '<angle>';
-    initial-value: 0deg;
-    inherits: false;
+  .btn-wrap:nth-child(2) .btn-bg::after {{
+    animation-delay: 3s;
   }}
-
-  @keyframes spin-light {{
-    to {{ --angle: 360deg; }}
-  }}
-
-  /* Fallback cho browser không hỗ trợ @property */
-  @supports not (background: conic-gradient(from 0deg, red, blue)) {{
-    .btn-wrap::before {{
-      animation: spin-fallback 2.5s linear infinite;
-      background: linear-gradient(90deg, transparent, #ffd700, transparent);
-    }}
-    @keyframes spin-fallback {{
-      0%   {{ transform: rotate(0deg) scale(2); }}
-      100% {{ transform: rotate(360deg) scale(2); }}
-    }}
-  }}
-
-  .btn-wrap::after {{
-    content: '';
-    position: absolute;
-    inset: 2px;
-    border-radius: 9999px;
-    background: hsla(0,0%,10%,1);
-    z-index: 1;
+  @keyframes leaf-shimmer {{
+    0%   {{ transform: skewX(-15deg) translateX(-160%); opacity: 0; }}
+    5%   {{ opacity: 1; }}
+    45%  {{ transform: skewX(-15deg) translateX(160%); opacity: 1; }}
+    50%  {{ opacity: 0; }}
+    100% {{ transform: skewX(-15deg) translateX(160%); opacity: 0; }}
   }}
 
   .btn {{
-    position: relative;
+    position: absolute;
+    inset: 0;
     z-index: 2;
     display: flex;
     align-items: center;
     justify-content: center;
     gap: 12px;
-    padding: 1rem 2rem;
-    border-radius: 9999px;
     background: transparent;
     border: none;
     cursor: pointer;
     text-decoration: none;
-    color: #fff;
-    font-size: 1rem;
-    font-weight: 600;
-    letter-spacing: 1px;
+    color: #d4e8c2;
+    font-size: 0.95rem;
+    font-weight: 700;
+    letter-spacing: 1.5px;
     font-family: sans-serif;
-    width: 100%;
     transition: all 0.3s ease;
-    overflow: hidden;
-  }}
-
-  .btn::before {{
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -120%;
-    width: 60%;
-    height: 100%;
-    background: linear-gradient(
-      105deg,
-      transparent 20%,
-      rgba(255, 255, 255, 0.08) 40%,
-      rgba(255, 215, 0, 0.18) 50%,
-      rgba(255, 255, 255, 0.08) 60%,
-      transparent 80%
-    );
-    transform: skewX(-15deg);
-    animation: shimmer 7s ease-in-out infinite;
-    z-index: 3;
-    pointer-events: none;
-    border-radius: 9999px;
-  }}
-
-  .btn-wrap:nth-child(2) .btn::before {{
-    animation-delay: 2s;
-  }}
-
-  @keyframes shimmer {{
-    0%   {{ left: -120%; opacity: 0; }}
-    5%   {{ opacity: 1; }}
-    45%  {{ left: 130%; opacity: 1; }}
-    50%  {{ opacity: 0; }}
-    100% {{ left: 130%; opacity: 0; }}
+    text-shadow: 0 1px 6px rgba(0,0,0,0.8);
   }}
 
   .btn-wrap:hover .btn {{
     color: #ffd700;
-    text-shadow: 0 0 10px rgba(255,215,0,0.7);
+    text-shadow: 0 0 12px rgba(255,215,0,0.8), 0 1px 6px rgba(0,0,0,0.8);
   }}
 
-  .btn-wrap:hover::before {{
-    animation-duration: 1.2s;
-  }}
-
-  .btn svg {{
-    width: 22px; height: 22px;
+  .btn svg.icon {{
+    width: 20px; height: 20px;
     flex-shrink: 0;
   }}
 
   @media (max-width: 768px) {{
-    .btn-wrap {{ width: 100%; min-width: unset; }}
-    .btn {{ padding: 0.9rem 1.5rem; }}
+    .btn-wrap {{ width: 100%; min-width: unset; height: 62px; }}
   }}
 </style>
 </head>
@@ -434,16 +410,41 @@ st.components.v1.html(f"""
 
   <div id="content">
     <div class="btn-wrap">
+      <div class="btn-bg"></div>
+      <svg class="leaf-border" viewBox="0 0 280 72" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 140,4 C 220,0 276,16 276,36 C 276,56 220,68 140,68 C 60,68 4,56 4,36 C 4,16 60,0 140,4 Z"
+          fill="none" stroke="#5a7a2a" stroke-width="2.5" pathLength="1000" class="leaf-path-tail"/>
+        <path d="M 140,4 C 220,0 276,16 276,36 C 276,56 220,68 140,68 C 60,68 4,56 4,36 C 4,16 60,0 140,4 Z"
+          fill="none" stroke="#a8d060" stroke-width="3" pathLength="1000" class="leaf-path-mid"/>
+        <path d="M 140,4 C 220,0 276,16 276,36 C 276,56 220,68 140,68 C 60,68 4,56 4,36 C 4,16 60,0 140,4 Z"
+          fill="none" stroke="#e8ffb0" stroke-width="1.5" pathLength="1000" class="leaf-path-tip"/>
+        <!-- gân lá -->
+        <line x1="20" y1="36" x2="260" y2="36" stroke="rgba(168,208,96,0.08)" stroke-width="1"/>
+        <path d="M 140,10 Q 180,36 140,62" fill="none" stroke="rgba(168,208,96,0.06)" stroke-width="1"/>
+        <path d="M 140,10 Q 100,36 140,62" fill="none" stroke="rgba(168,208,96,0.06)" stroke-width="1"/>
+      </svg>
       <a class="btn" href="/partnumber" target="_blank">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
+        <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.607 10.607z"/>
         </svg>
         TRA CỨU PART NUMBER
       </a>
     </div>
     <div class="btn-wrap">
+      <div class="btn-bg"></div>
+      <svg class="leaf-border" viewBox="0 0 280 72" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M 140,4 C 220,0 276,16 276,36 C 276,56 220,68 140,68 C 60,68 4,56 4,36 C 4,16 60,0 140,4 Z"
+          fill="none" stroke="#5a7a2a" stroke-width="2.5" pathLength="1000" class="leaf-path-tail"/>
+        <path d="M 140,4 C 220,0 276,16 276,36 C 276,56 220,68 140,68 C 60,68 4,56 4,36 C 4,16 60,0 140,4 Z"
+          fill="none" stroke="#a8d060" stroke-width="3" pathLength="1000" class="leaf-path-mid"/>
+        <path d="M 140,4 C 220,0 276,16 276,36 C 276,56 220,68 140,68 C 60,68 4,56 4,36 C 4,16 60,0 140,4 Z"
+          fill="none" stroke="#e8ffb0" stroke-width="1.5" pathLength="1000" class="leaf-path-tip"/>
+        <line x1="20" y1="36" x2="260" y2="36" stroke="rgba(168,208,96,0.08)" stroke-width="1"/>
+        <path d="M 140,10 Q 180,36 140,62" fill="none" stroke="rgba(168,208,96,0.06)" stroke-width="1"/>
+        <path d="M 140,10 Q 100,36 140,62" fill="none" stroke="rgba(168,208,96,0.06)" stroke-width="1"/>
+      </svg>
       <a class="btn" href="/bank" target="_blank">
-        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
+        <svg class="icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.042A8.967 8.967 0 006 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 016 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 016-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0018 18a8.967 8.967 0 00-6 2.292m0-14.25v14.25"/>
           <path stroke-linecap="round" stroke-linejoin="round" d="M9 9h.01M9 12h3m-3 3h6"/>
         </svg>
