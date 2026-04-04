@@ -6,7 +6,7 @@ import base64
 import os
 
 # --- CẤU HÌNH ---
-st.set_page_config(page_title="Tra cứu part number", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Tra cứu PN", layout="wide", initial_sidebar_state="collapsed")
 
 # --- HÀM HỖ TRỢ ---
 def get_base64_encoded_file(file_path):
@@ -309,55 +309,36 @@ div.stSelectbox label span,
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# --- HIỆU ỨNG SAO BĂNG ---
+# --- HIỆU ỨNG NGÔI SAO ---
 st.markdown("""
 <style>
-@keyframes shooting {
-    0%   { transform: translateX(0) translateY(0) rotate(-25deg); opacity: 1; }
-    70%  { opacity: 1; }
-    100% { transform: translateX(-900px) translateY(120px) rotate(-25deg); opacity: 0; }
+@keyframes glow-star {
+    0%   { opacity:0; transform:scale(0.2); filter:blur(1px); }
+    40%  { opacity:1; transform:scale(1.6); filter:blur(0px) drop-shadow(0 0 10px #fff) drop-shadow(0 0 24px #fff) drop-shadow(0 0 40px rgba(255,255,255,0.6)); }
+    65%  { opacity:0.85; transform:scale(1.2); filter:blur(0px) drop-shadow(0 0 6px #fff); }
+    100% { opacity:0; transform:scale(0.2); filter:blur(1px); }
 }
-.meteor-wrap { position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:9997; overflow:hidden; }
-.meteor {
-    position: absolute;
-    width: 140px;
-    height: 2px;
-    border-radius: 50%;
-    background: linear-gradient(to left, rgba(255,255,255,0), #FFD700 60%, #FFFFFF);
-    box-shadow: 0 0 6px 1px #FFD700;
+.gstar {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9997;
+    color: #FFFFFF;
+    font-size: 1.2rem;
     opacity: 0;
-    animation: shooting linear infinite;
+    animation: glow-star ease-in-out infinite;
+    line-height: 1;
 }
-.meteor::after {
-    content: '';
-    position: absolute;
-    right: -1px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: #FFFFFF;
-    box-shadow: 0 0 8px 3px #FFD700;
-}
-/* Mỗi sao băng: vị trí xuất phát, thời gian, delay khác nhau */
-.m1  { top:4vh;  left:95vw; animation-duration:6s;  animation-delay:0s;   width:160px; }
-.m2  { top:8vh;  left:80vw; animation-duration:8s;  animation-delay:2.5s; width:120px; }
-.m3  { top:2vh;  left:70vw; animation-duration:7s;  animation-delay:5s;   width:180px; }
-.m4  { top:12vh; left:90vw; animation-duration:9s;  animation-delay:1.2s; width:100px; }
-.m5  { top:6vh;  left:60vw; animation-duration:6.5s;animation-delay:3.8s; width:150px; }
-.m6  { top:1vh;  left:85vw; animation-duration:10s; animation-delay:7s;   width:130px; }
-.m7  { top:10vh; left:75vw; animation-duration:7.5s;animation-delay:4.5s; width:110px; }
+.gs1 { top:7vh;  left:11vw; animation-duration:5.5s; animation-delay:0s;    font-size:1.0rem; }
+.gs2 { top:19vh; left:82vw; animation-duration:6.5s; animation-delay:1.4s;  font-size:1.4rem; }
+.gs3 { top:53vh; left:6vw;  animation-duration:7.0s; animation-delay:2.9s;  font-size:1.1rem; }
+.gs4 { top:38vh; left:91vw; animation-duration:5.8s; animation-delay:4.2s;  font-size:0.9rem; }
+.gs5 { top:78vh; left:55vw; animation-duration:6.2s; animation-delay:0.8s;  font-size:1.3rem; }
 </style>
-<div class="meteor-wrap">
-  <div class="meteor m1"></div>
-  <div class="meteor m2"></div>
-  <div class="meteor m3"></div>
-  <div class="meteor m4"></div>
-  <div class="meteor m5"></div>
-  <div class="meteor m6"></div>
-  <div class="meteor m7"></div>
-</div>
+<div class="gstar gs1">&#10022;</div>
+<div class="gstar gs2">&#10022;</div>
+<div class="gstar gs3">&#10022;</div>
+<div class="gstar gs4">&#10022;</div>
+<div class="gstar gs5">&#10022;</div>
 """, unsafe_allow_html=True)
 
 # --- 2 LOGO GÓC TRÁI / PHẢI ---
