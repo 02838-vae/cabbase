@@ -309,6 +309,57 @@ div.stSelectbox label span,
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
+# --- HIỆU ỨNG SAO LẤP LÁNH ---
+st.markdown("""
+<div id="stars-container"></div>
+<style>
+.star {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    animation: twinkle var(--dur) ease-in-out var(--delay) infinite;
+    opacity: 0;
+}
+.star::before {
+    content: '\\2605';
+    font-size: var(--size);
+    color: var(--color);
+    filter: drop-shadow(0 0 6px var(--color)) drop-shadow(0 0 14px var(--color));
+    display: block;
+}
+@keyframes twinkle {
+    0%   { opacity: 0;    transform: scale(0.4) rotate(0deg); }
+    25%  { opacity: 1;    transform: scale(1.3) rotate(20deg); }
+    50%  { opacity: 0.7;  transform: scale(0.9) rotate(-12deg); }
+    75%  { opacity: 1;    transform: scale(1.2) rotate(10deg); }
+    100% { opacity: 0;    transform: scale(0.4) rotate(0deg); }
+}
+</style>
+<script>
+(function() {
+    var colors = ['#FFD700','#FFF8C0','#FFFACD','#FFE066','#FFC0CB','#B0E0FF','#FFFFFF','#D4A843'];
+    var sizes  = ['1.0rem','1.3rem','1.6rem','0.9rem','1.5rem'];
+    var count  = 10;
+    var container = document.getElementById('stars-container');
+    for (var i = 0; i < count; i++) {
+        var star = document.createElement('div');
+        star.classList.add('star');
+        var top   = (Math.random() * 92 + 2).toFixed(2) + 'vh';
+        var left  = (Math.random() * 95 + 1).toFixed(2) + 'vw';
+        var dur   = (Math.random() * 2.5 + 1.8).toFixed(2) + 's';
+        var delay = (Math.random() * 6).toFixed(2) + 's';
+        var color = colors[Math.floor(Math.random() * colors.length)];
+        var size  = sizes [Math.floor(Math.random() * sizes.length)];
+        star.style.cssText =
+            'top:' + top + ';left:' + left +
+            ';--dur:' + dur + ';--delay:' + delay +
+            ';--color:' + color + ';--size:' + size;
+        container.appendChild(star);
+    }
+})();
+</script>
+""", unsafe_allow_html=True)
+
 # --- 2 LOGO GÓC TRÁI / PHẢI ---
 st.markdown(f"""
 <div id="logo-container">
@@ -460,15 +511,8 @@ if zone_selected:
                 html_parts.append('<tr>')
                 for col in df_display.columns:
                     val = row[col]
-                    # Nếu giá trị là NaN, None, hoặc chuỗi "nan"/"NaN" thì hiển thị trống
-                    if val is None or (isinstance(val, float) and pd.isna(val)):
-                        display_val = ""
-                    else:
-                        display_val = str(val).strip()
-                        if display_val.lower() == "nan":
-                            display_val = ""
                     style = "color: #FF69B4; font-weight: bold;" if col == "PART NUMBER" else ""
-                    html_parts.append(f'<td style="{style}">{display_val}</td>')
+                    html_parts.append(f'<td style="{style}">{str(val)}</td>')
                 html_parts.append('</tr>')
             html_parts.append('</tbody></table>')
             html_parts.append('</div>')
