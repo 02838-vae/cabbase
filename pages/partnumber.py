@@ -6,7 +6,7 @@ import base64
 import os
 
 # --- CẤU HÌNH ---
-st.set_page_config(page_title="Tổ Bảo Dưỡng Số 1 - Tra Cứu PN", layout="wide", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="Tra cứu part number", layout="wide", initial_sidebar_state="collapsed")
 
 # --- HÀM HỖ TRỢ ---
 def get_base64_encoded_file(file_path):
@@ -35,10 +35,7 @@ def load_and_clean(excel_file, sheet):
         for col in df.columns:
             if df[col].dtype == "object":
                 df[col] = df[col].fillna("").astype(str).str.strip()
-            else:
-                # Giữ nguyên kiểu số, chỉ fillna chuỗi rỗng khi cần hiển thị sẽ xử lý sau
-                pass
-            if col in ["A/C", "DESCRIPTION", "ITEM", "PART NUMBER"] and df[col].replace("", pd.NA).isna().all():
+            if col in ["A/C", "DESCRIPTION", "ITEM", "PART NUMBER"] and df[col].eq("").all():
                 return pd.DataFrame()
         return df
     except Exception as e:
@@ -312,37 +309,55 @@ div.stSelectbox label span,
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# --- HIỆU ỨNG SAO LẤP LÁNH ---
+# --- HIỆU ỨNG SAO BĂNG ---
 st.markdown("""
 <style>
-@keyframes star-twinkle {
-    0%,100% { opacity:0; transform:scale(0.3) rotate(0deg); }
-    30%      { opacity:1; transform:scale(1.4) rotate(20deg); filter:drop-shadow(0 0 8px currentColor) drop-shadow(0 0 16px currentColor); }
-    60%      { opacity:0.6; transform:scale(1.0) rotate(-10deg); }
-    80%      { opacity:1; transform:scale(1.2) rotate(5deg); filter:drop-shadow(0 0 6px currentColor); }
+@keyframes shooting {
+    0%   { transform: translateX(0) translateY(0) rotate(-25deg); opacity: 1; }
+    70%  { opacity: 1; }
+    100% { transform: translateX(-900px) translateY(120px) rotate(-25deg); opacity: 0; }
 }
-.twinkle-star { position:fixed; pointer-events:none; z-index:9998; font-size:1.2rem; animation:star-twinkle linear infinite; opacity:0; }
-.ts1  { top:5vh;  left:8vw;  color:#FFD700; animation-duration:2.8s; animation-delay:0s;    font-size:1.4rem; }
-.ts2  { top:15vh; left:88vw; color:#FFF8C0; animation-duration:2.1s; animation-delay:0.7s;  font-size:1.0rem; }
-.ts3  { top:30vh; left:3vw;  color:#FFE066; animation-duration:3.2s; animation-delay:1.3s;  font-size:1.6rem; }
-.ts4  { top:45vh; left:93vw; color:#D4A843; animation-duration:2.5s; animation-delay:0.3s;  font-size:1.1rem; }
-.ts5  { top:60vh; left:12vw; color:#FFC0CB; animation-duration:2.9s; animation-delay:1.8s;  font-size:0.9rem; }
-.ts6  { top:72vh; left:75vw; color:#FFFFFF; animation-duration:2.3s; animation-delay:0.9s;  font-size:1.3rem; }
-.ts7  { top:85vh; left:40vw; color:#FFD700; animation-duration:3.0s; animation-delay:2.2s;  font-size:1.5rem; }
-.ts8  { top:20vh; left:50vw; color:#B0E0FF; animation-duration:2.6s; animation-delay:1.1s;  font-size:1.0rem; }
-.ts9  { top:55vh; left:60vw; color:#FFFACD; animation-duration:2.2s; animation-delay:0.5s;  font-size:1.2rem; }
-.ts10 { top:90vh; left:22vw; color:#FFE066; animation-duration:3.4s; animation-delay:1.6s;  font-size:1.4rem; }
+.meteor-wrap { position:fixed; top:0; left:0; width:100vw; height:100vh; pointer-events:none; z-index:9997; overflow:hidden; }
+.meteor {
+    position: absolute;
+    width: 140px;
+    height: 2px;
+    border-radius: 50%;
+    background: linear-gradient(to left, rgba(255,255,255,0), #FFD700 60%, #FFFFFF);
+    box-shadow: 0 0 6px 1px #FFD700;
+    opacity: 0;
+    animation: shooting linear infinite;
+}
+.meteor::after {
+    content: '';
+    position: absolute;
+    right: -1px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #FFFFFF;
+    box-shadow: 0 0 8px 3px #FFD700;
+}
+/* Mỗi sao băng: vị trí xuất phát, thời gian, delay khác nhau */
+.m1  { top:4vh;  left:95vw; animation-duration:6s;  animation-delay:0s;   width:160px; }
+.m2  { top:8vh;  left:80vw; animation-duration:8s;  animation-delay:2.5s; width:120px; }
+.m3  { top:2vh;  left:70vw; animation-duration:7s;  animation-delay:5s;   width:180px; }
+.m4  { top:12vh; left:90vw; animation-duration:9s;  animation-delay:1.2s; width:100px; }
+.m5  { top:6vh;  left:60vw; animation-duration:6.5s;animation-delay:3.8s; width:150px; }
+.m6  { top:1vh;  left:85vw; animation-duration:10s; animation-delay:7s;   width:130px; }
+.m7  { top:10vh; left:75vw; animation-duration:7.5s;animation-delay:4.5s; width:110px; }
 </style>
-<div class="twinkle-star ts1">&#9733;</div>
-<div class="twinkle-star ts2">&#9733;</div>
-<div class="twinkle-star ts3">&#9733;</div>
-<div class="twinkle-star ts4">&#9733;</div>
-<div class="twinkle-star ts5">&#9733;</div>
-<div class="twinkle-star ts6">&#9733;</div>
-<div class="twinkle-star ts7">&#9733;</div>
-<div class="twinkle-star ts8">&#9733;</div>
-<div class="twinkle-star ts9">&#9733;</div>
-<div class="twinkle-star ts10">&#9733;</div>
+<div class="meteor-wrap">
+  <div class="meteor m1"></div>
+  <div class="meteor m2"></div>
+  <div class="meteor m3"></div>
+  <div class="meteor m4"></div>
+  <div class="meteor m5"></div>
+  <div class="meteor m6"></div>
+  <div class="meteor m7"></div>
+</div>
 """, unsafe_allow_html=True)
 
 # --- 2 LOGO GÓC TRÁI / PHẢI ---
