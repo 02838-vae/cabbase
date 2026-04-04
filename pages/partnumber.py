@@ -436,7 +436,7 @@ elif zone_selected:
 desc_exists = "DESCRIPTION" in df_filtered.columns
 desc_selected = False
 if aircraft_selected and zone_selected and desc_exists:
-    descs_options = [CHOOSE_PROMPT] + sorted(df_filtered["DESCRIPTION"].dropna().unique().tolist())
+    descs_options = [CHOOSE_PROMPT] + list(dict.fromkeys(df_filtered["DESCRIPTION"].dropna().tolist()))
     with col3:
         desc = st.selectbox("🔑 Mô tả chi tiết", descs_options, key="desc_select")
     desc_selected = (desc and desc != CHOOSE_PROMPT)
