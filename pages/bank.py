@@ -2483,6 +2483,13 @@ html, body {{
     background-color: transparent !important;
 }}
 
+/* Xóa padding-top mặc định của Streamlit để logo lên đầu trang */
+.block-container,
+[data-testid="stMainBlockContainer"],
+section.main > div {{
+    padding-top: 0rem !important;
+}}
+
 /* Ẩn UI */
 #MainMenu, footer, header {{visibility: hidden; height: 0;}}
 [data-testid="stHeader"] {{display: none;}}
@@ -3049,7 +3056,6 @@ div.bank-answer-text.answer-wrong,
 @media (max-width: 768px) {{
     #main-title-container {{ height: 100px; padding-top: 10px; }}
     #main-title-container h1 {{ font-size: 8vw; line-height: 1.5 !important; }}
-    .main > div:first-child {{ padding-top: 75px !important; }}
 
     /* Thu nhỏ tiêu đề chính vừa 1 dòng trên mobile */
     #bank-main-title,
@@ -3132,9 +3138,7 @@ st.markdown(f"""
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    width: calc(100% + 8rem);
-    margin-left: -4rem;
-    margin-top: -6rem;
+    width: 100%;
     padding: 10px 10px 0 10px;
     box-sizing: border-box;
     pointer-events: none;
@@ -3180,11 +3184,6 @@ st.markdown(f"""
 @keyframes elr {{ from {{ stroke-dashoffset: 1000; }} to {{ stroke-dashoffset: 0; }} }}
 @media (max-width: 767px) {{
     #logo-fixed-left img, #logo-fixed-right img {{ height: 44px; }}
-    #logo-header-row {{
-        width: calc(100% + 2rem);
-        margin-left: -1rem;
-        margin-top: -4rem;
-    }}
 }}
 </style>
 
