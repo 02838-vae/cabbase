@@ -3130,6 +3130,113 @@ div.bank-answer-text.answer-wrong,
 st.markdown(css_style, unsafe_allow_html=True)
 
 # ====================================================
+# 🌿 HIỆU ỨNG ÁNH SÁNG XUYÊN TÁN LÁ (DAPPLED LIGHT)
+# ====================================================
+st.markdown("""
+<canvas id="dappled-light-canvas" style="
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    z-index: 0;
+    mix-blend-mode: screen;
+"></canvas>
+
+<script>
+(function() {
+    const canvas = document.getElementById('dappled-light-canvas');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+
+    function resize() {
+        canvas.width  = window.innerWidth;
+        canvas.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
+
+    // Mỗi "đốm sáng" mô phỏng ánh nắng xuyên qua khe lá
+    const NUM_SPOTS = 18;
+    const spots = [];
+
+    function randBetween(a, b) {
+        return a + Math.random() * (b - a);
+    }
+
+    function makeSpot() {
+        return {
+            x:        randBetween(0, window.innerWidth),
+            y:        randBetween(0, window.innerHeight),
+            rx:       randBetween(30, 110),   // bán kính ngang (elip)
+            ry:       randBetween(18, 65),    // bán kính dọc
+            rot:      randBetween(0, Math.PI),// góc xoay
+            alpha:    0,
+            targetA:  randBetween(0.04, 0.13),// độ trong suốt tối đa (rất nhẹ)
+            phase:    randBetween(0, Math.PI * 2),
+            speed:    randBetween(0.003, 0.009), // tốc độ nhấp nháy
+            driftX:   randBetween(-0.12, 0.12),  // trôi ngang rất chậm
+            driftY:   randBetween(-0.06, 0.06),  // trôi dọc
+            // màu vàng/xanh lá nhẹ giống ánh nắng qua lá
+            hue:      randBetween(45, 90),
+        };
+    }
+
+    for (let i = 0; i < NUM_SPOTS; i++) {
+        spots.push(makeSpot());
+    }
+
+    function drawSpot(s) {
+        ctx.save();
+        ctx.translate(s.x, s.y);
+        ctx.rotate(s.rot);
+        ctx.scale(1, s.ry / s.rx);
+
+        const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, s.rx);
+        const a = s.alpha;
+        grad.addColorStop(0,   `hsla(${s.hue}, 85%, 88%, ${a})`);
+        grad.addColorStop(0.45,`hsla(${s.hue}, 70%, 75%, ${a * 0.55})`);
+        grad.addColorStop(1,   `hsla(${s.hue}, 60%, 60%, 0)`);
+
+        ctx.beginPath();
+        ctx.arc(0, 0, s.rx, 0, Math.PI * 2);
+        ctx.fillStyle = grad;
+        ctx.fill();
+        ctx.restore();
+    }
+
+    let lastTime = 0;
+    function animate(ts) {
+        const dt = ts - lastTime;
+        lastTime = ts;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        for (const s of spots) {
+            // Nhấp nháy alpha theo sin
+            s.phase += s.speed;
+            s.alpha = s.targetA * (0.35 + 0.65 * (Math.sin(s.phase) * 0.5 + 0.5));
+
+            // Trôi nhẹ
+            s.x += s.driftX;
+            s.y += s.driftY;
+
+            // Wrap quanh màn hình
+            if (s.x < -150)  s.x = canvas.width  + 100;
+            if (s.x > canvas.width  + 150) s.x = -100;
+            if (s.y < -100)  s.y = canvas.height + 80;
+            if (s.y > canvas.height + 100) s.y = -80;
+
+            drawSpot(s);
+        }
+
+        requestAnimationFrame(animate);
+    }
+    requestAnimationFrame(animate);
+})();
+</script>
+""", unsafe_allow_html=True)
+
+# ====================================================
 # 🧭 HEADER & BODY
 # ====================================================
 st.markdown(f"""
