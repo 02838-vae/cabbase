@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import streamlit as st
+import streamlit.components.v1 as components
 from docx import Document
 # THÊM IMPORT ĐỂ XỬ LÝ ĐỊNH DẠNG (HIGHLIGHT)
 from docx.enum.text import WD_COLOR_INDEX 
@@ -3131,110 +3132,115 @@ st.markdown(css_style, unsafe_allow_html=True)
 
 # ====================================================
 # 🌿 HIỆU ỨNG ÁNH SÁNG XUYÊN TÁN LÁ (DAPPLED LIGHT)
+# Dùng components.html vì st.markdown chặn <script>
+# Canvas được inject vào DOM của trang cha qua postMessage
 # ====================================================
-st.markdown("""
-<canvas id="dappled-light-canvas" style="
-    position: fixed;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    pointer-events: none;
-    z-index: 0;
-    mix-blend-mode: screen;
-"></canvas>
-
+components.html("""
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  * { margin:0; padding:0; }
+  html, body { background:transparent; overflow:hidden; width:0; height:0; }
+</style>
+</head>
+<body>
 <script>
 (function() {
-    const canvas = document.getElementById('dappled-light-canvas');
-    if (!canvas) return;
+    // Tạo canvas trực tiếp trên document cha (Streamlit)
+    const parent = window.parent.document;
+
+    // Xóa canvas cũ nếu đã tồn tại (tránh duplicate khi Streamlit re-render)
+    const old = parent.getElementById('dappled-canvas');
+    if (old) old.remove();
+
+    const canvas = parent.createElement('canvas');
+    canvas.id = 'dappled-canvas';
+    Object.assign(canvas.style, {
+        position:       'fixed',
+        top:            '0',
+        left:           '0',
+        width:          '100%',
+        height:         '100%',
+        pointerEvents:  'none',
+        zIndex:         '1',
+        mixBlendMode:   'screen',
+    });
+    parent.body.appendChild(canvas);
+
     const ctx = canvas.getContext('2d');
+    const pw  = window.parent;
 
     function resize() {
-        canvas.width  = window.innerWidth;
-        canvas.height = window.innerHeight;
+        canvas.width  = pw.innerWidth;
+        canvas.height = pw.innerHeight;
     }
     resize();
-    window.addEventListener('resize', resize);
+    pw.addEventListener('resize', resize);
 
-    // Mỗi "đốm sáng" mô phỏng ánh nắng xuyên qua khe lá
-    const NUM_SPOTS = 18;
+    function rand(a, b) { return a + Math.random() * (b - a); }
+
+    const NUM = 22;
     const spots = [];
-
-    function randBetween(a, b) {
-        return a + Math.random() * (b - a);
-    }
 
     function makeSpot() {
         return {
-            x:        randBetween(0, window.innerWidth),
-            y:        randBetween(0, window.innerHeight),
-            rx:       randBetween(30, 110),   // bán kính ngang (elip)
-            ry:       randBetween(18, 65),    // bán kính dọc
-            rot:      randBetween(0, Math.PI),// góc xoay
-            alpha:    0,
-            targetA:  randBetween(0.04, 0.13),// độ trong suốt tối đa (rất nhẹ)
-            phase:    randBetween(0, Math.PI * 2),
-            speed:    randBetween(0.003, 0.009), // tốc độ nhấp nháy
-            driftX:   randBetween(-0.12, 0.12),  // trôi ngang rất chậm
-            driftY:   randBetween(-0.06, 0.06),  // trôi dọc
-            // màu vàng/xanh lá nhẹ giống ánh nắng qua lá
-            hue:      randBetween(45, 90),
+            x:     rand(0, pw.innerWidth),
+            y:     rand(0, pw.innerHeight),
+            rx:    rand(35, 130),
+            ry:    rand(20, 75),
+            rot:   rand(0, Math.PI),
+            alpha: 0,
+            maxA:  rand(0.07, 0.20),
+            phase: rand(0, Math.PI * 2),
+            speed: rand(0.004, 0.012),
+            dx:    rand(-0.18, 0.18),
+            dy:    rand(-0.09, 0.09),
+            hue:   rand(48, 88),
         };
     }
 
-    for (let i = 0; i < NUM_SPOTS; i++) {
-        spots.push(makeSpot());
-    }
+    for (let i = 0; i < NUM; i++) spots.push(makeSpot());
 
     function drawSpot(s) {
         ctx.save();
         ctx.translate(s.x, s.y);
         ctx.rotate(s.rot);
         ctx.scale(1, s.ry / s.rx);
-
-        const grad = ctx.createRadialGradient(0, 0, 0, 0, 0, s.rx);
+        const g = ctx.createRadialGradient(0,0,0, 0,0,s.rx);
         const a = s.alpha;
-        grad.addColorStop(0,   `hsla(${s.hue}, 85%, 88%, ${a})`);
-        grad.addColorStop(0.45,`hsla(${s.hue}, 70%, 75%, ${a * 0.55})`);
-        grad.addColorStop(1,   `hsla(${s.hue}, 60%, 60%, 0)`);
-
+        g.addColorStop(0,   `hsla(${s.hue},90%,92%,${a})`);
+        g.addColorStop(0.5, `hsla(${s.hue},72%,78%,${a*0.5})`);
+        g.addColorStop(1,   `hsla(${s.hue},60%,60%,0)`);
         ctx.beginPath();
-        ctx.arc(0, 0, s.rx, 0, Math.PI * 2);
-        ctx.fillStyle = grad;
+        ctx.arc(0, 0, s.rx, 0, Math.PI*2);
+        ctx.fillStyle = g;
         ctx.fill();
         ctx.restore();
     }
 
-    let lastTime = 0;
-    function animate(ts) {
-        const dt = ts - lastTime;
-        lastTime = ts;
-
+    function loop() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
-
+        const W = canvas.width, H = canvas.height;
         for (const s of spots) {
-            // Nhấp nháy alpha theo sin
             s.phase += s.speed;
-            s.alpha = s.targetA * (0.35 + 0.65 * (Math.sin(s.phase) * 0.5 + 0.5));
-
-            // Trôi nhẹ
-            s.x += s.driftX;
-            s.y += s.driftY;
-
-            // Wrap quanh màn hình
-            if (s.x < -150)  s.x = canvas.width  + 100;
-            if (s.x > canvas.width  + 150) s.x = -100;
-            if (s.y < -100)  s.y = canvas.height + 80;
-            if (s.y > canvas.height + 100) s.y = -80;
-
+            s.alpha  = s.maxA * (0.3 + 0.7*(Math.sin(s.phase)*0.5+0.5));
+            s.x += s.dx;
+            s.y += s.dy;
+            if (s.x < -160) s.x = W+120;
+            if (s.x > W+160) s.x = -120;
+            if (s.y < -120) s.y = H+100;
+            if (s.y > H+120) s.y = -100;
             drawSpot(s);
         }
-
-        requestAnimationFrame(animate);
+        pw.requestAnimationFrame(loop);
     }
-    requestAnimationFrame(animate);
+    pw.requestAnimationFrame(loop);
 })();
 </script>
-""", unsafe_allow_html=True)
+</body>
+</html>
+""", height=0, scrolling=False)
 
 # ====================================================
 # 🧭 HEADER & BODY
