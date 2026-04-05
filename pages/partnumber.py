@@ -33,6 +33,10 @@ def load_and_clean(excel_file, sheet):
         df = pd.read_excel(excel_path, sheet_name=sheet)
         df.columns = df.columns.str.strip().str.upper()
         df = df.replace(r'^\s*$', pd.NA, regex=True).dropna(how="all")
+        # Forward-fill các cột nhóm để xử lý merged cells / ô bỏ trống trong Excel
+        for fcol in ["A/C", "DESCRIPTION", "ITEM"]:
+            if fcol in df.columns:
+                df[fcol] = df[fcol].ffill()
         for col in df.columns:
             if df[col].dtype == "object":
                 df[col] = df[col].fillna("").astype(str).str.strip()
@@ -447,7 +451,7 @@ if aircraft_selected and zone_selected and desc_exists:
 item_exists = "ITEM" in df_filtered.columns
 item_selected = False
 if (aircraft_selected and zone_selected) and item_exists and (desc_selected or not desc_exists):
-    items_options = [CHOOSE_PROMPT] + sorted(df_filtered["ITEM"].dropna().unique().tolist())
+    items_options = [CHOOSE_PROMPT] + list(dict.fromkeys(v for v in df_filtered["ITEM"].tolist() if v != "" and str(v).strip().lower() not in ("nan","none","")))
     with col4:
         item = st.selectbox("🔌 Item", items_options, key="item_select")
     item_selected = (item and item != CHOOSE_PROMPT)
