@@ -1,19 +1,45 @@
+import streamlit as st
+
+st.set_page_config(
+    page_title="Tổ Bảo Dưỡng Số 1",
+    layout="wide",
+    initial_sidebar_state="collapsed"
+)
+
+# Ẩn UI mặc định Streamlit
+st.markdown("""
+<style>
+#MainMenu, footer, header { visibility: hidden; }
+.stApp, [data-testid="stAppViewContainer"], [data-testid="stMain"],
+.block-container, section.main, .main {
+    padding: 0 !important; margin: 0 !important;
+    background: transparent !important;
+    height: 100vh !important;
+    overflow: hidden !important;
+}
+iframe {
+    border: none !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    position: fixed !important;
+    top: 0 !important; left: 0 !important;
+}
+</style>
+""", unsafe_allow_html=True)
+
+st.components.v1.html("""
 <!DOCTYPE html>
 <html lang="vi">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>Tổ Bảo Dưỡng Số 1</title>
 <style>
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap');
-
   *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 
   html, body {
     height: 100%;
     background: #ffffff;
     font-family: 'Inter', sans-serif;
-    color: #1a1a2e;
   }
 
   .page {
@@ -23,16 +49,13 @@
     align-items: center;
     justify-content: center;
     padding: 40px 24px;
-    gap: 0;
   }
 
-  /* ── Airplane icon ── */
   .plane-wrap {
     margin-bottom: 48px;
     display: flex;
-    flex-direction: column;
     align-items: center;
-    gap: 16px;
+    justify-content: center;
   }
 
   .plane-icon {
@@ -42,7 +65,6 @@
     filter: drop-shadow(0 4px 16px rgba(29,111,196,0.18));
   }
 
-  /* ── Button stack ── */
   .btn-stack {
     display: flex;
     flex-direction: column;
@@ -52,7 +74,6 @@
     max-width: 320px;
   }
 
-  /* ── Button ── */
   .btn {
     display: flex;
     align-items: center;
@@ -67,29 +88,13 @@
     text-transform: uppercase;
     text-decoration: none;
     cursor: pointer;
-    transition: background 0.2s, color 0.2s, box-shadow 0.2s, transform 0.15s;
-    border: 2px solid transparent;
-  }
-
-  .btn-primary {
+    transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
+    border: 2px solid #1d6fc4;
     background: #ffffff;
     color: #1d6fc4;
-    border-color: #1d6fc4;
   }
 
-  .btn-primary:hover {
-    background: #f0f6ff;
-    box-shadow: 0 4px 18px rgba(29,111,196,0.12);
-    transform: translateY(-1px);
-  }
-
-  .btn-secondary {
-    background: #ffffff;
-    color: #1d6fc4;
-    border-color: #1d6fc4;
-  }
-
-  .btn-secondary:hover {
+  .btn:hover {
     background: #f0f6ff;
     box-shadow: 0 4px 18px rgba(29,111,196,0.12);
     transform: translateY(-1px);
@@ -100,30 +105,22 @@
     height: 18px;
     flex-shrink: 0;
   }
-
-  @media (max-width: 400px) {
-    .btn { padding: 13px 20px; font-size: 0.8rem; }
-  }
 </style>
 </head>
 <body>
 <div class="page">
 
-  <!-- Airplane + title -->
   <div class="plane-wrap">
     <svg class="plane-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-         fill="none" stroke="currentColor" stroke-width="1.5"
+         fill="none" stroke="#1d6fc4" stroke-width="1.5"
          stroke-linecap="round" stroke-linejoin="round">
-      <!-- Fuselage -->
       <path d="M22 2L11 13"/>
       <path d="M22 2L15 22L11 13L2 9L22 2Z"/>
     </svg>
-
   </div>
 
-  <!-- Two vertical buttons -->
   <div class="btn-stack">
-    <a class="btn btn-primary" href="/partnumber" target="_blank">
+    <a class="btn" href="/partnumber" target="_blank">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
            stroke-width="2" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round"
@@ -132,7 +129,7 @@
       Tra Cứu Part Number
     </a>
 
-    <a class="btn btn-secondary" href="/bank" target="_blank">
+    <a class="btn" href="/bank" target="_blank">
       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
            stroke-width="1.8" stroke="currentColor">
         <path stroke-linecap="round" stroke-linejoin="round"
@@ -146,3 +143,4 @@
 </div>
 </body>
 </html>
+""", height=800, scrolling=False)
