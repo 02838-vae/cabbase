@@ -12,142 +12,11 @@ import os
 import random 
 from deep_translator import GoogleTranslator
 
-st.markdown(
-    """
-    <style>
-    /* 1. ÁP DỤNG CHO TOÀN BỘ TRÌNH DUYỆT - ĐẢM BẢO LUÔN HIỆN DIỆN */
-    /* Độ rộng cực lớn (24px) để dễ bấm trên PC */
-    ::-webkit-scrollbar {
-        width: 24px !important;
-        height: 24px !important;
-        display: block !important;
-    }
 
-    /* 2. PHẦN RÃNH TRƯỢT (TRACK) */
-    ::-webkit-scrollbar-track {
-        background: #1e1e1e !important; /* Nền tối để làm nổi bật thanh trượt */
-        border-left: 2px solid #333 !important;
-    }
 
-    /* 3. THANH TRƯỢT CHÍNH (THUMB) - LUÔN LÀ MÀU VÀNG */
-    ::-webkit-scrollbar-thumb {
-        background-color: #FFD700 !important; /* Vàng Gold nguyên bản */
-        background-image: linear-gradient(45deg, #FFD700 25%, #ffeb3b 50%, #FFD700 75%) !important;
-        border-radius: 4px !important;
-        border: 4px solid #1e1e1e !important; /* Tạo khoảng trống để thanh vàng nổi hẳn lên */
-        box-shadow: 0 0 10px rgba(255, 215, 0, 0.8) !important; /* Hiệu ứng phát sáng nhẹ để dễ thấy */
-    }
 
-    /* 4. GIỮ MÀU KHI DI CHUỘT HOẶC KÉO (HOVER/ACTIVE) */
-    ::-webkit-scrollbar-thumb:hover, 
-    ::-webkit-scrollbar-thumb:active {
-        background-color: #ffffff !important; /* Đổi sang Trắng khi đang chọn để phản hồi trực quan */
-        background-image: none !important;
-        box-shadow: 0 0 20px rgba(255, 255, 255, 1) !important;
-    }
 
-    /* 5. FIX ĐẶC BIỆT CHO STREAMLIT (Vùng Sidebar và Main Content) */
-    [data-testid="stSidebar"]::-webkit-scrollbar,
-    .main::-webkit-scrollbar,
-    .stApp::-webkit-scrollbar {
-        width: 24px !important;
-    }
-    
-    /* Đối với Firefox */
-    * {
-        scrollbar-width: thick !important;
-        scrollbar-color: #FFD700 #1e1e1e !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
 
-# CSS: Canh giữa 2 button kết quả, chữ không xuống dòng trên PC lẫn mobile
-st.markdown(
-    """
-    <style>
-    /* =============================================
-       CANH GIỮA TẤT CẢ BUTTON (mọi chế độ)
-       ============================================= */
-
-    /* Canh giữa column trong horizontal block */
-    div[data-testid="stHorizontalBlock"] {
-        justify-content: center !important;
-    }
-    div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {
-        flex: 0 1 auto !important;
-        min-width: 0 !important;
-        width: auto !important;
-    }
-
-    /* Canh giữa từng stButton đơn lẻ */
-    div[data-testid="stButton"],
-    div.stButton {
-        display: flex !important;
-        justify-content: center !important;
-    }
-
-    /* =============================================
-       VIỀN SÁNG CHẠY VÒNG — dùng wrapper pseudo
-       ============================================= */
-    @property --btn-angle {
-        syntax: '<angle>';
-        initial-value: 0deg;
-        inherits: false;
-    }
-    @keyframes btn-border-spin {
-        to { --btn-angle: 360deg; }
-    }
-
-    /* Wrapper bọc button để tạo viền chạy */
-    div[data-testid="stButton"],
-    div.stButton {
-        position: relative;
-        border-radius: 50px !important;
-        padding: 3px !important;
-        background: conic-gradient(
-            from var(--btn-angle, 0deg),
-            transparent 0deg,
-            transparent 60deg,
-            #b8860b 80deg,
-            #FFD700 95deg,
-            #ffffff 105deg,
-            #FFD700 115deg,
-            #b8860b 130deg,
-            transparent 150deg,
-            transparent 360deg
-        ) !important;
-        animation: btn-border-spin 2.5s linear infinite !important;
-    }
-
-    /* Button: bo tròn 4 góc, padding đẹp, không xuống dòng */
-    div[data-testid="stButton"] button,
-    div.stButton > button {
-        white-space: nowrap !important;
-        width: auto !important;
-        min-width: 160px;
-        padding: 0.55rem 1.6rem !important;
-        font-size: clamp(13px, 2.5vw, 16px) !important;
-        border-radius: 50px !important;
-        border: none !important;
-        position: relative !important;
-        z-index: 1 !important;
-    }
-
-    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] button[kind="secondary"],
-    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] button[kind="primary"] {
-        white-space: nowrap !important;
-        width: auto !important;
-        min-width: 160px;
-        padding: 0.55rem 1.6rem !important;
-        font-size: clamp(13px, 2.5vw, 16px) !important;
-        border-radius: 50px !important;
-    }
-    </style>
-    """,
-    unsafe_allow_html=True
-)
 
 
 
@@ -2404,928 +2273,150 @@ def display_appendix_test_mode(appendix_full_name):
 
 st.set_page_config(page_title="Ngân hàng trắc nghiệm", layout="wide")
 
-PC_IMAGE_FILE = "PC2.jpg"
-MOBILE_IMAGE_FILE = "mobile2.jpg"
-LOGO_IMAGE_FILE = "logo.jpg"
-LOGO2_IMAGE_FILE = "logo2.png"
-img_pc_base64 = get_base64_encoded_file(PC_IMAGE_FILE)
-img_mobile_base64 = get_base64_encoded_file(MOBILE_IMAGE_FILE)
-img_logo_base64 = get_base64_encoded_file(LOGO_IMAGE_FILE)
-img_logo2_base64 = get_base64_encoded_file(LOGO2_IMAGE_FILE)
-
-# === CSS CẬP NHẬT CHO ĐOẠN VĂN (PARAGRAPH) ===
-css_style = f"""
+# === CSS TỐI GIẢN: NỀN TRẮNG, CHỮ ĐEN ===
+css_style = """
 <style>
-/* Đã thống nhất font nội dung là Oswald, tiêu đề là Playfair Display */
-@import url('https://fonts.googleapis.com/css2?family=Rye&display=swap');
 
-@keyframes colorShift {{
-    0% {{ background-position: 0% 50%; }}
-    50% {{ background-position: 100% 50%; }}
-    100% {{ background-position: 0% 50%; }}
-}}
-@keyframes scrollRight {{
-    0% {{ transform: translateX(100%); }}
-    100% {{ transform: translateX(-100%); }}
-}}
-
-html, body {{
-    height: 100% !important;
-    min-height: 100vh !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: auto;
+/* BASE */
+html, body {
+    background: #ffffff !important;
+    color: #1a1a1a !important;
     font-family: 'Arial', 'Helvetica', sans-serif !important;
-    color: #FFFFE0 !important;
-}}
-.stApp {{
-    height: 100% !important;
-    min-height: 100vh !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    overflow: visible !important;
-    position: static !important;
-    transform: none !important;
-    filter: none !important;
+}
+.stApp { background: #ffffff !important; color: #1a1a1a !important; }
+[data-testid='stAppViewContainer'], [data-testid='stMainBlock'], .main { background: #ffffff !important; }
+
+/* AN UI STREAMLIT */
+#MainMenu, footer, header { visibility: hidden; height: 0; }
+[data-testid='stHeader'] { display: none; }
+[data-testid='stSidebar'], [data-testid='stSidebarNav'],
+[data-testid='collapsedControl'], section[data-testid='stSidebar'],
+div[data-testid='stSidebarNav'] {
+    display: none !important; width: 0 !important;
+    min-width: 0 !important; visibility: hidden !important;
+}
+
+/* PADDING */
+.block-container, [data-testid='stMainBlockContainer'], section.main > div {
+    padding-top: 1.5rem !important;
+}
+
+/* TEXT */
+.stApp p, .stApp span, .stApp div, .stApp label,
+[data-testid='stText'], [data-testid='stMarkdownContainer'] *,
+[data-testid='stWidgetLabel'] * {
+    color: #1a1a1a !important;
     font-family: 'Arial', 'Helvetica', sans-serif !important;
-    color: #FFFFE0 !important;
-}}
+}
+div[data-testid='stMarkdownContainer'] p { font-size: 18px !important; color: #1a1a1a !important; }
 
-/* BACKGROUND */
-.stApp {{
-    background: none !important;
-}}
+/* CAU HOI */
+.bank-question-text {
+    color: #1a1a1a !important; font-weight: 700 !important;
+    font-size: 20px !important; font-family: 'Arial', 'Helvetica', sans-serif !important;
+    padding: 8px 0 4px 0; margin-bottom: 8px;
+    line-height: 1.5 !important; display: block;
+}
+.bank-question-text * { color: #1a1a1a !important; }
 
-.stApp::before {{
-    content: "";
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: url("data:image/jpeg;base64,{img_pc_base64}") no-repeat center top fixed;
-    background-size: cover;
-    filter: sepia(0.5) brightness(0.9) blur(0px);
-    z-index: -1; 
-    pointer-events: none;
-}}
-
-@media (max-width: 767px) {{
-    .stApp::before {{
-        background: url("data:image/jpeg;base64,{img_mobile_base64}") no-repeat center top scroll;
-        background-size: cover;
-    }}
-}}
-
-/* Nội dung nổi lên trên nền */
-[data-testid="stAppViewContainer"],
-[data-testid="stMainBlock"],
-.main {{
-    background-color: transparent !important;
-}}
-
-/* Xóa padding-top mặc định của Streamlit để logo lên đầu trang */
-.block-container,
-[data-testid="stMainBlockContainer"],
-section.main > div {{
-    padding-top: 0rem !important;
-}}
-
-/* Ẩn UI */
-#MainMenu, footer, header {{visibility: hidden; height: 0;}}
-[data-testid="stHeader"] {{display: none;}}
-
-/* TITLE CHÍNH */
-#main-title-container {{
-    position: relative; left: 0; top: 0; width: 100%;
-    height: 120px; overflow: hidden;
-    pointer-events: none;
-    background-color: transparent; padding-top: 20px; z-index: 1200; 
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}}
-
-/* LOGO LEFT */
-#logo-container {{
-    pointer-events: none;
-}}
-
-/* Wrapper viền sáng chạy vòng quanh logo trái */
-#logo-wrap {{
-    position: relative;
-    border-radius: 16px;
-    padding: 3px;
-    display: inline-block;
-    overflow: hidden;
-}}
-
-@property --logo-angle {{
-    syntax: '<angle>';
-    initial-value: 0deg;
-    inherits: false;
-}}
-
-@keyframes logo-spin-light {{
-    to {{ --logo-angle: 360deg; }}
-}}
-
-#logo-wrap::before {{
-    content: '';
-    position: absolute;
-    inset: -60%;
-    background: conic-gradient(
-        from var(--logo-angle, 0deg),
-        transparent 0deg,
-        transparent 40deg,
-        #b8860b 60deg,
-        #ffd700 80deg,
-        #fffacd 90deg,
-        #ffd700 100deg,
-        #b8860b 120deg,
-        transparent 140deg,
-        transparent 360deg
-    );
-    animation: logo-spin-light 3s linear infinite;
-    z-index: 0;
-}}
-
-#logo-wrap::after {{
-    content: '';
-    position: absolute;
-    inset: 3px;
-    border-radius: 13px;
-    background: rgba(0,0,0,0.45);
-    z-index: 1;
-}}
-
-#logo-wrap img {{
-    position: relative;
-    z-index: 2;
-    height: 110px;
-    width: auto;
-    object-fit: contain;
-    border-radius: 12px;
-    display: block;
-    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
-}}
-
-/* LOGO RIGHT (logo2) */
-#logo2-container {{
-    pointer-events: none;
-}}
-
-.logo2-wrap {{
-    position: relative;
-    display: inline-block;
-    padding: 0;
-}}
-
-.logo2-wrap svg.ellipse-border {{
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 3;
-    pointer-events: none;
-    overflow: visible;
-}}
-
-.logo2-wrap img {{
-    position: relative;
-    z-index: 2;
-    height: 110px;
-    width: auto;
-    object-fit: contain;
-    display: block;
-}}
-
-@media (max-width: 767px) {{
-    #logo-container {{
-        top: 5px;
-        left: 5px;
-    }}
-    #logo-wrap img {{
-        height: 44px;
-    }}
-    #logo-wrap::after {{ inset: 2px; border-radius: 10px; }}
-    #logo2-container {{
-        top: 5px;
-        right: 5px;
-    }}
-    .logo2-wrap img {{
-        height: 44px;
-    }}
-}}
-
-/* === BỔ SUNG CSS CHO ĐOẠN VĂN (PL3) === */
-
-/* RESULT TITLE */
-.result-title {{
-    margin-top: 30px;
-    margin-bottom: 30px;
-    text-align: center;
-}}
-.result-title h3 {{
-    font-family: 'Arial', 'Helvetica', sans-serif;
-    font-size: 1.8rem;
-    font-weight: 900;
-    letter-spacing: 2px;
-    color: #D4A843;
-    text-shadow: 0 0 15px #D4A843, 0 0 30px rgba(212,168,67,0.8);
-}}
-
-/* Padding bottom cho nội dung chính */
-.main > div:first-child {{
-    padding-bottom: 2rem !important;
-}}
-
-/* Tiêu đề Paragraph X . (In đậm, màu cam) */
-.paragraph-title {{
-    font-family: 'Arial', 'Helvetica', sans-serif;
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: #D4A843;
-    text-shadow: 0 0 8px rgba(212, 168, 67, 0.5);
-    margin-top: 20px;
-    margin-bottom: 10px;
-    padding: 5px 15px;
-    background-color: rgba(30, 30, 30, 0.8);
-    border-radius: 8px;
-    display: inline-block;
-    letter-spacing: 2px;
-}}
-
-/* Nội dung đoạn văn (Giữ nguyên bố cục xuống dòng) */
-.paragraph-content-box {{
-    /* Dùng 'white-space: pre-wrap' để giữ nguyên khoảng trắng và ngắt dòng */
-    white-space: pre-wrap; 
+/* DAP AN */
+.bank-answer-text {
     font-family: 'Arial', 'Helvetica', sans-serif !important;
-    font-size: 20px !important; 
-    line-height: 1.6;
-    color: #F0F0F0; /* Màu trắng nhạt */
-    padding: 15px;
-    background-color: rgba(0, 0, 0, 0.7);
-    border-radius: 8px;
-    margin-bottom: 20px;
-    border-left: 3px solid #FFA500;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
-}}
+    font-size: 18px !important; font-weight: 500 !important;
+    color: #1a1a1a !important; padding: 3px 0; margin: 2px 0; display: block;
+}
+.bank-answer-text.answer-correct  { color: #16a34a !important; font-weight: 800 !important; }
+.bank-answer-text.answer-selected-wrong { color: #dc2626 !important; font-weight: 700 !important; }
+.bank-answer-text.answer-wrong    { color: #6b7280 !important; }
 
-
-/* STYLE CÂU HỎI - PC (NỀN ĐEN BAO VỪA CHỮ) */
-.bank-question-text {{
-    color: #FF8C00 !important;
-    font-weight: 900 !important;
-    letter-spacing: 0.5px !important;
-    font-size: 22px !important; 
+/* RADIO */
+.stRadio label, .stRadio label span, .stRadio label p, .stRadio label div {
+    color: #1a1a1a !important; font-size: 18px !important;
     font-family: 'Arial', 'Helvetica', sans-serif !important;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
-    padding: 8px 15px;
-    margin-bottom: 10px;
-    line-height: 1.4 !important;
-    background-color: rgba(0, 0, 0, 0.75);
-    border-radius: 8px;
-    display: inline-block; /* BAO VỪA CHỮ */
-    max-width: 100%;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-}}
+}
 
-/* STYLE ĐÁP ÁN - PC (TRẮNG ĐẬM HƠN) */
-.bank-answer-text {{
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-    font-weight: 700 !important;
-    font-size: 22px !important; 
-    padding: 5px 15px;
-    margin: 2px 0;
-    line-height: 1.5 !important; 
-    display: block;
-    color: #FFFFFF !important;
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9);
-}}
-
-/* RADIO BUTTONS (CHỌN ĐÁP ÁN) */
-.stRadio label {{
-    color: #FFFFFF !important;
-    font-size: 20px !important; 
-    font-weight: 700 !important;
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-    padding: 2px 12px;
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9) !important;
-    background-color: transparent !important;
-    border: none !important;
-    display: block !important;
-    margin: 4px 0 !important;
-    letter-spacing: 0.3px !important;
-}}
-
-.stRadio label:hover {{
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9) !important;
-}}
-
-.stRadio label span, 
-.stRadio label p,
-.stRadio label div {{
-    color: #FFFFFF !important;
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.9) !important;
-    letter-spacing: 0.3px !important;
-}}
-
-div[data-testid="stMarkdownContainer"] p {{
-    font-size: 22px !important;
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-    color: #FFFFE0 !important;
-}}
-
-/* TIÊU ĐỀ CHÍNH - override mọi rule khác */
-#bank-main-title div[data-testid="stMarkdownContainer"] p,
-#bank-main-title div[data-testid="stMarkdownContainer"] span,
-#bank-main-title p, #bank-main-title span {{
-    font-size: 2.8rem !important;
-    font-family: 'Rye', serif !important;
-    font-weight: 900 !important;
-    color: #D4A843 !important;
-    letter-spacing: 3px !important;
-    line-height: 1.2 !important;
-}}
-
-/* ẨN SIDEBAR HOÀN TOÀN */
-[data-testid="stSidebar"],
-[data-testid="stSidebarNav"],
-[data-testid="collapsedControl"],
-section[data-testid="stSidebar"],
-div[data-testid="stSidebarNav"] {{
-    display: none !important;
-    width: 0 !important;
-    min-width: 0 !important;
-    visibility: hidden !important;
-}}
-
-/* GIỮ NGUYÊN font câu hỏi và đáp án - DÙNG ARIAL */
-.bank-question-text,
-.bank-question-text * {{
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-}}
-.bank-answer-text,
-.bank-answer-text * {{
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-}}
-.stRadio label,
-.stRadio label span,
-.stRadio label p,
-.stRadio label div {{
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-}}
-.paragraph-content-box,
-.paragraph-content-box * {{
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-}}
-
-/* =============================================
-   STYLE NÚT ACTION — BO TRÒN + HOVER + GLOW
-   ============================================= */
-
-/* @property cho animation conic wrapper */
-@property --btn-angle {{
-    syntax: '<angle>';
-    initial-value: 0deg;
-    inherits: false;
-}}
-@keyframes btn-border-spin {{
-    to {{ --btn-angle: 360deg; }}
-}}
-
-/* Wrapper div.stButton: tạo viền sáng chạy vòng + canh giữa */
-div.stButton,
-div[data-testid="stButton"] {{
-    display: flex !important;
-    justify-content: center !important;
-    position: relative !important;
-    border-radius: 50px !important;
-    padding: 3px !important;
-    background: conic-gradient(
-        from var(--btn-angle, 0deg),
-        transparent 0deg,
-        transparent 55deg,
-        #7b4f00 75deg,
-        #FFD700 92deg,
-        #fffbe6 104deg,
-        #FFD700 116deg,
-        #7b4f00 133deg,
-        transparent 153deg,
-        transparent 360deg
-    ) !important;
-    animation: btn-border-spin 2.5s linear infinite !important;
-    width: fit-content !important;
-    margin-left: auto !important;
-    margin-right: auto !important;
-    box-shadow: 0 0 12px rgba(255, 215, 0, 0.35) !important;
-}}
-
-/* Button bên trong */
-.stButton>button {{
-    background: linear-gradient(135deg, #1a0a3c 0%, #2d1265 60%, #1a0a3c 100%) !important;
-    color: #FFFFE0 !important;
-    border-radius: 50px !important;
-    font-size: 0.72em !important;
-    font-weight: 700 !important;
-    font-family: 'Rye', serif !important;
-    border: none !important;
-    padding: 10px 22px !important;
-    width: auto !important;
-    white-space: nowrap !important;
-    letter-spacing: 1px !important;
-    text-transform: uppercase !important;
-    transition: all 0.3s ease !important;
-    position: relative !important;
-    z-index: 1 !important;
-    box-shadow: inset 0 1px 0 rgba(255,255,255,0.1) !important;
-}}
-
-.stButton>button:hover {{
-    background: linear-gradient(135deg, #3d1280 0%, #6023b0 60%, #3d1280 100%) !important;
-    color: #FFD700 !important;
-    transform: translateY(-3px) scale(1.04) !important;
-    box-shadow: 0 0 24px rgba(255, 215, 0, 0.6), inset 0 1px 0 rgba(255,255,255,0.2) !important;
-    letter-spacing: 2px !important;
-}}
-
-.stButton>button:active {{
-    transform: translateY(0) scale(0.98) !important;
-    box-shadow: 0 0 8px rgba(255, 215, 0, 0.3) !important;
-}}
-
-/* STYLE CHO NÚT DỊCH (st.toggle) */
-div[data-testid="stCheckbox"] label p,
-div[data-testid="stCheckbox"] label span,
-div[data-testid="stCheckbox"] label div,
-div[data-testid="stCheckbox"] label,
-div[data-testid="stCheckbox"] p,
-div[data-testid="stCheckbox"] span,
-div[data-testid="stCheckbox"] div,
-.stCheckbox label p,
-.stCheckbox label span, 
-.stCheckbox label,
-.stCheckbox p,
-.stCheckbox span {{
-    color: #D4A843 !important;
-    font-size: 20px !important;
-    font-weight: 700 !important;
-}}
-
-.stToggle label p {{
-    font-size: 20px !important;
-    font-weight: 700 !important;
-    padding: 0;
-    margin: 0;
-    line-height: 1 !important;
-    color: #D4A843 !important;
-}}
-.stToggle label,
-.stToggle label span,
-.stToggle label div,
-.stToggle label > div[data-testid="stMarkdownContainer"],
-.stToggle label > div[data-testid="stMarkdownContainer"] p,
-.stToggle label > div[data-testid="stMarkdownContainer"] span,
-.stToggle label * {{
-    color: #D4A843 !important;
-    font-size: 20px !important;
-    font-weight: 700 !important;
-}}
-.stToggle > label > div[data-testid="stMarkdownContainer"] {{
-    margin-top: 10px !important; 
-}}
-
-/* Force màu vàng cho toggle text */
-[data-testid="stMarkdownContainer"] > p {{
-    color: inherit !important;
-}}
-.stToggle [data-testid="stMarkdownContainer"] > p {{
-    color: #D4A843 !important;
-}}
-
-/* SELECTBOX - LABEL TIÊU ĐỀ */
-div.stSelectbox label p,
-div.stSelectbox label span,
-div.stSelectbox label,
-div[data-testid*="column"] label p {{
-    color: #D4A843 !important;
-    font-size: 1.35rem !important;
-    font-family: 'Rye', serif !important;
-    font-weight: bold;
-    text-shadow: none;
-}}
-
-/* SELECTBOX - KHUNG CHỌN */
-.stSelectbox div[data-baseweb="select"] {{
-    background-color: rgba(0, 0, 0, 0.7) !important;
-    border: 1px solid #C29954 !important;
-    border-radius: 8px !important;
-}}
-
-/* SELECTBOX - NỘI DUNG ĐANG HIỂN THỊ (giá trị đã chọn) */
-.stSelectbox div[data-baseweb="select"] *,
-.stSelectbox div[data-baseweb="select"] span,
-.stSelectbox div[data-baseweb="select"] div,
-.stSelectbox div[data-baseweb="select"] input {{
-    font-family: 'Rye', serif !important;
-    color: #000000 !important;
-    font-size: 1.1rem !important;
-    background-color: #FFFFFF !important;
-}}
-
-/* SELECTBOX - DROPDOWN LIST OPTIONS (nền sáng, chữ đen) */
-[data-baseweb="popover"],
-[data-baseweb="popover"] *,
-[data-baseweb="menu"],
-[data-baseweb="menu"] *,
-[role="listbox"],
-[role="listbox"] *,
-[role="option"],
-[role="option"] *,
-li[role="option"],
-li[role="option"] * {{
-    font-family: 'Rye', serif !important;
-    font-size: 1.1rem !important;
-    color: #000000 !important;
-    background-color: #FFFFFF !important;
-}}
-
-/* Hover option */
-[role="option"]:hover,
-[role="option"]:hover * {{
-    background-color: rgba(184, 134, 11, 0.3) !important;
-    color: #000000 !important;
-}}
-
-/* STYLE CHO KHUNG DỊCH - ÁP DỤNG CHO CẢ PC & MOBILE */
-div[data-testid="stAlert"] {{
-    background-color: rgba(30, 30, 30, 0.95) !important;
-    border-left: 4px solid #00d4ff !important;
-    border-radius: 8px !important;
-    box-shadow: 0 4px 15px rgba(0, 212, 255, 0.3) !important;
-}}
-
-/* ============================================================
-   GLOBAL: Tất cả text UI (trừ câu hỏi/đáp án) → #FFFFE0
-   ============================================================ */
-
-/* Streamlit general text → Arial làm mặc định toàn trang */
-.stApp p, .stApp span, .stApp div,
-.stApp label,
-[data-testid="stText"],
-[data-testid="stMarkdownContainer"] *,
-[data-testid="stWidgetLabel"] *,
-[data-testid="stWidgetLabel"],
-div[data-testid="stNotification"] *,
-.stWarning *, .stInfo *, .stError *,
-.stSuccess * {{
-    color: #D4A843 !important;
-    font-family: 'Arial', 'Helvetica', sans-serif !important;
-}}
-
-/* Chỉ các label UI (selectbox, toggle, button) mới dùng Rye */
+/* SELECTBOX */
 div.stSelectbox label, div.stSelectbox label p, div.stSelectbox label span,
-.stToggle label, .stToggle label p, .stToggle label span,
-.stButton>button {{
-    font-family: 'Rye', serif !important;
-}}
+div[data-testid*='column'] label p {
+    color: #1a1a1a !important; font-size: 1rem !important;
+    font-family: 'Arial', 'Helvetica', sans-serif !important; font-weight: 600;
+}
+.stSelectbox div[data-baseweb='select'] {
+    background-color: #ffffff !important;
+    border: 1px solid #d1d5db !important; border-radius: 6px !important;
+}
+.stSelectbox div[data-baseweb='select'] *, .stSelectbox div[data-baseweb='select'] span,
+.stSelectbox div[data-baseweb='select'] div, .stSelectbox div[data-baseweb='select'] input {
+    color: #1a1a1a !important; background-color: #ffffff !important; font-size: 1rem !important;
+}
+[data-baseweb='popover'] *, [data-baseweb='menu'] *,
+[role='listbox'] *, [role='option'] *, li[role='option'] * {
+    color: #1a1a1a !important; background-color: #ffffff !important; font-size: 1rem !important;
+}
+[role='option']:hover, [role='option']:hover * { background-color: #f3f4f6 !important; }
 
-/* Ngoại lệ: tiêu đề chính giữ màu riêng */
-#bank-main-title {{
-    margin-top: 0px !important;
-    margin-bottom: 10px !important;
-    text-align: center !important;
-    font-size: 2.8rem !important;
-    font-family: 'Rye', serif !important;
-    font-weight: 900 !important;
-    color: #D4A843 !important;
-    letter-spacing: 3px !important;
-}}
-#bank-main-title span {{
-    color: #D4A843 !important;
-    font-size: 2.8rem !important;
-    font-family: 'Rye', serif !important;
-    font-weight: 900 !important;
-    letter-spacing: 3px !important;
-}}
+/* BUTTON */
+div.stButton, div[data-testid='stButton'] { display: flex !important; justify-content: center !important; }
+.stButton > button {
+    background: #ffffff !important; color: #1d6fc4 !important;
+    border: 2px solid #1d6fc4 !important; border-radius: 8px !important;
+    font-size: 0.875rem !important; font-weight: 700 !important;
+    font-family: 'Arial', 'Helvetica', sans-serif !important;
+    padding: 10px 24px !important; white-space: nowrap !important;
+    letter-spacing: 0.05em !important; transition: background 0.2s !important;
+}
+.stButton > button:hover { background: #f0f6ff !important; color: #1558a0 !important; }
 
-/* Ngoại lệ: câu hỏi và đáp án giữ màu riêng */
-.bank-question-text, .bank-question-text * {{ color: #FF8C00 !important; }}
-.bank-answer-text {{ color: #FFFFFF; }}
-.stRadio label, .stRadio label span,
-.stRadio label p, .stRadio label div {{ color: #FFFFFF !important; }}
-.paragraph-content-box, .paragraph-content-box * {{ color: #F0F0F0 !important; }}
+/* TOGGLE / CHECKBOX */
+div[data-testid='stCheckbox'] label p, div[data-testid='stCheckbox'] label span,
+div[data-testid='stCheckbox'] label, .stToggle label, .stToggle label p,
+.stToggle label span, .stToggle label * {
+    color: #374151 !important; font-size: 15px !important; font-weight: 500 !important;
+}
 
-/* Ngoại lệ: đáp án đúng/sai vẫn giữ màu xanh/đỏ */
-div[data-testid="stAlert"] *,
-div[data-testid="stAlert"] p,
-div[data-testid="stAlert"] strong,
-div[data-testid="stAlert"] em,
-div[data-testid="stAlert"] li,
-div[data-testid="stAlert"] span,
-div[data-testid="stAlert"] div {{ color: #FFFFFF !important; }}
-div[data-testid="stAlert"] strong {{ color: #FFD700 !important; }}
+/* DOAN VAN */
+.paragraph-title {
+    font-size: 1.1rem; font-weight: 700; color: #1a1a1a;
+    margin-top: 16px; margin-bottom: 8px; padding: 4px 0; display: block;
+}
+.paragraph-content-box {
+    white-space: pre-wrap;
+    font-family: 'Arial', 'Helvetica', sans-serif !important;
+    font-size: 17px !important; line-height: 1.7;
+    color: #1a1a1a; padding: 14px 18px;
+    background-color: #f9fafb; border-radius: 8px;
+    margin-bottom: 16px; border-left: 3px solid #1d6fc4;
+}
+.paragraph-content-box * { color: #1a1a1a !important; }
 
-/* ĐÁP ÁN SAU KHI NỘP BÀI: CLASS-BASED (KHÔNG BỊ OVERRIDE BỞI GLOBAL RULE) */
-/* Đáp án đúng → màu xanh lá */
-.bank-answer-text.answer-correct,
-div.bank-answer-text.answer-correct,
-.stApp .bank-answer-text.answer-correct,
-.stApp div.bank-answer-text.answer-correct {{
-    color: #00ff00 !important;
-    font-weight: 900 !important;
-}}
-/* Người dùng chọn sai → màu vàng */
-.bank-answer-text.answer-selected-wrong,
-div.bank-answer-text.answer-selected-wrong,
-.stApp .bank-answer-text.answer-selected-wrong,
-.stApp div.bank-answer-text.answer-selected-wrong {{
-    color: #FFD700 !important;
-    font-weight: 900 !important;
-}}
-/* Đáp án không được chọn và sai → màu trắng */
-.bank-answer-text.answer-wrong,
-div.bank-answer-text.answer-wrong,
-.stApp .bank-answer-text.answer-wrong,
-.stApp div.bank-answer-text.answer-wrong {{
-    color: #FFFFFF !important;
-}}
+/* ALERTS */
+div[data-testid='stAlert'] {
+    background-color: #f0f6ff !important;
+    border-left: 4px solid #1d6fc4 !important; border-radius: 8px !important;
+}
+div[data-testid='stAlert'] *, div[data-testid='stAlert'] p,
+div[data-testid='stAlert'] strong, div[data-testid='stAlert'] span { color: #1a1a1a !important; }
+div[data-testid='stAlert'] strong { color: #1d6fc4 !important; }
 
-/* MOBILE RESPONSIVE */
-@media (max-width: 768px) {{
-    #main-title-container {{ height: 100px; padding-top: 10px; }}
-    #main-title-container h1 {{ font-size: 8vw; line-height: 1.5 !important; }}
+/* KET QUA */
+.result-title { margin: 24px 0; text-align: center; }
+.result-title h3 { font-size: 1.6rem; font-weight: 800; color: #1a1a1a; }
 
-    /* Thu nhỏ tiêu đề chính vừa 1 dòng trên mobile */
-    #bank-main-title,
-    #bank-main-title span,
-    #bank-main-title p,
-    #bank-main-title div[data-testid="stMarkdownContainer"] p,
-    #bank-main-title div[data-testid="stMarkdownContainer"] span {{
-        font-size: 5.2vw !important;
-        letter-spacing: 1px !important;
-        white-space: nowrap !important;
-        overflow: hidden !important;
-        text-overflow: ellipsis !important;
-    }}
+/* PHAN CACH */
+.question-separator { border: none; border-top: 1px solid #e5e7eb; margin: 16px 0; }
 
-    /* Thu nhỏ label hộp chọn trên mobile */
-    div.stSelectbox label p,
-    div.stSelectbox label span,
-    div.stSelectbox label,
-    div[data-testid*="column"] label p {{
-        font-size: 1rem !important;
-    }}
-    
-    /* Chỉnh kích thước tiêu đề trên mobile */
-    .result-title h3 {{
-        font-size: 1.3rem !important;
-        font-family: 'Arial', 'Helvetica', sans-serif !important;
-        color: #D4A843 !important;
-        white-space: normal !important;
-        overflow: visible !important;
-        text-overflow: clip !important;
-        padding: 0 10px !important;
-        line-height: 1.3 !important;
-    }}
-    
-    /* Màu vàng cho câu hỏi trên mobile */
-    .bank-question-text {{
-        color: #FFFF00 !important;
-        background-color: rgba(0, 0, 0, 0.75) !important;
-        display: inline-block !important; /* BAO VỪA CHỮ */
-    }}
-    
-    /* Nút trên mobile */
-    .stButton>button {{
-        font-size: 0.64em !important;
-        padding: 8px 16px !important;
-        border-radius: 50px !important;
-        white-space: nowrap !important;
-        letter-spacing: 0px !important;
-        border: none !important;
-    }}
-    div.stButton,
-    div[data-testid="stButton"] {{
-        padding: 3px !important;
-        border-radius: 50px !important;
-    }}
-    
-    /* Cập nhật mobile cho đoạn văn */
-    .paragraph-title {{
-        font-size: 1.2rem;
-        padding: 5px 10px;
-        margin-top: 10px;
-    }}
-    .paragraph-content-box {{
-        font-size: 16px !important; 
-        line-height: 1.4;
-        padding: 10px;
-    }}
-}}
+/* MOBILE */
+@media (max-width: 768px) {
+    .bank-question-text { font-size: 17px !important; }
+    .bank-answer-text   { font-size: 16px !important; }
+    .stButton > button  { font-size: 0.8rem !important; }
+}
 </style>
 """
 
 st.markdown(css_style, unsafe_allow_html=True)
 
-# ====================================================
-# 🌿 HIỆU ỨNG ÁNH SÁNG XUYÊN TÁN LÁ (DAPPLED LIGHT)
-# Dùng components.html vì st.markdown chặn <script>
-# Canvas được inject vào DOM của trang cha qua postMessage
-# ====================================================
-components.html("""
-<!DOCTYPE html>
-<html>
-<head>
-<style>
-  * { margin:0; padding:0; }
-  html, body { background:transparent; overflow:hidden; width:0; height:0; }
-</style>
-</head>
-<body>
-<script>
-(function() {
-    // Tạo canvas trực tiếp trên document cha (Streamlit)
-    const parent = window.parent.document;
 
-    // Xóa canvas cũ nếu đã tồn tại (tránh duplicate khi Streamlit re-render)
-    const old = parent.getElementById('dappled-canvas');
-    if (old) old.remove();
-
-    const canvas = parent.createElement('canvas');
-    canvas.id = 'dappled-canvas';
-    Object.assign(canvas.style, {
-        position:       'fixed',
-        top:            '0',
-        left:           '0',
-        width:          '100%',
-        height:         '100%',
-        pointerEvents:  'none',
-        zIndex:         '1',
-        mixBlendMode:   'screen',
-    });
-    parent.body.appendChild(canvas);
-
-    const ctx = canvas.getContext('2d');
-    const pw  = window.parent;
-
-    function resize() {
-        canvas.width  = pw.innerWidth;
-        canvas.height = pw.innerHeight;
-    }
-    resize();
-    pw.addEventListener('resize', resize);
-
-    function rand(a, b) { return a + Math.random() * (b - a); }
-
-    const NUM = 22;
-    const spots = [];
-
-    function makeSpot() {
-        return {
-            x:     rand(0, pw.innerWidth),
-            y:     rand(0, pw.innerHeight),
-            rx:    rand(35, 130),
-            ry:    rand(20, 75),
-            rot:   rand(0, Math.PI),
-            alpha: 0,
-            maxA:  rand(0.07, 0.20),
-            phase: rand(0, Math.PI * 2),
-            speed: rand(0.004, 0.012),
-            dx:    rand(-0.18, 0.18),
-            dy:    rand(-0.09, 0.09),
-            hue:   rand(48, 88),
-        };
-    }
-
-    for (let i = 0; i < NUM; i++) spots.push(makeSpot());
-
-    function drawSpot(s) {
-        ctx.save();
-        ctx.translate(s.x, s.y);
-        ctx.rotate(s.rot);
-        ctx.scale(1, s.ry / s.rx);
-        const g = ctx.createRadialGradient(0,0,0, 0,0,s.rx);
-        const a = s.alpha;
-        g.addColorStop(0,   `hsla(${s.hue},90%,92%,${a})`);
-        g.addColorStop(0.5, `hsla(${s.hue},72%,78%,${a*0.5})`);
-        g.addColorStop(1,   `hsla(${s.hue},60%,60%,0)`);
-        ctx.beginPath();
-        ctx.arc(0, 0, s.rx, 0, Math.PI*2);
-        ctx.fillStyle = g;
-        ctx.fill();
-        ctx.restore();
-    }
-
-    function loop() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        const W = canvas.width, H = canvas.height;
-        for (const s of spots) {
-            s.phase += s.speed;
-            s.alpha  = s.maxA * (0.3 + 0.7*(Math.sin(s.phase)*0.5+0.5));
-            s.x += s.dx;
-            s.y += s.dy;
-            if (s.x < -160) s.x = W+120;
-            if (s.x > W+160) s.x = -120;
-            if (s.y < -120) s.y = H+100;
-            if (s.y > H+120) s.y = -100;
-            drawSpot(s);
-        }
-        pw.requestAnimationFrame(loop);
-    }
-    pw.requestAnimationFrame(loop);
-})();
-</script>
-</body>
-</html>
-""", height=0, scrolling=False)
-
-# ====================================================
-# 🧭 HEADER & BODY
-# ====================================================
-st.markdown(f"""
-<style>
-#logo-header-row {{
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    width: 100%;
-    padding: 4px 10px 0 10px;
-    margin-top: -20px;
-    margin-bottom: 30px;
-    box-sizing: border-box;
-    pointer-events: none;
-    position: relative;
-    z-index: 100;
-}}
-#logo-fixed-left {{
-    pointer-events: none;
-}}
-#logo-fixed-left img {{
-    height: 110px;
-    width: auto;
-    object-fit: contain;
-    border-radius: 12px;
-    display: block;
-    filter: drop-shadow(0 2px 8px rgba(0,0,0,0.6));
-}}
-#logo-fixed-right {{
-    pointer-events: none;
-}}
-#logo-fixed-right img {{
-    height: 110px;
-    width: auto;
-    object-fit: contain;
-    display: block;
-}}
-#logo-fixed-right .lw {{
-    position: relative;
-    display: inline-block;
-}}
-#logo-fixed-right svg {{
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    z-index: 3;
-    pointer-events: none;
-    overflow: visible;
-}}
-.el-t {{ stroke-dasharray: 100 900; animation: elr 2s linear infinite; }}
-.el-m {{ stroke-dasharray: 60 940;  animation: elr 2s linear infinite; }}
-.el-p {{ stroke-dasharray: 18 982;  animation: elr 2s linear infinite; }}
-@keyframes elr {{ from {{ stroke-dashoffset: 1000; }} to {{ stroke-dashoffset: 0; }} }}
-@media (max-width: 767px) {{
-    #logo-fixed-left img, #logo-fixed-right img {{ height: 44px; }}
-}}
-</style>
-
-<div id="logo-header-row">
-    <div id="logo-fixed-left">
-        <div id="logo-wrap">
-            <img src="data:image/jpeg;base64,{img_logo_base64}" alt="Logo"/>
-        </div>
-    </div>
-    <div id="logo-fixed-right">
-        <div class="lw">
-            <img src="data:image/png;base64,{img_logo2_base64}" alt="Logo2"/>
-            <svg viewBox="0 0 228 100">
-                <ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#b8860b" stroke-width="2.5" stroke-linecap="round" pathLength="1000" class="el-t"/>
-                <ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#FFD700" stroke-width="3" stroke-linecap="round" pathLength="1000" class="el-m"/>
-                <ellipse cx="114" cy="50" rx="112" ry="48" fill="none" stroke="#FFF8C0" stroke-width="1.5" stroke-linecap="round" pathLength="1000" class="el-p"/>
-            </svg>
-        </div>
-    </div>
-</div>
-""", unsafe_allow_html=True)
-
-st.markdown("""
-<div id="bank-main-title">
-    NGÂN HÀNG TRẮC NGHIỆM
-</div>
-""", unsafe_allow_html=True)
 
 if "current_group_idx" not in st.session_state: st.session_state.current_group_idx = 0
 if "submitted" not in st.session_state: st.session_state.submitted = False
