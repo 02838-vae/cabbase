@@ -285,50 +285,60 @@ if zone_selected:
                 df_display = df_display.drop(columns=[drop_col])
 
         if len(df_display) > 0:
-            st.markdown('<div class="result-title"><h3>Kết quả tra cứu</h3></div>', unsafe_allow_html=True)
+            # Lọc bỏ hàng mà tất cả cột (trừ STT) đều rỗng
+            df_display = df_display.replace(r'^\s*$', '', regex=True)
+            df_display = df_display[
+                df_display.apply(lambda row: any(
+                    str(v).strip() not in ('', 'nan', 'none', 'nat', '<na>')
+                    for v in row.values
+                ), axis=1)
+            ]
 
-            df_display = df_display.reset_index(drop=True)
-            df_display.insert(0, "STT", range(1, len(df_display) + 1))
-
-            if "PART NUMBER" in df_display.columns:
-                pn_col = df_display.pop("PART NUMBER")
-                df_display.insert(1, "PART NUMBER", pn_col)
-
-            html_parts = ['<div class="table-container">']
-            html_parts.append('<table class="custom-table">')
-            html_parts.append('<thead><tr>')
-            for col in df_display.columns:
-                html_parts.append(f'<th>{str(col)}</th>')
-            html_parts.append('</tr></thead><tbody>')
-
-            import math
-            for idx, row in df_display.iterrows():
-                html_parts.append('<tr>')
+            if len(df_display) == 0:
+                st.warning("⚠️ **Không tìm thấy kết quả phù hợp** với các tiêu chí đã chọn.")
+            else:
+                st.markdown('<div class="result-title"><h3>Kết quả tra cứu</h3></div>', unsafe_allow_html=True)
+    
+                df_display = df_display.reset_index(drop=True)
+                df_display.insert(0, "STT", range(1, len(df_display) + 1))
+    
+                if "PART NUMBER" in df_display.columns:
+                    pn_col = df_display.pop("PART NUMBER")
+                    df_display.insert(1, "PART NUMBER", pn_col)
+    
+                html_parts = ['<div class="table-container">']
+                html_parts.append('<table class="custom-table">')
+                html_parts.append('<thead><tr>')
                 for col in df_display.columns:
-                    val = row[col]
-                    if val is None:
-                        display_val = ""
-                    elif isinstance(val, float) and (math.isnan(val) or math.isinf(val)):
-                        display_val = ""
-                    else:
-                        display_val = str(val).strip()
-                        if display_val.lower() in ("nan", "none", "nat", "<na>"):
+                    html_parts.append(f'<th>{str(col)}</th>')
+                html_parts.append('</tr></thead><tbody>')
+    
+                import math
+                for idx, row in df_display.iterrows():
+                    html_parts.append('<tr>')
+                    for col in df_display.columns:
+                        val = row[col]
+                        if val is None:
                             display_val = ""
-                    safe_val = html_module.escape(str(display_val))
-                    if col == "PART NUMBER":
-                        style = "color: #1d6fc4; font-weight: 700; white-space: nowrap;"
-                        html_parts.append(f'<td style="{style}">{safe_val}</td>')
-                    elif col in ("NOTE", "NOTES", "PN INTERCHANGE", "PN INTERCHAGE"):
-                        style = "max-width:260px; word-wrap:break-word; white-space:pre-wrap; text-align:left !important;"
-                        html_parts.append(f'<td style="{style}">{safe_val}</td>')
-                    else:
-                        html_parts.append(f'<td>{safe_val}</td>')
-                html_parts.append('</tr>')
-
-            html_parts.append('</tbody></table></div>')
-            st.markdown(''.join(html_parts), unsafe_allow_html=True)
-        else:
-            st.warning("⚠️ **Không tìm thấy kết quả phù hợp** với các tiêu chí đã chọn.")
+                        elif isinstance(val, float) and (math.isnan(val) or math.isinf(val)):
+                            display_val = ""
+                        else:
+                            display_val = str(val).strip()
+                            if display_val.lower() in ("nan", "none", "nat", "<na>"):
+                                display_val = ""
+                        safe_val = html_module.escape(str(display_val))
+                        if col == "PART NUMBER":
+                            style = "color: #1d6fc4; font-weight: 700; white-space: nowrap;"
+                            html_parts.append(f'<td style="{style}">{safe_val}</td>')
+                        elif col in ("NOTE", "NOTES", "PN INTERCHANGE", "PN INTERCHAGE"):
+                            style = "max-width:260px; word-wrap:break-word; white-space:pre-wrap; text-align:left !important;"
+                            html_parts.append(f'<td style="{style}">{safe_val}</td>')
+                        else:
+                            html_parts.append(f'<td>{safe_val}</td>')
+                    html_parts.append('</tr>')
+    
+                html_parts.append('</tbody></table></div>')
+                st.markdown(''.join(html_parts), unsafe_allow_html=True)
 
     elif not all_criteria_met:
         prompt_text = "Zone"
