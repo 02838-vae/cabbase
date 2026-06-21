@@ -147,8 +147,8 @@ div.stSelectbox label, div.stSelectbox label p, div.stSelectbox label span,
 .table-container {
     overflow-x: auto;
     margin-top: 8px;
-    border-radius: 8px;
     border: 2px solid #1d6fc4;
+    border-radius: 0;
 }
 .custom-table {
     width: 100%;
@@ -180,7 +180,6 @@ div.stSelectbox label, div.stSelectbox label p, div.stSelectbox label span,
     vertical-align: middle;
 }
 .custom-table td:last-child { border-right: none; }
-.custom-table tbody tr:last-child td { border-bottom: none; }
 .custom-table tbody tr:hover { background-color: #f0f6ff; }
 .custom-table tbody tr:last-child td { border-bottom: none; }
 
