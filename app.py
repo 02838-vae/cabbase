@@ -10,8 +10,7 @@ st.set_page_config(
 
 # ── CẤU HÌNH TÀI KHOẢN ──────────────────────────────────────────────
 USERS = {
-    "admin": hashlib.sha256("vae02838".encode()).hexdigest(),
-    "user1": hashlib.sha256("vae02838".encode()).hexdigest(),
+    "vae02838": hashlib.sha256("vae02838".encode()).hexdigest(),
 }
 TIMEOUT_SECONDS = 2 * 60 * 60  # 2 giờ
 
