@@ -92,8 +92,8 @@ div.stSelectbox label, div.stSelectbox label p, div.stSelectbox label span,
 }
 .stSelectbox div[data-baseweb="select"] {
     background-color: #ffffff !important;
-    border: 1px solid #d1d5db !important;
-    border-radius: 6px !important;
+    border: 2px solid #1d6fc4 !important;
+    border-radius: 8px !important;
 }
 .stSelectbox div[data-baseweb="select"] *,
 .stSelectbox div[data-baseweb="select"] span,
@@ -128,7 +128,7 @@ div.stSelectbox label, div.stSelectbox label p, div.stSelectbox label span,
     overflow-x: auto;
     margin-top: 8px;
     border-radius: 8px;
-    border: 1px solid #e5e7eb;
+    border: 2px solid #1d6fc4;
 }
 .custom-table {
     width: 100%;
@@ -138,12 +138,12 @@ div.stSelectbox label, div.stSelectbox label p, div.stSelectbox label span,
     color: #1a1a1a;
 }
 .custom-table th {
-    background-color: #f3f4f6;
-    color: #111827;
+    background-color: #1d6fc4;
+    color: #ffffff;
     font-weight: 700;
     padding: 10px 14px;
     text-align: center;
-    border-bottom: 2px solid #d1d5db;
+    border-bottom: 2px solid #1558a0;
     white-space: nowrap;
     font-size: 13px;
     letter-spacing: 0.04em;
@@ -152,27 +152,27 @@ div.stSelectbox label, div.stSelectbox label p, div.stSelectbox label span,
 .custom-table td {
     padding: 9px 14px;
     text-align: center;
-    border-bottom: 1px solid #e5e7eb;
+    border-bottom: 1px solid #e0ecf8;
     color: #1a1a1a;
     vertical-align: middle;
 }
-.custom-table tbody tr:hover { background-color: #f9fafb; }
+.custom-table tbody tr:hover { background-color: #f0f6ff; }
 .custom-table tbody tr:last-child td { border-bottom: none; }
 
 /* PROMPT BOX */
 .prompt-box {
     text-align: center;
-    background-color: #f9fafb;
-    border: 1.5px solid #d1d5db;
+    background-color: #ffffff;
+    border: 2px solid #1d6fc4;
     padding: 12px 28px;
-    border-radius: 10px;
+    border-radius: 8px;
     margin: 20px auto;
     max-width: fit-content;
 }
 .prompt-box p {
     font-size: 1rem;
     margin: 0;
-    color: #374151 !important;
+    color: #1d6fc4 !important;
     font-weight: 600;
 }
 
