@@ -33,12 +33,16 @@ def load_and_clean(excel_file, sheet):
         for fcol in ["A/C", "DESCRIPTION", "ITEM"]:
             if fcol in df.columns:
                 df[fcol] = df[fcol].ffill()
+        # Bỏ hàng không có PART NUMBER TRƯỚC KHI fillna (lúc này vẫn là NaN thật)
+        pn_col = next((c for c in df.columns if "PART NUMBER" in c), None)
+        if pn_col:
+            df = df[df[pn_col].notna() & (df[pn_col].astype(str).str.strip() != "")]
         for col in df.columns:
             if df[col].dtype == "object":
                 df[col] = df[col].fillna("").astype(str).str.strip()
             if col in ["A/C", "DESCRIPTION", "ITEM", "PART NUMBER"] and df[col].eq("").all():
                 return pd.DataFrame()
-        return df
+        return df.reset_index(drop=True)
     except Exception:
         return pd.DataFrame()
 
