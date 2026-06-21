@@ -149,6 +149,7 @@ div.stSelectbox label, div.stSelectbox label p, div.stSelectbox label span,
     margin-top: 8px;
     border: 2px solid #1d6fc4;
     display: block;
+    font-size: 0;
     line-height: 0;
 }
 .custom-table {
@@ -158,7 +159,7 @@ div.stSelectbox label, div.stSelectbox label p, div.stSelectbox label span,
     font-size: 14px;
     color: #1a1a1a;
     line-height: 1.4;
-    display: table;
+    vertical-align: top;
 }
 .custom-table th {
     background-color: #ffffff;
@@ -318,18 +319,25 @@ if zone_selected:
     
                 import math
                 for idx, row in df_display.iterrows():
-                    html_parts.append('<tr>')
+                    # Tính display_val cho tất cả cells trước
+                    cell_vals = []
                     for col in df_display.columns:
                         val = row[col]
                         if val is None:
-                            display_val = ""
+                            dv = ""
                         elif isinstance(val, float) and (math.isnan(val) or math.isinf(val)):
-                            display_val = ""
+                            dv = ""
                         else:
-                            display_val = str(val).strip()
-                            if display_val.lower() in ("nan", "none", "nat", "<na>"):
-                                display_val = ""
-                        safe_val = html_module.escape(str(display_val))
+                            dv = str(val).strip()
+                            if dv.lower() in ("nan", "none", "nat", "<na>"):
+                                dv = ""
+                        cell_vals.append(dv)
+                    # Bỏ qua hàng rỗng hoàn toàn
+                    if all(v == "" for v in cell_vals):
+                        continue
+                    html_parts.append('<tr>')
+                    for col, display_val in zip(df_display.columns, cell_vals):
+                        safe_val = html_module.escape(display_val)
                         if col == "PART NUMBER":
                             style = "color: #1d6fc4; font-weight: 700; white-space: nowrap;"
                             html_parts.append(f'<td style="{style}">{safe_val}</td>')
