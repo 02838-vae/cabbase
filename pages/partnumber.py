@@ -151,8 +151,6 @@ div.stSelectbox label, div.stSelectbox label p, div.stSelectbox label span,
 .table-container {
     overflow-x: auto;
     margin-top: 8px;
-    border: 2px solid #1d6fc4;
-    display: block;
     font-size: 0;
     line-height: 0;
 }
@@ -163,7 +161,7 @@ div.stSelectbox label, div.stSelectbox label p, div.stSelectbox label span,
     font-size: 14px;
     color: #1a1a1a;
     line-height: 1.4;
-    vertical-align: top;
+    border: 2px solid #1d6fc4;
 }
 .custom-table th {
     background-color: #ffffff;
@@ -171,19 +169,24 @@ div.stSelectbox label, div.stSelectbox label p, div.stSelectbox label span,
     font-weight: 700;
     padding: 10px 14px;
     text-align: center;
-    border: 2px solid #1d6fc4;
+    border-right: 2px solid #1d6fc4;
+    border-bottom: 2px solid #1d6fc4;
     white-space: nowrap;
     font-size: 13px;
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
+.custom-table th:last-child { border-right: none; }
 .custom-table td {
     padding: 9px 14px;
     text-align: center;
-    border: 2px solid #1d6fc4;
+    border-right: 2px solid #1d6fc4;
+    border-bottom: 2px solid #1d6fc4;
     color: #1a1a1a;
     vertical-align: middle;
 }
+.custom-table td:last-child { border-right: none; }
+.custom-table tbody tr:last-child td { border-bottom: none; }
 .custom-table tbody tr:hover { background-color: #f0f6ff; }
 
 /* PROMPT BOX */
@@ -314,7 +317,7 @@ if zone_selected:
                     pn_col = df_display.pop("PART NUMBER")
                     df_display.insert(1, "PART NUMBER", pn_col)
     
-                html_parts = ['<div style="margin:0;padding:0;font-size:0"><div class="table-container">']
+                html_parts = ['<div class="table-container">']
                 html_parts.append('<table class="custom-table">')
                 html_parts.append('<thead><tr>')
                 for col in df_display.columns:
@@ -352,7 +355,7 @@ if zone_selected:
                             html_parts.append(f'<td>{safe_val}</td>')
                     html_parts.append('</tr>')
     
-                html_parts.append('</tbody></table></div></div>')
+                html_parts.append('</tbody></table></div>')
                 st.markdown(''.join(html_parts), unsafe_allow_html=True)
 
     elif not all_criteria_met:
