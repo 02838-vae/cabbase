@@ -147,8 +147,9 @@ div.stSelectbox label, div.stSelectbox label p, div.stSelectbox label span,
 .table-container {
     overflow-x: auto;
     margin-top: 8px;
-    outline: 2px solid #1d6fc4;
-    border-radius: 0;
+    border: 2px solid #1d6fc4;
+    display: block;
+    line-height: 0;
 }
 .custom-table {
     width: 100%;
@@ -156,6 +157,8 @@ div.stSelectbox label, div.stSelectbox label p, div.stSelectbox label span,
     font-family: 'Arial', 'Helvetica', sans-serif;
     font-size: 14px;
     color: #1a1a1a;
+    line-height: 1.4;
+    display: table;
 }
 .custom-table th {
     background-color: #ffffff;
@@ -306,7 +309,7 @@ if zone_selected:
                     pn_col = df_display.pop("PART NUMBER")
                     df_display.insert(1, "PART NUMBER", pn_col)
     
-                html_parts = ['<div class="table-container">']
+                html_parts = ['<div style="margin:0;padding:0;font-size:0"><div class="table-container">']
                 html_parts.append('<table class="custom-table">')
                 html_parts.append('<thead><tr>')
                 for col in df_display.columns:
@@ -337,7 +340,7 @@ if zone_selected:
                             html_parts.append(f'<td>{safe_val}</td>')
                     html_parts.append('</tr>')
     
-                html_parts.append('</tbody></table></div>')
+                html_parts.append('</tbody></table></div></div>')
                 st.markdown(''.join(html_parts), unsafe_allow_html=True)
 
     elif not all_criteria_met:
