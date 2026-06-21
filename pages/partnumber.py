@@ -147,7 +147,7 @@ div.stSelectbox label, div.stSelectbox label p, div.stSelectbox label span,
 .table-container {
     overflow-x: auto;
     margin-top: 8px;
-    border: 2px solid #1d6fc4;
+    outline: 2px solid #1d6fc4;
     border-radius: 0;
 }
 .custom-table {
@@ -163,25 +163,20 @@ div.stSelectbox label, div.stSelectbox label p, div.stSelectbox label span,
     font-weight: 700;
     padding: 10px 14px;
     text-align: center;
-    border-bottom: 2px solid #1d6fc4;
-    border-right: 2px solid #1d6fc4;
+    border: 2px solid #1d6fc4;
     white-space: nowrap;
     font-size: 13px;
     letter-spacing: 0.04em;
     text-transform: uppercase;
 }
-.custom-table th:last-child { border-right: none; }
 .custom-table td {
     padding: 9px 14px;
     text-align: center;
-    border-bottom: 2px solid #1d6fc4;
-    border-right: 2px solid #1d6fc4;
+    border: 2px solid #1d6fc4;
     color: #1a1a1a;
     vertical-align: middle;
 }
-.custom-table td:last-child { border-right: none; }
 .custom-table tbody tr:hover { background-color: #f0f6ff; }
-.custom-table tbody tr:last-child td { border-bottom: none; }
 
 /* PROMPT BOX */
 .prompt-box {
